@@ -772,9 +772,9 @@
   <!-- ================= ACTIVE SESSION ================= -->
   <div id="view-session" hidden>
     <div class="topbar">
-      <button class="topbar-btn" id="endSessionBtn">
+      <button class="topbar-btn" id="sessionHomeBtn" aria-label="Back to home — your session keeps running">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-        <span>End session</span>
+        <span>Home</span>
       </button>
       <div class="level-pill">
         <div class="lv-badge" id="lvBadge">1</div>
@@ -1127,7 +1127,24 @@
   function uid(){ return Date.now()+"-"+Math.random().toString(36).slice(2); }
   function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
   function escapeHtml(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
-  function debounce(fn, wait){ var t; return function(){ var args=arguments, ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,args); }, wait); }; }
+  // A debounced save registers a flusher only while it has a write pending, so leaving the page
+  // can run those writes immediately instead of dropping the last ~350ms of typing.
+  var pendingFlushes = [];
+  function debounce(fn, wait){
+    var t = null, args, ctx;
+    function run(){
+      t = null;
+      var i = pendingFlushes.indexOf(flush); if(i>-1) pendingFlushes.splice(i,1);
+      fn.apply(ctx, args);
+    }
+    function flush(){ if(t!==null){ clearTimeout(t); run(); } }
+    return function(){
+      args = arguments; ctx = this;
+      if(t!==null) clearTimeout(t); else pendingFlushes.push(flush);
+      t = setTimeout(run, wait);
+    };
+  }
+  function flushPendingSaves(){ pendingFlushes.slice().forEach(function(f){ f(); }); }
 
   function gainFor(result){ return result==="flash"?30:result==="send"?20:5; }
 
@@ -1497,11 +1514,29 @@
   }
 
   /* ---------------- timer engine ---------------- */
-  var timer = { phase:"idle", remaining:state.timerDefaults.workSec, running:false, round:0, tickId:null };
+  // Driven by absolute timestamps, not by counting ticks: the interval only decides how often
+  // the clock gets looked at, so a late tick, a throttled background tab, or a locked screen
+  // can never make the countdown drift. The run state is mirrored onto the active session
+  // (session.timerState) so a reload or an iOS tab eviction resumes exactly where it was.
+  var TIMER_TICK_MS = 250;
+  var timer = idleTimer();
+  var timerTickId = null;
   var audioCtx = null;
+
+  function idleTimer(){
+    return { phase:"idle", running:false, round:0, phaseEndsAt:null, remainingMs:state.timerDefaults.workSec*1000, lastShownSec:null };
+  }
+  function phaseDurationMs(phase){
+    return (phase==="rest" ? state.timerDefaults.restSec : state.timerDefaults.workSec)*1000;
+  }
+  function timerRemainingMs(now){
+    return timer.running ? Math.max(0, timer.phaseEndsAt-now) : timer.remainingMs;
+  }
 
   function ensureAudio(){
     if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; } }
+    // iOS suspends the context whenever the page is backgrounded; it only comes back via resume().
+    if(audioCtx && audioCtx.state==="suspended" && audioCtx.resume){ audioCtx.resume().catch(function(){}); }
     return audioCtx;
   }
   function beep(freq, dur, vol){
@@ -1518,48 +1553,99 @@
     }catch(e){}
   }
 
+  // Walk through every phase boundary that has already passed. Only a boundary crossed within
+  // the last second gets its beep — catching up after the screen was off shouldn't fire a burst
+  // of stale beeps. Returns whether the phase changed.
+  function syncTimer(now){
+    if(!timer.running) return false;
+    var changed = false;
+    while(now >= timer.phaseEndsAt){
+      var fresh = now - timer.phaseEndsAt < 1000;
+      if(timer.phase==="work"){ timer.round += 1; if(fresh) beep(880,220,0.1); }
+      else if(fresh){ beep(440,220,0.1); }
+      timer.phase = timer.phase==="work" ? "rest" : "work";
+      timer.phaseEndsAt += phaseDurationMs(timer.phase);
+      changed = true;
+    }
+    return changed;
+  }
+  function startTimerTicking(){ if(!timerTickId) timerTickId = setInterval(tick, TIMER_TICK_MS); }
+  function stopTimerTicking(){ if(timerTickId){ clearInterval(timerTickId); timerTickId = null; } }
+  function persistTimer(){
+    var s = getActiveSession();
+    if(!s) return;
+    s.timerState = { phase:timer.phase, running:timer.running, round:timer.round, phaseEndsAt:timer.phaseEndsAt, remainingMs:timer.remainingMs };
+    saveState();
+  }
+  // Rebuild the in-memory timer from the active session — on load, and after an import.
+  function restoreTimer(){
+    stopTimerTicking();
+    timer = idleTimer();
+    var s = getActiveSession();
+    var t = s && s.timerState;
+    if(!t || (t.phase!=="work" && t.phase!=="rest")) return;
+    timer.phase = t.phase;
+    timer.round = t.round||0;
+    timer.remainingMs = typeof t.remainingMs==="number" ? t.remainingMs : phaseDurationMs(t.phase);
+    timer.running = !!t.running && typeof t.phaseEndsAt==="number";
+    timer.phaseEndsAt = timer.running ? t.phaseEndsAt : null;
+    if(timer.running){
+      if(syncTimer(Date.now())) persistTimer();
+      startTimerTicking();
+    }
+  }
+
   function startTimer(){
     if(timer.running) return;
     ensureAudio();
-    if(timer.phase==="idle"){ timer.phase="work"; timer.remaining=state.timerDefaults.workSec; timer.round=0; }
+    if(timer.phase==="idle"){ timer.phase="work"; timer.round=0; timer.remainingMs=phaseDurationMs("work"); }
     timer.running = true;
-    timer.tickId = setInterval(tick, 1000);
+    timer.phaseEndsAt = Date.now() + timer.remainingMs;
+    startTimerTicking();
+    persistTimer();
     renderTimer();
   }
   function pauseTimer(){
-    timer.running = false;
-    if(timer.tickId){ clearInterval(timer.tickId); timer.tickId=null; }
+    if(timer.running){
+      var now = Date.now();
+      syncTimer(now);
+      timer.remainingMs = Math.max(0, timer.phaseEndsAt-now);
+      timer.running = false;
+      timer.phaseEndsAt = null;
+      persistTimer();
+    }
+    stopTimerTicking();
     renderTimer();
   }
   function resetTimer(){
-    if(timer.tickId){ clearInterval(timer.tickId); timer.tickId=null; }
-    timer = { phase:"idle", remaining:state.timerDefaults.workSec, running:false, round:0, tickId:null };
+    stopTimerTicking();
+    timer = idleTimer();
+    persistTimer();
     renderTimer();
   }
   function tick(){
-    timer.remaining -= 1;
-    if(timer.remaining <= 0){
-      if(timer.phase==="work"){ timer.round += 1; beep(880,220,0.1); } else { beep(440,220,0.1); }
-      timer.phase = timer.phase==="work" ? "rest" : "work";
-      timer.remaining = timer.phase==="work" ? state.timerDefaults.workSec : state.timerDefaults.restSec;
-    } else if(timer.remaining<=3){
-      beep(660,90,0.06);
-    }
-    renderTimer();
+    var now = Date.now();
+    var phaseChanged = syncTimer(now);
+    var secs = Math.ceil(timerRemainingMs(now)/1000);
+    if(phaseChanged) persistTimer();
+    else if(timer.running && secs!==timer.lastShownSec && secs>=1 && secs<=3) beep(660,90,0.06);
+    if(phaseChanged || secs!==timer.lastShownSec) renderTimer();
   }
   function fmtClock(sec){
     var m = Math.floor(sec/60), s = sec%60;
     return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
   }
   function renderTimer(){
+    var secs = Math.ceil(timerRemainingMs(Date.now())/1000);
+    timer.lastShownSec = secs;
     var card = document.getElementById("timerCard");
     card.classList.remove("phase-idle","phase-work","phase-rest");
     card.classList.add("phase-"+timer.phase);
     document.getElementById("phaseLabel").textContent = timer.phase==="idle" ? "READY" : (timer.phase==="work" ? "WORK" : "REST");
     document.getElementById("roundLabel").textContent = timer.round>0 ? ("ROUND "+timer.round) : " ";
-    document.getElementById("countdown").textContent = fmtClock(Math.max(timer.remaining,0));
-    var total = timer.phase==="rest" ? state.timerDefaults.restSec : state.timerDefaults.workSec;
-    var pct = total>0 ? Math.max(0,Math.min(100,(timer.remaining/total)*100)) : 0;
+    document.getElementById("countdown").textContent = fmtClock(Math.max(secs,0));
+    var total = phaseDurationMs(timer.phase)/1000;
+    var pct = total>0 ? Math.max(0,Math.min(100,(secs/total)*100)) : 0;
     document.getElementById("timerFill").style.width = pct+"%";
     document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : "Resume");
     var idle = timer.phase==="idle";
@@ -1569,11 +1655,35 @@
     document.querySelectorAll("#presets .chip").forEach(function(c){ c.disabled = !idle; });
   }
 
+  /* ---------------- screen wake lock ---------------- */
+  // Held while a workout is active (a session is open) and the page is visible — a hangboard
+  // timer is useless if the phone locks mid-set. Browsers drop the lock on their own whenever
+  // the page is hidden, so this is re-evaluated on every visibility change. Silently does
+  // nothing where the API is missing or the host frame's permissions policy refuses it.
+  var wakeLock = null, wakeLockPending = false;
+  function updateWakeLock(){
+    var want = !!getActiveSession() && document.visibilityState==="visible";
+    if(want){
+      if(wakeLock || wakeLockPending || !(navigator.wakeLock && navigator.wakeLock.request)) return;
+      wakeLockPending = true;
+      navigator.wakeLock.request("screen").then(function(lock){
+        wakeLockPending = false;
+        wakeLock = lock;
+        lock.addEventListener("release", function(){ if(wakeLock===lock) wakeLock = null; });
+        updateWakeLock(); // the workout may have ended while the request was in flight
+      }).catch(function(){ wakeLockPending = false; });
+    } else if(wakeLock){
+      var lock = wakeLock;
+      wakeLock = null;
+      lock.release().catch(function(){});
+    }
+  }
+
   function clampSec(v){ return Math.max(3, Math.min(1800, Math.round(v)||0)); }
   function setWork(v){
     state.timerDefaults.workSec = clampSec(v);
     var s = getActiveSession(); if(s) s.timerConfig.workSec = state.timerDefaults.workSec;
-    if(timer.phase==="idle") timer.remaining = state.timerDefaults.workSec;
+    if(timer.phase==="idle") timer.remainingMs = state.timerDefaults.workSec*1000;
     saveState(); renderTimer();
   }
   function setRest(v){
@@ -1800,17 +1910,21 @@
     state.activeSessionId = s.id;
     saveState();
     resetTimer();
+    updateWakeLock();
     switchView("session");
   }
   function finishSession(){
     var s = getActiveSession();
     if(!s) return;
-    s.endedAt = Date.now();
-    state.activeSessionId = null;
+    flushPendingSaves();
     pauseTimer();
+    s.endedAt = Date.now();
+    delete s.timerState;
+    state.activeSessionId = null;
     resetTimer();
     hideComposer();
     saveState();
+    updateWakeLock();
     showEndSummary(s);
   }
   function showEndSummary(s){
@@ -2093,7 +2207,11 @@
     document.getElementById("psFlash").textContent = state.counts.flash;
     document.getElementById("psSend").textContent = state.counts.send;
     document.getElementById("psFall").textContent = state.counts.fall;
-    document.getElementById("startCtaSub").textContent = state.timerDefaults.workSec+"s work / "+state.timerDefaults.restSec+"s rest";
+    var activeS = getActiveSession();
+    document.querySelector("#startSessionBtn .main").textContent = activeS ? "Resume Session" : "Start Session";
+    document.getElementById("startCtaSub").textContent = activeS
+      ? (timer.running ? "Timer running" : "In progress")+" · "+activeS.attempts.length+" logged"
+      : state.timerDefaults.workSec+"s work / "+state.timerDefaults.restSec+"s rest";
 
     var ended = state.sessions.filter(function(s){ return s.endedAt; })
       .sort(function(a,b){ return b.startedAt-a.startedAt; });
@@ -2967,8 +3085,12 @@
     if(el && !el.disabled) tapPop(el);
   });
 
-  document.getElementById("startSessionBtn").addEventListener("click", startSession);
-  document.getElementById("endSessionBtn").addEventListener("click", finishSession);
+  // Home's CTA resumes a running session rather than stacking a second one on top of it;
+  // leaving the session view never ends it — only Finish Session does.
+  document.getElementById("startSessionBtn").addEventListener("click", function(){
+    if(getActiveSession()) switchView("session"); else startSession();
+  });
+  document.getElementById("sessionHomeBtn").addEventListener("click", function(){ flushPendingSaves(); switchView("home"); });
   document.getElementById("finishSessionBtn").addEventListener("click", finishSession);
   document.getElementById("endSummaryDoneBtn").addEventListener("click", closeEndSummary);
   document.getElementById("endSessionOverlay").addEventListener("click", function(e){ if(e.target.id==="endSessionOverlay") closeEndSummary(); });
@@ -3171,15 +3293,27 @@
     switchView("home");
   });
 
+  // Leaving the page (backgrounding, app switch, closing the tab) flushes any debounced text
+  // save and the timer state; coming back re-reads the clock and re-takes the wake lock, which
+  // the browser drops by itself whenever the page is hidden.
+  function onPageHidden(){ flushPendingSaves(); persistTimer(); saveState(); }
+  function onPageVisible(){ if(timer.running) tick(); updateWakeLock(); }
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState==="hidden") onPageHidden(); else onPageVisible();
+  });
+  window.addEventListener("pagehide", onPageHidden);
+  window.addEventListener("pageshow", onPageVisible);
+
   /* ---------------- init ---------------- */
   applyTheme();
   recomputeProfile();
   saveState();
   initAssets();
   scheduleAutoHop();
+  restoreTimer();
+  updateWakeLock();
   var activeSession = getActiveSession();
   if(activeSession && !activeSession.endedAt){
-    timer.remaining = activeSession.timerConfig.workSec || state.timerDefaults.workSec;
     switchView("session");
   } else {
     switchView("home");
