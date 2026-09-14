@@ -310,7 +310,11 @@
     position:absolute;left:50%;bottom:6%;width:52%;height:10%;
     transform:translateX(-50%);border-radius:50%;
     background:radial-gradient(ellipse, rgba(20,14,8,0.4) 0%, rgba(20,14,8,0.16) 55%, transparent 78%);
+    transition:transform .15s ease-out, opacity .15s ease-out;
   }
+  /* The hop's vertical lift is applied here, not on .character-wander, so the ground shadow
+     (a sibling) only follows Crimpet sideways and stays on the floor through the jump. */
+  .character-body{position:relative;transition:transform .15s ease-out;}
   .character-wander img{width:100%;height:auto;display:block;cursor:pointer;position:relative;filter:drop-shadow(0 6px 6px var(--shadow));}
   .character-wander img.evolve{animation:cxEvolve 1s cubic-bezier(.34,1.56,.64,1);}
   @keyframes cxEvolve{0%{transform:scale(1) rotate(0);opacity:1;}30%{transform:scale(0.55) rotate(-10deg);opacity:0.35;}58%{transform:scale(1.3) rotate(7deg);opacity:1;}82%{transform:scale(0.92) rotate(-3deg);}100%{transform:scale(1) rotate(0);}}
@@ -679,8 +683,10 @@
         <div class="scene-layers" id="sceneLayers"></div>
         <div class="room-lab-layer" id="roomLabLayer" aria-hidden="true"></div>
         <div class="character-wander" id="characterWander">
-          <div class="character-shadow" aria-hidden="true"></div>
-          <img id="characterStage" alt="Your Crimpet">
+          <div class="character-shadow" id="characterShadow" aria-hidden="true"></div>
+          <div class="character-body" id="characterBody">
+            <img id="characterStage" alt="Your Crimpet">
+          </div>
         </div>
 
         <div class="scene-overlay-top">
@@ -986,6 +992,14 @@
         </div>
       </div>
     </div>
+
+    <div class="settings-section" id="developerSection">
+      <p class="settings-section-title">Developer</p>
+      <div class="switch-row">
+        <div><div class="switch-label">Room Lab</div><div class="switch-desc">Placement-testing squares in Customize and the Garage</div></div>
+        <button type="button" class="switch" data-setting="devRoomLab" aria-pressed="false"><span class="switch-thumb"></span></button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1049,7 +1063,7 @@
       <p class="settings-section-hint">Tap any number of these on or off — they place themselves in the room, no unlocking needed.</p>
       <div class="picker-grid" id="decoratePickerGrid"></div>
     </div>
-    <div class="settings-section">
+    <div class="settings-section" id="roomLabSection" hidden>
       <p class="settings-section-title">Room Lab<span class="lab-badge">TEST</span></p>
       <p class="settings-section-hint">Placeholder squares for testing where future room objects can attach — the Climbing Wall, the Back Wall, or the Floor. Add one, then drag it around directly in the Garage scene; its surface below updates automatically. Not final art.</p>
       <div class="lab-add-row" id="labAddRow">
@@ -1182,13 +1196,14 @@
       lastGradeType:"boulder",
       lastLocation:"",
       settingsVersion:3,
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false },
+      // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false },
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
-      // in whatever gym is selected. decorPositions: per-id {x,y} override written by
-      // dragging a piece in Arrange mode; a piece with no override just uses ACCESSORIES'
-      // preset x/y, so old saves with no decorPositions key still render correctly.
+      // in whatever gym is selected. decorPositionsByEnv: {envId: {accessoryId: {x,y}}}
+      // overrides written by dragging a piece in Arrange mode, kept per gym; a piece with no
+      // override in the current gym just uses ACCESSORIES' preset x/y.
       // roomLab: temporary colored test squares for the Garage's room-placement system —
       // see ROOM_SURFACES below. Each entry is {id, color, surfaceId, x, y, scale, rotation}.
       // Separate from `decorations` (the real, non-level-gated accessory art) on purpose:
@@ -1196,7 +1211,7 @@
       // A few accessories on by default (new installs only — Object.assign in loadState()
       // never overwrites an existing save's own decorations array) so a brand-new Garage
       // reads as lived-in on first look, not an empty test room waiting for Customize.
-      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositions:{}, roomLab:[] },
+      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[] },
       sessions:[],
       activeSessionId:null
     };
@@ -1263,6 +1278,13 @@
         merged.settings.mode = "advanced";
       }
       merged.settingsVersion = 3;
+      // Decoration positions used to be one map shared by every gym. They were only ever tuned
+      // against the Garage painting, so an old layout moves under the Garage.
+      var oldChar = migrated.character || {};
+      if(!oldChar.decorPositionsByEnv && oldChar.decorPositions && Object.keys(oldChar.decorPositions).length){
+        merged.character.decorPositionsByEnv = { garage: oldChar.decorPositions };
+      }
+      delete merged.character.decorPositions;
       return merged;
     }catch(e){ return defaultState(); }
   }
@@ -1369,6 +1391,7 @@
       state.character.selectedEnvironmentId, "pick-env", ""
     );
     document.getElementById("decoratePickerGrid").innerHTML = decorateItemsHTML();
+    document.getElementById("roomLabSection").hidden = !state.settings.devRoomLab;
     renderRoomLabList();
   }
   function openCustomize(){ renderCustomizeModal(); document.getElementById("customizeOverlay").hidden = false; }
@@ -2681,7 +2704,8 @@
   // 1/10/20/30/50, same reasoning as CHARACTER_STAGES — gyms still unlock a bit slower than
   // looks (matching the original spacing), just not absurdly slower.
   var ENVIRONMENTS = [
-    { id:"garage",   name:"The Garage",      minLevel:1,  wallColor:"#C9A876", floorColor:"#8B8378",
+    // artReady: this room has finished production art, so Auto may select it (see selectedEnvironment).
+    { id:"garage",   name:"The Garage",      minLevel:1,  artReady:true, wallColor:"#C9A876", floorColor:"#8B8378",
       wallImg:"/_blob/1539353a54bfd43eb8d646acddd78e3f", floorImg:"/_blob/05021e4a15ac9579c96b9e6b7c05e8f7", props:[] },
     { id:"homewall", name:"Home Wall",       minLevel:8,  wallColor:"#A8763F", floorColor:"#6B5744", wallImg:null, floorImg:null, props:[] },
     { id:"local",    name:"The Local",       minLevel:15, wallColor:"#B8AFA0", floorColor:"#3E3A35", wallImg:null, floorImg:null, props:[] },
@@ -2696,12 +2720,17 @@
   function unlockedEnvironments(){
     return ENVIRONMENTS.filter(function(e){ return state.level>=e.minLevel; });
   }
+  // Auto follows the newest unlocked gym that has finished production art (artReady). The
+  // flat-color placeholder rooms can still be picked by hand in Customize, but Auto never
+  // moves someone out of a finished room into one of them just because they leveled up.
   function selectedEnvironment(){
     var unlocked = unlockedEnvironments();
     var sel = state.character.selectedEnvironmentId;
     var match = null;
     unlocked.forEach(function(e){ if(e.id===sel) match=e; });
-    return match || unlocked[unlocked.length-1];
+    if(match) return match;
+    var finished = unlocked.filter(function(e){ return e.artReady; });
+    return finished.length ? finished[finished.length-1] : unlocked[0];
   }
 
   // ---- decorations: real modular pieces, freely toggled on/off, not level-gated ----
@@ -2737,12 +2766,15 @@
     var on = state.character.decorations||[];
     return ACCESSORIES.filter(function(a){ return on.indexOf(a.id)>-1; });
   }
-  // A dragged position overrides the accessory's preset x/y; nothing dragged yet just
-  // falls back to the preset, so old saves with no decorPositions entry render unchanged.
-  function decorPosition(a){
-    var overrides = state.character.decorPositions || {};
-    var o = overrides[a.id];
-    return o ? { x:o.x, y:o.y } : { x:a.x, y:a.y };
+  // A position dragged in this gym overrides the accessory's preset x/y; nothing dragged here
+  // yet just falls back to the preset. Layouts saved before dragging was constrained could
+  // leave a piece entirely outside the scene, so it's pulled back into view here — the image's
+  // height isn't known before it loads, so y is only clamped loosely.
+  function decorPosition(a, envId){
+    var byEnv = state.character.decorPositionsByEnv || {};
+    var o = byEnv[envId] && byEnv[envId][a.id];
+    var x = o ? o.x : a.x, y = o ? o.y : a.y;
+    return { x:Math.max(0, Math.min(100-a.w, x)), y:Math.max(0, Math.min(96, y)) };
   }
   // ---- Room Lab: a simple room-placement system, tested with throwaway colored squares ----
   // Three invisible attachment surfaces for the Garage. Nothing is drawn for these — they're
@@ -2766,7 +2798,11 @@
   var LAB_COLORS = ["#E0574A","#3FA9A0","#4C8C4A","#D9B23C","#7B5EA7"];
   function renderRoomLab(){
     var host = document.getElementById("roomLabLayer");
-    var objs = state.character.roomLab||[];
+    // Developer-only tool: its squares stay out of the scene (but remain saved) unless the
+    // Room Lab switch in Settings → Developer is on.
+    var enabled = !!state.settings.devRoomLab;
+    host.hidden = !enabled;
+    var objs = enabled ? (state.character.roomLab||[]) : [];
     host.innerHTML = objs.map(function(o){
       return '<div class="lab-square" data-lab-id="'+o.id+'" style="left:'+o.x+'%;top:'+o.y+'%;'+
         'width:'+(10*o.scale)+'%;transform:translate(-50%,-50%) rotate('+o.rotation+'deg);background:'+o.color+';"></div>';
@@ -2797,41 +2833,62 @@
       '</div>';
     }).join("");
   }
-  (function initRoomLabDrag(){
-    var host = document.getElementById("roomLabLayer");
-    var dragEl = null, dragId = null;
+  // ---- dragging pieces around the scene (shared by Arrange mode and Room Lab) ----
+  // Remembers where inside the piece it was grabbed, so it never jumps to put a corner under
+  // the pointer, and keeps the whole piece inside the scene so nothing can be dragged out of
+  // reach. `anchor` says what style.left/top mean for these elements: the top-left corner
+  // ("corner", decoration images) or the center ("center", Room Lab squares, which are
+  // translate(-50%,-50%)). onDrop(el, xPct, yPct) persists the final position.
+  function makeSceneDraggable(host, opts){
+    var drag = null;
+    var centered = opts.anchor==="center";
     host.addEventListener("pointerdown", function(e){
-      var sq = e.target.closest(".lab-square");
-      if(!sq) return;
-      dragEl = sq; dragId = sq.getAttribute("data-lab-id");
-      sq.classList.add("dragging");
-      sq.setPointerCapture(e.pointerId);
+      if(drag || (opts.enabled && !opts.enabled())) return;
+      var el = e.target.closest(opts.selector);
+      if(!el) return;
+      var rect = host.getBoundingClientRect();
+      drag = {
+        el:el, pointerId:e.pointerId,
+        dx:(e.clientX-rect.left) - parseFloat(el.style.left)/100*rect.width,
+        dy:(e.clientY-rect.top) - parseFloat(el.style.top)/100*rect.height
+      };
+      el.classList.add("dragging");
+      el.setPointerCapture(e.pointerId);
       e.preventDefault();
     });
     host.addEventListener("pointermove", function(e){
-      if(!dragEl) return;
+      if(!drag || e.pointerId!==drag.pointerId) return;
       var rect = host.getBoundingClientRect();
-      var x = Math.max(0, Math.min(100, ((e.clientX-rect.left)/rect.width)*100));
-      var y = Math.max(0, Math.min(100, ((e.clientY-rect.top)/rect.height)*100));
-      dragEl.style.left = x+"%";
-      dragEl.style.top = y+"%";
+      var w = drag.el.offsetWidth, h = drag.el.offsetHeight;
+      var minX = centered ? w/2 : 0, minY = centered ? h/2 : 0;
+      var maxX = Math.max(minX, rect.width - (centered ? w/2 : w));
+      var maxY = Math.max(minY, rect.height - (centered ? h/2 : h));
+      var x = Math.max(minX, Math.min(maxX, (e.clientX-rect.left) - drag.dx));
+      var y = Math.max(minY, Math.min(maxY, (e.clientY-rect.top) - drag.dy));
+      drag.el.style.left = (Math.round(x/rect.width*10000)/100)+"%";
+      drag.el.style.top = (Math.round(y/rect.height*10000)/100)+"%";
     });
-    function endDrag(){
-      if(!dragEl) return;
-      var x = parseFloat(dragEl.style.left), y = parseFloat(dragEl.style.top);
-      var objs = state.character.roomLab||[];
-      var o = objs.filter(function(o){ return o.id===dragId; })[0];
-      if(o){
-        o.x = x; o.y = y; o.surfaceId = detectSurface(x,y);
-        saveState();
-        renderRoomLabList(); // just the surface readout — the square's own DOM is already right
-      }
-      dragEl.classList.remove("dragging");
-      dragEl = null; dragId = null;
+    function endDrag(e){
+      if(!drag || e.pointerId!==drag.pointerId) return;
+      var el = drag.el;
+      drag = null;
+      el.classList.remove("dragging");
+      opts.onDrop(el, parseFloat(el.style.left), parseFloat(el.style.top));
     }
     host.addEventListener("pointerup", endDrag);
     host.addEventListener("pointercancel", endDrag);
-  })();
+  }
+  makeSceneDraggable(document.getElementById("roomLabLayer"), {
+    selector:".lab-square", anchor:"center",
+    onDrop:function(el, x, y){
+      var id = el.getAttribute("data-lab-id");
+      var o = (state.character.roomLab||[]).filter(function(o){ return o.id===id; })[0];
+      if(!o) return;
+      o.x = x; o.y = y; o.surfaceId = detectSurface(x,y);
+      saveState();
+      renderRoomLabList(); // just the surface readout — the square's own DOM is already right
+    }
+  });
   // Ambient-only effects, independent of the static architecture: a pulsing lamp glow plus a
   // few drifting dust motes, positioned to match the lamp fixture drawn in garageSceneSVG.
   // Only the Garage has a lamp fixture to glow from right now, so it's the only one lit up
@@ -2861,7 +2918,7 @@
       return '<img class="scene-layer-img" src="'+p.img+'" style="left:'+p.x+'%;top:'+p.y+'%;width:'+p.w+'%" alt="">';
     });
     var decorPieces = activeDecorations().map(function(a){
-      var pos = decorPosition(a);
+      var pos = decorPosition(a, env.id);
       return '<img class="scene-layer-img" data-decor-id="'+a.id+'" src="'+a.img+'" style="left:'+pos.x+'%;top:'+pos.y+'%;width:'+a.w+'%" alt="">';
     });
     layerHost.innerHTML = envPieces.concat(decorPieces).join("");
@@ -2888,40 +2945,19 @@
     document.getElementById("arrangeToggleBtn").querySelector(".label").textContent = on ? "Done" : "Arrange";
     document.getElementById("arrangeRow").hidden = !on;
   }
-  (function initDecorDrag(){
-    var layerHost = document.getElementById("sceneLayers");
-    var dragEl = null, dragId = null;
-    layerHost.addEventListener("pointerdown", function(e){
-      if(!arrangeMode) return;
-      var img = e.target.closest(".scene-layer-img[data-decor-id]");
-      if(!img) return;
-      dragEl = img; dragId = img.getAttribute("data-decor-id");
-      img.classList.add("dragging");
-      // Pointer capture keeps move/up events targeted at this image even once the
-      // pointer drags outside its own (small) box — without it a fast drag loses tracking.
-      img.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
-    layerHost.addEventListener("pointermove", function(e){
-      if(!dragEl) return;
-      var rect = layerHost.getBoundingClientRect();
-      var x = Math.max(0, Math.min(100, ((e.clientX-rect.left)/rect.width)*100));
-      var y = Math.max(0, Math.min(100, ((e.clientY-rect.top)/rect.height)*100));
-      dragEl.style.left = x+"%";
-      dragEl.style.top = y+"%";
-    });
-    function endDrag(){
-      if(!dragEl) return;
-      var positions = state.character.decorPositions || {};
-      positions[dragId] = { x:parseFloat(dragEl.style.left), y:parseFloat(dragEl.style.top) };
-      state.character.decorPositions = positions;
+  // Only accessories carry data-decor-id, so a future room prop is never draggable. Positions
+  // are saved under the gym currently on screen.
+  makeSceneDraggable(document.getElementById("sceneLayers"), {
+    selector:".scene-layer-img[data-decor-id]", anchor:"corner",
+    enabled:function(){ return arrangeMode; },
+    onDrop:function(el, x, y){
+      var envId = selectedEnvironment().id;
+      var byEnv = state.character.decorPositionsByEnv || (state.character.decorPositionsByEnv = {});
+      var positions = byEnv[envId] || (byEnv[envId] = {});
+      positions[el.getAttribute("data-decor-id")] = { x:x, y:y };
       saveState();
-      dragEl.classList.remove("dragging");
-      dragEl = null; dragId = null;
     }
-    layerHost.addEventListener("pointerup", endDrag);
-    layerHost.addEventListener("pointercancel", endDrag);
-  })();
+  });
 
   // Tamagotchi half of the idea: mood reflects how long it's been since your last session,
   // not anything you set — the whole point is it's a passive read of real behavior.
@@ -3019,6 +3055,8 @@
     var frames = stage.hopFrames;
     var img = document.getElementById("characterStage");
     var wander = document.getElementById("characterWander");
+    var body = document.getElementById("characterBody");
+    var shadow = document.getElementById("characterShadow");
     var scene = document.getElementById("characterScene");
     var dir = Math.random()<0.5 ? -1 : 1;
     var hopDist = 20 + Math.random()*18;
@@ -3033,13 +3071,20 @@
       img.src = frames[frame];
       var lift = stage.hopLift[frame];
       var x = startX + (endX-startX)*stage.hopProgress[frame];
-      wander.style.transform = "translateX("+x+"px) translateY("+lift+"px) scaleX("+(dir<0?-1:1)+")";
+      wander.style.transform = "translateX("+x+"px) scaleX("+(dir<0?-1:1)+")";
+      body.style.transform = "translateY("+lift+"px)";
+      // The shadow stays on the floor; it only tightens and fades a little as Crimpet rises.
+      shadow.style.transform = "translateX(-50%) scale("+Math.max(0.6, 1 + lift/60)+")";
+      shadow.style.opacity = String(Math.max(0.5, 1 + lift/48));
       frame++;
       if(frame<frames.length){
         setTimeout(step, stage.hopFrameMs);
       } else {
         wanderOffsetX = endX;
-        wander.style.transform = "translateX("+endX+"px) translateY(0) scaleX("+(dir<0?-1:1)+")";
+        wander.style.transform = "translateX("+endX+"px) scaleX("+(dir<0?-1:1)+")";
+        body.style.transform = "translateY(0)";
+        shadow.style.transform = "";
+        shadow.style.opacity = "";
         // Re-read the selected stage rather than reusing the closed-over one — Customize
         // could have switched looks mid-hop, and the portrait should match whatever's
         // actually selected now, not what was selected when this hop started.
@@ -3115,7 +3160,8 @@
   document.getElementById("closeCustomizeBtn").addEventListener("click", closeCustomize);
   document.getElementById("arrangeToggleBtn").addEventListener("click", function(){ setArrangeMode(!arrangeMode); });
   document.getElementById("resetLayoutBtn").addEventListener("click", function(){
-    state.character.decorPositions = {};
+    // Only the gym on screen — other gyms keep their own arrangements.
+    if(state.character.decorPositionsByEnv) delete state.character.decorPositionsByEnv[selectedEnvironment().id];
     saveState();
     renderCharacterCard();
   });
@@ -3209,6 +3255,7 @@
       state.settings[key] = !state.settings[key];
       saveState();
       renderSettingsModal();
+      if(key==="devRoomLab") renderRoomLab();
     });
   });
 
@@ -3294,9 +3341,11 @@
   });
 
   // Leaving the page (backgrounding, app switch, closing the tab) flushes any debounced text
-  // save and the timer state; coming back re-reads the clock and re-takes the wake lock, which
-  // the browser drops by itself whenever the page is hidden.
-  function onPageHidden(){ flushPendingSaves(); persistTimer(); saveState(); }
+  // save; coming back re-reads the clock and re-takes the wake lock, which the browser drops by
+  // itself whenever the page is hidden. Deliberately NOT an unconditional saveState(): a stale
+  // second tab being closed would otherwise overwrite newer data written by the tab in use.
+  // Timer state needs no flush here — it's persisted on every start/pause/reset/phase change.
+  function onPageHidden(){ flushPendingSaves(); }
   function onPageVisible(){ if(timer.running) tick(); updateWakeLock(); }
   document.addEventListener("visibilitychange", function(){
     if(document.visibilityState==="hidden") onPageHidden(); else onPageVisible();
