@@ -570,7 +570,10 @@
   .modal-overlay[hidden]{display:none;}
   .modal-card{
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-    padding:24px 22px;max-width:420px;width:100%;max-height:calc(100vh - 40px);overflow-y:auto;
+    padding:24px 22px;max-width:420px;width:100%;overflow-y:auto;overscroll-behavior:contain;
+    /* 100vh on mobile Safari/Chrome includes the collapsible URL bar, which cut the bottom of
+       tall modals off; dvh tracks the viewport that's actually visible. vh stays as fallback. */
+    max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);
     box-shadow:0 24px 60px var(--shadow);position:relative;
     animation:modalIn .3s cubic-bezier(.34,1.56,.64,1);
   }
@@ -662,7 +665,9 @@
   @keyframes confettiBurst{0%{transform:translate(0,0) rotate(0);opacity:1;}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0;}}
 
   /* ---------- toasts ---------- */
-  .toast-stack{position:fixed;left:0;right:0;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:50;}
+  /* Above .modal-overlay (100): feedback raised from inside a modal (backup export/import)
+     must not render underneath it. pointer-events:none, so it never blocks the modal. */
+  .toast-stack{position:fixed;left:0;right:0;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:150;}
   .toast{background:var(--accent);color:var(--accent-contrast);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:0 6px 18px var(--shadow);animation:toastin .4s cubic-bezier(.34,1.56,.64,1), toastout .4s ease 2.6s forwards;}
   @keyframes toastin{from{transform:translateY(10px) scale(0.9);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
   @keyframes toastout{to{opacity:0;transform:translateY(-6px);}}
@@ -968,7 +973,7 @@
 
     <div class="settings-section" id="loggingFieldsSection">
       <p class="settings-section-title">When you log a climb</p>
-      <p class="settings-section-hint" id="loggingFieldsHint">All off by default — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging.</p>
+      <p class="settings-section-hint" id="loggingFieldsHint">Only Effort starts on — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging.</p>
       <div id="loggingFieldsSwitches">
         <div class="switch-row">
           <div><div class="switch-label">Climb name</div><div class="switch-desc">Name the problem or route — builds a project history</div></div>
@@ -991,6 +996,28 @@
           <button type="button" class="switch" data-setting="askNote" aria-pressed="false"><span class="switch-thumb"></span></button>
         </div>
       </div>
+    </div>
+
+    <div class="settings-section" id="backupSection">
+      <p class="settings-section-title">Backup</p>
+      <p class="settings-section-hint">Your sessions are saved only in this browser. Export a backup now and then — importing one replaces everything here with the backup. Photos and videos stay stored with this Crux page; a backup keeps the links to them.</p>
+      <div class="theme-row">
+        <button type="button" class="btn btn-ghost" id="exportBackupBtn" style="flex:1;padding:10px 12px;">Export backup</button>
+        <button type="button" class="btn btn-ghost" id="importBackupBtn" style="flex:1;padding:10px 12px;">Import backup</button>
+      </div>
+      <input type="file" id="importBackupInput" accept="application/json,.json" hidden>
+      <div id="importConfirm" hidden style="margin-top:12px;">
+        <p class="settings-section-hint" id="importConfirmText"></p>
+        <div class="theme-row">
+          <button type="button" class="btn btn-primary" id="importConfirmBtn" style="flex:1;padding:10px 12px;">Replace my data</button>
+          <button type="button" class="btn btn-ghost" id="importCancelBtn" style="flex:1;padding:10px 12px;">Cancel</button>
+        </div>
+      </div>
+      <div id="exportFallback" hidden style="margin-top:12px;">
+        <p class="settings-section-hint">Saving files isn't available here. Copy this text and keep it somewhere safe — save it as a .json file to import it later.</p>
+        <textarea id="exportFallbackText" class="note-input" rows="5" readonly style="font-family:'IBM Plex Mono',monospace;font-size:11px;"></textarea>
+      </div>
+      <button type="button" class="link-btn danger" id="resetAllDataBtn" style="margin-top:14px;">Reset all data</button>
     </div>
 
     <div class="settings-section" id="developerSection">
@@ -1162,14 +1189,15 @@
 
   function gainFor(result){ return result==="flash"?30:result==="send"?20:5; }
 
-  // Badge checks run during a chronological replay (see recomputeProfile). `s` is the
-  // running totals at this point in history; `seen` is attempts up to & including the
-  // current one, newest-first.
+  // Badge checks run during a chronological replay (see recomputeProfile). `s` is the running
+  // totals at this point in history, including the attempt being replayed (`s.current`) and
+  // the one logged just before it (`s.previous`, null for the very first). Checks only read
+  // these running values, never rescan history, so a full replay stays linear.
   var BADGES = [
     { id:"first_send", name:"First Send", desc:"Log a send", icon:iconMountain(),
-      check:function(s, seen){ return seen.some(function(a){return a.result==="send";}); } },
+      check:function(s){ return s.hasSend; } },
     { id:"first_flash", name:"First Flash", desc:"Log a flash", icon:iconBolt(),
-      check:function(s, seen){ return seen.some(function(a){return a.result==="flash";}); } },
+      check:function(s){ return s.hasFlash; } },
     { id:"streak_3", name:"On a Roll", desc:"3-attempt streak", icon:iconFlame(),
       check:function(s){ return s.longestStreak>=3; } },
     { id:"streak_5", name:"Dialed In", desc:"5-attempt streak", icon:iconFlame(),
@@ -1181,7 +1209,7 @@
     { id:"ten_logged", name:"Regular", desc:"10 attempts logged", icon:iconList(),
       check:function(s){ return s.totalAttempts>=10; } },
     { id:"comeback", name:"Comeback", desc:"Send right after a fall", icon:iconRebound(),
-      check:function(s, seen){ return seen.length>=2 && seen[1].result==="fall" && (seen[0].result==="send"||seen[0].result==="flash"); } }
+      check:function(s){ return !!s.previous && s.previous.result==="fall" && (s.current.result==="send"||s.current.result==="flash"); } }
   ];
 
   /* ---------------- state ---------------- */
@@ -1257,55 +1285,62 @@
     try{
       var raw = localStorage.getItem(STORAGE_KEY);
       if(!raw) return defaultState();
-      var migrated = migrateIfNeeded(JSON.parse(raw));
-      var base = defaultState();
-      var merged = Object.assign(base, migrated, {
-        counts: Object.assign(base.counts, migrated.counts||{}),
-        timerDefaults: Object.assign(base.timerDefaults, migrated.timerDefaults||{}),
-        settings: Object.assign(base.settings, migrated.settings||{}),
-        character: Object.assign(base.character, migrated.character||{}),
-        badges: migrated.badges||{},
-        sessions: Array.isArray(migrated.sessions)?migrated.sessions:[]
-      });
-      // One-time upgrades, each gated on its own settingsVersion so a person's later choice
-      // always wins and these never re-fire.
-      if(!(migrated.settingsVersion>=2)){
-        merged.settings.askEffort = true;
-      }
-      if(!(migrated.settingsVersion>=3)){
-        // Simple mode is now the default for new installs, but an existing install already
-        // mid-session with granular fields on should land in Advanced, not lose them from view.
-        merged.settings.mode = "advanced";
-      }
-      merged.settingsVersion = 3;
-      // Decoration positions used to be one map shared by every gym. They were only ever tuned
-      // against the Garage painting, so an old layout moves under the Garage.
-      var oldChar = migrated.character || {};
-      if(!oldChar.decorPositionsByEnv && oldChar.decorPositions && Object.keys(oldChar.decorPositions).length){
-        merged.character.decorPositionsByEnv = { garage: oldChar.decorPositions };
-      }
-      delete merged.character.decorPositions;
-      return merged;
+      return normalizeState(JSON.parse(raw));
     }catch(e){ return defaultState(); }
+  }
+  // Shared by loadState and backup import: brings any saved shape (pre-sessions legacy data,
+  // older settings versions, or a current save) up to today's state shape.
+  function normalizeState(parsed){
+    var migrated = migrateIfNeeded(parsed);
+    var base = defaultState();
+    var merged = Object.assign(base, migrated, {
+      counts: Object.assign(base.counts, migrated.counts||{}),
+      timerDefaults: Object.assign(base.timerDefaults, migrated.timerDefaults||{}),
+      settings: Object.assign(base.settings, migrated.settings||{}),
+      character: Object.assign(base.character, migrated.character||{}),
+      badges: migrated.badges||{},
+      sessions: Array.isArray(migrated.sessions)?migrated.sessions:[]
+    });
+    // One-time upgrades, each gated on its own settingsVersion so a person's later choice
+    // always wins and these never re-fire.
+    if(!(migrated.settingsVersion>=2)){
+      merged.settings.askEffort = true;
+    }
+    if(!(migrated.settingsVersion>=3)){
+      // Simple mode is now the default for new installs, but an existing install already
+      // mid-session with granular fields on should land in Advanced, not lose them from view.
+      merged.settings.mode = "advanced";
+    }
+    merged.settingsVersion = 3;
+    // Decoration positions used to be one map shared by every gym. They were only ever tuned
+    // against the Garage painting, so an old layout moves under the Garage.
+    var oldChar = migrated.character || {};
+    if(!oldChar.decorPositionsByEnv && oldChar.decorPositions && Object.keys(oldChar.decorPositions).length){
+      merged.character.decorPositionsByEnv = { garage: oldChar.decorPositions };
+    }
+    delete merged.character.decorPositions;
+    backfillSeq(merged);
+    return merged;
   }
 
   function saveState(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ /* storage unavailable */ }
   }
 
-  var state = loadState();
-
   // Attempts saved before `seq` existed (or saved between then and now) won't have one.
   // Backfill from stored order — sessions are always unshifted (newest first) and so is
   // each session's attempts array, so the flattened order is already newest→oldest.
-  (function backfillSeq(){
+  // Runs as part of normalizeState(), so it covers both a normal load and a backup import.
+  function backfillSeq(st){
     var flat = [];
-    state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ flat.push(a); }); });
+    st.sessions.forEach(function(s){ (s.attempts||[]).forEach(function(a){ flat.push(a); }); });
     if(!flat.some(function(a){ return typeof a.seq!=="number"; })) return;
     var n = flat.length;
     flat.forEach(function(a, i){ if(typeof a.seq!=="number") a.seq = n-i; });
-    state.seq = Math.max(state.seq||0, n);
-  })();
+    st.seq = Math.max(st.seq||0, n);
+  }
+
+  var state = loadState();
 
   /* ---------------- theme & settings ---------------- */
   function applyTheme(){
@@ -1327,7 +1362,7 @@
     var advanced = state.settings.mode==="advanced";
     document.getElementById("loggingFieldsSwitches").hidden = !advanced;
     document.getElementById("loggingFieldsHint").textContent = advanced
-      ? "All off by default — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging."
+      ? "Only Effort starts on — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging."
       : "Switch to Advanced to choose exactly what gets asked after each climb — grade, effort, notes, and more.";
   }
   function openSettings(){ renderSettingsModal(); document.getElementById("settingsOverlay").hidden = false; }
@@ -1891,20 +1926,23 @@
     // and ts alone would then replay them in an arbitrary order and corrupt the streak.
     all.sort(function(a,b){ return (a.seq||0)-(b.seq||0); });
 
-    var xp=0, level=1, streak=0, longestStreak=0;
+    var xp=0, level=1, streak=0, longestStreak=0, hasSend=false, hasFlash=false, previous=null;
     var counts={ flash:0, send:0, fall:0 };
     var badges={};
-    var seenNewestFirst=[];
-    all.forEach(function(a){
+    // Single pass with running values only. (This used to unshift every attempt onto a
+    // newest-first array for the badge checks, which made each log tap O(n²) in total history.)
+    all.forEach(function(a, i){
       counts[a.result] = (counts[a.result]||0)+1;
       xp += a.xp;
       if(a.result==="fall"){ streak=0; } else { streak+=1; if(streak>longestStreak) longestStreak=streak; }
       while(xp>=xpForLevel(level)){ xp-=xpForLevel(level); level+=1; }
-      seenNewestFirst.unshift(a);
-      var running = { level:level, longestStreak:longestStreak, totalAttempts:seenNewestFirst.length };
+      if(a.result==="send") hasSend = true;
+      if(a.result==="flash") hasFlash = true;
+      var running = { level:level, longestStreak:longestStreak, totalAttempts:i+1, hasSend:hasSend, hasFlash:hasFlash, current:a, previous:previous };
       BADGES.forEach(function(b){
-        if(!badges[b.id] && b.check(running, seenNewestFirst)) badges[b.id] = a.ts;
+        if(!badges[b.id] && b.check(running)) badges[b.id] = a.ts;
       });
+      previous = a;
     });
 
     state.xp=xp; state.level=level; state.streak=streak; state.longestStreak=longestStreak;
@@ -3232,6 +3270,22 @@
 
   document.getElementById("closeLightboxBtn").addEventListener("click", closeLightbox);
   document.getElementById("mediaLightboxOverlay").addEventListener("click", function(e){ if(e.target.id==="mediaLightboxOverlay") closeLightbox(); });
+  // Escape closes whichever modal is on top. The lightbox and the end-of-session summary can
+  // sit above the others, so they're checked first.
+  var MODAL_CLOSERS = [
+    ["mediaLightboxOverlay", closeLightbox],
+    ["endSessionOverlay", closeEndSummary],
+    ["customizeOverlay", closeCustomize],
+    ["progressOverlay", closeProgress],
+    ["drillsOverlay", closeDrills],
+    ["settingsOverlay", closeSettings]
+  ];
+  document.addEventListener("keydown", function(e){
+    if(e.key!=="Escape" || e.defaultPrevented) return;
+    for(var i=0;i<MODAL_CLOSERS.length;i++){
+      if(!document.getElementById(MODAL_CLOSERS[i][0]).hidden){ e.preventDefault(); MODAL_CLOSERS[i][1](); return; }
+    }
+  });
   document.getElementById("themeRow").addEventListener("click", function(e){
     var chip = e.target.closest(".chip");
     if(!chip) return;
@@ -3321,6 +3375,21 @@
     deleteCurrentDetailSession();
   });
 
+  // "Reset progress" clears workout history and everything derived from it (sessions, the
+  // active session, XP, level, streaks, badges, last location) but keeps how the app is set
+  // up: settings and theme, timer defaults, Crimpet/gym picks, decorations, per-gym room
+  // layouts, and Room Lab data. Wiping everything is the separate "Reset all data" in Settings.
+  function resetProgress(){
+    var keep = state;
+    var fresh = defaultState();
+    fresh.settings = keep.settings;
+    fresh.settingsVersion = keep.settingsVersion;
+    fresh.timerDefaults = keep.timerDefaults;
+    fresh.lastGradeType = keep.lastGradeType;
+    fresh.character = keep.character;
+    state = fresh;
+    recomputeProfile();
+  }
   var resetBtn = document.getElementById("resetProgressBtn");
   var confirming = false;
   resetBtn.addEventListener("click", function(){
@@ -3331,12 +3400,143 @@
       return;
     }
     confirming = false;
+    hideComposer();
+    resetProgress();
+    saveState();
+    resetTimer();
+    updateWakeLock();
+    resetBtn.textContent = "Reset progress";
+    showToast("Progress reset");
+    switchView("home");
+  });
+
+  /* ---------------- backup: export / import / reset all ---------------- */
+  // Export hands the whole state to the viewer as a JSON file through the Artifact's
+  // `downloads` capability — inside the Artifact frame a page can't start a download itself.
+  // Where that capability isn't available the JSON is shown for copying instead. Import
+  // validates a file and only replaces anything after an explicit confirm. No cloud sync.
+  var BACKUP_KIND = "crux-backup";
+  var downloadsNS = null;
+  if(window.claude && typeof window.claude.use==="function"){
+    window.claude.use("downloads").then(function(ns){ downloadsNS = ns; }).catch(function(){ downloadsNS = null; });
+  }
+  function backupFilename(){
+    var d = new Date();
+    function p(n){ return (n<10?"0":"")+n; }
+    return "crux-backup-"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+".json";
+  }
+  function showExportFallback(json){
+    var ta = document.getElementById("exportFallbackText");
+    ta.value = json;
+    document.getElementById("exportFallback").hidden = false;
+    ta.focus();
+    ta.select();
+  }
+  function exportBackup(){
+    flushPendingSaves();
+    var json = JSON.stringify({ kind:BACKUP_KIND, version:1, exportedAt:new Date().toISOString(), data:state }, null, 2);
+    document.getElementById("exportFallback").hidden = true;
+    if(!downloadsNS){ showExportFallback(json); return; }
+    downloadsNS.save({ filename:backupFilename(), data:json }).then(function(res){
+      if(res && res.status==="saved") showToast("Backup saved");
+    }).catch(function(err){
+      var code = err && err.code;
+      if(code==="declined") return; // the viewer said no — never re-prompt
+      if(code==="rate_limited"){ showToast("A save prompt is already open"); return; }
+      showExportFallback(json);
+    });
+  }
+
+  // Accepts a Crux export ({kind:"crux-backup", data}) or a raw saved state. Anything without a
+  // sessions array (or the pre-sessions legacy attempts array) is rejected, rather than being
+  // normalized into an empty state that would wipe this device on confirm.
+  function parseBackup(text){
+    var parsed = JSON.parse(text);
+    var wrapped = !!parsed && parsed.kind===BACKUP_KIND;
+    var data = wrapped ? parsed.data : parsed;
+    if(!data || typeof data!=="object") throw new Error("not a backup");
+    var hasSessions = Array.isArray(data.sessions) && data.sessions.every(function(s){ return s && Array.isArray(s.attempts); });
+    var legacy = !data.sessions && Array.isArray(data.attempts);
+    if(!hasSessions && !legacy) throw new Error("not a backup");
+    return { state:normalizeState(data), exportedAt: wrapped ? parsed.exportedAt : null };
+  }
+  var pendingImport = null;
+  function onImportFile(file){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var backup;
+      try{ backup = parseBackup(String(reader.result)); }
+      catch(e){ showToast("That file isn't a Crux backup"); return; }
+      pendingImport = backup.state;
+      var sessions = backup.state.sessions.length;
+      var attempts = backup.state.sessions.reduce(function(n, s){ return n+s.attempts.length; }, 0);
+      var when = backup.exportedAt ? new Date(backup.exportedAt).toLocaleDateString(undefined,{ month:"short", day:"numeric", year:"numeric" }) : "";
+      document.getElementById("importConfirmText").textContent =
+        "Replace everything on this device with this backup"+(when ? " from "+when : "")+" — "+
+        sessions+" session"+(sessions===1?"":"s")+", "+attempts+" attempt"+(attempts===1?"":"s")+
+        "? What's here now can't be recovered unless you export it first.";
+      document.getElementById("importConfirm").hidden = false;
+    };
+    reader.onerror = function(){ showToast("Couldn't read that file"); };
+    reader.readAsText(file);
+  }
+  function applyImport(){
+    if(!pendingImport) return;
+    hideComposer();
+    if(arrangeMode) setArrangeMode(false);
+    state = pendingImport;
+    pendingImport = null;
+    recomputeProfile();
+    saveState();
+    applyTheme();
+    restoreTimer();
+    updateWakeLock();
+    document.getElementById("importConfirm").hidden = true;
+    closeSettings();
+    showToast("Backup imported");
+    var active = getActiveSession();
+    switchView(active && !active.endedAt ? "session" : "home");
+  }
+  document.getElementById("exportBackupBtn").addEventListener("click", exportBackup);
+  document.getElementById("importBackupBtn").addEventListener("click", function(){ document.getElementById("importBackupInput").click(); });
+  document.getElementById("importBackupInput").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0];
+    if(f) onImportFile(f);
+    e.target.value = "";
+  });
+  document.getElementById("importConfirmBtn").addEventListener("click", applyImport);
+  document.getElementById("importCancelBtn").addEventListener("click", function(){
+    pendingImport = null;
+    document.getElementById("importConfirm").hidden = true;
+  });
+  // Re-opening Settings never shows a stale import prompt or an old export dump.
+  document.getElementById("openSettingsBtn").addEventListener("click", function(){
+    pendingImport = null;
+    document.getElementById("importConfirm").hidden = true;
+    document.getElementById("exportFallback").hidden = true;
+  });
+
+  // The nuclear option: everything back to a fresh install, customization included.
+  var resetAllBtn = document.getElementById("resetAllDataBtn");
+  var confirmingResetAll = false;
+  resetAllBtn.addEventListener("click", function(){
+    if(!confirmingResetAll){
+      confirmingResetAll = true;
+      resetAllBtn.textContent = "Erase everything? Tap again";
+      setTimeout(function(){ if(confirmingResetAll){ confirmingResetAll=false; resetAllBtn.textContent="Reset all data"; } }, 3500);
+      return;
+    }
+    confirmingResetAll = false;
+    resetAllBtn.textContent = "Reset all data";
+    hideComposer();
+    if(arrangeMode) setArrangeMode(false);
     state = defaultState();
     saveState();
     applyTheme();
     resetTimer();
-    resetBtn.textContent = "Reset progress";
-    showToast("Progress reset");
+    updateWakeLock();
+    closeSettings();
+    showToast("All data reset");
     switchView("home");
   });
 
