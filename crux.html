@@ -1,0 +1,3188 @@
+<script>(function(){try{var raw=localStorage.getItem("crux-app-state-v2");var t=raw&&JSON.parse(raw).settings&&JSON.parse(raw).settings.theme;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<title>Crux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F3EEE2;
+    --surface:#FFFFFF;
+    --surface-2:#F7F2E7;
+    --border:#E3DAC5;
+    --text:#221E19;
+    --text-dim:#8A8073;
+    --accent:#0FB8A6;
+    --accent-contrast:#FFFFFF;
+    --flash:#FFAB1F;
+    --send:#29C56F;
+    --send-contrast:#FFFFFF;
+    --fall:#FF5C5C;
+    --shadow:rgba(34,30,25,0.16);
+    --radius-lg:18px;
+    --radius-md:12px;
+    --radius-sm:8px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#181511;
+      --surface:#221E18;
+      --surface-2:#2B261F;
+      --border:#3A342A;
+      --text:#F5F0E4;
+      --text-dim:#A79E8C;
+      --accent:#2FE7D6;
+      --accent-contrast:#08211F;
+      --flash:#FFC24D;
+      --send:#4FE28F;
+      --send-contrast:#0A2E1C;
+      --fall:#FF7A6E;
+      --shadow:rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#181511;
+    --surface:#221E18;
+    --surface-2:#2B261F;
+    --border:#3A342A;
+    --text:#F5F0E4;
+    --text-dim:#A79E8C;
+    --accent:#2FE7D6;
+    --accent-contrast:#08211F;
+    --flash:#FFC24D;
+    --send:#4FE28F;
+    --send-contrast:#0A2E1C;
+    --fall:#FF7A6E;
+    --shadow:rgba(0,0,0,0.55);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:760px;
+    margin:0 auto;
+    padding:28px 18px 60px;
+  }
+  h1,h2,h3{text-wrap:balance;}
+  [hidden]{display:none !important;}
+
+  /* ---------- shared card ---------- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    box-shadow:0 3px 14px -4px var(--shadow), 0 1px 0 var(--shadow);
+    min-width:0;
+  }
+  .eyebrow{
+    font-size:11.5px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  .btn{
+    border-radius:var(--radius-md);
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    padding:11px 22px;
+    font-size:14.5px;font-weight:600;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease, border-color .15s ease, filter .15s ease;
+  }
+  .btn:hover{border-color:var(--text-dim);}
+  .btn:active{transform:scale(0.95);}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .btn-primary{background:var(--accent);color:var(--accent-contrast);border-color:transparent;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;}
+  .btn:disabled, .chip:disabled{opacity:0.45;cursor:not-allowed;}
+  /* Every "text link" action reads as a real, tappable chip — nothing on the page is just
+     colored text pretending to be a button. */
+  .link-btn{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);
+    font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .link-btn svg{width:13px;height:13px;flex-shrink:0;}
+  .link-btn:hover{color:var(--text);border-color:var(--text-dim);background:var(--surface);}
+  .link-btn:active{transform:scale(0.94);}
+  .link-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .link-btn.danger{color:var(--fall);border-color:color-mix(in srgb, var(--fall) 30%, var(--border));}
+  .link-btn.danger:hover{color:var(--fall);border-color:var(--fall);background:color-mix(in srgb, var(--fall) 10%, var(--surface-2));}
+  .chip{
+    border:1px solid var(--border);background:transparent;color:var(--text-dim);
+    border-radius:999px;padding:8px 14px;font-size:12px;font-weight:600;
+    min-height:36px;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .chip:hover{color:var(--text);border-color:var(--text-dim);}
+  .chip:active{transform:scale(0.92);}
+  .chip.selected{background:var(--accent);color:var(--accent-contrast);border-color:transparent;}
+
+  /* ---- tiny click interactions ---- */
+  @keyframes tapPop{0%{transform:scale(1);}35%{transform:scale(0.9);}65%{transform:scale(1.08);}100%{transform:scale(1);}}
+  .tap-pop{animation:tapPop .4s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes flashBurst{from{box-shadow:0 0 0 0 color-mix(in srgb, var(--flash) 55%, transparent);}to{box-shadow:0 0 0 16px color-mix(in srgb, var(--flash) 0%, transparent);}}
+  @keyframes sendBurst{from{box-shadow:0 0 0 0 color-mix(in srgb, var(--send) 55%, transparent);}to{box-shadow:0 0 0 16px color-mix(in srgb, var(--send) 0%, transparent);}}
+  @keyframes fallBurst{from{box-shadow:0 0 0 0 color-mix(in srgb, var(--fall) 55%, transparent);}to{box-shadow:0 0 0 16px color-mix(in srgb, var(--fall) 0%, transparent);}}
+  .log-btn.flash.tap-pop{animation:tapPop .4s cubic-bezier(.34,1.56,.64,1), flashBurst .55s ease-out;}
+  .log-btn.send.tap-pop{animation:tapPop .4s cubic-bezier(.34,1.56,.64,1), sendBurst .55s ease-out;}
+  .log-btn.fall.tap-pop{animation:tapPop .4s cubic-bezier(.34,1.56,.64,1), fallBurst .55s ease-out;}
+  @keyframes levelUpPop{0%{transform:scale(1) rotate(0);}30%{transform:scale(1.45) rotate(-10deg);}60%{transform:scale(0.88) rotate(6deg);}100%{transform:scale(1) rotate(0);}}
+  .lv-badge.levelup{animation:levelUpPop .6s cubic-bezier(.34,1.56,.64,1);}
+
+  /* ================= HOME ================= */
+  .icon-btn{
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), color .15s ease, border-color .15s ease;
+  }
+  .icon-btn:hover{color:var(--text);border-color:var(--text-dim);}
+  .icon-btn:active{transform:scale(0.9);}
+  .icon-btn svg{width:18px;height:18px;}
+
+  /* ================= GARAGE HERO ================= */
+  /* The whole top-of-home experience — branding, level, utility nav, and the Crimpet scene
+     itself — is one immersive card now instead of a plain white header sitting above a
+     smaller room preview. Everything textual floats over the art as a translucent "glass"
+     overlay (.scene-icon-btn / .scene-chip / .level-chip) so the environment reads as the
+     dominant thing on screen, the way the reference mockup does, while the name/mood/hint
+     text below the art stays on a normal opaque surface for guaranteed readability. */
+  .garage-hero{position:relative;overflow:hidden;margin-bottom:14px;}
+  .scene-overlay-top{
+    position:absolute;top:0;left:0;right:0;z-index:3;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+    padding:12px 12px 0;pointer-events:none;
+  }
+  .scene-overlay-top>*{pointer-events:auto;}
+  .level-chip{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  .level-chip .avatar{
+    width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;
+    background:rgba(24,18,12,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border:2px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.35);
+  }
+  .level-chip .avatar img{width:100%;height:100%;object-fit:contain;padding:3px;display:block;}
+  .level-chip .lv-tag{
+    margin-top:-7px;background:var(--flash);color:#221E19;
+    font-family:"Bebas Neue",sans-serif;font-size:11px;letter-spacing:0.03em;
+    padding:1px 8px 2px;border-radius:999px;border:2px solid rgba(255,255,255,0.75);
+    white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);
+  }
+  .hero-brand{text-align:center;flex:1;min-width:0;padding-top:2px;}
+  .hero-brand h1{
+    font-family:"Bebas Neue",system-ui,sans-serif;font-size:clamp(28px,8vw,38px);
+    letter-spacing:0.03em;margin:0;line-height:0.9;color:#FBF6E8;
+    text-shadow:0 2px 10px rgba(0,0,0,0.6);
+  }
+  .hero-brand p{
+    margin:3px 0 0;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;
+    color:rgba(251,246,232,0.85);text-shadow:0 1px 6px rgba(0,0,0,0.55);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .scene-icon-row{display:flex;gap:7px;flex-shrink:0;}
+  .scene-icon-btn{
+    width:32px;height:32px;border-radius:50%;flex-shrink:0;
+    background:rgba(24,18,12,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,0.3);color:#FBF6E8;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease;
+  }
+  .scene-icon-btn:hover{background:rgba(24,18,12,0.72);}
+  .scene-icon-btn:active{transform:scale(0.9);}
+  .scene-icon-btn svg{width:15px;height:15px;}
+  .scene-icon-btn:focus-visible{outline:2px solid #FBF6E8;outline-offset:2px;}
+  .scene-overlay-bottom{
+    position:absolute;right:10px;bottom:10px;z-index:3;
+    display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+  }
+  .scene-chip{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(24,18,12,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,0.3);color:#FBF6E8;
+    font-size:11.5px;font-weight:700;padding:7px 12px;border-radius:999px;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease;
+  }
+  .scene-chip svg{width:13px;height:13px;flex-shrink:0;}
+  .scene-chip:hover{background:rgba(24,18,12,0.78);}
+  .scene-chip:active{transform:scale(0.94);}
+  .scene-chip:focus-visible{outline:2px solid #FBF6E8;outline-offset:2px;}
+  .garage-hero-footer{padding:16px 18px 18px;text-align:center;}
+  /* Crimpet's habitat, not a headshot frame: room for the full hop arc plus a real room
+     drawn into it (see roomSVG / garageSceneSVG in the script below) — walls, floor, and
+     Crimpet's own earned gear placed like furniture, Animal-Crossing style, rather than one
+     flat painted scene. Full width and a taller ratio than before so the environment reads
+     as the dominant thing on the card, not a small preview window; sized by aspect-ratio + %,
+     not fixed px, so it scales cleanly across phone widths instead of clipping. */
+  .character-scene{
+    position:relative;width:100%;aspect-ratio:4/5;
+    overflow:hidden;
+    background:linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  }
+  .scene-layers{position:absolute;inset:0;pointer-events:none;}
+  /* A soft contact shadow is the cheapest way to stop a real accessory PNG from reading as
+     "pasted flat" against the painted background — every decoration/prop gets one. */
+  .scene-layers img{position:absolute;display:block;width:auto;height:auto;max-width:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,0.35));}
+  .scene-env{position:absolute;inset:0;width:100%;height:100%;}
+  /* Ambient-only: a lamp glow and a few drifting dust motes. Independent of the static
+     architecture and never blocks input, so it can be extended (chalk puffs, gear sway)
+     without touching sceneEnv or sceneLayers. */
+  .scene-effects{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .lamp-glow{
+    position:absolute;width:52%;height:42%;transform:translate(-50%,-22%);
+    background:radial-gradient(circle, rgba(255,196,110,0.5) 0%, rgba(255,176,90,0.16) 45%, transparent 72%);
+    filter:blur(1px);
+  }
+  .lamp-glow.flicker{animation:lampFlicker 4.5s ease-in-out infinite;}
+  @keyframes lampFlicker{0%,100%{opacity:1;}45%{opacity:0.85;}52%{opacity:1;}78%{opacity:0.92;}}
+  .dust-mote{
+    position:absolute;width:3px;height:3px;border-radius:50%;
+    background:rgba(255,232,190,0.75);animation:dustFloat 9s ease-in-out infinite;
+  }
+  @keyframes dustFloat{
+    0%{transform:translate(0,0);opacity:0;}
+    15%{opacity:0.75;}
+    50%{transform:translate(6px,-22px);opacity:0.45;}
+    85%{opacity:0.12;}
+    100%{transform:translate(-4px,-40px);opacity:0;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .lamp-glow.flicker{animation:none;}
+    .dust-mote{display:none;}
+  }
+  /* Arrange mode: decorations become draggable directly in the scene. touch-action:none
+     stops mobile from scrolling the page instead of moving the piece. */
+  .scene-layers.arrange-mode{pointer-events:auto;}
+  .scene-layers.arrange-mode img{cursor:grab;touch-action:none;outline:2px dashed color-mix(in srgb, var(--accent) 65%, transparent);outline-offset:3px;border-radius:6px;}
+  .scene-layers.arrange-mode img.dragging{cursor:grabbing;z-index:5;outline-color:var(--accent);filter:drop-shadow(0 5px 10px var(--shadow));}
+  .arrange-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px;flex-wrap:wrap;}
+  .arrange-row p{margin:0;}
+  /* ---- Room Lab: temporary placement-testing squares, see ROOM_SURFACES in the script ----
+     The surfaces themselves (climbing wall / back wall / floor) are intentionally invisible
+     — nothing drawn here, this is purely a hit-test against detectSurface(). The layer sits
+     on top of #sceneLayers so its squares are reachable, but it must NOT intercept pointer
+     events over its empty space — this full-bleed div previously had pointer-events:auto
+     unconditionally, which sat directly on top of the decorations layer and swallowed every
+     pointerdown meant for a decoration (broke Arrange-mode dragging entirely, not just where
+     a square happened to be). Only the squares themselves opt back in to pointer-events. */
+  .room-lab-layer{position:absolute;inset:0;pointer-events:none;}
+  .lab-square{
+    position:absolute;aspect-ratio:1;border-radius:3px;transform:translate(-50%,-50%);
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);border:1.5px solid rgba(255,255,255,0.65);
+    cursor:grab;touch-action:none;pointer-events:auto;
+  }
+  .lab-square.dragging{cursor:grabbing;z-index:6;box-shadow:0 5px 12px rgba(0,0,0,0.55);}
+  .lab-badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.06em;background:var(--flash);color:#221E19;padding:1px 6px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+  .lab-add-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .lab-add-btn{width:32px;height:32px;border-radius:8px;border:2px solid var(--border);flex-shrink:0;transition:transform .2s cubic-bezier(.34,1.56,.64,1), border-color .15s ease;}
+  .lab-add-btn:hover{border-color:var(--text-dim);}
+  .lab-add-btn:active{transform:scale(0.9);}
+  .lab-add-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .lab-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .lab-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;flex-wrap:wrap;}
+  .lab-swatch{width:16px;height:16px;border-radius:4px;flex-shrink:0;border:1px solid rgba(0,0,0,0.2);}
+  .lab-surface{font-size:11.5px;font-weight:700;flex:1;min-width:80px;}
+  .lab-controls{display:flex;align-items:center;gap:4px;}
+  .lab-controls button{
+    width:24px;height:24px;border-radius:6px;flex-shrink:0;
+    border:1px solid var(--border);background:var(--surface);color:var(--text);
+    font-size:12px;display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .lab-controls button:active{transform:scale(0.9);}
+  .lab-controls button[data-lab-act="delete"]{color:var(--fall);border-color:color-mix(in srgb, var(--fall) 35%, var(--border));}
+  .lab-val{font-size:10px;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;min-width:28px;text-align:center;}
+  .character-wander{
+    position:absolute;bottom:19%;left:50%;width:52%;margin-left:-26%;
+    transition:transform .15s ease-out;
+  }
+  /* A dedicated contact shadow reads as "standing on the floor" much better than the
+     sprite's own drop-shadow filter alone, which shades every edge evenly rather than
+     just the ground beneath its feet. */
+  .character-shadow{
+    position:absolute;left:50%;bottom:6%;width:52%;height:10%;
+    transform:translateX(-50%);border-radius:50%;
+    background:radial-gradient(ellipse, rgba(20,14,8,0.4) 0%, rgba(20,14,8,0.16) 55%, transparent 78%);
+  }
+  .character-wander img{width:100%;height:auto;display:block;cursor:pointer;position:relative;filter:drop-shadow(0 6px 6px var(--shadow));}
+  .character-wander img.evolve{animation:cxEvolve 1s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes cxEvolve{0%{transform:scale(1) rotate(0);opacity:1;}30%{transform:scale(0.55) rotate(-10deg);opacity:0.35;}58%{transform:scale(1.3) rotate(7deg);opacity:1;}82%{transform:scale(0.92) rotate(-3deg);}100%{transform:scale(1) rotate(0);}}
+  .character-name{font-family:"Bebas Neue",sans-serif;font-size:19px;letter-spacing:0.02em;margin:4px 0 1px;}
+  .character-sub{font-size:11.5px;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;margin:0 0 4px;}
+  .character-hint{font-size:11px;color:var(--text-dim);margin:0;}
+  .environment-hint{font-size:10.5px;color:var(--text-dim);margin:3px 0 0;opacity:0.8;}
+
+  /* ---- Customize modal: picking any unlocked look/environment, independent of each other ---- */
+  .picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px;}
+  @media (max-width:380px){.picker-grid{grid-template-columns:repeat(2,1fr);}}
+  .picker-item{
+    border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-2);
+    padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), border-color .15s ease, box-shadow .15s ease;
+  }
+  button.picker-item{font-family:inherit;width:100%;}
+  .picker-item:not(.locked):active{transform:scale(0.94);}
+  .picker-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .picker-item.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);}
+  .picker-item.locked{opacity:0.48;filter:grayscale(0.55);cursor:not-allowed;}
+  .picker-thumb{width:100%;aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;background:var(--surface);display:flex;align-items:center;justify-content:center;}
+  .picker-thumb img{width:100%;height:100%;display:block;}
+  .picker-thumb.fit-contain img{object-fit:contain;padding:4px;}
+  .picker-thumb.auto-thumb{font-family:"Bebas Neue",sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--text-dim);}
+  .picker-name{font-size:11px;font-weight:700;line-height:1.2;}
+  .picker-lock{font-size:9.5px;color:var(--text-dim);}
+
+  .profile-card{display:flex;align-items:center;gap:18px;padding:16px 18px;margin-bottom:14px;}
+  .ring{
+    width:84px;height:84px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(var(--accent) calc(var(--pct, 0) * 1%), var(--surface-2) 0);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ring-inner{width:64px;height:64px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-inner .rl{font-family:"Bebas Neue",sans-serif;font-size:22px;line-height:1;}
+  .ring-inner .rc{font-size:8px;letter-spacing:0.1em;color:var(--text-dim);}
+  .profile-stats{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px;}
+  .ps-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;}
+  .ps-row b{font-weight:700;}
+  .ps-mini-track{height:6px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;}
+  .ps-mini-fill{height:100%;background:var(--accent);border-radius:999px;transition:width .5s ease;}
+  .ps-totals{display:flex;gap:12px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--text-dim);font-variant-numeric:tabular-nums;}
+  .ps-totals b.flash{color:var(--flash);} .ps-totals b.send{color:var(--send);} .ps-totals b.fall{color:var(--fall);}
+
+  .start-cta{
+    width:100%;border:none;border-radius:var(--radius-lg);
+    background:var(--accent);color:var(--accent-contrast);
+    padding:18px;display:flex;flex-direction:column;align-items:center;gap:3px;
+    margin-bottom:22px;box-shadow:0 6px 18px var(--shadow);
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), filter .15s ease, box-shadow .2s ease, border-color .15s ease;
+  }
+  .start-cta:hover{filter:brightness(1.08);transform:translateY(-2px);box-shadow:0 10px 22px var(--shadow);}
+  .start-cta:active{transform:scale(0.96);}
+  .start-cta:focus-visible{outline:2px solid var(--text);outline-offset:3px;}
+  .start-cta .main{font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.03em;}
+  .start-cta .sub{font-size:11.5px;font-family:"IBM Plex Mono",monospace;opacity:0.88;}
+  /* Warm gold rather than the shared teal --accent — a deliberate one-off for the button
+     that sits right below the Garage art, echoing that scene's lamplight. Scoped to this
+     modifier class (not the bare .start-cta) so Finish Session, which reuses the same base
+     class with its own .finish-cta green, is completely unaffected. */
+  .start-cta.garage-cta{
+    flex-direction:row;justify-content:center;gap:10px;padding:16px;
+    border:2px solid #6B4A1E;background:linear-gradient(180deg, #F3C766 0%, #E0A83A 100%);color:#241B0E;
+  }
+  .start-cta.garage-cta:hover{filter:brightness(1.06);}
+  .start-cta.garage-cta svg{width:22px;height:22px;flex-shrink:0;}
+  .start-cta.garage-cta .cta-text{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .start-cta.garage-cta .sub{opacity:0.75;}
+
+  .history-section{margin-bottom:10px;}
+  .session-card{
+    display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;
+    border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-2);
+    text-align:left;width:100%;transition:border-color .15s ease, transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .session-card:hover{border-color:var(--accent);}
+  .session-card:active{transform:scale(0.98);}
+  .session-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .sc-date{min-width:58px;}
+  .sc-date .d1{font-weight:700;font-size:13.5px;}
+  .sc-date .d2{font-size:10.5px;color:var(--text-dim);}
+  .sc-counts{display:flex;gap:10px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-variant-numeric:tabular-nums;}
+  .sc-counts span{display:flex;align-items:center;gap:4px;color:var(--text-dim);}
+  .sc-xp{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);white-space:nowrap;}
+  .sc-chevron{color:var(--text-dim);flex-shrink:0;width:16px;height:16px;}
+  .empty-state{color:var(--text-dim);font-size:13px;padding:16px 4px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-md);}
+
+  footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--text-dim);font-size:11.5px;margin-top:18px;}
+
+  /* ================= TOPBAR (session + detail) ================= */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .topbar-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--surface);border:1px solid var(--border);color:var(--text-dim);
+    font-size:13px;font-weight:700;padding:8px 15px 8px 11px;border-radius:999px;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), border-color .15s ease, color .15s ease;
+  }
+  .topbar-btn svg{width:16px;height:16px;flex-shrink:0;}
+  .topbar-btn:hover{color:var(--text);border-color:var(--text-dim);}
+  .topbar-btn:active{transform:scale(0.95);}
+  .topbar-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .level-pill{
+    display:flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 6px;flex-shrink:0;
+  }
+  .level-pill .lv-badge{
+    width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-contrast);
+    display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:15px;
+    transition:transform .25s ease;
+  }
+  .level-pill span{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums;}
+
+  /* ================= TIMER (session view) ================= */
+  .timer-card{padding:24px 22px 22px;text-align:center;margin-bottom:16px;transition:border-color .3s ease;}
+  .timer-card.phase-work{border-color:color-mix(in srgb, var(--accent) 55%, var(--border));}
+  .timer-card.phase-rest{border-color:color-mix(in srgb, var(--send) 55%, var(--border));}
+  .phase-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;}
+  .phase-dot{width:9px;height:9px;border-radius:50%;background:var(--text-dim);}
+  .phase-work .phase-dot{background:var(--accent);} .phase-rest .phase-dot{background:var(--send);}
+  .phase-label{font-size:12.5px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);}
+  .phase-work .phase-label{color:var(--accent);} .phase-rest .phase-label{color:var(--send);}
+  .round-label{font-size:12px;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;}
+  .countdown{font-family:"Bebas Neue",sans-serif;font-size:clamp(76px,22vw,120px);line-height:0.95;font-variant-numeric:tabular-nums;margin:4px 0 10px;}
+  .progress-track{height:6px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;margin:0 auto 18px;max-width:420px;}
+  .progress-fill{height:100%;border-radius:999px;background:var(--text-dim);transition:width 1s linear, background .3s ease;}
+  .phase-work .progress-fill{background:var(--accent);} .phase-rest .progress-fill{background:var(--send);}
+  .timer-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+  .timer-config{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;padding-top:16px;border-top:1px dashed var(--border);}
+  .field{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .field label{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);}
+  .stepper{display:flex;align-items:center;gap:6px;}
+  .stepper button{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .stepper input{width:56px;text-align:center;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);color:var(--text);padding:9px 4px;font-size:14px;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;}
+  .presets{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
+  /* Still an inline-flex chip (from .link-btn) — .timer-card's own text-align:center is
+     what actually centers it, no block/auto-margin hack needed. */
+  .preset-guide-link{margin-top:14px;}
+
+  /* ================= GRID (session view) ================= */
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px;}
+  @media (min-width:640px){.grid{grid-template-columns:1fr 1fr;}}
+  .progress-card, .log-card{padding:18px 18px 20px;}
+  .xp-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .xp-row .num{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--text-dim);font-variant-numeric:tabular-nums;}
+  .xp-track{height:10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;margin-bottom:16px;}
+  .xp-fill{height:100%;background:var(--accent);border-radius:999px;transition:width .5s ease;}
+  .stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+  .stat-tile{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 6px;text-align:center;}
+  .stat-tile .n{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .stat-tile .l{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin-top:2px;}
+  .stat-tile.flash .n{color:var(--flash);} .stat-tile.send .n{color:var(--send);} .stat-tile.fall .n{color:var(--fall);}
+  .streak-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;}
+  .streak-row .big{font-family:"Bebas Neue",sans-serif;font-size:26px;line-height:1;}
+  .streak-row .cap{font-size:10.5px;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;}
+
+  .log-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+  .log-btn{border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface-2);padding:13px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+  .log-btn:active{transform:scale(0.93);}
+  .log-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .log-btn .icon{width:20px;height:20px;}
+  .log-btn .name{font-size:12.5px;font-weight:700;}
+  .log-btn .xp{font-size:10.5px;font-family:"IBM Plex Mono",monospace;color:var(--text-dim);}
+  .log-btn.flash{border-color:color-mix(in srgb, var(--flash) 45%, var(--border));}
+  .log-btn.flash .icon,.log-btn.flash .name{color:var(--flash);}
+  .log-btn.send{border-color:color-mix(in srgb, var(--send) 45%, var(--border));}
+  .log-btn.send .icon,.log-btn.send .name{color:var(--send);}
+  .log-btn.fall{border-color:color-mix(in srgb, var(--fall) 45%, var(--border));}
+  .log-btn.fall .icon,.log-btn.fall .name{color:var(--fall);}
+
+  /* ---- attempt composer ---- */
+  .composer{border:1px dashed var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;background:var(--surface-2);max-height:600px;opacity:1;}
+  .composer.closing{animation:composerCollapse .26s ease forwards;overflow:hidden;}
+  @keyframes composerCollapse{to{opacity:0;max-height:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0;transform:scale(0.97);}}
+  .composer-log-btn{width:100%;margin-top:2px;}
+  .composer-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;margin-bottom:9px;}
+  .composer-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;flex-wrap:wrap;}
+  .c-label{font-size:10.5px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;min-width:60px;margin-top:5px;}
+  .c-hint{display:block;font-size:10px;color:var(--text-dim);margin-top:2px;}
+  .chip-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .grade-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+  .chip-scroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px;min-width:0;max-width:100%;}
+  .chip-scroll .chip{flex-shrink:0;white-space:nowrap;}
+  .grade-type-row .chip{padding:6px 12px;font-size:11px;min-height:32px;}
+  .note-input{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);padding:8px 10px;font-size:13px;font-family:inherit;}
+  .note-input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+
+  .attempt-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;max-height:230px;overflow-y:auto;}
+  .attempt-row-wrap{padding:6px 2px;border-bottom:1px solid var(--border);border-radius:var(--radius-sm);}
+  .attempt-row-wrap:last-child{border-bottom:none;}
+  .attempt-row-wrap.just-logged{animation:justLogged .6s ease-out;}
+  @keyframes justLogged{
+    0%{background:color-mix(in srgb, var(--accent) 25%, transparent);transform:translateX(-8px);opacity:0.5;}
+    60%{background:color-mix(in srgb, var(--accent) 12%, transparent);transform:translateX(0);opacity:1;}
+    100%{background:transparent;}
+  }
+  .attempt-row{display:flex;align-items:center;gap:9px;font-size:13px;}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot.flash{background:var(--flash);} .dot.send{background:var(--send);} .dot.fall{background:var(--fall);}
+  .attempt-row .r-name{font-weight:600;text-transform:capitalize;}
+  .attempt-row .r-time{color:var(--text-dim);margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11.5px;}
+  .attempt-row .r-xp{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--text-dim);}
+  .attempt-meta{font-size:11px;color:var(--text-dim);padding-left:17px;margin-top:2px;}
+  .attempt-meta b{color:var(--text);}
+  .empty-note{color:var(--text-dim);font-size:13px;padding:10px 2px;}
+  .attempt-row-clickable{cursor:pointer;border-radius:var(--radius-sm);margin:-4px;padding:4px;transition:background .12s ease;}
+  .attempt-row-clickable:hover{background:var(--surface-2);}
+  .attempt-row-clickable:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .attempt-editor-wrap{list-style:none;padding:8px 0 4px;}
+
+  .notes-card{padding:18px 18px 20px;margin-bottom:16px;}
+  .notes-card textarea{width:100%;min-height:64px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--text);font-family:inherit;font-size:13.5px;padding:10px;resize:vertical;}
+  .notes-card textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .photo-strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .photo-thumb{position:relative;width:72px;height:72px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);background:var(--surface-2);flex-shrink:0;cursor:pointer;transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+  .photo-thumb:active{transform:scale(0.93);}
+  .photo-thumb img, .photo-thumb video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}
+  .photo-thumb .photo-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,0.7);pointer-events:none;}
+  .photo-thumb .photo-remove{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;border:none;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;}
+  .photo-actions{margin-top:10px;}
+  .photo-add-btn{padding:8px 16px;font-size:12.5px;}
+
+  .lightbox-card{padding:14px;max-width:560px;overflow:visible;}
+  .lightbox-close{position:absolute;top:-14px;right:-14px;background:var(--surface);box-shadow:0 4px 14px var(--shadow);}
+  #lightboxContent{border-radius:var(--radius-md);overflow:hidden;background:#000;}
+  #lightboxContent img, #lightboxContent video{width:100%;max-height:75vh;display:block;object-fit:contain;background:#000;}
+
+  /* ================= BADGES ================= */
+  .badges-card{padding:18px 18px 20px;margin-bottom:16px;}
+  .badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px;}
+  @media (max-width:520px){.badge-grid{grid-template-columns:repeat(2,1fr);}}
+  .badge{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-2);padding:12px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0.42;filter:grayscale(0.6);transition:opacity .3s ease, filter .3s ease, transform .3s ease;}
+  .badge.unlocked{opacity:1;filter:none;border-color:color-mix(in srgb, var(--accent) 40%, var(--border));}
+  .badge.pop{animation:badgepop .6s cubic-bezier(.34,1.56,.64,1), badgeGlow .7s ease-out;}
+  @keyframes badgepop{0%{transform:scale(1) rotate(0);}30%{transform:scale(1.2) rotate(-5deg);}60%{transform:scale(0.94) rotate(4deg);}100%{transform:scale(1) rotate(0);}}
+  @keyframes badgeGlow{from{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);}to{box-shadow:0 0 0 18px color-mix(in srgb, var(--accent) 0%, transparent);}}
+  .badge .b-icon{width:24px;height:24px;color:var(--accent);}
+  .badge .b-name{font-size:11px;font-weight:700;}
+  .badge .b-desc{font-size:9.5px;color:var(--text-dim);line-height:1.3;}
+
+  /* ================= DETAIL ================= */
+  .detail-header{padding:18px 18px 16px;margin-bottom:14px;}
+  .detail-header h2{font-family:"Bebas Neue",sans-serif;font-size:30px;margin:0 0 4px;}
+
+  /* ================= FINISH SESSION ================= */
+  .finish-cta{background:var(--send);color:var(--send-contrast);margin-top:4px;margin-bottom:0;}
+
+  /* ================= MODALS ================= */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(20,17,13,0.55);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:100;
+  }
+  .modal-overlay[hidden]{display:none;}
+  .modal-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:24px 22px;max-width:420px;width:100%;max-height:calc(100vh - 40px);overflow-y:auto;
+    box-shadow:0 24px 60px var(--shadow);position:relative;
+    animation:modalIn .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes modalIn{from{transform:scale(0.92) translateY(8px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .modal-head h2{font-family:"Bebas Neue",sans-serif;font-size:26px;margin:0;}
+  .settings-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .settings-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+  .settings-section-title{font-size:11.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin:0 0 4px;}
+  .settings-section-hint{font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.4;}
+  .theme-row{display:flex;gap:8px;}
+  .theme-row .chip{flex:1;text-align:center;}
+
+  .switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .switch-row:last-child{border-bottom:none;}
+  .switch-label{font-size:13.5px;font-weight:600;}
+  .switch-desc{font-size:11.5px;color:var(--text-dim);margin-top:1px;}
+  .switch{
+    width:44px;height:26px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);
+    flex-shrink:0;position:relative;transition:background .2s ease, border-color .2s ease;
+  }
+  .switch .switch-thumb{
+    position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--surface);
+    box-shadow:0 1px 3px var(--shadow);transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .switch[aria-pressed="true"]{background:var(--accent);border-color:transparent;}
+  .switch[aria-pressed="true"] .switch-thumb{transform:translateX(18px);}
+
+  .rating-row{display:flex;gap:8px;justify-content:center;margin:6px 0 2px;}
+  .rating-row.left{justify-content:flex-start;}
+  .rating-star{
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
+    border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .rating-star svg{width:16px;height:16px;}
+  .rating-star.filled{color:var(--flash);border-color:color-mix(in srgb, var(--flash) 45%, var(--border));background:color-mix(in srgb, var(--flash) 14%, var(--surface-2));}
+  .rating-star:active{transform:scale(0.85);}
+  .rating-label{font-size:11.5px;color:var(--text-dim);margin:8px 0 0;min-height:14px;}
+
+  .drill-card{padding:16px 0;border-bottom:1px solid var(--border);}
+  .drill-card:first-child{padding-top:2px;}
+  .drill-card:last-child{border-bottom:none;padding-bottom:2px;}
+  .drill-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+  .drill-name{font-family:"Bebas Neue",sans-serif;font-size:20px;letter-spacing:0.02em;}
+  .drill-protocol{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-dim);background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 10px;white-space:nowrap;}
+  .drill-row{font-size:12.5px;line-height:1.55;margin:0 0 6px;color:var(--text);}
+  .drill-row:last-child{margin-bottom:0;}
+  .drill-row b{font-weight:700;}
+  .drill-caution{font-size:12px;line-height:1.5;color:var(--fall);margin-top:8px;}
+
+  .pyramid-group{margin-bottom:14px;}
+  .pyramid-group:last-child{margin-bottom:0;}
+  .pyramid-group-title{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;}
+  .pyramid-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .pyramid-grade{width:38px;flex-shrink:0;font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;text-align:right;}
+  .pyramid-bar-track{flex:1;height:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+  .pyramid-bar-fill{height:100%;background:var(--send);border-radius:3px;transition:width .4s ease;}
+  .pyramid-count{width:20px;flex-shrink:0;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--text-dim);text-align:right;}
+
+  .project-row-btn{display:block;width:100%;text-align:left;background:none;border:none;padding:0;cursor:pointer;border-radius:var(--radius-sm);}
+  .project-row-btn:hover .project-row{background:var(--surface-2);}
+  .project-row-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .project-row{padding:12px 8px;margin:0 -8px;border-bottom:1px solid var(--border);border-radius:var(--radius-sm);transition:background .12s ease;}
+  .project-row-btn:last-child .project-row{border-bottom:none;}
+  .project-main{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;}
+  .project-name{font-weight:700;font-size:13.5px;}
+  .project-meta{font-size:11.5px;color:var(--text-dim);}
+  .project-sent{color:var(--send);font-weight:700;}
+  .project-working{color:var(--flash);font-weight:700;}
+  .project-chevron{width:14px;height:14px;color:var(--text-dim);margin-left:auto;flex-shrink:0;transition:transform .2s ease;}
+  .project-row-btn.expanded .project-chevron{transform:rotate(90deg);}
+  .project-attempts{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
+  .project-attempt-row{display:flex;align-items:center;gap:7px;font-size:12.5px;}
+  .pa-result{font-weight:600;}
+  .pa-grade{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-dim);}
+  .pa-date{margin-left:auto;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;font-size:11px;}
+  .pa-meta{font-size:11px;color:var(--text-dim);padding-left:15px;margin-top:-3px;}
+
+  .sc-location{display:block;font-size:10px;color:var(--text-dim);margin-top:2px;max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .end-summary-card{text-align:center;overflow:hidden;}
+  .end-title{font-family:"Bebas Neue",sans-serif;font-size:32px;margin:4px 0 2px;letter-spacing:0.02em;}
+  .end-sub{color:var(--text-dim);font-size:13px;margin:0 0 16px;font-family:"IBM Plex Mono",monospace;}
+  .end-done-btn{width:100%;margin-top:18px;}
+  .confetti-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .confetti-piece{position:absolute;top:30%;left:50%;width:7px;height:13px;border-radius:2px;animation:confettiBurst .9s ease-out forwards;}
+  @keyframes confettiBurst{0%{transform:translate(0,0) rotate(0);opacity:1;}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0;}}
+
+  /* ---------- toasts ---------- */
+  .toast-stack{position:fixed;left:0;right:0;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:50;}
+  .toast{background:var(--accent);color:var(--accent-contrast);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:0 6px 18px var(--shadow);animation:toastin .4s cubic-bezier(.34,1.56,.64,1), toastout .4s ease 2.6s forwards;}
+  @keyframes toastin{from{transform:translateY(10px) scale(0.9);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
+  @keyframes toastout{to{opacity:0;transform:translateY(-6px);}}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;}
+  }
+</style>
+
+<div class="app">
+
+  <!-- ================= HOME ================= -->
+  <div id="view-home">
+    <section class="card garage-hero">
+      <div class="character-scene" id="characterScene">
+        <svg class="scene-env" id="sceneEnv" viewBox="0 0 200 240" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div class="scene-effects" id="sceneEffects" aria-hidden="true"></div>
+        <div class="scene-layers" id="sceneLayers"></div>
+        <div class="room-lab-layer" id="roomLabLayer" aria-hidden="true"></div>
+        <div class="character-wander" id="characterWander">
+          <div class="character-shadow" aria-hidden="true"></div>
+          <img id="characterStage" alt="Your Crimpet">
+        </div>
+
+        <div class="scene-overlay-top">
+          <div class="level-chip">
+            <div class="avatar"><img id="heroAvatarImg" alt=""></div>
+            <span class="lv-tag">Lv <span id="heroLevelNum">1</span></span>
+          </div>
+          <div class="hero-brand">
+            <h1>CRUX</h1>
+            <p>training timer · send log</p>
+          </div>
+          <div class="scene-icon-row">
+            <button type="button" class="scene-icon-btn" id="openDrillsBtn" aria-label="Training drills guide">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5c-.8 0-1.5-.7-1.5-1.5v-13z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5c.8 0 1.5-.7 1.5-1.5v-13z"/></svg>
+            </button>
+            <button type="button" class="scene-icon-btn" id="openProgressBtn" aria-label="Climbing progress">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="19" y1="20" x2="19" y2="14"/></svg>
+            </button>
+            <button type="button" class="scene-icon-btn" id="openSettingsBtn" aria-label="Settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.6" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.6" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="7" cy="18" r="2.6" fill="currentColor" stroke="none"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="scene-overlay-bottom">
+          <button type="button" class="scene-chip" id="arrangeToggleBtn" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+            <span class="label">Arrange</span>
+          </button>
+          <button type="button" class="scene-chip" id="openCustomizeBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Customize
+          </button>
+        </div>
+      </div>
+
+      <div class="garage-hero-footer">
+        <p class="character-name" id="characterStageName">—</p>
+        <p class="character-sub" id="characterSub">Level 1</p>
+        <p class="character-hint" id="characterHint"></p>
+        <p class="environment-hint" id="environmentHint"></p>
+        <div class="arrange-row" id="arrangeRow" hidden>
+          <p class="environment-hint">Drag any piece to reposition it — tap Done when you're happy.</p>
+          <button type="button" class="link-btn" id="resetLayoutBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Reset layout
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card profile-card">
+      <div class="ring" id="profileRing"><div class="ring-inner"><span class="rl" id="ringLevel">1</span><span class="rc">LEVEL</span></div></div>
+      <div class="profile-stats">
+        <div class="ps-row"><b id="psXpLabel">0 / 100 XP</b><span id="psXpToGo">to next level</span></div>
+        <div class="ps-mini-track"><div class="ps-mini-fill" id="psXpFill" style="width:0%"></div></div>
+        <div class="ps-row"><span>Streak</span><b><span id="psStreakNow">0</span> current · <span id="psStreakBest">0</span> best</b></div>
+        <div class="ps-totals">
+          <span>Flash <b class="flash" id="psFlash">0</b></span>
+          <span>Send <b class="send" id="psSend">0</b></span>
+          <span>Fall <b class="fall" id="psFall">0</b></span>
+        </div>
+      </div>
+    </section>
+
+    <button class="start-cta garage-cta" id="startSessionBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 19 9 6l4 7 2-3 7 9z"/></svg>
+      <span class="cta-text">
+        <span class="main">Start Session</span>
+        <span class="sub" id="startCtaSub">45s work / 90s rest</span>
+      </span>
+    </button>
+
+    <section class="history-section">
+      <p class="eyebrow">Session History</p>
+      <div id="historyList"></div>
+      <button type="button" class="link-btn" id="historyExpandBtn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <span class="label">View all sessions</span>
+      </button>
+    </section>
+
+    <footer>
+      <span>Session data is saved locally in this browser; photos are stored with this Crux page.</span>
+      <button class="link-btn danger" id="resetProgressBtn">Reset progress</button>
+    </footer>
+  </div>
+
+  <!-- ================= ACTIVE SESSION ================= -->
+  <div id="view-session" hidden>
+    <div class="topbar">
+      <button class="topbar-btn" id="endSessionBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        <span>End session</span>
+      </button>
+      <div class="level-pill">
+        <div class="lv-badge" id="lvBadge">1</div>
+        <span id="lvXpText">0 / 100 XP</span>
+      </div>
+    </div>
+
+    <section class="card timer-card" id="timerCard">
+      <div class="phase-row">
+        <span class="phase-dot"></span>
+        <span class="phase-label" id="phaseLabel">READY</span>
+        <span class="round-label" id="roundLabel">&nbsp;</span>
+      </div>
+      <div class="countdown" id="countdown">00:45</div>
+      <div class="progress-track"><div class="progress-fill" id="timerFill" style="width:100%"></div></div>
+      <div class="timer-controls">
+        <button class="btn btn-primary" id="startBtn">Start</button>
+        <button class="btn btn-ghost" id="resetBtn">Reset</button>
+      </div>
+      <div class="timer-config">
+        <div class="field">
+          <label for="workInput">Work (sec)</label>
+          <div class="stepper">
+            <button type="button" id="workMinus" aria-label="Decrease work seconds">–</button>
+            <input type="number" id="workInput" min="3" max="1800" value="45" inputmode="numeric">
+            <button type="button" id="workPlus" aria-label="Increase work seconds">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="restInput">Rest (sec)</label>
+          <div class="stepper">
+            <button type="button" id="restMinus" aria-label="Decrease rest seconds">–</button>
+            <input type="number" id="restInput" min="3" max="1800" value="90" inputmode="numeric">
+            <button type="button" id="restPlus" aria-label="Increase rest seconds">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="presets" id="presets">
+        <button class="chip" data-work="10" data-rest="50">Max Hangs 10/50</button>
+        <button class="chip" data-work="7" data-rest="3">Repeaters 7/3</button>
+        <button class="chip" data-work="60" data-rest="180">Limit Boulder 60/180</button>
+        <button class="chip" data-work="120" data-rest="120">2 On / 2 Off</button>
+        <button class="chip" data-work="240" data-rest="240">4x4s 240/240</button>
+      </div>
+      <button type="button" class="link-btn preset-guide-link" id="openDrillsFromSessionBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        What are these workouts for?
+      </button>
+    </section>
+
+    <div class="grid">
+      <section class="card progress-card">
+        <p class="eyebrow">Progress</p>
+        <div class="xp-row"><span class="num" id="xpCurrentLabel">Level 1</span><span class="num" id="xpNextLabel">0 / 100 XP</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+        <div class="stat-strip">
+          <div class="stat-tile flash"><div class="n" id="statFlash">0</div><div class="l">Flash</div></div>
+          <div class="stat-tile send"><div class="n" id="statSend">0</div><div class="l">Send</div></div>
+          <div class="stat-tile fall"><div class="n" id="statFall">0</div><div class="l">Fall</div></div>
+          <div class="stat-tile"><div class="n" id="statTotal">0</div><div class="l">Logged</div></div>
+        </div>
+        <div class="streak-row">
+          <div><div class="big" id="streakNow">0</div><div class="cap">Current streak</div></div>
+          <div style="text-align:right"><div class="big" id="streakBest">0</div><div class="cap">Best streak</div></div>
+        </div>
+      </section>
+
+      <section class="card log-card">
+        <p class="eyebrow">Log an attempt</p>
+        <div class="log-buttons">
+          <button class="log-btn flash" id="logFlash">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+            <span class="name">Flash</span><span class="xp">+30 XP</span>
+          </button>
+          <button class="log-btn send" id="logSend">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12.5 9.5 18 20 6"/></svg>
+            <span class="name">Send</span><span class="xp">+20 XP</span>
+          </button>
+          <button class="log-btn fall" id="logFall">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            <span class="name">Fall</span><span class="xp">+5 XP</span>
+          </button>
+        </div>
+        <div id="attemptComposer"></div>
+        <p class="eyebrow" style="margin-top:2px;">Recent this session</p>
+        <ul class="attempt-list" id="attemptList"></ul>
+      </section>
+    </div>
+
+    <section class="card notes-card">
+      <p class="eyebrow">Location</p>
+      <input type="text" id="sessionLocationInput" class="note-input" list="locationList" maxlength="60" placeholder="Gym or crag (optional)" style="margin-bottom:14px;">
+      <p class="eyebrow">Session notes</p>
+      <textarea id="sessionNoteInput" maxlength="600" placeholder="What did you work on today? (optional)"></textarea>
+      <p class="eyebrow" style="margin-top:14px;">Media</p>
+      <div class="photo-strip" id="sessionPhotoStrip"></div>
+      <div class="photo-actions">
+        <button type="button" class="btn btn-ghost photo-add-btn" id="addPhotoBtn" hidden>Add photo/video</button>
+        <input type="file" id="photoFileInput" accept="image/*,video/*" capture="environment" multiple hidden>
+      </div>
+    </section>
+
+    <section class="card badges-card">
+      <p class="eyebrow">Badges</p>
+      <div class="badge-grid" id="badgeGrid"></div>
+    </section>
+
+    <button type="button" class="start-cta finish-cta" id="finishSessionBtn">
+      <span class="main">Finish Session</span>
+      <span class="sub" id="finishCtaSub">Nothing logged yet</span>
+    </button>
+  </div>
+
+  <!-- ================= SESSION DETAIL ================= -->
+  <div id="view-detail" hidden>
+    <div class="topbar">
+      <button class="topbar-btn" id="backFromDetailBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        <span>Back to history</span>
+      </button>
+    </div>
+    <section class="card detail-header">
+      <h2 id="detailDate">—</h2>
+      <p class="eyebrow" id="detailMeta">—</p>
+      <div class="rating-row left" id="detailRatingRow"></div>
+      <p class="rating-label" id="detailRatingLabel"></p>
+    </section>
+    <section class="card" style="padding:18px;">
+      <div class="stat-strip" id="detailStats"></div>
+    </section>
+    <section class="card" style="padding:18px;margin-top:16px;">
+      <p class="eyebrow">Attempts</p>
+      <ul class="attempt-list" id="detailAttemptList" style="max-height:none;"></ul>
+    </section>
+    <section class="card notes-card" style="margin-top:16px;">
+      <p class="eyebrow">Location</p>
+      <input type="text" id="detailLocationInput" class="note-input" list="locationList" maxlength="60" placeholder="Gym or crag (optional)" style="margin-bottom:14px;">
+      <p class="eyebrow">Session notes</p>
+      <textarea id="detailNoteInput" maxlength="600" placeholder="No notes for this session."></textarea>
+      <p class="eyebrow" style="margin-top:14px;">Media</p>
+      <div class="photo-strip" id="detailPhotoStrip"></div>
+      <div class="photo-actions">
+        <button type="button" class="btn btn-ghost photo-add-btn" id="detailAddPhotoBtn" hidden>Add photo/video</button>
+        <input type="file" id="detailPhotoFileInput" accept="image/*,video/*" capture="environment" multiple hidden>
+      </div>
+    </section>
+
+    <footer style="margin-top:4px;">
+      <span></span>
+      <button class="link-btn danger" id="deleteSessionBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        <span class="label">Delete this session</span>
+      </button>
+    </footer>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="settingsOverlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="modal-head">
+      <h2>Settings</h2>
+      <button type="button" class="icon-btn" id="closeSettingsBtn" aria-label="Close settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-section-title">Mode</p>
+      <p class="settings-section-hint">Simple keeps this a fast, fun tracker — tap and go, your climber front and center. Advanced adds grade pyramids, projects, and exactly-what-you-want logging detail.</p>
+      <div class="theme-row" id="modeRow">
+        <button type="button" class="chip" data-mode-val="simple">Simple</button>
+        <button type="button" class="chip" data-mode-val="advanced">Advanced</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-section-title">Appearance</p>
+      <div class="theme-row" id="themeRow">
+        <button type="button" class="chip" data-theme-val="system">System</button>
+        <button type="button" class="chip" data-theme-val="light">Light</button>
+        <button type="button" class="chip" data-theme-val="dark">Dark</button>
+      </div>
+    </div>
+
+    <div class="settings-section" id="loggingFieldsSection">
+      <p class="settings-section-title">When you log a climb</p>
+      <p class="settings-section-hint" id="loggingFieldsHint">All off by default — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging.</p>
+      <div id="loggingFieldsSwitches">
+        <div class="switch-row">
+          <div><div class="switch-label">Climb name</div><div class="switch-desc">Name the problem or route — builds a project history</div></div>
+          <button type="button" class="switch" data-setting="askClimbName" aria-pressed="false"><span class="switch-thumb"></span></button>
+        </div>
+        <div class="switch-row">
+          <div><div class="switch-label">Felt grade</div><div class="switch-desc">Boulder or route grade, your own read</div></div>
+          <button type="button" class="switch" data-setting="askGrade" aria-pressed="false"><span class="switch-thumb"></span></button>
+        </div>
+        <div class="switch-row">
+          <div><div class="switch-label">Effort (RPE)</div><div class="switch-desc">1–10 rate of perceived exertion — on by default</div></div>
+          <button type="button" class="switch" data-setting="askEffort" aria-pressed="false"><span class="switch-thumb"></span></button>
+        </div>
+        <div class="switch-row">
+          <div><div class="switch-label">Fall reason</div><div class="switch-desc">Footwork, grip, power, etc. — falls only</div></div>
+          <button type="button" class="switch" data-setting="askReason" aria-pressed="false"><span class="switch-thumb"></span></button>
+        </div>
+        <div class="switch-row">
+          <div><div class="switch-label">Note</div><div class="switch-desc">One-line freeform note</div></div>
+          <button type="button" class="switch" data-setting="askNote" aria-pressed="false"><span class="switch-thumb"></span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<datalist id="climbNameList"></datalist>
+<datalist id="locationList"></datalist>
+
+<div class="modal-overlay" id="progressOverlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Climbing progress">
+    <div class="modal-head">
+      <h2>Progress</h2>
+      <button type="button" class="icon-btn" id="closeProgressBtn" aria-label="Close progress">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="settings-section">
+      <p class="settings-section-title">Grade Pyramid</p>
+      <p class="settings-section-hint" id="pyramidHint">—</p>
+      <div id="pyramidContent"></div>
+    </div>
+    <div class="settings-section">
+      <p class="settings-section-title">Projects</p>
+      <p class="settings-section-hint">Climbs you've named come up here with their attempt history — turn on Climb Name in Settings to start building this.</p>
+      <div id="projectsList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="drillsOverlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Training drills guide">
+    <div class="modal-head">
+      <h2>Training Drills</h2>
+      <button type="button" class="icon-btn" id="closeDrillsBtn" aria-label="Close guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <p class="settings-section-hint">What each timer preset actually trains, in plain terms — general background, not coaching or medical advice. Warm up first, and back off at any joint or tendon pain, especially on hangs.</p>
+    <div id="drillsList"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="customizeOverlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Customize Crimpet">
+    <div class="modal-head">
+      <h2>Customize</h2>
+      <button type="button" class="icon-btn" id="closeCustomizeBtn" aria-label="Close customize">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="settings-section">
+      <p class="settings-section-title">Crimpet</p>
+      <p class="settings-section-hint">Any look you've unlocked by level, picked independently of your gym. Auto always shows your newest.</p>
+      <div class="picker-grid" id="characterPickerGrid"></div>
+    </div>
+    <div class="settings-section">
+      <p class="settings-section-title">Gym</p>
+      <p class="settings-section-hint">Same idea, separate choice — decorate with any gym you've unlocked, whatever level Crimpet's wearing.</p>
+      <div class="picker-grid" id="environmentPickerGrid"></div>
+    </div>
+    <div class="settings-section">
+      <p class="settings-section-title">Decorate</p>
+      <p class="settings-section-hint">Tap any number of these on or off — they place themselves in the room, no unlocking needed.</p>
+      <div class="picker-grid" id="decoratePickerGrid"></div>
+    </div>
+    <div class="settings-section">
+      <p class="settings-section-title">Room Lab<span class="lab-badge">TEST</span></p>
+      <p class="settings-section-hint">Placeholder squares for testing where future room objects can attach — the Climbing Wall, the Back Wall, or the Floor. Add one, then drag it around directly in the Garage scene; its surface below updates automatically. Not final art.</p>
+      <div class="lab-add-row" id="labAddRow">
+        <button type="button" class="lab-add-btn" data-lab-color="#E0574A" style="background:#E0574A" aria-label="Add red test square"></button>
+        <button type="button" class="lab-add-btn" data-lab-color="#3FA9A0" style="background:#3FA9A0" aria-label="Add teal test square"></button>
+        <button type="button" class="lab-add-btn" data-lab-color="#4C8C4A" style="background:#4C8C4A" aria-label="Add green test square"></button>
+        <button type="button" class="lab-add-btn" data-lab-color="#D9B23C" style="background:#D9B23C" aria-label="Add yellow test square"></button>
+        <button type="button" class="lab-add-btn" data-lab-color="#7B5EA7" style="background:#7B5EA7" aria-label="Add purple test square"></button>
+      </div>
+      <div class="lab-list" id="roomLabList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mediaLightboxOverlay" hidden>
+  <div class="modal-card lightbox-card" role="dialog" aria-modal="true" aria-label="Media viewer">
+    <button type="button" class="icon-btn lightbox-close" id="closeLightboxBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div id="lightboxContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="endSessionOverlay" hidden>
+  <div class="modal-card end-summary-card" role="dialog" aria-modal="true" aria-label="Session complete">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <h2 class="end-title" id="endTitle">Session complete</h2>
+    <p class="end-sub" id="endSub">—</p>
+    <div class="stat-strip" id="endStats"></div>
+    <div class="rating-row" id="endRatingRow"></div>
+    <p class="rating-label" id="endRatingLabel">Tap to rate how it felt</p>
+    <button type="button" class="btn btn-primary end-done-btn" id="endSummaryDoneBtn">Back to home</button>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+(function(){
+  "use strict";
+  var STORAGE_KEY = "crux-app-state-v2";
+  var REASONS = ["Footwork","Grip","Power","Beta","Mental","Other"];
+  var RPE_SCALE = [1,2,3,4,5,6,7,8,9,10];
+  var SATISFACTION_LABELS = ["Rough","Okay","Decent","Good","Great"];
+
+  // Plain-language background on each timer preset — established training protocols,
+  // not invented numbers. No movement diagrams or form imagery: for something with real
+  // finger/tendon injury stakes, an unverified illustration is worse than none.
+  var DRILLS = [
+    { name:"Max Hangs", protocol:"10s / 50s",
+      trains:"Maximum finger strength — the raw ability to hold a hard grip, not endurance.",
+      how:"Hang from a moderately hard edge for 10 seconds at a load you can just barely complete with good form. Rest 50s–3min, repeat for 4–6 hangs.",
+      bestFor:"Climbers with a solid injury-free base looking to build a stronger baseline grip.",
+      caution:"The highest injury-risk protocol here. Not for beginners or anyone nursing a finger tweak — build pain-free mileage first, and stop at the first sign of a pulley twinge." },
+    { name:"Repeaters", protocol:"7s / 3s",
+      trains:"Finger and forearm strength-endurance — staying power under sustained load.",
+      how:"Hang 7 seconds, rest 3, for about 6 reps in a row (one set). Rest 2–3 minutes between sets.",
+      bestFor:"Building the grip stamina that carries you through a long boulder or a pumpy redpoint." },
+    { name:"Limit Bouldering", protocol:"60s / 180s",
+      trains:"Maximum power and hard-move execution at your absolute limit.",
+      how:"Attempt your hardest move or problem for up to a minute, then rest a full 3 minutes before trying again — the long rest is the point, not optional.",
+      bestFor:"Pushing your grade ceiling and drilling technique on moves you can't yet do easily." },
+    { name:"2 On / 2 Off", protocol:"120s / 120s",
+      trains:"Power-endurance — keeping your climbing together once you're already pumped.",
+      how:"Climb continuously (link problems or repeat a circuit) for 2 minutes, rest 2, repeat for several rounds.",
+      bestFor:"Intermediate+ climbers training resistance to the pump on longer boulders or burly redpoints." },
+    { name:"4x4s", protocol:"240s / 240s",
+      trains:"Power-endurance at a bigger scale — the classic anaerobic-capacity session.",
+      how:"Pick 4 problems a bit below your limit. Climb all 4 back-to-back with minimal rest, then rest ~4 minutes and repeat the whole circuit 4 times through.",
+      bestFor:"A staple power-endurance phase workout — expect to be climbing on a pump by round 2." }
+  ];
+  var BOULDER_GRADES = ["VB","V0","V1","V2","V3","V4","V5","V6","V7","V8","V9","V10","V11+"];
+  var ROUTE_GRADES = ["5.6","5.7","5.8","5.9","5.10-","5.10","5.10+","5.11-","5.11","5.11+","5.12-","5.12","5.12+","5.13+","5.14+"];
+
+  function uid(){ return Date.now()+"-"+Math.random().toString(36).slice(2); }
+  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+  function debounce(fn, wait){ var t; return function(){ var args=arguments, ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,args); }, wait); }; }
+
+  function gainFor(result){ return result==="flash"?30:result==="send"?20:5; }
+
+  // Badge checks run during a chronological replay (see recomputeProfile). `s` is the
+  // running totals at this point in history; `seen` is attempts up to & including the
+  // current one, newest-first.
+  var BADGES = [
+    { id:"first_send", name:"First Send", desc:"Log a send", icon:iconMountain(),
+      check:function(s, seen){ return seen.some(function(a){return a.result==="send";}); } },
+    { id:"first_flash", name:"First Flash", desc:"Log a flash", icon:iconBolt(),
+      check:function(s, seen){ return seen.some(function(a){return a.result==="flash";}); } },
+    { id:"streak_3", name:"On a Roll", desc:"3-attempt streak", icon:iconFlame(),
+      check:function(s){ return s.longestStreak>=3; } },
+    { id:"streak_5", name:"Dialed In", desc:"5-attempt streak", icon:iconFlame(),
+      check:function(s){ return s.longestStreak>=5; } },
+    { id:"level_3", name:"Level 3", desc:"Reach level 3", icon:iconChevrons(),
+      check:function(s){ return s.level>=3; } },
+    { id:"level_5", name:"Level 5", desc:"Reach level 5", icon:iconChevrons(),
+      check:function(s){ return s.level>=5; } },
+    { id:"ten_logged", name:"Regular", desc:"10 attempts logged", icon:iconList(),
+      check:function(s){ return s.totalAttempts>=10; } },
+    { id:"comeback", name:"Comeback", desc:"Send right after a fall", icon:iconRebound(),
+      check:function(s, seen){ return seen.length>=2 && seen[1].result==="fall" && (seen[0].result==="send"||seen[0].result==="flash"); } }
+  ];
+
+  /* ---------------- state ---------------- */
+  function defaultState(){
+    return {
+      version:2,
+      seq:0,
+      xp:0, level:1, streak:0, longestStreak:0, totalAttempts:0,
+      counts:{ flash:0, send:0, fall:0 },
+      badges:{},
+      timerDefaults:{ workSec:45, restSec:90 },
+      lastGradeType:"boulder",
+      lastLocation:"",
+      settingsVersion:3,
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false },
+      // null = auto (always show your newest unlock, same as before); set once someone
+      // actually picks something in Customize. Independent of each other on purpose.
+      // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
+      // in whatever gym is selected. decorPositions: per-id {x,y} override written by
+      // dragging a piece in Arrange mode; a piece with no override just uses ACCESSORIES'
+      // preset x/y, so old saves with no decorPositions key still render correctly.
+      // roomLab: temporary colored test squares for the Garage's room-placement system —
+      // see ROOM_SURFACES below. Each entry is {id, color, surfaceId, x, y, scale, rotation}.
+      // Separate from `decorations` (the real, non-level-gated accessory art) on purpose:
+      // this is throwaway test data, not a feature to keep polishing.
+      // A few accessories on by default (new installs only — Object.assign in loadState()
+      // never overwrites an existing save's own decorations array) so a brand-new Garage
+      // reads as lived-in on first look, not an empty test room waiting for Customize.
+      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositions:{}, roomLab:[] },
+      sessions:[],
+      activeSessionId:null
+    };
+  }
+
+  function migrateIfNeeded(parsed){
+    if(parsed && Array.isArray(parsed.sessions)) return parsed;
+    var base = defaultState();
+    if(!parsed) return base;
+    base.xp = parsed.xp||0;
+    base.level = parsed.level||1;
+    base.streak = parsed.streak||0;
+    base.longestStreak = parsed.longestStreak||0;
+    base.totalAttempts = parsed.totalAttempts || (parsed.attempts?parsed.attempts.length:0);
+    base.counts = Object.assign(base.counts, parsed.counts||{});
+    base.badges = parsed.badges||{};
+    base.timerDefaults = Object.assign(base.timerDefaults, parsed.timer||{});
+    if(parsed.attempts && parsed.attempts.length){
+      // parsed.attempts was stored newest-first; assign seq so replay order (oldest→newest)
+      // matches how these were actually logged, regardless of any timestamp collisions.
+      var n = parsed.attempts.length;
+      var legacy = parsed.attempts.map(function(a, i){
+        return { id:a.id||uid(), result:a.result, xp:a.xp, ts:a.ts, seq:n-i, effort:null, reason:null, note:"", gradeType:"boulder", grade:null, photos:[], climbName:"" };
+      });
+      base.seq = n;
+      var tsList = legacy.map(function(a){ return a.ts; });
+      base.sessions.push({
+        id:"legacy-session",
+        startedAt: Math.min.apply(null, tsList),
+        endedAt: Math.max.apply(null, tsList),
+        timerConfig:{ workSec:base.timerDefaults.workSec, restSec:base.timerDefaults.restSec },
+        attempts: legacy,
+        note:"Imported from an earlier version of Crux.",
+        photos:[],
+        satisfaction:null,
+        location:""
+      });
+    }
+    return base;
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      var migrated = migrateIfNeeded(JSON.parse(raw));
+      var base = defaultState();
+      var merged = Object.assign(base, migrated, {
+        counts: Object.assign(base.counts, migrated.counts||{}),
+        timerDefaults: Object.assign(base.timerDefaults, migrated.timerDefaults||{}),
+        settings: Object.assign(base.settings, migrated.settings||{}),
+        character: Object.assign(base.character, migrated.character||{}),
+        badges: migrated.badges||{},
+        sessions: Array.isArray(migrated.sessions)?migrated.sessions:[]
+      });
+      // One-time upgrades, each gated on its own settingsVersion so a person's later choice
+      // always wins and these never re-fire.
+      if(!(migrated.settingsVersion>=2)){
+        merged.settings.askEffort = true;
+      }
+      if(!(migrated.settingsVersion>=3)){
+        // Simple mode is now the default for new installs, but an existing install already
+        // mid-session with granular fields on should land in Advanced, not lose them from view.
+        merged.settings.mode = "advanced";
+      }
+      merged.settingsVersion = 3;
+      return merged;
+    }catch(e){ return defaultState(); }
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ /* storage unavailable */ }
+  }
+
+  var state = loadState();
+
+  // Attempts saved before `seq` existed (or saved between then and now) won't have one.
+  // Backfill from stored order — sessions are always unshifted (newest first) and so is
+  // each session's attempts array, so the flattened order is already newest→oldest.
+  (function backfillSeq(){
+    var flat = [];
+    state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ flat.push(a); }); });
+    if(!flat.some(function(a){ return typeof a.seq!=="number"; })) return;
+    var n = flat.length;
+    flat.forEach(function(a, i){ if(typeof a.seq!=="number") a.seq = n-i; });
+    state.seq = Math.max(state.seq||0, n);
+  })();
+
+  /* ---------------- theme & settings ---------------- */
+  function applyTheme(){
+    var t = state.settings.theme;
+    if(t==="light" || t==="dark") document.documentElement.setAttribute("data-theme", t);
+    else document.documentElement.removeAttribute("data-theme");
+  }
+  function renderSettingsModal(){
+    document.querySelectorAll("#modeRow .chip").forEach(function(btn){
+      btn.classList.toggle("selected", btn.dataset.modeVal===state.settings.mode);
+    });
+    document.querySelectorAll("#themeRow .chip").forEach(function(btn){
+      btn.classList.toggle("selected", btn.dataset.themeVal===state.settings.theme);
+    });
+    document.querySelectorAll(".switch[data-setting]").forEach(function(btn){
+      var on = !!state.settings[btn.dataset.setting];
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    var advanced = state.settings.mode==="advanced";
+    document.getElementById("loggingFieldsSwitches").hidden = !advanced;
+    document.getElementById("loggingFieldsHint").textContent = advanced
+      ? "All off by default — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging."
+      : "Switch to Advanced to choose exactly what gets asked after each climb — grade, effort, notes, and more.";
+  }
+  function openSettings(){ renderSettingsModal(); document.getElementById("settingsOverlay").hidden = false; }
+  function closeSettings(){ document.getElementById("settingsOverlay").hidden = true; }
+
+  function renderDrills(){
+    document.getElementById("drillsList").innerHTML = DRILLS.map(function(d){
+      return '<div class="drill-card">'+
+        '<div class="drill-head"><span class="drill-name">'+d.name+'</span><span class="drill-protocol">'+d.protocol+'</span></div>'+
+        '<p class="drill-row"><b>Trains</b> — '+d.trains+'</p>'+
+        '<p class="drill-row"><b>How</b> — '+d.how+'</p>'+
+        '<p class="drill-row"><b>Best for</b> — '+d.bestFor+'</p>'+
+        (d.caution ? '<p class="drill-caution">'+d.caution+'</p>' : "")+
+      '</div>';
+    }).join("");
+  }
+  function openDrills(){ renderDrills(); document.getElementById("drillsOverlay").hidden = false; }
+  function closeDrills(){ document.getElementById("drillsOverlay").hidden = true; }
+
+  /* ---------------- Customize: pick any unlocked Crimpet look / gym, independently ---------------- */
+  function pickerItemsHTML(all, unlockedIds, selectedId, dataAttr, thumbFitClass){
+    var html = '<button type="button" class="picker-item'+(selectedId===null?' selected':'')+'" data-'+dataAttr+'="__auto__">'
+      + '<div class="picker-thumb auto-thumb">AUTO</div>'
+      + '<span class="picker-name">Auto</span><span class="picker-lock">Newest unlock</span></button>';
+    all.forEach(function(item){
+      var unlocked = unlockedIds.indexOf(item.id)>-1;
+      var cls = 'picker-item'+(unlocked?'':' locked')+(selectedId===item.id?' selected':'');
+      // Character stages have a real portrait (img); gyms are a drawn room now, not a photo
+      // — a small wall/floor swatch stands in for a thumbnail until real modular art exists.
+      var thumbInner = item.img
+        ? '<img src="'+item.img+'" alt="">'
+        : '<div style="position:absolute;inset:0 0 35% 0;background:'+item.wallColor+'"></div>'
+          + '<div style="position:absolute;inset:65% 0 0 0;background:'+item.floorColor+'"></div>';
+      html += '<button type="button" class="'+cls+'" '+(unlocked?('data-'+dataAttr+'="'+item.id+'"'):'disabled')+'>'
+        + '<div class="picker-thumb '+thumbFitClass+'" style="position:relative;">'+thumbInner+'</div>'
+        + '<span class="picker-name">'+escapeHtml(item.name)+'</span>'
+        + (unlocked?'':'<span class="picker-lock">Level '+item.minLevel+'</span>')
+        + '</button>';
+    });
+    return html;
+  }
+  // Decorations toggle independently (any number on at once), so they get their own
+  // renderer rather than being force-fit into pickerItemsHTML's single-select/locked shape.
+  function decorateItemsHTML(){
+    var on = state.character.decorations||[];
+    return ACCESSORIES.map(function(a){
+      var isOn = on.indexOf(a.id)>-1;
+      return '<button type="button" class="picker-item'+(isOn?' selected':'')+'" data-decor="'+a.id+'">'
+        + '<div class="picker-thumb fit-contain"><img src="'+a.img+'" alt=""></div>'
+        + '<span class="picker-name">'+escapeHtml(a.name)+'</span>'
+        + '</button>';
+    }).join("");
+  }
+  function renderCustomizeModal(){
+    document.getElementById("characterPickerGrid").innerHTML = pickerItemsHTML(
+      CHARACTER_STAGES, unlockedCharacterStages().map(function(s){ return s.id; }),
+      state.character.selectedStageId, "pick-char", "fit-contain"
+    );
+    document.getElementById("environmentPickerGrid").innerHTML = pickerItemsHTML(
+      ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
+      state.character.selectedEnvironmentId, "pick-env", ""
+    );
+    document.getElementById("decoratePickerGrid").innerHTML = decorateItemsHTML();
+    renderRoomLabList();
+  }
+  function openCustomize(){ renderCustomizeModal(); document.getElementById("customizeOverlay").hidden = false; }
+  function closeCustomize(){ document.getElementById("customizeOverlay").hidden = true; }
+
+  /* ---------------- climb name & location autocomplete ---------------- */
+  function refreshClimbNameList(){
+    var seen = {};
+    state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ if(a.climbName) seen[a.climbName]=true; }); });
+    document.getElementById("climbNameList").innerHTML = Object.keys(seen).map(function(n){ return '<option value="'+escapeHtml(n)+'">'; }).join("");
+  }
+  function refreshLocationList(){
+    var seen = {};
+    state.sessions.forEach(function(s){ if(s.location) seen[s.location]=true; });
+    document.getElementById("locationList").innerHTML = Object.keys(seen).map(function(n){ return '<option value="'+escapeHtml(n)+'">'; }).join("");
+  }
+
+  /* ---------------- progress: grade pyramid + projects ---------------- */
+  // Both are pure read-outs of data already being logged — no new collection step,
+  // just a way to actually see it.
+  function computeGradePyramid(gradeType){
+    var scale = gradeType==="route" ? ROUTE_GRADES : BOULDER_GRADES;
+    var counts = {};
+    state.sessions.forEach(function(s){
+      s.attempts.forEach(function(a){
+        if(a.gradeType===gradeType && a.grade && (a.result==="send"||a.result==="flash")){
+          counts[a.grade] = (counts[a.grade]||0)+1;
+        }
+      });
+    });
+    return scale.map(function(g){ return { grade:g, count:counts[g]||0 }; }).filter(function(r){ return r.count>0; });
+  }
+  function renderPyramidSection(){
+    var boulderRows = computeGradePyramid("boulder");
+    var routeRows = computeGradePyramid("route");
+    var hint = document.getElementById("pyramidHint");
+    var content = document.getElementById("pyramidContent");
+    if(!boulderRows.length && !routeRows.length){
+      hint.textContent = "Log a felt grade on your sends and flashes to build this — turn on Felt Grade in Settings.";
+      content.innerHTML = "";
+      return;
+    }
+    var hardestB = boulderRows.length ? boulderRows[boulderRows.length-1].grade : null;
+    var hardestR = routeRows.length ? routeRows[routeRows.length-1].grade : null;
+    hint.textContent = "From sends and flashes with a felt grade." +
+      (hardestB ? " Hardest boulder: "+hardestB+"." : "") +
+      (hardestR ? " Hardest route: "+hardestR+"." : "");
+    var maxCount = Math.max.apply(null, boulderRows.concat(routeRows).map(function(r){ return r.count; }).concat([1]));
+    function group(title, rows){
+      if(!rows.length) return "";
+      return '<div class="pyramid-group"><p class="pyramid-group-title">'+title+'</p>'+
+        rows.slice().reverse().map(function(r){
+          var pct = Math.round((r.count/maxCount)*100);
+          return '<div class="pyramid-row"><span class="pyramid-grade">'+r.grade+'</span><div class="pyramid-bar-track"><div class="pyramid-bar-fill" style="width:'+pct+'%"></div></div><span class="pyramid-count">'+r.count+'</span></div>';
+        }).join("")+
+      '</div>';
+    }
+    content.innerHTML = group("Boulder", boulderRows) + group("Route", routeRows);
+  }
+  function computeProjects(){
+    var map = {};
+    state.sessions.forEach(function(s){
+      s.attempts.forEach(function(a){
+        var name = (a.climbName||"").trim();
+        if(!name) return;
+        var key = name.toLowerCase();
+        if(!map[key]) map[key] = { name:name, attempts:0, sent:false, grade:null, sessionIds:{}, lastTs:0 };
+        var p = map[key];
+        p.attempts += 1;
+        p.sessionIds[s.id] = true;
+        if(a.ts > p.lastTs) p.lastTs = a.ts;
+        if(a.result==="send" || a.result==="flash") p.sent = true;
+        if(a.grade) p.grade = a.grade;
+      });
+    });
+    return Object.keys(map).map(function(k){
+      var p = map[k];
+      return { name:p.name, attempts:p.attempts, sessions:Object.keys(p.sessionIds).length, sent:p.sent, grade:p.grade, lastTs:p.lastTs };
+    }).sort(function(a,b){ return b.lastTs-a.lastTs; });
+  }
+  // Every attempt (across every session) logged under one climb name, newest first —
+  // powers the tap-to-expand history in the Projects list below.
+  function attemptsForClimbName(name){
+    var key = name.trim().toLowerCase();
+    var rows = [];
+    state.sessions.forEach(function(s){
+      s.attempts.forEach(function(a){
+        if((a.climbName||"").trim().toLowerCase()===key) rows.push(a);
+      });
+    });
+    rows.sort(function(a,b){ return b.ts-a.ts; });
+    return rows;
+  }
+  var openProjectKey = null;
+  function renderProjectsSection(){
+    var projects = computeProjects();
+    var wrap = document.getElementById("projectsList");
+    if(!projects.length){
+      wrap.innerHTML = '<div class="empty-state">No named climbs yet.</div>';
+      return;
+    }
+    wrap.innerHTML = projects.map(function(p){
+      var key = p.name.toLowerCase();
+      var expanded = openProjectKey===key;
+      var historyHtml = expanded ? attemptsForClimbName(p.name).map(function(a){
+        var extras = [];
+        if(a.effort) extras.push("Effort "+a.effort);
+        if(a.reason) extras.push(a.reason);
+        if(a.note) extras.push("“"+escapeHtml(a.note)+"”");
+        return '<div class="project-attempt-row">'+
+            '<span class="dot '+a.result+'"></span>'+
+            '<span class="pa-result">'+cap(a.result)+'</span>'+
+            (a.grade ? '<span class="pa-grade">'+a.grade+'</span>' : "")+
+            '<span class="pa-date">'+new Date(a.ts).toLocaleDateString(undefined,{ month:"short", day:"numeric" })+'</span>'+
+          '</div>'+
+          (extras.length ? '<div class="pa-meta">'+extras.join(" · ")+'</div>' : "");
+      }).join("") : "";
+      return '<button type="button" class="project-row-btn'+(expanded?" expanded":"")+'" data-key="'+escapeHtml(key)+'">'+
+        '<div class="project-row">'+
+          '<div class="project-main"><span class="project-name">'+escapeHtml(p.name)+'</span>'+(p.grade ? '<span class="drill-protocol">'+p.grade+'</span>' : "")+
+            '<svg class="project-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>'+
+          '<div class="project-meta">'+(p.sent ? '<span class="project-sent">Sent</span>' : '<span class="project-working">Working on it</span>')+
+            ' · '+p.attempts+' attempt'+(p.attempts===1?"":"s")+' · '+p.sessions+' session'+(p.sessions===1?"":"s")+'</div>'+
+          (expanded ? '<div class="project-attempts">'+historyHtml+'</div>' : "")+
+        '</div>'+
+      '</button>';
+    }).join("");
+    wrap.querySelectorAll(".project-row-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var k = btn.dataset.key;
+        openProjectKey = (openProjectKey===k) ? null : k;
+        renderProjectsSection();
+      });
+    });
+  }
+  function openProgress(){ renderPyramidSection(); renderProjectsSection(); document.getElementById("progressOverlay").hidden = false; }
+  function closeProgress(){ document.getElementById("progressOverlay").hidden = true; }
+
+  function getActiveSession(){
+    if(!state.activeSessionId) return null;
+    for(var i=0;i<state.sessions.length;i++){ if(state.sessions[i].id===state.activeSessionId) return state.sessions[i]; }
+    return null;
+  }
+
+  /* ---------------- timer engine ---------------- */
+  var timer = { phase:"idle", remaining:state.timerDefaults.workSec, running:false, round:0, tickId:null };
+  var audioCtx = null;
+
+  function ensureAudio(){
+    if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; } }
+    return audioCtx;
+  }
+  function beep(freq, dur, vol){
+    var ctx = ensureAudio();
+    if(!ctx) return;
+    try{
+      var osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = "sine"; osc.frequency.value = freq;
+      osc.connect(gain).connect(ctx.destination);
+      var now = ctx.currentTime;
+      gain.gain.setValueAtTime(vol||0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur/1000);
+      osc.start(now); osc.stop(now + dur/1000);
+    }catch(e){}
+  }
+
+  function startTimer(){
+    if(timer.running) return;
+    ensureAudio();
+    if(timer.phase==="idle"){ timer.phase="work"; timer.remaining=state.timerDefaults.workSec; timer.round=0; }
+    timer.running = true;
+    timer.tickId = setInterval(tick, 1000);
+    renderTimer();
+  }
+  function pauseTimer(){
+    timer.running = false;
+    if(timer.tickId){ clearInterval(timer.tickId); timer.tickId=null; }
+    renderTimer();
+  }
+  function resetTimer(){
+    if(timer.tickId){ clearInterval(timer.tickId); timer.tickId=null; }
+    timer = { phase:"idle", remaining:state.timerDefaults.workSec, running:false, round:0, tickId:null };
+    renderTimer();
+  }
+  function tick(){
+    timer.remaining -= 1;
+    if(timer.remaining <= 0){
+      if(timer.phase==="work"){ timer.round += 1; beep(880,220,0.1); } else { beep(440,220,0.1); }
+      timer.phase = timer.phase==="work" ? "rest" : "work";
+      timer.remaining = timer.phase==="work" ? state.timerDefaults.workSec : state.timerDefaults.restSec;
+    } else if(timer.remaining<=3){
+      beep(660,90,0.06);
+    }
+    renderTimer();
+  }
+  function fmtClock(sec){
+    var m = Math.floor(sec/60), s = sec%60;
+    return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+  }
+  function renderTimer(){
+    var card = document.getElementById("timerCard");
+    card.classList.remove("phase-idle","phase-work","phase-rest");
+    card.classList.add("phase-"+timer.phase);
+    document.getElementById("phaseLabel").textContent = timer.phase==="idle" ? "READY" : (timer.phase==="work" ? "WORK" : "REST");
+    document.getElementById("roundLabel").textContent = timer.round>0 ? ("ROUND "+timer.round) : " ";
+    document.getElementById("countdown").textContent = fmtClock(Math.max(timer.remaining,0));
+    var total = timer.phase==="rest" ? state.timerDefaults.restSec : state.timerDefaults.workSec;
+    var pct = total>0 ? Math.max(0,Math.min(100,(timer.remaining/total)*100)) : 0;
+    document.getElementById("timerFill").style.width = pct+"%";
+    document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : "Resume");
+    var idle = timer.phase==="idle";
+    document.getElementById("workInput").disabled = !idle;
+    document.getElementById("restInput").disabled = !idle;
+    ["workMinus","workPlus","restMinus","restPlus"].forEach(function(id){ document.getElementById(id).disabled = !idle; });
+    document.querySelectorAll("#presets .chip").forEach(function(c){ c.disabled = !idle; });
+  }
+
+  function clampSec(v){ return Math.max(3, Math.min(1800, Math.round(v)||0)); }
+  function setWork(v){
+    state.timerDefaults.workSec = clampSec(v);
+    var s = getActiveSession(); if(s) s.timerConfig.workSec = state.timerDefaults.workSec;
+    if(timer.phase==="idle") timer.remaining = state.timerDefaults.workSec;
+    saveState(); renderTimer();
+  }
+  function setRest(v){
+    state.timerDefaults.restSec = clampSec(v);
+    var s = getActiveSession(); if(s) s.timerConfig.restSec = state.timerDefaults.restSec;
+    saveState(); renderTimer();
+  }
+
+  /* ---------------- gamification ---------------- */
+  // Was lv*100 — at typical logging volume that put the last character look (old level 35)
+  // close to a year out and the last gym (old level 50) well past that, way too slow for
+  // what's meant to be a lightweight reward layer. Cut by 40% so leveling itself feels
+  // faster across the board; unlock levels below were pulled in to match.
+  function xpForLevel(lv){ return lv*60; }
+
+  var composerTimeoutId = null;
+  function clearComposerTimeout(){ if(composerTimeoutId){ clearTimeout(composerTimeoutId); composerTimeoutId=null; } }
+  function resetComposerTimeout(){ clearComposerTimeout(); composerTimeoutId = setTimeout(hideComposer, 8000); }
+  function hideComposer(){ clearComposerTimeout(); var box=document.getElementById("attemptComposer"); if(box) box.innerHTML=""; }
+
+  function showComposer(attempt){
+    var box = document.getElementById("attemptComposer");
+    if(!box) return;
+    var s = state.settings;
+    var advancedMode = s.mode==="advanced";
+    var showClimbName = advancedMode && !!s.askClimbName;
+    var showGrade = advancedMode && !!s.askGrade;
+    var showEffort = advancedMode && !!s.askEffort;
+    var showReason = advancedMode && !!s.askReason && attempt.result==="fall";
+    var showNote = advancedMode && !!s.askNote;
+
+    // Nothing turned on in Settings → stay out of the way entirely, just confirm the log.
+    if(!showClimbName && !showGrade && !showEffort && !showReason && !showNote){
+      box.innerHTML = "";
+      showToast(cap(attempt.result)+" logged · +"+attempt.xp+" XP");
+      return;
+    }
+
+    var effortChips = RPE_SCALE.map(function(n){ return '<button type="button" class="chip effort-chip" data-val="'+n+'">'+n+'</button>'; }).join("");
+    var reasonChips = REASONS.map(function(r){ return '<button type="button" class="chip reason-chip" data-val="'+r+'">'+r+'</button>'; }).join("");
+    box.innerHTML =
+      '<div class="composer">' +
+        '<div class="composer-head"><span>'+cap(attempt.result)+' logged · +'+attempt.xp+' XP</span></div>' +
+        (showClimbName ? '<input type="text" id="composerClimbName" class="note-input" list="climbNameList" maxlength="60" placeholder="Name this climb (optional)" style="margin-bottom:9px;">' : "") +
+        (showGrade ? '<div class="composer-row"><span class="c-label">Felt grade</span><div class="grade-wrap">'+
+          '<div class="chip-row grade-type-row" id="gradeTypeRow">'+
+            '<button type="button" class="chip grade-type-chip" data-val="boulder">Boulder</button>'+
+            '<button type="button" class="chip grade-type-chip" data-val="route">Route</button>'+
+          '</div>'+
+          '<div class="chip-row chip-scroll" id="gradeRow"></div>'+
+        '</div></div>' : "") +
+        (showEffort ? '<div class="composer-row"><span class="c-label">Effort (RPE)</span><div class="grade-wrap"><div class="chip-row chip-scroll" id="effortRow">'+effortChips+'</div><span class="c-hint">1 felt easy · 10 all-out max</span></div></div>' : "") +
+        (showReason ? '<div class="composer-row"><span class="c-label">What happened?</span><div class="chip-row" id="reasonRow">'+reasonChips+'</div></div>' : "") +
+        (showNote ? '<input type="text" id="composerNote" class="note-input" maxlength="80" placeholder="Add a note (optional)">' : "") +
+        '<button type="button" class="btn btn-primary composer-log-btn" id="composerDone">Save</button>' +
+      '</div>';
+
+    if(showClimbName){
+      refreshClimbNameList();
+      var climbInput = document.getElementById("composerClimbName");
+      climbInput.value = attempt.climbName||"";
+      climbInput.addEventListener("input", debounce(function(e){ attempt.climbName = e.target.value; saveState(); }, 350));
+      climbInput.addEventListener("input", function(){ resetComposerTimeout(); });
+    }
+    if(showEffort){
+      box.querySelectorAll(".effort-chip").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var v = parseInt(btn.dataset.val,10);
+          attempt.effort = (attempt.effort===v) ? null : v;
+          saveState(); render(); syncComposerSelection(attempt); resetComposerTimeout();
+        });
+      });
+    }
+    if(showReason){
+      box.querySelectorAll(".reason-chip").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var v = btn.dataset.val;
+          attempt.reason = (attempt.reason===v) ? null : v;
+          saveState(); render(); syncComposerSelection(attempt); resetComposerTimeout();
+        });
+      });
+    }
+    if(showGrade){
+      box.querySelectorAll(".grade-type-chip").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var v = btn.dataset.val;
+          if(attempt.gradeType!==v){ attempt.gradeType = v; attempt.grade = null; state.lastGradeType = v; }
+          renderGradeRow(attempt);
+          saveState(); render(); syncComposerSelection(attempt); resetComposerTimeout();
+        });
+      });
+      renderGradeRow(attempt);
+    }
+    if(showNote){
+      var noteInput = document.getElementById("composerNote");
+      noteInput.addEventListener("input", debounce(function(e){
+        attempt.note = e.target.value; saveState(); render();
+      }, 350));
+      noteInput.addEventListener("input", function(){ resetComposerTimeout(); });
+    }
+    document.getElementById("composerDone").addEventListener("click", closeComposerWithFlourish);
+
+    syncComposerSelection(attempt);
+    resetComposerTimeout();
+  }
+  function closeComposerWithFlourish(){
+    var box = document.getElementById("attemptComposer");
+    var composerEl = box && box.querySelector(".composer");
+    if(!composerEl){ hideComposer(); return; }
+    clearComposerTimeout();
+    composerEl.classList.add("closing");
+    setTimeout(hideComposer, 260);
+  }
+  function renderGradeRow(attempt){
+    var row = document.getElementById("gradeRow");
+    if(!row) return;
+    var options = attempt.gradeType==="route" ? ROUTE_GRADES : BOULDER_GRADES;
+    row.innerHTML = options.map(function(g){ return '<button type="button" class="chip grade-chip" data-val="'+g+'">'+g+'</button>'; }).join("");
+    row.querySelectorAll(".grade-chip").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = btn.dataset.val;
+        attempt.grade = (attempt.grade===v) ? null : v;
+        saveState(); render(); syncComposerSelection(attempt); resetComposerTimeout();
+      });
+    });
+  }
+  function syncComposerSelection(attempt){
+    var box = document.getElementById("attemptComposer");
+    if(!box) return;
+    box.querySelectorAll(".effort-chip").forEach(function(btn){
+      btn.classList.toggle("selected", parseInt(btn.dataset.val,10)===attempt.effort);
+    });
+    box.querySelectorAll(".reason-chip").forEach(function(btn){
+      btn.classList.toggle("selected", btn.dataset.val===attempt.reason);
+    });
+    box.querySelectorAll(".grade-type-chip").forEach(function(btn){
+      btn.classList.toggle("selected", btn.dataset.val===attempt.gradeType);
+    });
+    box.querySelectorAll(".grade-chip").forEach(function(btn){
+      btn.classList.toggle("selected", btn.dataset.val===attempt.grade);
+    });
+    var noteInput = document.getElementById("composerNote");
+    if(noteInput && document.activeElement!==noteInput) noteInput.value = attempt.note||"";
+  }
+
+  function logAttempt(result){
+    var session = getActiveSession();
+    if(!session) return;
+    state.seq = (state.seq||0) + 1;
+    // Prefill the climb name from the last attempt this session — you usually log several
+    // goes in a row on the same problem before moving on.
+    var lastClimbName = (session.attempts[0] && session.attempts[0].climbName) || "";
+    var attempt = { id:uid(), result:result, xp:gainFor(result), ts:Date.now(), seq:state.seq, effort:null, reason:null, note:"", gradeType:state.lastGradeType||"boulder", grade:null, photos:[], climbName:lastClimbName };
+    session.attempts.unshift(attempt);
+    if(session.attempts.length>300) session.attempts.length = 300;
+
+    var outcome = recomputeProfile();
+    saveState();
+    render();
+
+    // A quick highlight on the row that just landed at the top of the list — the
+    // clearest possible confirmation that the tap actually logged something.
+    var freshRow = document.querySelector("#attemptList .attempt-row-wrap");
+    if(freshRow) freshRow.classList.add("just-logged");
+
+    if(outcome.leveledUpTo) pulseLevelBadge();
+    announceOutcome(outcome);
+
+    showComposer(attempt);
+  }
+
+  // Attempts are the single source of truth; xp/level/streak/counts/badges are all
+  // derived by replaying every attempt (across every session) in chronological order.
+  // Call this after logging, editing, or deleting any attempt so the profile never
+  // drifts out of sync with the history a viewer can edit.
+  function recomputeProfile(){
+    var prevLevel = state.level;
+    var prevBadges = state.badges || {};
+    var all = [];
+    state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ all.push(a); }); });
+    // Sort by logging order (seq), not wall-clock ts: two attempts can share a millisecond,
+    // and ts alone would then replay them in an arbitrary order and corrupt the streak.
+    all.sort(function(a,b){ return (a.seq||0)-(b.seq||0); });
+
+    var xp=0, level=1, streak=0, longestStreak=0;
+    var counts={ flash:0, send:0, fall:0 };
+    var badges={};
+    var seenNewestFirst=[];
+    all.forEach(function(a){
+      counts[a.result] = (counts[a.result]||0)+1;
+      xp += a.xp;
+      if(a.result==="fall"){ streak=0; } else { streak+=1; if(streak>longestStreak) longestStreak=streak; }
+      while(xp>=xpForLevel(level)){ xp-=xpForLevel(level); level+=1; }
+      seenNewestFirst.unshift(a);
+      var running = { level:level, longestStreak:longestStreak, totalAttempts:seenNewestFirst.length };
+      BADGES.forEach(function(b){
+        if(!badges[b.id] && b.check(running, seenNewestFirst)) badges[b.id] = a.ts;
+      });
+    });
+
+    state.xp=xp; state.level=level; state.streak=streak; state.longestStreak=longestStreak;
+    state.counts=counts; state.totalAttempts=all.length; state.badges=badges;
+
+    return {
+      leveledUpTo: level>prevLevel ? level : null,
+      newlyUnlocked: BADGES.filter(function(b){ return badges[b.id] && !prevBadges[b.id]; })
+    };
+  }
+
+  function announceOutcome(outcome){
+    if(!outcome) return;
+    if(outcome.leveledUpTo) showToast("Level up — now level "+outcome.leveledUpTo);
+    outcome.newlyUnlocked.forEach(function(b){ showToast("Badge unlocked: "+b.name); popBadge(b.id); });
+  }
+
+  /* ---------------- session lifecycle ---------------- */
+  function startSession(){
+    var s = {
+      id:uid(), startedAt:Date.now(), endedAt:null,
+      timerConfig:{ workSec:state.timerDefaults.workSec, restSec:state.timerDefaults.restSec },
+      attempts:[], note:"", photos:[], satisfaction:null, location:state.lastLocation||""
+    };
+    state.sessions.unshift(s);
+    state.activeSessionId = s.id;
+    saveState();
+    resetTimer();
+    switchView("session");
+  }
+  function finishSession(){
+    var s = getActiveSession();
+    if(!s) return;
+    s.endedAt = Date.now();
+    state.activeSessionId = null;
+    pauseTimer();
+    resetTimer();
+    hideComposer();
+    saveState();
+    showEndSummary(s);
+  }
+  function showEndSummary(s){
+    var counts = { flash:0, send:0, fall:0 }, xpEarned = 0;
+    s.attempts.forEach(function(a){ counts[a.result]++; xpEarned += a.xp; });
+    var total = s.attempts.length;
+    var durMin = Math.max(1, Math.round((s.endedAt-s.startedAt)/60000));
+    document.getElementById("endTitle").textContent = total>0 ? "Session complete" : "Session ended";
+    document.getElementById("endSub").textContent =
+      total>0 ? (durMin+" min · "+total+" attempt"+(total===1?"":"s")+" · +"+xpEarned+" XP")
+               : (durMin+" min · nothing logged this time");
+    document.getElementById("endStats").innerHTML =
+      '<div class="stat-tile flash"><div class="n">'+counts.flash+'</div><div class="l">Flash</div></div>'+
+      '<div class="stat-tile send"><div class="n">'+counts.send+'</div><div class="l">Send</div></div>'+
+      '<div class="stat-tile fall"><div class="n">'+counts.fall+'</div><div class="l">Fall</div></div>'+
+      '<div class="stat-tile"><div class="n">'+xpEarned+'</div><div class="l">XP earned</div></div>';
+    var endRatingRow = document.getElementById("endRatingRow");
+    var endRatingLabel = document.getElementById("endRatingLabel");
+    endRatingRow.innerHTML = ratingRowHTML(s.satisfaction);
+    wireRatingRow(endRatingRow, s, endRatingLabel);
+    endRatingLabel.textContent = s.satisfaction ? SATISFACTION_LABELS[s.satisfaction-1] : "Tap to rate how it felt";
+    document.getElementById("endSessionOverlay").hidden = false;
+    if(total>0) spawnConfetti(document.getElementById("confettiLayer"));
+  }
+  function closeEndSummary(){
+    document.getElementById("endSessionOverlay").hidden = true;
+    switchView("home");
+  }
+  function spawnConfetti(container){
+    if(!container) return;
+    container.innerHTML = "";
+    var palette = ["var(--accent)","var(--flash)","var(--send)","var(--fall)"];
+    for(var i=0;i<18;i++){
+      var el = document.createElement("span");
+      el.className = "confetti-piece";
+      el.style.background = palette[i%palette.length];
+      el.style.setProperty("--dx", Math.round(Math.random()*280-140)+"px");
+      el.style.setProperty("--dy", Math.round(Math.random()*220-30)+"px");
+      el.style.setProperty("--rot", Math.round(Math.random()*540-270)+"deg");
+      el.style.animationDelay = (Math.random()*0.12)+"s";
+      container.appendChild(el);
+    }
+    setTimeout(function(){ container.innerHTML=""; }, 1300);
+  }
+
+  /* ---------------- rendering ---------------- */
+  function relTime(ts){
+    var diff = Math.max(0, Date.now()-ts);
+    var m = Math.floor(diff/60000);
+    if(m<1) return "just now";
+    if(m<60) return m+"m ago";
+    var h = Math.floor(m/60);
+    if(h<24) return h+"h ago";
+    return Math.floor(h/24)+"d ago";
+  }
+  function attemptRowHTML(a, editable){
+    var meta = [];
+    if(a.climbName) meta.push("<b>"+escapeHtml(a.climbName)+"</b>");
+    if(a.grade) meta.push("felt "+a.grade);
+    if(a.effort) meta.push("Effort "+a.effort);
+    if(a.reason) meta.push(a.reason);
+    if(a.note) meta.push("“"+escapeHtml(a.note)+"”");
+    var metaHtml = meta.length ? '<div class="attempt-meta">'+meta.join(" · ")+'</div>' : "";
+    var rowCls = "attempt-row"+(editable?" attempt-row-clickable":"");
+    var rowAttrs = editable ? ' data-attempt-id="'+a.id+'" role="button" tabindex="0"' : "";
+    return '<li class="attempt-row-wrap">'+
+      '<div class="'+rowCls+'"'+rowAttrs+'>'+
+        '<span class="dot '+a.result+'"></span>'+
+        '<span class="r-name">'+a.result+'</span>'+
+        '<span class="r-xp">+'+a.xp+' XP</span>'+
+        '<span class="r-time">'+relTime(a.ts)+'</span>'+
+      '</div>'+metaHtml+
+    '</li>';
+  }
+
+  /* ---------------- editing a past attempt (session detail) ---------------- */
+  var editingAttemptId = null;
+
+  function attemptEditorHTML(a){
+    var effortChips = RPE_SCALE.map(function(n){ return '<button type="button" class="chip ae-effort" data-val="'+n+'">'+n+'</button>'; }).join("");
+    var reasonChips = REASONS.map(function(r){ return '<button type="button" class="chip ae-reason" data-val="'+r+'">'+r+'</button>'; }).join("");
+    var resultChips = ["flash","send","fall"].map(function(r){ return '<button type="button" class="chip ae-result" data-val="'+r+'">'+cap(r)+'</button>'; }).join("");
+    return '<li class="attempt-editor-wrap"><div class="composer">'+
+      '<div class="composer-head"><span>Edit attempt</span><button type="button" class="link-btn ae-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>Close</button></div>'+
+      '<input type="text" class="note-input ae-climbname" list="climbNameList" maxlength="60" placeholder="Name this climb (optional)" style="margin-bottom:9px;">'+
+      '<div class="composer-row"><span class="c-label">Result</span><div class="chip-row ae-result-row">'+resultChips+'</div></div>'+
+      '<div class="composer-row"><span class="c-label">Felt grade</span><div class="grade-wrap">'+
+        '<div class="chip-row"><button type="button" class="chip ae-gradetype" data-val="boulder">Boulder</button><button type="button" class="chip ae-gradetype" data-val="route">Route</button></div>'+
+        '<div class="chip-row chip-scroll ae-graderow"></div>'+
+      '</div></div>'+
+      '<div class="composer-row"><span class="c-label">Effort (RPE)</span><div class="grade-wrap"><div class="chip-row chip-scroll">'+effortChips+'</div><span class="c-hint">1 felt easy · 10 all-out max</span></div></div>'+
+      '<div class="composer-row ae-reason-row"'+(a.result!=="fall"?" hidden":"")+'><span class="c-label">What happened?</span><div class="chip-row">'+reasonChips+'</div></div>'+
+      '<input type="text" class="note-input ae-note" maxlength="80" placeholder="Add a note (optional)">'+
+      '<div class="composer-row" style="margin-top:10px;"><span class="c-label">Media</span><div class="grade-wrap">'+
+        '<div class="photo-strip ae-media-strip"></div>'+
+        (assetsNS ? '<button type="button" class="btn btn-ghost photo-add-btn ae-media-add">Add photo/video</button><input type="file" class="ae-media-input" accept="image/*,video/*" capture="environment" multiple hidden>' : "")+
+      '</div></div>'+
+      '<button type="button" class="link-btn danger ae-delete" style="margin-top:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Delete this attempt</button>'+
+    '</div></li>';
+  }
+  function renderAeGradeRow(container, a){
+    var row = container.querySelector(".ae-graderow");
+    if(!row) return;
+    var options = a.gradeType==="route" ? ROUTE_GRADES : BOULDER_GRADES;
+    row.innerHTML = options.map(function(g){ return '<button type="button" class="chip ae-grade" data-val="'+g+'">'+g+'</button>'; }).join("");
+    row.querySelectorAll(".ae-grade").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = btn.dataset.val;
+        a.grade = (a.grade===v) ? null : v;
+        saveState(); syncAeSelection(container, a);
+      });
+    });
+  }
+  function syncAeSelection(container, a){
+    container.querySelectorAll(".ae-result").forEach(function(btn){ btn.classList.toggle("selected", btn.dataset.val===a.result); });
+    container.querySelectorAll(".ae-effort").forEach(function(btn){ btn.classList.toggle("selected", parseInt(btn.dataset.val,10)===a.effort); });
+    container.querySelectorAll(".ae-reason").forEach(function(btn){ btn.classList.toggle("selected", btn.dataset.val===a.reason); });
+    container.querySelectorAll(".ae-gradetype").forEach(function(btn){ btn.classList.toggle("selected", btn.dataset.val===a.gradeType); });
+    container.querySelectorAll(".ae-grade").forEach(function(btn){ btn.classList.toggle("selected", btn.dataset.val===a.grade); });
+    var noteInput = container.querySelector(".ae-note");
+    if(noteInput && document.activeElement!==noteInput) noteInput.value = a.note||"";
+    var climbInput = container.querySelector(".ae-climbname");
+    if(climbInput && document.activeElement!==climbInput) climbInput.value = a.climbName||"";
+    var reasonRow = container.querySelector(".ae-reason-row");
+    if(reasonRow) reasonRow.hidden = a.result!=="fall";
+  }
+  function wireAttemptEditor(container, session, a, onStructuralChange){
+    refreshClimbNameList();
+    var climbNameInput = container.querySelector(".ae-climbname");
+    climbNameInput.addEventListener("input", debounce(function(e){ a.climbName = e.target.value; saveState(); }, 350));
+    container.querySelectorAll(".ae-result").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = btn.dataset.val;
+        if(a.result===v) return;
+        a.result = v; a.xp = gainFor(v);
+        if(v!=="fall") a.reason = null;
+        var outcome = recomputeProfile();
+        saveState();
+        announceOutcome(outcome);
+        onStructuralChange();
+      });
+    });
+    container.querySelectorAll(".ae-effort").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = parseInt(btn.dataset.val,10);
+        a.effort = (a.effort===v) ? null : v;
+        saveState(); syncAeSelection(container, a);
+      });
+    });
+    container.querySelectorAll(".ae-reason").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = btn.dataset.val;
+        a.reason = (a.reason===v) ? null : v;
+        saveState(); syncAeSelection(container, a);
+      });
+    });
+    container.querySelectorAll(".ae-gradetype").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = btn.dataset.val;
+        if(a.gradeType!==v){ a.gradeType=v; a.grade=null; state.lastGradeType=v; }
+        renderAeGradeRow(container, a);
+        saveState(); syncAeSelection(container, a);
+      });
+    });
+    renderAeGradeRow(container, a);
+    var noteInput = container.querySelector(".ae-note");
+    noteInput.addEventListener("input", debounce(function(e){ a.note = e.target.value; saveState(); }, 350));
+
+    var mediaStrip = container.querySelector(".ae-media-strip");
+    renderPhotoStrip(mediaStrip, a);
+    var mediaAddBtn = container.querySelector(".ae-media-add");
+    var mediaInput = container.querySelector(".ae-media-input");
+    if(mediaAddBtn && mediaInput){
+      mediaAddBtn.addEventListener("click", function(){ mediaInput.click(); });
+      mediaInput.addEventListener("change", function(e){
+        addPhotos(a, e.target.files, mediaStrip, mediaAddBtn);
+        e.target.value = "";
+      });
+    }
+
+    container.querySelector(".ae-close").addEventListener("click", function(){ editingAttemptId=null; onStructuralChange(); });
+    container.querySelector(".ae-delete").addEventListener("click", function(){
+      var idx = session.attempts.findIndex(function(x){ return x.id===a.id; });
+      if(idx>-1) session.attempts.splice(idx,1);
+      editingAttemptId = null;
+      var outcome = recomputeProfile();
+      saveState();
+      announceOutcome(outcome);
+      onStructuralChange();
+    });
+    syncAeSelection(container, a);
+  }
+
+  function render(){
+    var need = xpForLevel(state.level);
+    document.getElementById("lvBadge").textContent = state.level;
+    document.getElementById("lvXpText").textContent = state.xp+" / "+need+" XP";
+    document.getElementById("xpCurrentLabel").textContent = "Level "+state.level;
+    document.getElementById("xpNextLabel").textContent = state.xp+" / "+need+" XP";
+    document.getElementById("xpFill").style.width = Math.min(100,(state.xp/need)*100)+"%";
+
+    document.getElementById("statFlash").textContent = state.counts.flash;
+    document.getElementById("statSend").textContent = state.counts.send;
+    document.getElementById("statFall").textContent = state.counts.fall;
+    document.getElementById("statTotal").textContent = state.totalAttempts;
+
+    document.getElementById("streakNow").textContent = state.streak;
+    document.getElementById("streakBest").textContent = state.longestStreak;
+
+    var session = getActiveSession();
+    var list = document.getElementById("attemptList");
+    var recent = session ? session.attempts.slice(0,8) : [];
+    list.innerHTML = recent.length ? recent.map(function(a){
+      var html = attemptRowHTML(a, true);
+      if(editingAttemptId===a.id) html += attemptEditorHTML(a);
+      return html;
+    }).join("") : '<li class="empty-note">No attempts logged yet — tap Flash, Send, or Fall after your next go.</li>';
+    list.querySelectorAll(".attempt-row-clickable").forEach(function(row){
+      row.addEventListener("click", function(){
+        editingAttemptId = (editingAttemptId===row.dataset.attemptId) ? null : row.dataset.attemptId;
+        render();
+      });
+      row.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); row.click(); } });
+    });
+    if(session && editingAttemptId){
+      var recentEditorEl = list.querySelector(".attempt-editor-wrap");
+      var recentEditingAttempt = session.attempts.find(function(x){ return x.id===editingAttemptId; });
+      if(recentEditorEl && recentEditingAttempt){
+        wireAttemptEditor(recentEditorEl, session, recentEditingAttempt, render);
+      } else {
+        editingAttemptId = null;
+      }
+    }
+
+    var grid = document.getElementById("badgeGrid");
+    grid.innerHTML = BADGES.map(function(b){
+      var unlocked = !!state.badges[b.id];
+      return '<div class="badge'+(unlocked?" unlocked":"")+'" id="badge-'+b.id+'">'+
+        '<span class="b-icon">'+b.icon+'</span>'+
+        '<span class="b-name">'+b.name+'</span>'+
+        '<span class="b-desc">'+(unlocked?b.desc:"Locked — "+b.desc)+'</span>'+
+      '</div>';
+    }).join("");
+
+    document.getElementById("workInput").value = state.timerDefaults.workSec;
+    document.getElementById("restInput").value = state.timerDefaults.restSec;
+
+    var noteInput = document.getElementById("sessionNoteInput");
+    if(session && document.activeElement!==noteInput) noteInput.value = session.note||"";
+    var locInput = document.getElementById("sessionLocationInput");
+    if(session && document.activeElement!==locInput) locInput.value = session.location||"";
+    if(session) refreshLocationList();
+    if(session) renderPhotoStrip(document.getElementById("sessionPhotoStrip"), session);
+
+    var finishSub = document.getElementById("finishCtaSub");
+    if(finishSub && session){
+      if(session.attempts.length===0){
+        finishSub.textContent = "Nothing logged yet";
+      } else {
+        var sessionXp = session.attempts.reduce(function(sum,a){ return sum+a.xp; }, 0);
+        finishSub.textContent = session.attempts.length+" logged · "+sessionXp+" XP so far";
+      }
+    }
+  }
+
+  var historyExpanded = false;
+  function renderHome(){
+    renderCharacterCard();
+    var advanced = state.settings.mode==="advanced";
+    document.querySelector(".profile-card").hidden = !advanced;
+
+    var need = xpForLevel(state.level);
+    var pct = Math.min(100,(state.xp/need)*100);
+    document.getElementById("profileRing").style.setProperty("--pct", pct);
+    document.getElementById("ringLevel").textContent = state.level;
+    document.getElementById("psXpLabel").textContent = state.xp+" / "+need+" XP";
+    document.getElementById("psXpFill").style.width = pct+"%";
+    document.getElementById("psStreakNow").textContent = state.streak;
+    document.getElementById("psStreakBest").textContent = state.longestStreak;
+    document.getElementById("psFlash").textContent = state.counts.flash;
+    document.getElementById("psSend").textContent = state.counts.send;
+    document.getElementById("psFall").textContent = state.counts.fall;
+    document.getElementById("startCtaSub").textContent = state.timerDefaults.workSec+"s work / "+state.timerDefaults.restSec+"s rest";
+
+    var ended = state.sessions.filter(function(s){ return s.endedAt; })
+      .sort(function(a,b){ return b.startedAt-a.startedAt; });
+    var wrap = document.getElementById("historyList");
+    var expandBtn = document.getElementById("historyExpandBtn");
+    var cap = (!advanced && !historyExpanded) ? 3 : ended.length;
+    var shown = ended.slice(0, cap);
+    if(ended.length===0){
+      wrap.innerHTML = '<div class="empty-state">Your sessions will show up here once you finish one.</div>';
+    } else {
+      wrap.innerHTML = shown.map(function(s){
+        var d = new Date(s.startedAt);
+        var d1 = d.toLocaleDateString(undefined,{ month:"short", day:"numeric" });
+        var d2 = d.toLocaleTimeString(undefined,{ hour:"numeric", minute:"2-digit" });
+        var counts = { flash:0, send:0, fall:0 };
+        var xpEarned = 0;
+        s.attempts.forEach(function(a){ counts[a.result]++; xpEarned += a.xp; });
+        return '<button type="button" class="session-card" data-id="'+s.id+'">'+
+          '<span class="sc-date"><span class="d1">'+d1+'</span><br><span class="d2">'+d2+'</span>'+(s.location?'<span class="sc-location">'+escapeHtml(s.location)+'</span>':'')+'</span>'+
+          '<span class="sc-counts"><span><i class="dot flash"></i>'+counts.flash+'</span><span><i class="dot send"></i>'+counts.send+'</span><span><i class="dot fall"></i>'+counts.fall+'</span></span>'+
+          '<span class="sc-xp">+'+xpEarned+' XP</span>'+
+          '<svg class="sc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>'+
+        '</button>';
+      }).join("");
+      wrap.querySelectorAll(".session-card").forEach(function(btn){
+        btn.addEventListener("click", function(){ showDetail(btn.dataset.id); });
+      });
+    }
+    expandBtn.hidden = advanced || ended.length<=cap;
+    expandBtn.querySelector(".label").textContent = "View all "+ended.length+" sessions";
+  }
+
+  var currentDetailId = null;
+  function renderDetail(id){
+    var s = state.sessions.find(function(x){ return x.id===id; });
+    if(!s) return;
+    var d = new Date(s.startedAt);
+    document.getElementById("detailDate").textContent = d.toLocaleDateString(undefined,{ weekday:"short", month:"short", day:"numeric" });
+    var durMin = s.endedAt ? Math.max(1, Math.round((s.endedAt-s.startedAt)/60000)) : null;
+    document.getElementById("detailMeta").textContent =
+      (s.location ? s.location+" · " : "") +
+      (durMin!==null ? durMin+" min · " : "") + s.timerConfig.workSec+"s work / "+s.timerConfig.restSec+"s rest";
+    var detailRatingRow = document.getElementById("detailRatingRow");
+    var detailRatingLabel = document.getElementById("detailRatingLabel");
+    detailRatingRow.innerHTML = ratingRowHTML(s.satisfaction);
+    wireRatingRow(detailRatingRow, s, detailRatingLabel);
+    detailRatingLabel.textContent = s.satisfaction ? SATISFACTION_LABELS[s.satisfaction-1] : "Tap to rate how it felt";
+
+    var counts = { flash:0, send:0, fall:0 }, xpEarned = 0;
+    s.attempts.forEach(function(a){ counts[a.result]++; xpEarned += a.xp; });
+    document.getElementById("detailStats").innerHTML =
+      '<div class="stat-tile flash"><div class="n">'+counts.flash+'</div><div class="l">Flash</div></div>'+
+      '<div class="stat-tile send"><div class="n">'+counts.send+'</div><div class="l">Send</div></div>'+
+      '<div class="stat-tile fall"><div class="n">'+counts.fall+'</div><div class="l">Fall</div></div>'+
+      '<div class="stat-tile"><div class="n">'+xpEarned+'</div><div class="l">XP earned</div></div>';
+
+    var list = document.getElementById("detailAttemptList");
+    list.innerHTML = s.attempts.length ? s.attempts.map(function(a){
+      var html = attemptRowHTML(a, true);
+      if(editingAttemptId===a.id) html += attemptEditorHTML(a);
+      return html;
+    }).join("") : '<li class="empty-note">No attempts were logged in this session.</li>';
+    list.querySelectorAll(".attempt-row-clickable").forEach(function(row){
+      row.addEventListener("click", function(){
+        var id2 = row.dataset.attemptId;
+        editingAttemptId = (editingAttemptId===id2) ? null : id2;
+        renderDetail(currentDetailId);
+      });
+      row.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); row.click(); } });
+    });
+    if(editingAttemptId){
+      var editorEl = list.querySelector(".attempt-editor-wrap");
+      var editingAttempt = s.attempts.find(function(x){ return x.id===editingAttemptId; });
+      if(editorEl && editingAttempt){
+        wireAttemptEditor(editorEl, s, editingAttempt, function(){ renderDetail(currentDetailId); });
+      } else {
+        editingAttemptId = null;
+      }
+    }
+
+    var noteInput = document.getElementById("detailNoteInput");
+    if(document.activeElement!==noteInput) noteInput.value = s.note||"";
+    var detailLocInput = document.getElementById("detailLocationInput");
+    if(document.activeElement!==detailLocInput) detailLocInput.value = s.location||"";
+    refreshLocationList();
+    renderPhotoStrip(document.getElementById("detailPhotoStrip"), s);
+  }
+  function showDetail(id){
+    currentDetailId = id;
+    editingAttemptId = null;
+    resetDeleteSessionConfirm();
+    renderDetail(id);
+    switchView("detail");
+  }
+
+  /* ---------------- deleting a whole session ---------------- */
+  var deletingSession = false;
+  function resetDeleteSessionConfirm(){
+    deletingSession = false;
+    var btn = document.getElementById("deleteSessionBtn");
+    if(btn) btn.querySelector(".label").textContent = "Delete this session";
+  }
+  function deleteCurrentDetailSession(){
+    var idx = state.sessions.findIndex(function(x){ return x.id===currentDetailId; });
+    if(idx===-1) return;
+    state.sessions.splice(idx,1);
+    if(state.activeSessionId===currentDetailId) state.activeSessionId=null;
+    recomputeProfile();
+    saveState();
+    showToast("Session deleted");
+    switchView("home");
+  }
+
+  /* ---------------- photos ---------------- */
+  var assetsNS = null;
+  function initAssets(){
+    if(!(window.claude && typeof window.claude.use==="function")){ return; }
+    window.claude.use("assets").then(function(ns){
+      assetsNS = ns;
+      refreshPhotoUI();
+    }).catch(function(){ assetsNS = null; });
+  }
+  function refreshPhotoUI(){
+    var canEdit = !!assetsNS;
+    var b1 = document.getElementById("addPhotoBtn"); if(b1) b1.hidden = !canEdit;
+    var b2 = document.getElementById("detailAddPhotoBtn"); if(b2) b2.hidden = !canEdit;
+    var activeS = getActiveSession();
+    if(activeS && !document.getElementById("view-session").hidden){
+      renderPhotoStrip(document.getElementById("sessionPhotoStrip"), activeS);
+    }
+    if(currentDetailId && !document.getElementById("view-detail").hidden){
+      var s = state.sessions.find(function(x){ return x.id===currentDetailId; });
+      if(s) renderPhotoStrip(document.getElementById("detailPhotoStrip"), s);
+    }
+  }
+  // Shared by session-level media and per-attempt media — `holder` is whichever object
+  // (a session or a single attempt) owns the `.photos` array.
+  function renderPhotoStrip(container, holder){
+    if(!container) return;
+    var items = holder.photos || [];
+    var canEdit = !!assetsNS;
+    container.innerHTML = items.map(function(p){
+      var isVideo = !!(p.type && p.type.indexOf("video/")===0);
+      var mediaHtml = isVideo
+        ? '<video src="'+p.url+'" muted playsinline preload="metadata"></video><span class="photo-play" aria-hidden="true">▶</span>'
+        : '<img src="'+p.url+'" alt="Climb media" loading="lazy">';
+      return '<div class="photo-thumb" data-url="'+p.url+'" data-video="'+isVideo+'">'+mediaHtml+
+        (canEdit ? '<button type="button" class="photo-remove" data-id="'+p.id+'" aria-label="Remove">×</button>' : '')+
+      '</div>';
+    }).join("");
+    container.querySelectorAll(".photo-thumb").forEach(function(thumb){
+      thumb.addEventListener("click", function(e){
+        if(e.target.closest(".photo-remove")) return;
+        openLightbox(thumb.dataset.url, thumb.dataset.video==="true");
+      });
+    });
+    if(canEdit){
+      container.querySelectorAll(".photo-remove").forEach(function(btn){
+        btn.addEventListener("click", function(e){
+          e.stopPropagation();
+          removePhoto(holder, btn.dataset.id, container);
+        });
+      });
+    }
+  }
+  function removePhoto(holder, id, container){
+    var items = holder.photos || [];
+    var idx = items.findIndex(function(p){ return p.id===id; });
+    if(idx===-1) return;
+    var photo = items[idx];
+    items.splice(idx,1);
+    saveState();
+    renderPhotoStrip(container, holder);
+    if(assetsNS){ assetsNS.delete(photo.id).catch(function(){}); }
+  }
+  function addPhotos(holder, fileList, container, btn){
+    if(!assetsNS || !fileList || !fileList.length) return;
+    holder.photos = holder.photos || [];
+    var files = Array.prototype.slice.call(fileList);
+    btn.disabled = true;
+    var original = btn.textContent;
+    btn.textContent = "Uploading…";
+    var chain = Promise.resolve();
+    files.forEach(function(file){
+      chain = chain.then(function(){
+        return assetsNS.upload(file).then(function(res){
+          holder.photos.push({ id:res.id, url:res.url, type:res.contentType||file.type||"", addedAt:Date.now() });
+          saveState();
+          renderPhotoStrip(container, holder);
+        }).catch(function(){ showToast("Couldn't upload — try again"); });
+      });
+    });
+    chain.then(function(){ btn.disabled=false; btn.textContent=original; });
+  }
+  function openLightbox(url, isVideo){
+    var content = document.getElementById("lightboxContent");
+    content.innerHTML = isVideo
+      ? '<video src="'+url+'" controls autoplay playsinline></video>'
+      : '<img src="'+url+'" alt="Climb media">';
+    document.getElementById("mediaLightboxOverlay").hidden = false;
+  }
+  function closeLightbox(){
+    document.getElementById("mediaLightboxOverlay").hidden = true;
+    document.getElementById("lightboxContent").innerHTML = "";
+  }
+
+  function tapPop(el){
+    el.classList.remove("tap-pop");
+    void el.offsetWidth; // restart the animation even on a rapid repeat click
+    el.classList.add("tap-pop");
+  }
+
+  function pulseLevelBadge(){
+    var el = document.getElementById("lvBadge");
+    el.classList.remove("levelup");
+    void el.offsetWidth;
+    el.classList.add("levelup");
+  }
+  function popBadge(id){
+    var el = document.getElementById("badge-"+id);
+    if(!el) return;
+    el.classList.add("pop");
+    setTimeout(function(){ el.classList.remove("pop"); }, 550);
+  }
+  function showToast(msg){
+    var stack = document.getElementById("toastStack");
+    var t = document.createElement("div");
+    t.className = "toast"; t.textContent = msg;
+    stack.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3100);
+  }
+
+  /* ---------------- session satisfaction rating ---------------- */
+  // Shared by the end-of-session summary and the session detail view — tap a peak to
+  // rate, tap it again to clear. No submit step; it just saves as you tap.
+  function ratingRowHTML(value){
+    var html = "";
+    for(var i=1;i<=5;i++){
+      html += '<button type="button" class="rating-star'+(value && i<=value ? " filled" : "")+'" data-val="'+i+'" aria-label="Rate '+i+' of 5">'+iconMountain()+'</button>';
+    }
+    return html;
+  }
+  function wireRatingRow(container, session, labelEl){
+    container.querySelectorAll(".rating-star").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = parseInt(btn.dataset.val,10);
+        session.satisfaction = (session.satisfaction===v) ? null : v;
+        saveState();
+        container.innerHTML = ratingRowHTML(session.satisfaction);
+        wireRatingRow(container, session, labelEl);
+        if(labelEl) labelEl.textContent = session.satisfaction ? SATISFACTION_LABELS[session.satisfaction-1] : "Tap to rate how it felt";
+      });
+    });
+  }
+
+  /* ---------------- Crimpet: the climber character ---------------- */
+  // An idle-game layer on top of real data — no separate currency, no games (yet). Stage is
+  // purely derived from your actual level; mood is purely derived from how recently you last
+  // climbed. Art is real illustration (hand-picked, not generated by this code), uploaded as
+  // artifact assets. Each stage carries its own hop cycle now, not a single shared one — the
+  // gear you've earned stays visible through the jump instead of the hop reverting to bare
+  // rock. hopLift/hopProgress are hand-tuned per frame count: Chalkling's 8-frame arc reads
+  // the jump mostly through the art itself (small assist values); the 5-frame sets need a
+  // more explicit curve since there's less art to carry it. Crimper and Dynomite share one
+  // outfit (art commissioned as three tiers, not four) — a fourth, distinct look for
+  // Dynomite is a clean drop-in later, just its own hopFrames/img on that entry.
+  var HOP8_LIFT     = [0, 0, -2, -5, -8, -5, -1, 0];
+  var HOP8_PROGRESS = [0, 0, 0.06, 0.32, 0.58, 0.82, 0.98, 1];
+  var HOP5_LIFT     = [0, -8, -24, -20, -2];
+  var HOP5_PROGRESS = [0, 0.2, 0.55, 0.85, 1];
+  var CRIMPER_HOP_FRAMES = [
+    "/_blob/7694fa848ec8ad0961fca59c17fb91ab", // 1. resting, settled
+    "/_blob/5300dec8a8ec36fd151921a052c48e02", // 2. launch, dust kicking off
+    "/_blob/061f3b6259c590dc4cac60c2a4c067a6", // 3. peak of the hop
+    "/_blob/61a67338d14392fcd3c430213f684f77", // 4. peak, starting to fall
+    "/_blob/222cb2d86ec4e1206b198eca3906286c"  // 5. landing, dust
+  ];
+  // minLevel gates pulled in from 1/5/10/20/35 — combined with the lighter xpForLevel above,
+  // these come noticeably sooner without needing yet another number to tune independently.
+  var CHARACTER_STAGES = [
+    { id:"chalkling",    minLevel:1,  name:"Chalkling",     img:"/_blob/b7736dcb771e7095da5875f205b225be", props:[],
+      hopFrameMs:100, hopLift:HOP8_LIFT, hopProgress:HOP8_PROGRESS, hopFrames:[
+        "/_blob/b7736dcb771e7095da5875f205b225be",
+        "/_blob/3e48d0b9fc434dc941a41dd189688d59",
+        "/_blob/991dafcf4f874a5b7bf8826068c4cb9e",
+        "/_blob/d9b889269b42af6b27873896515ac998",
+        "/_blob/7cef8b6c3e6b494fb76755fc91216e11",
+        "/_blob/3d5d933731f86c4ab8ce1e58c9cadf83",
+        "/_blob/2cbb7b7f4edf4b92b2dccaa4c4562d34",
+        "/_blob/95bedb4d3e84d33b9d646ddc17f98552"
+      ] },
+    { id:"boulderbud",   minLevel:4,  name:"Boulder Bud",   img:"/_blob/60a1e78bc8d76d149bee708e543dc1e7", props:["pad"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:[
+        "/_blob/60a1e78bc8d76d149bee708e543dc1e7",
+        "/_blob/116deba8cdb81258077409060037100c",
+        "/_blob/afb9d6d8c17cfaf542f2f9a7f3b44f3e",
+        "/_blob/35f418effc12675a499d527fd21c379f",
+        "/_blob/5fd9de7e24179badd4ee91e11b33b9c2"
+      ] },
+    { id:"crimper",      minLevel:8,  name:"Crimper",       img:"/_blob/7694fa848ec8ad0961fca59c17fb91ab", props:["pad","holds"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:CRIMPER_HOP_FRAMES },
+    { id:"dynomite",     minLevel:15, name:"Dynomite",      img:"/_blob/7694fa848ec8ad0961fca59c17fb91ab", props:["pad","holds","plant"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:CRIMPER_HOP_FRAMES },
+    { id:"summitfriend", minLevel:25, name:"Summit Friend", img:"/_blob/36158f3abc0e3bb69cd91bf3cd728452", props:["pad","holds","plant","lights"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:[
+        "/_blob/36158f3abc0e3bb69cd91bf3cd728452",
+        "/_blob/08c1f0b4ecf7f5951b176ba1546400a8",
+        "/_blob/4890dc73ce58f599b3d8e664cc91afcc",
+        "/_blob/f42c13635ae5c270ca322951d19dfac2",
+        "/_blob/b55ec8ff0d3ce65de9850353c75399da"
+      ] }
+  ];
+  // Customizable, not automatic: level still gates what's *available*, but which unlocked
+  // look/environment actually shows is a separate, independent choice (character.selectedX
+  // in state) — null means "auto," always following your newest unlock, same as before.
+  function unlockedCharacterStages(){
+    return CHARACTER_STAGES.filter(function(s){ return state.level>=s.minLevel; });
+  }
+  function selectedCharacterStage(){
+    var unlocked = unlockedCharacterStages();
+    var sel = state.character.selectedStageId;
+    var match = null;
+    unlocked.forEach(function(s){ if(s.id===sel) match=s; });
+    return match || unlocked[unlocked.length-1];
+  }
+  // The scene behind Crimpet — simple code-drawn props, not illustration, but it's what
+  // gives "popping around in an environment" real meaning: a floor to wander on and gear
+  // that accumulates on the same schedule as Crimpet's own gear.
+  // ---- the room: walls + floor + objects, Animal Crossing style, not one painted scene ----
+  // A single flat illustration can't grow with you — it can't show off gear you've actually
+  // earned, and there's nowhere for individually-unlocked furniture pieces to go. A real room
+  // can: wallColor/floorColor set the shell (solid for now; wallImg/floorImg are there for a
+  // tileable wallpaper/flooring texture whenever one exists), decorSVG draws one small
+  // distinctive fixture per gym so each still reads as its own place without needing full
+  // illustration, and Crimpet's own earned gear (pad/holds/plant/lights, unchanged from
+  // before — still tied to CHARACTER_STAGES, not the room) gets placed like real objects:
+  // holds bolted to the wall, a pad and a potted plant sitting on the floor. `props` is where
+  // real modular pieces (from the reference sheet, once genuinely transparent) get placed
+  // later — [{ img, x, y, w }] in percent-of-scene — layered as <img> on top of this SVG room,
+  // no rework needed here when that day comes.
+  var ROOM_VB_W = 200, ROOM_VB_H = 240, ROOM_FLOOR_Y = 192; // floor starts 80% down the room
+  function roomDecorSVG(env){
+    switch(env.id){
+      case "garage": // pegboard with a couple of tool hooks — DIY, unfinished
+        return '<rect x="146" y="34" width="34" height="46" rx="2" fill="none" stroke="var(--border)" stroke-width="1.4"/>'+
+          [0,1,2].map(function(i){ return '<circle cx="'+(154+i*10)+'" cy="'+(44+((i%2)*14))+'" r="1.6" fill="var(--border)"/>'+
+            '<path d="M'+(154+i*10)+' '+(44+((i%2)*14))+' v8" stroke="var(--border)" stroke-width="1.2"/>'; }).join("");
+      case "homewall": // a framed photo on the wall — lived-in, personal
+        return '<rect x="150" y="40" width="30" height="24" rx="1.5" fill="var(--surface)" stroke="var(--border)" stroke-width="1.6"/>'+
+          '<path d="M154 60 l7-9 5 6 4-5 6 8z" fill="none" stroke="var(--text-dim)" stroke-width="1.2" stroke-linejoin="round"/>';
+      case "local": // one bold angled panel — the faceted modern wall
+        return '<path d="M120 0 L200 0 L200 130 Z" fill="var(--accent)" opacity="0.14"/>'+
+          '<path d="M120 0 L200 130" stroke="var(--accent)" stroke-width="1.6" opacity="0.4"/>';
+      case "mtnclub": // the big window on a mountain view — this one's the signature
+        return '<rect x="118" y="18" width="66" height="56" rx="2" fill="#B9D4E8" opacity="0.9"/>'+
+          '<path d="M118 60 L140 34 L154 52 L166 30 L184 58 L184 74 L118 74 Z" fill="#7C93A8"/>'+
+          '<rect x="118" y="18" width="66" height="56" rx="2" fill="none" stroke="var(--border)" stroke-width="2"/>'+
+          '<line x1="151" y1="18" x2="151" y2="74" stroke="var(--border)" stroke-width="1.4"/>';
+      case "dreamgym": // a skylight washing the top of the room in soft light
+        return '<path d="M100 0 L200 0 L200 30 L100 46 Z" fill="#EAF4F2" opacity="0.16"/>'+
+          '<path d="M100 46 L200 30" stroke="var(--border)" stroke-width="1.4"/>'+
+          '<path d="M133 15 L143 43 M166 6 L173 38" stroke="var(--border)" stroke-width="1" opacity="0.6"/>';
+      default: return "";
+    }
+  }
+  // A real tileable texture (wallImg/floorImg) repeats via an SVG pattern instead of the
+  // flat wallColor/floorColor fill — same tile size for both since the first pair (Garage)
+  // shares one crop aspect; revisit if a later texture comes in a different ratio.
+  var ROOM_TILE_W = 60, ROOM_TILE_H = 30;
+  function tiledFillSVG(defs, id, imgUrl){
+    defs.push('<pattern id="'+id+'" patternUnits="userSpaceOnUse" width="'+ROOM_TILE_W+'" height="'+ROOM_TILE_H+'">'
+      + '<image href="'+imgUrl+'" x="0" y="0" width="'+ROOM_TILE_W+'" height="'+ROOM_TILE_H+'" preserveAspectRatio="none"/></pattern>');
+    return 'url(#'+id+')';
+  }
+  // ---- The Garage: static back layer is now a real painted photo (see GARAGE_BG_IMG),
+  // replacing the earlier procedural wood/lamp/shelf placeholder wholesale. This function
+  // draws ONLY that image plus Crimpet's own gated gear (lights/holds/plant/pad — unchanged
+  // unlock logic, coordinates hand-tuned against the new photo so they sit on the wall/floor
+  // rather than floating). It does NOT draw decorations or Room Lab objects — those are
+  // separate DOM layers (#sceneLayers / #roomLabLayer) rendered on top by
+  // renderSceneEnvironment(), untouched by this change. The other 4 gyms are untouched and
+  // still fall through to the plain flat-color roomSVG below.
+  var GARAGE_BG_IMG = "/_blob/065027a2c9a922d690e45df4c3877299";
+  // The source photo (941x1672) is taller/narrower than our 200x240 viewBox, so it's scaled
+  // by width (200/941) and shifted vertically so the photo's own floor line lands at
+  // y=192 — the same ROOM_FLOOR_Y convention every accessory/decoration default and
+  // detectSurface()'s floor threshold already assume. Picked by sampling the source image's
+  // actual floor transition, not eyeballed, so existing item positions still read as
+  // "on the floor" against the new art.
+  var GARAGE_BG_W = 200, GARAGE_BG_H = 355.4, GARAGE_BG_Y = -63;
+  // Real illustrated art for Crimpet's own gear reads far better against the painted photo
+  // than a flat drawn shape. Having the same hold/pad model appear twice in one room (once
+  // here, once as an optional Decorate accessory) is normal for a real climbing space, not a
+  // duplicate-looking glitch — except the unfolded pad below, which is a different pose from
+  // the standing "Crash Pad" decoration specifically so the two never look like an exact copy.
+  var GEAR_HOLD_A_IMG = "/_blob/ae46fb6b9ff3f78e3a614905d7fd0149"; // small green hold
+  var GEAR_HOLD_B_IMG = "/_blob/a808d5a20dae5066e8dc531814e43c72"; // small yellow hold
+  var GEAR_PLANT_IMG = "/_blob/836bafc9ec9167f2827a14e5d01b5375";
+  var GEAR_PAD_IMG = "/_blob/800277ddae1fd117340228af0e7b1069"; // real unfolded crash pad
+  var GEAR_LIGHTS_IMG = "/_blob/7a069e331e38814e895c82b86e010c40"; // real string lights
+  function garageSceneSVG(charStage){
+    var has = function(g){ return charStage.props.indexOf(g)>-1; };
+    var p = [];
+    p.push('<image href="'+GARAGE_BG_IMG+'" x="0" y="'+GARAGE_BG_Y+'" width="'+GARAGE_BG_W+'" height="'+GARAGE_BG_H+'" preserveAspectRatio="none"/>');
+    // Crimpet's own earned gear — unchanged unlock logic, repositioned to sit on the photo's
+    // actual wall/floor instead of the old procedural one.
+    if(has("lights")){ // real string-light art, replacing the earlier flat glow dots
+      p.push('<image href="'+GEAR_LIGHTS_IMG+'" x="55" y="2" width="90" height="45.3"/>');
+    }
+    if(has("holds")){ // two small illustrated holds — sized down from the earlier oversized pair
+      p.push('<image href="'+GEAR_HOLD_A_IMG+'" x="47" y="94" width="16" height="12"/>');
+      p.push('<image href="'+GEAR_HOLD_B_IMG+'" x="27.5" y="143" width="15" height="14.3"/>');
+    }
+    if(has("plant")){ // just right of the pad, clear of the Arrange/Customize chips in the corner
+      p.push('<ellipse cx="100" cy="227" rx="15" ry="4" fill="#000" opacity="0.22"/>'); // contact shadow
+      p.push('<image href="'+GEAR_PLANT_IMG+'" x="86" y="199" width="28" height="28"/>');
+    }
+    if(has("pad")){ // the real unfolded pad — a different pose from the standing "Crash Pad"
+      // decoration, so unlocking this never looks like the same accessory duplicated
+      p.push('<ellipse cx="50" cy="231" rx="44" ry="7" fill="#000" opacity="0.28"/>'); // contact shadow
+      p.push('<image href="'+GEAR_PAD_IMG+'" x="10" y="197" width="80" height="34.4"/>');
+    }
+    return p.join("");
+  }
+  function roomSVG(env, charStage){
+    if(env.id==="garage") return garageSceneSVG(charStage);
+    var has = function(g){ return charStage.props.indexOf(g)>-1; };
+    var p = [];
+    var defs = [];
+    var wallFill = env.wallImg ? tiledFillSVG(defs, "wallTile", env.wallImg) : env.wallColor;
+    var floorFill = env.floorImg ? tiledFillSVG(defs, "floorTile", env.floorImg) : env.floorColor;
+    if(defs.length) p.push('<defs>'+defs.join("")+'</defs>');
+    // wall + floor shell
+    p.push('<rect x="0" y="0" width="'+ROOM_VB_W+'" height="'+ROOM_FLOOR_Y+'" fill="'+wallFill+'"/>');
+    p.push('<rect x="0" y="'+ROOM_FLOOR_Y+'" width="'+ROOM_VB_W+'" height="'+(ROOM_VB_H-ROOM_FLOOR_Y)+'" fill="'+floorFill+'"/>');
+    p.push('<line x1="0" y1="'+ROOM_FLOOR_Y+'" x2="'+ROOM_VB_W+'" y2="'+ROOM_FLOOR_Y+'" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>');
+    // this gym's one distinctive fixture
+    p.push(roomDecorSVG(env));
+    // Crimpet's own earned gear, placed like real furniture rather than floating icons
+    if(has("lights")){
+      p.push('<path d="M8 8 Q100 22 192 8" stroke="var(--border)" stroke-width="1.4" fill="none"/>');
+      ["accent","flash","send","fall"].forEach(function(c,i){
+        p.push('<circle cx="'+(20+i*54)+'" cy="'+(11+(i%2)*7)+'" r="2.6" fill="var(--'+c+')"/>');
+      });
+    }
+    if(has("holds")){ // bolted to the wall, away from the window/panel side
+      p.push('<ellipse cx="26" cy="96" rx="6.5" ry="5.5" fill="var(--accent)" stroke="var(--text)" stroke-width="1" transform="rotate(-18 26 96)"/>');
+      p.push('<ellipse cx="44" cy="128" rx="5.5" ry="5" fill="#E8DFC9" stroke="var(--border)" stroke-width="1" transform="rotate(12 44 128)"/>');
+      p.push('<ellipse cx="22" cy="150" rx="6" ry="5" fill="var(--send)" stroke="var(--text)" stroke-width="1" transform="rotate(-8 22 150)"/>');
+    }
+    if(has("plant")){ // potted, standing on the floor
+      var px=168, py=ROOM_FLOOR_Y;
+      p.push('<path d="M'+px+' '+py+' Q'+(px-6)+' '+(py-20)+' '+px+' '+(py-32)+'" stroke="var(--send)" stroke-width="2.2" fill="none" stroke-linecap="round"/>');
+      p.push('<path d="M'+px+' '+py+' Q'+(px+7)+' '+(py-18)+' '+px+' '+(py-28)+'" stroke="var(--send)" stroke-width="2.2" fill="none" stroke-linecap="round"/>');
+      p.push('<path d="M'+(px-9)+' '+py+' h18 l-3 16 h-12 z" fill="#E8DFC9" stroke="var(--border)" stroke-width="1.4"/>');
+    }
+    if(has("pad")){ // lying on the floor — kept clear of the card's own rounded corner
+      p.push('<rect x="22" y="'+(ROOM_VB_H-24)+'" width="44" height="16" rx="3" fill="#E8DFC9" stroke="var(--border)" stroke-width="1.4"/>');
+    }
+    return p.join("");
+  }
+
+  // ---- gyms: unlockable rooms, chosen independently of Crimpet's own look ----
+  // Gated by level for now (same currency as Crimpet's stages) — swap the condition inside
+  // unlockedEnvironments() later if XP, sessions, or a badge should unlock these instead;
+  // nothing else here needs to change. minLevel gates pulled in from the original
+  // 1/10/20/30/50, same reasoning as CHARACTER_STAGES — gyms still unlock a bit slower than
+  // looks (matching the original spacing), just not absurdly slower.
+  var ENVIRONMENTS = [
+    { id:"garage",   name:"The Garage",      minLevel:1,  wallColor:"#C9A876", floorColor:"#8B8378",
+      wallImg:"/_blob/1539353a54bfd43eb8d646acddd78e3f", floorImg:"/_blob/05021e4a15ac9579c96b9e6b7c05e8f7", props:[] },
+    { id:"homewall", name:"Home Wall",       minLevel:8,  wallColor:"#A8763F", floorColor:"#6B5744", wallImg:null, floorImg:null, props:[] },
+    { id:"local",    name:"The Local",       minLevel:15, wallColor:"#B8AFA0", floorColor:"#3E3A35", wallImg:null, floorImg:null, props:[] },
+    { id:"mtnclub",  name:"The Mountain Club", minLevel:24, wallColor:"#8CA0B3", floorColor:"#C4BCA8", wallImg:null, floorImg:null, props:[] },
+    { id:"dreamgym", name:"The Dream Gym",   minLevel:40, wallColor:"#3F4A45", floorColor:"#A8896B", wallImg:null, floorImg:null, props:[] }
+    // Real modular pieces (wall modules, pads, plants, gear, signs, furniture — the reference
+    // sheet with dozens of them) go in a given room's `props` array as { img, x, y, w }
+    // (percent-of-scene) once they exist with genuine alpha transparency; see the note where
+    // that sheet was checked — it currently isn't. wallImg/floorImg take a tileable texture
+    // the same way, replacing the flat wallColor/floorColor fill for that room only.
+  ];
+  function unlockedEnvironments(){
+    return ENVIRONMENTS.filter(function(e){ return state.level>=e.minLevel; });
+  }
+  function selectedEnvironment(){
+    var unlocked = unlockedEnvironments();
+    var sel = state.character.selectedEnvironmentId;
+    var match = null;
+    unlocked.forEach(function(e){ if(e.id===sel) match=e; });
+    return match || unlocked[unlocked.length-1];
+  }
+
+  // ---- decorations: real modular pieces, freely toggled on/off, not level-gated ----
+  // First real assets from the reference-sheet redo — actual alpha this time. Each has a
+  // sensible preset position (percent-of-scene, same coordinate space as ENVIRONMENTS.props)
+  // but that's just the default — Arrange mode (below) lets you drag any active piece
+  // anywhere in the scene, and the override is saved per accessory id. Applies in whatever
+  // gym is selected, since these are yours, not the room's.
+  var ACCESSORIES = [
+    { id:"haybail",     name:"Hay Bail",     img:"/_blob/4eca611abe9f2b433110ed0e580e9f83", x:4,  y:81, w:24 },
+    { id:"crashpad2",   name:"Crash Pad",    img:"/_blob/0ec6b0ad049d53866f7f02a54b0c9e8a", x:34, y:78, w:26 },
+    { id:"chalkbag",    name:"Chalk Bag",    img:"/_blob/31293a4e86cec9f3a07516f55d960bb8", x:58, y:74, w:16 },
+    { id:"pottedplant2",name:"Potted Plant", img:"/_blob/836bafc9ec9167f2827a14e5d01b5375", x:6,  y:64, w:16 },
+    { id:"jug",         name:"Jug Hold",     img:"/_blob/2cfc0395a8333ce1661ac5ddb21c6f4a", x:48, y:16, w:18 },
+    { id:"slottedhold", name:"Slotted Hold", img:"/_blob/4a338f1911e4e70ee10fccacd4229bc4", x:64, y:36, w:15 },
+    { id:"foothold",    name:"Foothold",     img:"/_blob/bb602a94f87da85ac8530ba5f51b80ef", x:78, y:52, w:15 },
+    // Illustrated Garage set — holds sized small and sampled against the real photo so they
+    // read as bolted to the woody rather than floating; wall/floor pieces placed the same way.
+    { id:"holdred",     name:"Red Hold",      img:"/_blob/d3eb8091ec354d3eb61f29fa56c40716", x:31.5, y:21.5,  w:7  },
+    { id:"holdblue",    name:"Blue Hold",     img:"/_blob/8712287a69f7e49c1edb149f6b32476a", x:19,   y:29.8,  w:7  },
+    { id:"holdyellowtri",name:"Yellow Hold",  img:"/_blob/ec9d4375521cffe8d1bc94c3417dd6ae", x:27,   y:51.2,  w:6  },
+    { id:"holdgreentri",name:"Green Hold",    img:"/_blob/e6baacf209c407c4e311b3b52f517727", x:9.5,  y:42.8,  w:6  },
+    { id:"holdpurple",  name:"Purple Hold",   img:"/_blob/cc1e47e4c907a97268acea6845d98227", x:22,   y:67.8,  w:6  },
+    { id:"holdgray",    name:"Gray Hold",     img:"/_blob/244dfba43e7705f8d81c5517d295589f", x:12,   y:74.1,  w:6  },
+    { id:"holdvolume",  name:"Wall Volume",   img:"/_blob/6749f3f8422e43189dd018899f200da6", x:27.5, y:13.75, w:10 },
+    { id:"hangboard",   name:"Hangboard",     img:"/_blob/200fbf4df0909564b7bcb2e00e55ff84", x:48,   y:19,    w:28 },
+    { id:"artprint",    name:"Mountain Print",img:"/_blob/756709da6e5dab92a39fb038e737ee54", x:61.5, y:36.65, w:13 },
+    { id:"wallshelf",   name:"Wall Shelf",    img:"/_blob/c939389ec5775e35abbf5603e59e46c6", x:8,    y:47.25, w:20 },
+    { id:"climbshoes",  name:"Climbing Shoes",img:"/_blob/86f58628d2ca798e02e666e64732519d", x:60.5, y:83.24, w:9  },
+    { id:"gearbag",     name:"Gear Bag",      img:"/_blob/b5d2e7dbfb0b066f07d33f67a0841da7", x:60,   y:62.28, w:16 }
+  ];
+  function activeDecorations(){
+    var on = state.character.decorations||[];
+    return ACCESSORIES.filter(function(a){ return on.indexOf(a.id)>-1; });
+  }
+  // A dragged position overrides the accessory's preset x/y; nothing dragged yet just
+  // falls back to the preset, so old saves with no decorPositions entry render unchanged.
+  function decorPosition(a){
+    var overrides = state.character.decorPositions || {};
+    var o = overrides[a.id];
+    return o ? { x:o.x, y:o.y } : { x:a.x, y:a.y };
+  }
+  // ---- Room Lab: a simple room-placement system, tested with throwaway colored squares ----
+  // Three invisible attachment surfaces for the Garage. Nothing is drawn for these — they're
+  // purely a hit-test region used to classify wherever a square gets dropped. Rough
+  // rectangles, not perspective-aware: good enough to prove out surfaceId/x/y/scale/rotation
+  // as real, persisted data before any real object system gets built on top of it.
+  var ROOM_SURFACES = [
+    { id:"climbingWall", name:"Climbing Wall" },
+    { id:"backWall",     name:"Back Wall" },
+    { id:"floor",        name:"Floor" }
+  ];
+  function detectSurface(xPct, yPct){
+    if(yPct>=80) return "floor";
+    if(xPct>=9 && xPct<=79) return "climbingWall"; // the leaning wall's rough bounding box
+    return "backWall"; // everything above the floor, off to either side of the wall
+  }
+  function surfaceName(id){
+    var match = ROOM_SURFACES.filter(function(s){ return s.id===id; })[0];
+    return match ? match.name : id;
+  }
+  var LAB_COLORS = ["#E0574A","#3FA9A0","#4C8C4A","#D9B23C","#7B5EA7"];
+  function renderRoomLab(){
+    var host = document.getElementById("roomLabLayer");
+    var objs = state.character.roomLab||[];
+    host.innerHTML = objs.map(function(o){
+      return '<div class="lab-square" data-lab-id="'+o.id+'" style="left:'+o.x+'%;top:'+o.y+'%;'+
+        'width:'+(10*o.scale)+'%;transform:translate(-50%,-50%) rotate('+o.rotation+'deg);background:'+o.color+';"></div>';
+    }).join("");
+    renderRoomLabList();
+  }
+  function renderRoomLabList(){
+    var list = document.getElementById("roomLabList");
+    if(!list) return; // modal markup not built yet on first call
+    var objs = state.character.roomLab||[];
+    if(!objs.length){
+      list.innerHTML = '<p class="environment-hint">No test squares yet — tap a color above to add one, then drag it in the scene.</p>';
+      return;
+    }
+    list.innerHTML = objs.map(function(o){
+      return '<div class="lab-row" data-lab-row="'+o.id+'">'+
+        '<span class="lab-swatch" style="background:'+o.color+'"></span>'+
+        '<span class="lab-surface">'+surfaceName(o.surfaceId)+'</span>'+
+        '<div class="lab-controls">'+
+          '<button type="button" data-lab-act="rotate-" aria-label="Rotate left">⟲</button>'+
+          '<span class="lab-val">'+o.rotation+'°</span>'+
+          '<button type="button" data-lab-act="rotate+" aria-label="Rotate right">⟳</button>'+
+          '<button type="button" data-lab-act="scale-" aria-label="Scale down">−</button>'+
+          '<span class="lab-val">'+o.scale.toFixed(1)+'×</span>'+
+          '<button type="button" data-lab-act="scale+" aria-label="Scale up">+</button>'+
+          '<button type="button" data-lab-act="delete" aria-label="Delete test square">✕</button>'+
+        '</div>'+
+      '</div>';
+    }).join("");
+  }
+  (function initRoomLabDrag(){
+    var host = document.getElementById("roomLabLayer");
+    var dragEl = null, dragId = null;
+    host.addEventListener("pointerdown", function(e){
+      var sq = e.target.closest(".lab-square");
+      if(!sq) return;
+      dragEl = sq; dragId = sq.getAttribute("data-lab-id");
+      sq.classList.add("dragging");
+      sq.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    host.addEventListener("pointermove", function(e){
+      if(!dragEl) return;
+      var rect = host.getBoundingClientRect();
+      var x = Math.max(0, Math.min(100, ((e.clientX-rect.left)/rect.width)*100));
+      var y = Math.max(0, Math.min(100, ((e.clientY-rect.top)/rect.height)*100));
+      dragEl.style.left = x+"%";
+      dragEl.style.top = y+"%";
+    });
+    function endDrag(){
+      if(!dragEl) return;
+      var x = parseFloat(dragEl.style.left), y = parseFloat(dragEl.style.top);
+      var objs = state.character.roomLab||[];
+      var o = objs.filter(function(o){ return o.id===dragId; })[0];
+      if(o){
+        o.x = x; o.y = y; o.surfaceId = detectSurface(x,y);
+        saveState();
+        renderRoomLabList(); // just the surface readout — the square's own DOM is already right
+      }
+      dragEl.classList.remove("dragging");
+      dragEl = null; dragId = null;
+    }
+    host.addEventListener("pointerup", endDrag);
+    host.addEventListener("pointercancel", endDrag);
+  })();
+  // Ambient-only effects, independent of the static architecture: a pulsing lamp glow plus a
+  // few drifting dust motes, positioned to match the lamp fixture drawn in garageSceneSVG.
+  // Only the Garage has a lamp fixture to glow from right now, so it's the only one lit up
+  // here — extending this to another gym later is just adding another branch, same pattern
+  // as roomSVG's own env.id switch.
+  function sceneEffectsHTML(env){
+    if(env.id!=="garage") return "";
+    var glowClass = prefersReducedMotion ? "lamp-glow" : "lamp-glow flicker";
+    var glow = '<div class="'+glowClass+'" style="left:76%;top:3%;"></div>';
+    if(prefersReducedMotion) return glow;
+    var motes = [12,30,54,72,90].map(function(x,i){
+      return '<div class="dust-mote" style="left:'+x+'%;top:'+(28+(i%3)*20)+'%;animation-delay:'+(i*1.3)+'s"></div>';
+    }).join("");
+    return glow + motes;
+  }
+  function renderSceneEnvironment(env, charStage){
+    var layerHost = document.getElementById("sceneLayers");
+    var svgRoom = document.getElementById("sceneEnv");
+    svgRoom.innerHTML = roomSVG(env, charStage);
+    document.getElementById("sceneEffects").innerHTML = sceneEffectsHTML(env);
+    renderRoomLab();
+    // Real modular room pieces (env.props, still empty until a room has its own) plus
+    // whatever accessories are toggled on — same layering, same coordinate space. Only
+    // accessories carry a data-decor-id, so Arrange mode's drag handler only picks those
+    // up, never a future room prop.
+    var envPieces = (env.props||[]).map(function(p){
+      return '<img class="scene-layer-img" src="'+p.img+'" style="left:'+p.x+'%;top:'+p.y+'%;width:'+p.w+'%" alt="">';
+    });
+    var decorPieces = activeDecorations().map(function(a){
+      var pos = decorPosition(a);
+      return '<img class="scene-layer-img" data-decor-id="'+a.id+'" src="'+a.img+'" style="left:'+pos.x+'%;top:'+pos.y+'%;width:'+a.w+'%" alt="">';
+    });
+    layerHost.innerHTML = envPieces.concat(decorPieces).join("");
+    // "Next unlock" tracks real progress (how many are unlocked), not this env's own
+    // position — you might have picked an earlier gym to look at while sitting on a much
+    // higher level, and the hint should still reflect what's actually still locked.
+    var envHint = document.getElementById("environmentHint");
+    var nextEnv = ENVIRONMENTS[unlockedEnvironments().length];
+    envHint.hidden = !nextEnv;
+    envHint.textContent = nextEnv ? "Level "+nextEnv.minLevel+": "+nextEnv.name+" unlocks" : "";
+    // Arrange only makes sense once something's actually placed to drag; if the last
+    // piece gets switched off from Customize while mid-arrange, drop out of the mode too
+    // so its button isn't stuck hidden with no way to reach Done.
+    var hasDecor = activeDecorations().length>0;
+    document.getElementById("arrangeToggleBtn").hidden = !hasDecor;
+    if(!hasDecor && arrangeMode) setArrangeMode(false);
+  }
+
+  // ---- Arrange mode: drag any active decoration around the scene, position sticks ----
+  var arrangeMode = false;
+  function setArrangeMode(on){
+    arrangeMode = on;
+    document.getElementById("sceneLayers").classList.toggle("arrange-mode", on);
+    document.getElementById("arrangeToggleBtn").querySelector(".label").textContent = on ? "Done" : "Arrange";
+    document.getElementById("arrangeRow").hidden = !on;
+  }
+  (function initDecorDrag(){
+    var layerHost = document.getElementById("sceneLayers");
+    var dragEl = null, dragId = null;
+    layerHost.addEventListener("pointerdown", function(e){
+      if(!arrangeMode) return;
+      var img = e.target.closest(".scene-layer-img[data-decor-id]");
+      if(!img) return;
+      dragEl = img; dragId = img.getAttribute("data-decor-id");
+      img.classList.add("dragging");
+      // Pointer capture keeps move/up events targeted at this image even once the
+      // pointer drags outside its own (small) box — without it a fast drag loses tracking.
+      img.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    layerHost.addEventListener("pointermove", function(e){
+      if(!dragEl) return;
+      var rect = layerHost.getBoundingClientRect();
+      var x = Math.max(0, Math.min(100, ((e.clientX-rect.left)/rect.width)*100));
+      var y = Math.max(0, Math.min(100, ((e.clientY-rect.top)/rect.height)*100));
+      dragEl.style.left = x+"%";
+      dragEl.style.top = y+"%";
+    });
+    function endDrag(){
+      if(!dragEl) return;
+      var positions = state.character.decorPositions || {};
+      positions[dragId] = { x:parseFloat(dragEl.style.left), y:parseFloat(dragEl.style.top) };
+      state.character.decorPositions = positions;
+      saveState();
+      dragEl.classList.remove("dragging");
+      dragEl = null; dragId = null;
+    }
+    layerHost.addEventListener("pointerup", endDrag);
+    layerHost.addEventListener("pointercancel", endDrag);
+  })();
+
+  // Tamagotchi half of the idea: mood reflects how long it's been since your last session,
+  // not anything you set — the whole point is it's a passive read of real behavior.
+  function daysSinceLastSession(){
+    var lastTs = null;
+    state.sessions.forEach(function(s){
+      var t = s.endedAt || s.startedAt;
+      if(t && (lastTs===null || t>lastTs)) lastTs = t;
+    });
+    if(lastTs===null) return null;
+    return Math.floor((Date.now()-lastTs) / 86400000);
+  }
+  function characterMood(){
+    var d = daysSinceLastSession();
+    if(d===null) return { caption:"Ready when you are." };
+    if(d<=1) return { caption:"Climbed recently — feeling good." };
+    if(d<=3) return { caption:"Resting up between sessions." };
+    return { caption:"It's been "+d+" days — the wall misses you." };
+  }
+  // These track real progress across renders (to fire "new unlock" toasts) separately from
+  // what's currently displayed (to fire the pop animation on a look/env switch) — leveling
+  // up and picking something in Customize are different events that both need feedback.
+  var lastDisplayedStageId = null;
+  var lastUnlockedCharCount = null;
+  var lastUnlockedEnvCount = null;
+  function renderCharacterCard(){
+    var unlockedChar = unlockedCharacterStages();
+    var stage = selectedCharacterStage();
+    var mood = characterMood();
+    var img = document.getElementById("characterStage");
+    var displayChanged = lastDisplayedStageId!==null && stage.id!==lastDisplayedStageId;
+    // Mid-hop the image is showing an animation frame, not the resting portrait — don't
+    // stomp on it. playHop() itself restores the correct portrait once it finishes.
+    if(!isHopping && img.getAttribute("src")!==stage.img) img.src = stage.img;
+    renderSceneEnvironment(selectedEnvironment(), stage);
+    // Quick-glance level badge floating over the art — reuses Crimpet's own current
+    // portrait as the avatar rather than needing a separate asset.
+    var avatarImg = document.getElementById("heroAvatarImg");
+    if(avatarImg.getAttribute("src")!==stage.img) avatarImg.src = stage.img;
+    document.getElementById("heroLevelNum").textContent = state.level;
+    document.getElementById("characterStageName").textContent = stage.name;
+    document.getElementById("characterSub").textContent = "Level "+state.level+" · "+mood.caption;
+    var nextStage = CHARACTER_STAGES[unlockedChar.length];
+    document.getElementById("characterHint").textContent = nextStage
+      ? "Level "+nextStage.minLevel+": "+nextStage.name
+      : "All looks unlocked.";
+    if(displayChanged){
+      img.classList.remove("evolve");
+      void img.offsetWidth;
+      img.classList.add("evolve");
+    }
+    if(lastUnlockedCharCount!==null && unlockedChar.length>lastUnlockedCharCount){
+      showToast("New Crimpet look unlocked: "+unlockedChar[unlockedChar.length-1].name+"!");
+    }
+    lastUnlockedCharCount = unlockedChar.length;
+    lastDisplayedStageId = stage.id;
+
+    var unlockedEnvs = unlockedEnvironments();
+    if(lastUnlockedEnvCount!==null && unlockedEnvs.length>lastUnlockedEnvCount){
+      showToast("New gym unlocked: "+unlockedEnvs[unlockedEnvs.length-1].name+"!");
+    }
+    lastUnlockedEnvCount = unlockedEnvs.length;
+  }
+
+  // ---- the actual hop: a real animation cycle per stage, not a sliding portrait ----
+  // Reads whichever stage is currently displayed (selectedCharacterStage()) at hop time,
+  // so switching looks in Customize also switches which hop plays — no separate wiring.
+  // Without preloading, each frame swap during a hop is a fresh network fetch that usually
+  // can't finish inside its frame window — the browser just keeps showing whatever was
+  // already painted, so the hop reads as "moves, but skips the in-between poses." Warming
+  // the cache up front means every swap during the actual hop is instant.
+  (function preloadCharacterArt(){
+    CHARACTER_STAGES.forEach(function(s){
+      s.hopFrames.forEach(function(src){ var im = new Image(); im.src = src; });
+    });
+    ENVIRONMENTS.forEach(function(e){
+      [e.wallImg, e.floorImg].concat((e.props||[]).map(function(p){ return p.img; })).forEach(function(src){
+        if(src){ var im = new Image(); im.src = src; }
+      });
+    });
+    ACCESSORIES.forEach(function(a){ var im = new Image(); im.src = a.img; });
+    [GARAGE_BG_IMG, GEAR_HOLD_A_IMG, GEAR_HOLD_B_IMG, GEAR_PAD_IMG, GEAR_LIGHTS_IMG].forEach(function(src){
+      var im = new Image(); im.src = src;
+    });
+  })();
+  var isHopping = false;
+  var wanderOffsetX = 0;
+  var prefersReducedMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var autoHopTimerId = null;
+
+  function playHop(){
+    if(isHopping) return;
+    isHopping = true;
+    var stage = selectedCharacterStage();
+    var frames = stage.hopFrames;
+    var img = document.getElementById("characterStage");
+    var wander = document.getElementById("characterWander");
+    var scene = document.getElementById("characterScene");
+    var dir = Math.random()<0.5 ? -1 : 1;
+    var hopDist = 20 + Math.random()*18;
+    // Clamp off the actual rendered size, not a hardcoded px number — the scene is a
+    // responsive (%-based) box now, so this has to hold on a small phone, a wide tablet,
+    // and everything between without ever letting the hop clip out of its habitat.
+    var maxX = Math.max(0, scene.clientWidth/2 - wander.offsetWidth/2 - 6);
+    var startX = Math.max(-maxX, Math.min(maxX, wanderOffsetX));
+    var endX = Math.max(-maxX, Math.min(maxX, startX + dir*hopDist));
+    var frame = 0;
+    (function step(){
+      img.src = frames[frame];
+      var lift = stage.hopLift[frame];
+      var x = startX + (endX-startX)*stage.hopProgress[frame];
+      wander.style.transform = "translateX("+x+"px) translateY("+lift+"px) scaleX("+(dir<0?-1:1)+")";
+      frame++;
+      if(frame<frames.length){
+        setTimeout(step, stage.hopFrameMs);
+      } else {
+        wanderOffsetX = endX;
+        wander.style.transform = "translateX("+endX+"px) translateY(0) scaleX("+(dir<0?-1:1)+")";
+        // Re-read the selected stage rather than reusing the closed-over one — Customize
+        // could have switched looks mid-hop, and the portrait should match whatever's
+        // actually selected now, not what was selected when this hop started.
+        img.src = selectedCharacterStage().img;
+        isHopping = false;
+      }
+    })();
+  }
+  function scheduleAutoHop(){
+    if(prefersReducedMotion) return; // ambient/automatic motion only — tap-to-hop still works
+    autoHopTimerId = setTimeout(function(){
+      if(!document.getElementById("view-home").hidden) playHop();
+      scheduleAutoHop();
+    }, 4500 + Math.random()*3500);
+  }
+
+  /* ---------------- icons ---------------- */
+  function iconMountain(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M2 19 9 6l4 7 2-3 7 9z"/></svg>'; }
+  function iconBolt(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>'; }
+  function iconFlame(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M12 22c4 0 6-2.5 6-6 0-3-2-4.5-2.5-7C15 7 14 5 12 3c0 3-2 4-2 7-1.5-.5-2-2-2-3.5C6.5 8 6 10 6 12c0 4 2 6 6 6z"/></svg>'; }
+  function iconChevrons(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M6 15l6-6 6 6"/></svg>'; }
+  function iconList(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>'; }
+  function iconRebound(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M4 12a8 8 0 1 1 3 6.3M4 12v5h5"/></svg>'; }
+
+  /* ---------------- view switching ---------------- */
+  function switchView(name){
+    editingAttemptId = null; // leaving a view always closes any open attempt editor in it
+    document.getElementById("view-home").hidden = name!=="home";
+    document.getElementById("view-session").hidden = name!=="session";
+    document.getElementById("view-detail").hidden = name!=="detail";
+    if(name==="home") renderHome();
+    if(name==="session"){ render(); renderTimer(); }
+    if(name==="detail" && currentDetailId) renderDetail(currentDetailId);
+    window.scrollTo(0,0);
+  }
+
+  /* ---------------- wiring ---------------- */
+  // One delegated listener gives every chip, log button, session card and the big CTA
+  // its little press-pop — new controls (composer chips, attempt-editor chips) pick it
+  // up automatically without each click handler needing to know about it.
+  document.addEventListener("click", function(e){
+    var el = e.target.closest(".chip, .log-btn, .start-cta, .session-card, .switch, .icon-btn");
+    if(el && !el.disabled) tapPop(el);
+  });
+
+  document.getElementById("startSessionBtn").addEventListener("click", startSession);
+  document.getElementById("endSessionBtn").addEventListener("click", finishSession);
+  document.getElementById("finishSessionBtn").addEventListener("click", finishSession);
+  document.getElementById("endSummaryDoneBtn").addEventListener("click", closeEndSummary);
+  document.getElementById("endSessionOverlay").addEventListener("click", function(e){ if(e.target.id==="endSessionOverlay") closeEndSummary(); });
+  document.getElementById("backFromDetailBtn").addEventListener("click", function(){ switchView("home"); });
+
+  document.getElementById("openSettingsBtn").addEventListener("click", openSettings);
+  document.getElementById("closeSettingsBtn").addEventListener("click", closeSettings);
+  document.getElementById("settingsOverlay").addEventListener("click", function(e){ if(e.target.id==="settingsOverlay") closeSettings(); });
+
+  document.getElementById("characterStage").addEventListener("click", playHop);
+
+  document.getElementById("openProgressBtn").addEventListener("click", openProgress);
+  document.getElementById("closeProgressBtn").addEventListener("click", closeProgress);
+  document.getElementById("progressOverlay").addEventListener("click", function(e){ if(e.target.id==="progressOverlay") closeProgress(); });
+
+  document.getElementById("openDrillsBtn").addEventListener("click", openDrills);
+  document.getElementById("openDrillsFromSessionBtn").addEventListener("click", openDrills);
+  document.getElementById("closeDrillsBtn").addEventListener("click", closeDrills);
+  document.getElementById("drillsOverlay").addEventListener("click", function(e){ if(e.target.id==="drillsOverlay") closeDrills(); });
+
+  document.getElementById("openCustomizeBtn").addEventListener("click", openCustomize);
+  document.getElementById("closeCustomizeBtn").addEventListener("click", closeCustomize);
+  document.getElementById("arrangeToggleBtn").addEventListener("click", function(){ setArrangeMode(!arrangeMode); });
+  document.getElementById("resetLayoutBtn").addEventListener("click", function(){
+    state.character.decorPositions = {};
+    saveState();
+    renderCharacterCard();
+  });
+  document.getElementById("customizeOverlay").addEventListener("click", function(e){ if(e.target.id==="customizeOverlay") closeCustomize(); });
+  document.getElementById("characterPickerGrid").addEventListener("click", function(e){
+    var btn = e.target.closest(".picker-item");
+    if(!btn || btn.disabled) return;
+    var pick = btn.getAttribute("data-pick-char");
+    if(pick===null) return;
+    state.character.selectedStageId = pick==="__auto__" ? null : pick;
+    saveState();
+    renderCharacterCard();
+    renderCustomizeModal();
+  });
+  document.getElementById("environmentPickerGrid").addEventListener("click", function(e){
+    var btn = e.target.closest(".picker-item");
+    if(!btn || btn.disabled) return;
+    var pick = btn.getAttribute("data-pick-env");
+    if(pick===null) return;
+    state.character.selectedEnvironmentId = pick==="__auto__" ? null : pick;
+    saveState();
+    renderCharacterCard();
+    renderCustomizeModal();
+  });
+  document.getElementById("decoratePickerGrid").addEventListener("click", function(e){
+    var btn = e.target.closest(".picker-item");
+    if(!btn) return;
+    var id = btn.getAttribute("data-decor");
+    var on = state.character.decorations||[];
+    var idx = on.indexOf(id);
+    if(idx>-1) on.splice(idx,1); else on.push(id);
+    state.character.decorations = on;
+    saveState();
+    renderCharacterCard();
+    renderCustomizeModal();
+  });
+
+  document.getElementById("labAddRow").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-lab-color]");
+    if(!btn) return;
+    var color = btn.getAttribute("data-lab-color");
+    var x = 50, y = 50; // dropped center-scene by default; dragging it re-detects the surface
+    var objs = state.character.roomLab||[];
+    objs.push({ id:uid(), color:color, surfaceId:detectSurface(x,y), x:x, y:y, scale:1, rotation:0 });
+    state.character.roomLab = objs;
+    saveState();
+    renderRoomLab();
+  });
+  document.getElementById("roomLabList").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-lab-act]");
+    if(!btn) return;
+    var row = e.target.closest("[data-lab-row]");
+    var id = row.getAttribute("data-lab-row");
+    var objs = state.character.roomLab||[];
+    var o = objs.filter(function(o){ return o.id===id; })[0];
+    if(!o) return;
+    switch(btn.getAttribute("data-lab-act")){
+      case "rotate-": o.rotation = (o.rotation-15+360)%360; break;
+      case "rotate+": o.rotation = (o.rotation+15)%360; break;
+      case "scale-": o.scale = Math.max(0.5, Math.round((o.scale-0.1)*10)/10); break;
+      case "scale+": o.scale = Math.min(2, Math.round((o.scale+0.1)*10)/10); break;
+      case "delete": objs = objs.filter(function(x){ return x.id!==id; }); break;
+    }
+    state.character.roomLab = objs;
+    saveState();
+    renderRoomLab();
+  });
+
+  document.getElementById("closeLightboxBtn").addEventListener("click", closeLightbox);
+  document.getElementById("mediaLightboxOverlay").addEventListener("click", function(e){ if(e.target.id==="mediaLightboxOverlay") closeLightbox(); });
+  document.getElementById("themeRow").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip");
+    if(!chip) return;
+    state.settings.theme = chip.dataset.themeVal;
+    saveState(); applyTheme(); renderSettingsModal();
+  });
+  document.getElementById("modeRow").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip");
+    if(!chip) return;
+    state.settings.mode = chip.dataset.modeVal;
+    saveState(); renderSettingsModal();
+    if(!document.getElementById("view-home").hidden) renderHome();
+  });
+  document.getElementById("historyExpandBtn").addEventListener("click", function(){
+    historyExpanded = true;
+    renderHome();
+  });
+  document.querySelectorAll(".switch[data-setting]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var key = btn.dataset.setting;
+      state.settings[key] = !state.settings[key];
+      saveState();
+      renderSettingsModal();
+    });
+  });
+
+  document.getElementById("startBtn").addEventListener("click", function(){ if(timer.running) pauseTimer(); else startTimer(); });
+  document.getElementById("resetBtn").addEventListener("click", resetTimer);
+
+  document.getElementById("workInput").addEventListener("change", function(e){ setWork(e.target.value); });
+  document.getElementById("restInput").addEventListener("change", function(e){ setRest(e.target.value); });
+  document.getElementById("workMinus").addEventListener("click", function(){ setWork(state.timerDefaults.workSec-5); });
+  document.getElementById("workPlus").addEventListener("click", function(){ setWork(state.timerDefaults.workSec+5); });
+  document.getElementById("restMinus").addEventListener("click", function(){ setRest(state.timerDefaults.restSec-5); });
+  document.getElementById("restPlus").addEventListener("click", function(){ setRest(state.timerDefaults.restSec+5); });
+
+  document.getElementById("presets").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip");
+    if(!chip || chip.disabled) return;
+    setWork(parseInt(chip.dataset.work,10));
+    setRest(parseInt(chip.dataset.rest,10));
+  });
+
+  document.getElementById("logFlash").addEventListener("click", function(){ logAttempt("flash"); });
+  document.getElementById("logSend").addEventListener("click", function(){ logAttempt("send"); });
+  document.getElementById("logFall").addEventListener("click", function(){ logAttempt("fall"); });
+
+  document.getElementById("sessionNoteInput").addEventListener("input", debounce(function(e){
+    var s = getActiveSession();
+    if(s){ s.note = e.target.value; saveState(); }
+  }, 350));
+  document.getElementById("sessionLocationInput").addEventListener("input", debounce(function(e){
+    var s = getActiveSession();
+    if(s){ s.location = e.target.value; state.lastLocation = e.target.value; saveState(); }
+  }, 350));
+
+  document.getElementById("detailNoteInput").addEventListener("input", debounce(function(e){
+    var s = state.sessions.find(function(x){ return x.id===currentDetailId; });
+    if(s){ s.note = e.target.value; saveState(); }
+  }, 350));
+  document.getElementById("detailLocationInput").addEventListener("input", debounce(function(e){
+    var s = state.sessions.find(function(x){ return x.id===currentDetailId; });
+    if(s){ s.location = e.target.value; saveState(); }
+  }, 350));
+
+  document.getElementById("addPhotoBtn").addEventListener("click", function(){ document.getElementById("photoFileInput").click(); });
+  document.getElementById("photoFileInput").addEventListener("change", function(e){
+    var s = getActiveSession();
+    if(s) addPhotos(s, e.target.files, document.getElementById("sessionPhotoStrip"), document.getElementById("addPhotoBtn"));
+    e.target.value = "";
+  });
+  document.getElementById("detailAddPhotoBtn").addEventListener("click", function(){ document.getElementById("detailPhotoFileInput").click(); });
+  document.getElementById("detailPhotoFileInput").addEventListener("change", function(e){
+    var s = state.sessions.find(function(x){ return x.id===currentDetailId; });
+    if(s) addPhotos(s, e.target.files, document.getElementById("detailPhotoStrip"), document.getElementById("detailAddPhotoBtn"));
+    e.target.value = "";
+  });
+
+  document.getElementById("deleteSessionBtn").addEventListener("click", function(){
+    if(!deletingSession){
+      deletingSession = true;
+      document.getElementById("deleteSessionBtn").querySelector(".label").textContent = "Really delete? Tap again";
+      setTimeout(function(){ if(deletingSession) resetDeleteSessionConfirm(); }, 3500);
+      return;
+    }
+    deleteCurrentDetailSession();
+  });
+
+  var resetBtn = document.getElementById("resetProgressBtn");
+  var confirming = false;
+  resetBtn.addEventListener("click", function(){
+    if(!confirming){
+      confirming = true;
+      resetBtn.textContent = "Really reset? Tap again";
+      setTimeout(function(){ if(confirming){ confirming=false; resetBtn.textContent="Reset progress"; } }, 3500);
+      return;
+    }
+    confirming = false;
+    state = defaultState();
+    saveState();
+    applyTheme();
+    resetTimer();
+    resetBtn.textContent = "Reset progress";
+    showToast("Progress reset");
+    switchView("home");
+  });
+
+  /* ---------------- init ---------------- */
+  applyTheme();
+  recomputeProfile();
+  saveState();
+  initAssets();
+  scheduleAutoHop();
+  var activeSession = getActiveSession();
+  if(activeSession && !activeSession.endedAt){
+    timer.remaining = activeSession.timerConfig.workSec || state.timerDefaults.workSec;
+    switchView("session");
+  } else {
+    switchView("home");
+  }
+})();
+</script>
