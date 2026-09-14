@@ -263,6 +263,10 @@
   .scene-layers.arrange-mode{pointer-events:auto;}
   .scene-layers.arrange-mode img{cursor:grab;touch-action:none;outline:2px dashed color-mix(in srgb, var(--accent) 65%, transparent);outline-offset:3px;border-radius:6px;}
   .scene-layers.arrange-mode img.dragging{cursor:grabbing;z-index:5;outline-color:var(--accent);filter:drop-shadow(0 5px 10px var(--shadow));}
+  /* Crimpet sits above the decoration layer, and its sprite's box (transparent padding
+     included) covers a large part of the wall — in Arrange mode that swallowed presses meant
+     for props underneath and turned them into hops. While arranging, Crimpet ignores input. */
+  .scene-layers.arrange-mode ~ .character-wander{pointer-events:none;}
   .arrange-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px;flex-wrap:wrap;}
   .arrange-row p{margin:0;}
   /* ---- Room Lab: temporary placement-testing squares, see ROOM_SURFACES in the script ----
