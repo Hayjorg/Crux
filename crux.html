@@ -2532,6 +2532,92 @@
     });
   }
 
+  /* ---------------- image assets ---------------- */
+  // Every production image is defined here, once. Each entry pairs a file in the dev project's
+  // assets/ folder with its byte-identical copy in the published Artifact's asset store
+  // (/_blob/<id>, sha256-checked when mirrored). The published page keeps loading the store
+  // copies, exactly as before; a local dev server (localhost / 127.0.0.1) or file:// loads the
+  // assets/ files instead, so the full Garage and Crimpet render during development.
+  // ?assets=local or ?assets=blob overrides the detection. Photos people upload during sessions
+  // aren't listed — those are runtime data that carry their own URLs.
+  var ASSET_SOURCE = (function(){
+    var forced = /[?&]assets=(local|blob)\b/.exec(location.search);
+    if(forced) return forced[1];
+    var local = location.protocol==="file:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+    return local ? "local" : "blob";
+  })();
+  function asset(file, blobId){ return ASSET_SOURCE==="local" ? "assets/"+file : "/_blob/"+blobId; }
+  var IMG = {
+    // Crimpet's hop cycles, one folder per look; frame 01 doubles as that look's resting portrait.
+    mascot: {
+      chalkling: [
+        asset("mascot/chalkling/hop-01.png", "b7736dcb771e7095da5875f205b225be"),
+        asset("mascot/chalkling/hop-02.png", "3e48d0b9fc434dc941a41dd189688d59"),
+        asset("mascot/chalkling/hop-03.png", "991dafcf4f874a5b7bf8826068c4cb9e"),
+        asset("mascot/chalkling/hop-04.png", "d9b889269b42af6b27873896515ac998"),
+        asset("mascot/chalkling/hop-05.png", "7cef8b6c3e6b494fb76755fc91216e11"),
+        asset("mascot/chalkling/hop-06.png", "3d5d933731f86c4ab8ce1e58c9cadf83"),
+        asset("mascot/chalkling/hop-07.png", "2cbb7b7f4edf4b92b2dccaa4c4562d34"),
+        asset("mascot/chalkling/hop-08.png", "95bedb4d3e84d33b9d646ddc17f98552")
+      ],
+      boulderbud: [
+        asset("mascot/boulderbud/hop-01.png", "60a1e78bc8d76d149bee708e543dc1e7"),
+        asset("mascot/boulderbud/hop-02.png", "116deba8cdb81258077409060037100c"),
+        asset("mascot/boulderbud/hop-03.png", "afb9d6d8c17cfaf542f2f9a7f3b44f3e"),
+        asset("mascot/boulderbud/hop-04.png", "35f418effc12675a499d527fd21c379f"),
+        asset("mascot/boulderbud/hop-05.png", "5fd9de7e24179badd4ee91e11b33b9c2")
+      ],
+      crimper: [
+        asset("mascot/crimper/hop-01.png", "7694fa848ec8ad0961fca59c17fb91ab"), // resting, settled
+        asset("mascot/crimper/hop-02.png", "5300dec8a8ec36fd151921a052c48e02"), // launch, dust kicking off
+        asset("mascot/crimper/hop-03.png", "061f3b6259c590dc4cac60c2a4c067a6"), // peak of the hop
+        asset("mascot/crimper/hop-04.png", "61a67338d14392fcd3c430213f684f77"), // peak, starting to fall
+        asset("mascot/crimper/hop-05.png", "222cb2d86ec4e1206b198eca3906286c")  // landing, dust
+      ],
+      summitfriend: [
+        asset("mascot/summitfriend/hop-01.png", "36158f3abc0e3bb69cd91bf3cd728452"),
+        asset("mascot/summitfriend/hop-02.png", "08c1f0b4ecf7f5951b176ba1546400a8"),
+        asset("mascot/summitfriend/hop-03.png", "4890dc73ce58f599b3d8e664cc91afcc"),
+        asset("mascot/summitfriend/hop-04.png", "f42c13635ae5c270ca322951d19dfac2"),
+        asset("mascot/summitfriend/hop-05.png", "b55ec8ff0d3ce65de9850353c75399da")
+      ]
+    },
+    garage: {
+      background: asset("garage/background.png", "065027a2c9a922d690e45df4c3877299"),
+      wallTile:   asset("garage/wall-tile.png",  "1539353a54bfd43eb8d646acddd78e3f"),
+      floorTile:  asset("garage/floor-tile.png", "05021e4a15ac9579c96b9e6b7c05e8f7")
+    },
+    // Crimpet's own level-gated gear, drawn into the Garage scene.
+    gear: {
+      holdGreen:        asset("gear/hold-green.png",         "ae46fb6b9ff3f78e3a614905d7fd0149"),
+      holdYellow:       asset("gear/hold-yellow.png",        "a808d5a20dae5066e8dc531814e43c72"),
+      pottedPlant:      asset("gear/potted-plant.png",       "836bafc9ec9167f2827a14e5d01b5375"),
+      crashPadUnfolded: asset("gear/crash-pad-unfolded.png", "800277ddae1fd117340228af0e7b1069"),
+      stringLights:     asset("gear/string-lights.png",      "7a069e331e38814e895c82b86e010c40")
+    },
+    // Decorate-able pieces (ACCESSORIES). The potted plant decoration reuses IMG.gear.pottedPlant.
+    decor: {
+      hayBale:       asset("decor/hay-bale.png",       "4eca611abe9f2b433110ed0e580e9f83"),
+      crashPad:      asset("decor/crash-pad.png",      "0ec6b0ad049d53866f7f02a54b0c9e8a"),
+      chalkBag:      asset("decor/chalk-bag.png",      "31293a4e86cec9f3a07516f55d960bb8"),
+      jugHold:       asset("decor/jug-hold.png",       "2cfc0395a8333ce1661ac5ddb21c6f4a"),
+      slottedHold:   asset("decor/slotted-hold.png",   "4a338f1911e4e70ee10fccacd4229bc4"),
+      foothold:      asset("decor/foothold.png",       "bb602a94f87da85ac8530ba5f51b80ef"),
+      holdRed:       asset("decor/hold-red.png",       "d3eb8091ec354d3eb61f29fa56c40716"),
+      holdBlue:      asset("decor/hold-blue.png",      "8712287a69f7e49c1edb149f6b32476a"),
+      holdYellowTri: asset("decor/hold-yellow-tri.png","ec9d4375521cffe8d1bc94c3417dd6ae"),
+      holdGreenTri:  asset("decor/hold-green-tri.png", "e6baacf209c407c4e311b3b52f517727"),
+      holdPurple:    asset("decor/hold-purple.png",    "cc1e47e4c907a97268acea6845d98227"),
+      holdGray:      asset("decor/hold-gray.png",      "244dfba43e7705f8d81c5517d295589f"),
+      wallVolume:    asset("decor/wall-volume.png",    "6749f3f8422e43189dd018899f200da6"),
+      hangboard:     asset("decor/hangboard.png",      "200fbf4df0909564b7bcb2e00e55ff84"),
+      mountainPrint: asset("decor/mountain-print.png", "756709da6e5dab92a39fb038e737ee54"),
+      wallShelf:     asset("decor/wall-shelf.png",     "c939389ec5775e35abbf5603e59e46c6"),
+      climbingShoes: asset("decor/climbing-shoes.png", "86f58628d2ca798e02e666e64732519d"),
+      gearBag:       asset("decor/gear-bag.png",       "b5d2e7dbfb0b066f07d33f67a0841da7")
+    }
+  };
+
   /* ---------------- Crimpet: the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Stage is
   // purely derived from your actual level; mood is purely derived from how recently you last
@@ -2547,47 +2633,20 @@
   var HOP8_PROGRESS = [0, 0, 0.06, 0.32, 0.58, 0.82, 0.98, 1];
   var HOP5_LIFT     = [0, -8, -24, -20, -2];
   var HOP5_PROGRESS = [0, 0.2, 0.55, 0.85, 1];
-  var CRIMPER_HOP_FRAMES = [
-    "/_blob/7694fa848ec8ad0961fca59c17fb91ab", // 1. resting, settled
-    "/_blob/5300dec8a8ec36fd151921a052c48e02", // 2. launch, dust kicking off
-    "/_blob/061f3b6259c590dc4cac60c2a4c067a6", // 3. peak of the hop
-    "/_blob/61a67338d14392fcd3c430213f684f77", // 4. peak, starting to fall
-    "/_blob/222cb2d86ec4e1206b198eca3906286c"  // 5. landing, dust
-  ];
   // minLevel gates pulled in from 1/5/10/20/35 — combined with the lighter xpForLevel above,
   // these come noticeably sooner without needing yet another number to tune independently.
+  // Image paths live in IMG (see "image assets" above); a look's resting portrait is frame 01.
   var CHARACTER_STAGES = [
-    { id:"chalkling",    minLevel:1,  name:"Chalkling",     img:"/_blob/b7736dcb771e7095da5875f205b225be", props:[],
-      hopFrameMs:100, hopLift:HOP8_LIFT, hopProgress:HOP8_PROGRESS, hopFrames:[
-        "/_blob/b7736dcb771e7095da5875f205b225be",
-        "/_blob/3e48d0b9fc434dc941a41dd189688d59",
-        "/_blob/991dafcf4f874a5b7bf8826068c4cb9e",
-        "/_blob/d9b889269b42af6b27873896515ac998",
-        "/_blob/7cef8b6c3e6b494fb76755fc91216e11",
-        "/_blob/3d5d933731f86c4ab8ce1e58c9cadf83",
-        "/_blob/2cbb7b7f4edf4b92b2dccaa4c4562d34",
-        "/_blob/95bedb4d3e84d33b9d646ddc17f98552"
-      ] },
-    { id:"boulderbud",   minLevel:4,  name:"Boulder Bud",   img:"/_blob/60a1e78bc8d76d149bee708e543dc1e7", props:["pad"],
-      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:[
-        "/_blob/60a1e78bc8d76d149bee708e543dc1e7",
-        "/_blob/116deba8cdb81258077409060037100c",
-        "/_blob/afb9d6d8c17cfaf542f2f9a7f3b44f3e",
-        "/_blob/35f418effc12675a499d527fd21c379f",
-        "/_blob/5fd9de7e24179badd4ee91e11b33b9c2"
-      ] },
-    { id:"crimper",      minLevel:8,  name:"Crimper",       img:"/_blob/7694fa848ec8ad0961fca59c17fb91ab", props:["pad","holds"],
-      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:CRIMPER_HOP_FRAMES },
-    { id:"dynomite",     minLevel:15, name:"Dynomite",      img:"/_blob/7694fa848ec8ad0961fca59c17fb91ab", props:["pad","holds","plant"],
-      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:CRIMPER_HOP_FRAMES },
-    { id:"summitfriend", minLevel:25, name:"Summit Friend", img:"/_blob/36158f3abc0e3bb69cd91bf3cd728452", props:["pad","holds","plant","lights"],
-      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:[
-        "/_blob/36158f3abc0e3bb69cd91bf3cd728452",
-        "/_blob/08c1f0b4ecf7f5951b176ba1546400a8",
-        "/_blob/4890dc73ce58f599b3d8e664cc91afcc",
-        "/_blob/f42c13635ae5c270ca322951d19dfac2",
-        "/_blob/b55ec8ff0d3ce65de9850353c75399da"
-      ] }
+    { id:"chalkling",    minLevel:1,  name:"Chalkling",     img:IMG.mascot.chalkling[0], props:[],
+      hopFrameMs:100, hopLift:HOP8_LIFT, hopProgress:HOP8_PROGRESS, hopFrames:IMG.mascot.chalkling },
+    { id:"boulderbud",   minLevel:4,  name:"Boulder Bud",   img:IMG.mascot.boulderbud[0], props:["pad"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:IMG.mascot.boulderbud },
+    { id:"crimper",      minLevel:8,  name:"Crimper",       img:IMG.mascot.crimper[0], props:["pad","holds"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:IMG.mascot.crimper },
+    { id:"dynomite",     minLevel:15, name:"Dynomite",      img:IMG.mascot.crimper[0], props:["pad","holds","plant"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:IMG.mascot.crimper },
+    { id:"summitfriend", minLevel:25, name:"Summit Friend", img:IMG.mascot.summitfriend[0], props:["pad","holds","plant","lights"],
+      hopFrameMs:150, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS, hopFrames:IMG.mascot.summitfriend }
   ];
   // Customizable, not automatic: level still gates what's *available*, but which unlocked
   // look/environment actually shows is a separate, independent choice (character.selectedX
@@ -2659,7 +2718,7 @@
   // separate DOM layers (#sceneLayers / #roomLabLayer) rendered on top by
   // renderSceneEnvironment(), untouched by this change. The other 4 gyms are untouched and
   // still fall through to the plain flat-color roomSVG below.
-  var GARAGE_BG_IMG = "/_blob/065027a2c9a922d690e45df4c3877299";
+  var GARAGE_BG_IMG = IMG.garage.background;
   // The source photo (941x1672) is taller/narrower than our 200x240 viewBox, so it's scaled
   // by width (200/941) and shifted vertically so the photo's own floor line lands at
   // y=192 — the same ROOM_FLOOR_Y convention every accessory/decoration default and
@@ -2672,11 +2731,11 @@
   // here, once as an optional Decorate accessory) is normal for a real climbing space, not a
   // duplicate-looking glitch — except the unfolded pad below, which is a different pose from
   // the standing "Crash Pad" decoration specifically so the two never look like an exact copy.
-  var GEAR_HOLD_A_IMG = "/_blob/ae46fb6b9ff3f78e3a614905d7fd0149"; // small green hold
-  var GEAR_HOLD_B_IMG = "/_blob/a808d5a20dae5066e8dc531814e43c72"; // small yellow hold
-  var GEAR_PLANT_IMG = "/_blob/836bafc9ec9167f2827a14e5d01b5375";
-  var GEAR_PAD_IMG = "/_blob/800277ddae1fd117340228af0e7b1069"; // real unfolded crash pad
-  var GEAR_LIGHTS_IMG = "/_blob/7a069e331e38814e895c82b86e010c40"; // real string lights
+  var GEAR_HOLD_A_IMG = IMG.gear.holdGreen;        // small green hold
+  var GEAR_HOLD_B_IMG = IMG.gear.holdYellow;       // small yellow hold
+  var GEAR_PLANT_IMG = IMG.gear.pottedPlant;
+  var GEAR_PAD_IMG = IMG.gear.crashPadUnfolded;    // real unfolded crash pad
+  var GEAR_LIGHTS_IMG = IMG.gear.stringLights;     // real string lights
   function garageSceneSVG(charStage){
     var has = function(g){ return charStage.props.indexOf(g)>-1; };
     var p = [];
@@ -2748,7 +2807,7 @@
   var ENVIRONMENTS = [
     // artReady: this room has finished production art, so Auto may select it (see selectedEnvironment).
     { id:"garage",   name:"The Garage",      minLevel:1,  artReady:true, wallColor:"#C9A876", floorColor:"#8B8378",
-      wallImg:"/_blob/1539353a54bfd43eb8d646acddd78e3f", floorImg:"/_blob/05021e4a15ac9579c96b9e6b7c05e8f7", props:[] },
+      wallImg:IMG.garage.wallTile, floorImg:IMG.garage.floorTile, props:[] },
     { id:"homewall", name:"Home Wall",       minLevel:8,  wallColor:"#A8763F", floorColor:"#6B5744", wallImg:null, floorImg:null, props:[] },
     { id:"local",    name:"The Local",       minLevel:15, wallColor:"#B8AFA0", floorColor:"#3E3A35", wallImg:null, floorImg:null, props:[] },
     { id:"mtnclub",  name:"The Mountain Club", minLevel:24, wallColor:"#8CA0B3", floorColor:"#C4BCA8", wallImg:null, floorImg:null, props:[] },
@@ -2782,27 +2841,27 @@
   // anywhere in the scene, and the override is saved per accessory id. Applies in whatever
   // gym is selected, since these are yours, not the room's.
   var ACCESSORIES = [
-    { id:"haybail",     name:"Hay Bail",     img:"/_blob/4eca611abe9f2b433110ed0e580e9f83", x:4,  y:81, w:24 },
-    { id:"crashpad2",   name:"Crash Pad",    img:"/_blob/0ec6b0ad049d53866f7f02a54b0c9e8a", x:34, y:78, w:26 },
-    { id:"chalkbag",    name:"Chalk Bag",    img:"/_blob/31293a4e86cec9f3a07516f55d960bb8", x:58, y:74, w:16 },
-    { id:"pottedplant2",name:"Potted Plant", img:"/_blob/836bafc9ec9167f2827a14e5d01b5375", x:6,  y:64, w:16 },
-    { id:"jug",         name:"Jug Hold",     img:"/_blob/2cfc0395a8333ce1661ac5ddb21c6f4a", x:48, y:16, w:18 },
-    { id:"slottedhold", name:"Slotted Hold", img:"/_blob/4a338f1911e4e70ee10fccacd4229bc4", x:64, y:36, w:15 },
-    { id:"foothold",    name:"Foothold",     img:"/_blob/bb602a94f87da85ac8530ba5f51b80ef", x:78, y:52, w:15 },
+    { id:"haybail",     name:"Hay Bail",     img:IMG.decor.hayBale,     x:4,  y:81, w:24 },
+    { id:"crashpad2",   name:"Crash Pad",    img:IMG.decor.crashPad,    x:34, y:78, w:26 },
+    { id:"chalkbag",    name:"Chalk Bag",    img:IMG.decor.chalkBag,    x:58, y:74, w:16 },
+    { id:"pottedplant2",name:"Potted Plant", img:IMG.gear.pottedPlant,  x:6,  y:64, w:16 },
+    { id:"jug",         name:"Jug Hold",     img:IMG.decor.jugHold,     x:48, y:16, w:18 },
+    { id:"slottedhold", name:"Slotted Hold", img:IMG.decor.slottedHold, x:64, y:36, w:15 },
+    { id:"foothold",    name:"Foothold",     img:IMG.decor.foothold,    x:78, y:52, w:15 },
     // Illustrated Garage set — holds sized small and sampled against the real photo so they
     // read as bolted to the woody rather than floating; wall/floor pieces placed the same way.
-    { id:"holdred",     name:"Red Hold",      img:"/_blob/d3eb8091ec354d3eb61f29fa56c40716", x:31.5, y:21.5,  w:7  },
-    { id:"holdblue",    name:"Blue Hold",     img:"/_blob/8712287a69f7e49c1edb149f6b32476a", x:19,   y:29.8,  w:7  },
-    { id:"holdyellowtri",name:"Yellow Hold",  img:"/_blob/ec9d4375521cffe8d1bc94c3417dd6ae", x:27,   y:51.2,  w:6  },
-    { id:"holdgreentri",name:"Green Hold",    img:"/_blob/e6baacf209c407c4e311b3b52f517727", x:9.5,  y:42.8,  w:6  },
-    { id:"holdpurple",  name:"Purple Hold",   img:"/_blob/cc1e47e4c907a97268acea6845d98227", x:22,   y:67.8,  w:6  },
-    { id:"holdgray",    name:"Gray Hold",     img:"/_blob/244dfba43e7705f8d81c5517d295589f", x:12,   y:74.1,  w:6  },
-    { id:"holdvolume",  name:"Wall Volume",   img:"/_blob/6749f3f8422e43189dd018899f200da6", x:27.5, y:13.75, w:10 },
-    { id:"hangboard",   name:"Hangboard",     img:"/_blob/200fbf4df0909564b7bcb2e00e55ff84", x:48,   y:19,    w:28 },
-    { id:"artprint",    name:"Mountain Print",img:"/_blob/756709da6e5dab92a39fb038e737ee54", x:61.5, y:36.65, w:13 },
-    { id:"wallshelf",   name:"Wall Shelf",    img:"/_blob/c939389ec5775e35abbf5603e59e46c6", x:8,    y:47.25, w:20 },
-    { id:"climbshoes",  name:"Climbing Shoes",img:"/_blob/86f58628d2ca798e02e666e64732519d", x:60.5, y:83.24, w:9  },
-    { id:"gearbag",     name:"Gear Bag",      img:"/_blob/b5d2e7dbfb0b066f07d33f67a0841da7", x:60,   y:62.28, w:16 }
+    { id:"holdred",     name:"Red Hold",      img:IMG.decor.holdRed,       x:31.5, y:21.5,  w:7  },
+    { id:"holdblue",    name:"Blue Hold",     img:IMG.decor.holdBlue,      x:19,   y:29.8,  w:7  },
+    { id:"holdyellowtri",name:"Yellow Hold",  img:IMG.decor.holdYellowTri, x:27,   y:51.2,  w:6  },
+    { id:"holdgreentri",name:"Green Hold",    img:IMG.decor.holdGreenTri,  x:9.5,  y:42.8,  w:6  },
+    { id:"holdpurple",  name:"Purple Hold",   img:IMG.decor.holdPurple,    x:22,   y:67.8,  w:6  },
+    { id:"holdgray",    name:"Gray Hold",     img:IMG.decor.holdGray,      x:12,   y:74.1,  w:6  },
+    { id:"holdvolume",  name:"Wall Volume",   img:IMG.decor.wallVolume,    x:27.5, y:13.75, w:10 },
+    { id:"hangboard",   name:"Hangboard",     img:IMG.decor.hangboard,     x:48,   y:19,    w:28 },
+    { id:"artprint",    name:"Mountain Print",img:IMG.decor.mountainPrint, x:61.5, y:36.65, w:13 },
+    { id:"wallshelf",   name:"Wall Shelf",    img:IMG.decor.wallShelf,     x:8,    y:47.25, w:20 },
+    { id:"climbshoes",  name:"Climbing Shoes",img:IMG.decor.climbingShoes, x:60.5, y:83.24, w:9  },
+    { id:"gearbag",     name:"Gear Bag",      img:IMG.decor.gearBag,       x:60,   y:62.28, w:16 }
   ];
   function activeDecorations(){
     var on = state.character.decorations||[];
