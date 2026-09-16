@@ -2641,6 +2641,11 @@
       blink: [
         asset("mascot/climber/default/blink/blink-01.png", null),
         asset("mascot/climber/default/blink/blink-02.png", null)
+      ],
+      step: [
+        asset("mascot/climber/default/step/step-01.png", null),
+        asset("mascot/climber/default/step/step-02.png", null),
+        asset("mascot/climber/default/step/step-03.png", null)
       ]
     }
   };
@@ -3205,9 +3210,12 @@
     var step = IMG.next.step, jump = IMG.next.jump;
     if(kind==="blink") return { unit:"box", ease:false, travel:[0, 0], frames:[
       [b1, 60, 0, 0], [b2, 90, 0, 0], [b1, 60, 0, 0], [rest, 1, 0, 0]] };
-    if(kind==="tap" && step) return { unit:"box", ease:false, travel:[12, 24], frames:[
-      [step[0], 110, 0, 0.1], [step[1], 110, 0, 0.55], [step[2], 120, 0, 1], [rest, 1, 0, 1]] };
-    if(kind==="tap") return { unit:"box", ease:false, travel:[0, 0], frames:[
+    // Step art (art-source STEP-SPEC.md): the stride is 92 of the 1024 canvas px, and the
+    // progress values keep the planted trail foot still through step-01 and step-02.
+    if(kind==="tap" && step) return { unit:"box", ease:false, travel:[1, 1], stride:92/1024,
+      fallback:nextMascotClip("react"), frames:[
+      [step[0], 120, 0, 0], [step[1], 100, 0, 0.1], [step[2], 140, 0, 1], [rest, 1, 0, 1]] };
+    if(kind==="tap" || kind==="react") return { unit:"box", ease:false, travel:[0, 0], frames:[
       [b1, 60, 0.002, 0], [b2, 90, 0.003, 0], [b1, 60, 0.002, 0], [rest, 120, 0, 0], [rest, 1, 0, 0]] };
     if(kind==="auto") return step ? nextMascotClip("tap") : null;
     if(kind==="jump"){
@@ -3225,7 +3233,7 @@
   }
   // kind: "tap" (user tap), "auto" (ambient timer), "jump" (level-up and other big moments)
   function motionClipFor(kind){
-    if(MASCOT_PREVIEW) return nextMascotClip(prefersReducedMotion && kind==="jump" ? "blink" : kind);
+    if(MASCOT_PREVIEW) return nextMascotClip(!prefersReducedMotion ? kind : kind==="jump" ? "blink" : kind==="tap" ? "react" : kind);
     if(prefersReducedMotion && kind==="jump") return null; // Crimpet has no blink art: stay still
     return hopClip(selectedCharacterStage());
   }
@@ -3248,6 +3256,13 @@
     // and everything between without ever letting the move clip out of its habitat.
     var maxX = Math.max(0, scene.clientWidth/2 - wander.offsetWidth/2 - 6);
     var startX = Math.max(-maxX, Math.min(maxX, wanderOffsetX));
+    // A drawn step has its foot placement baked in, so its stride is exact (a fraction of the
+    // box width): step the way there's room, or react in place if there's room neither way.
+    if(clip.stride){
+      dist = clip.stride*wander.offsetWidth;
+      if(Math.abs(startX + dir*dist) > maxX) dir = -dir;
+      if(Math.abs(startX + dir*dist) > maxX){ motionPlaying = false; playMotion(clip.fallback); return; }
+    }
     var endX = moves ? Math.max(-maxX, Math.min(maxX, startX + dir*dist)) : startX;
     var boxH = wander.offsetHeight || wander.offsetWidth*1.5 || 1; // sprite not laid out yet: 2:3 box
     if(!clip.ease) wander.classList.add("in-motion");
@@ -3344,7 +3359,7 @@
   }
   function startMascotPreviewAnimation(){
     if(!MASCOT_PREVIEW || prefersReducedMotion) return;
-    IMG.next.idle.concat(IMG.next.blink).forEach(function(src){ var im = new Image(); im.src = src; });
+    IMG.next.idle.concat(IMG.next.blink, IMG.next.step).forEach(function(src){ var im = new Image(); im.src = src; });
     scheduleMascotBlink();
     if(!mascotAnim.timer) mascotTick();
   }
