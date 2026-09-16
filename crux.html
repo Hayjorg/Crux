@@ -2646,6 +2646,15 @@
         asset("mascot/climber/default/step/step-01.png", null),
         asset("mascot/climber/default/step/step-02.png", null),
         asset("mascot/climber/default/step/step-03.png", null)
+      ],
+      jump: [
+        asset("mascot/climber/default/jump/jump-01.png", null),
+        asset("mascot/climber/default/jump/jump-02.png", null),
+        asset("mascot/climber/default/jump/jump-03.png", null)
+      ],
+      land: [
+        asset("mascot/climber/default/land/land-01.png", null),
+        asset("mascot/climber/default/land/land-02.png", null)
       ]
     }
   };
@@ -3219,14 +3228,16 @@
       [b1, 60, 0.002, 0], [b2, 90, 0.003, 0], [b1, 60, 0.002, 0], [rest, 120, 0, 0], [rest, 1, 0, 0]] };
     if(kind==="auto") return step ? nextMascotClip("tap") : null;
     if(kind==="jump"){
-      var f = jump || [rest, rest, rest, rest, rest];
+      // Lifts are in 1536ths of the box height (the master canvas): the art already stands the
+      // takeoff frame tall on its toes, so the code only adds the airborne part.
+      var f = jump ? jump.concat(IMG.next.land) : [rest, rest, rest, rest, rest];
       return { unit:"box", ease:false, travel:[0, 0], frames:[
-        [f[0], 130, 0, 0],          // crouch
-        [f[1], 70, -0.015, 0],      // takeoff
-        [f[2], 150, -0.05, 0],      // apex
-        [f[1], 70, -0.015, 0],      // fall (takeoff frame reused)
-        [f[3], 90, 0, 0, 1.12],     // land: shadow spreads
-        [f[4], 120, 0, 0],          // recover
+        [f[0], 140, 0, 0],             // jump-01 crouch
+        [f[1], 80, -10/1536, 0],       // jump-02 takeoff
+        [f[2], 160, -160/1536, 0],     // jump-03 apex
+        [f[1], 80, -20/1536, 0],       // fall (takeoff frame reused)
+        [f[3], 100, 0, 0, 1.12],       // land-01: shadow spreads
+        [f[4], 140, 0, 0],             // land-02 recover
         [rest, 1, 0, 0]] };
     }
     return null;
@@ -3359,7 +3370,7 @@
   }
   function startMascotPreviewAnimation(){
     if(!MASCOT_PREVIEW || prefersReducedMotion) return;
-    IMG.next.idle.concat(IMG.next.blink, IMG.next.step).forEach(function(src){ var im = new Image(); im.src = src; });
+    IMG.next.idle.concat(IMG.next.blink, IMG.next.step, IMG.next.jump, IMG.next.land).forEach(function(src){ var im = new Image(); im.src = src; });
     scheduleMascotBlink();
     if(!mascotAnim.timer) mascotTick();
   }
