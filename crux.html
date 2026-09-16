@@ -3260,7 +3260,11 @@
     }
     if(!mascotAnim.queue.length){
       var blinkDue = Date.now() >= mascotAnim.nextBlinkAt;
-      mascotAnim.queue = (blinkDue ? MASCOT_CLIPS.blink.concat(MASCOT_CLIPS.idle) : MASCOT_CLIPS.idle).slice();
+      var idle = MASCOT_CLIPS.idle, rest = idle[0];
+      // a blink splits the rest-pose hold: rest -> blink -> rest, then the breath continues
+      mascotAnim.queue = blinkDue
+        ? [[rest[0], 300]].concat(MASCOT_CLIPS.blink, [[rest[0], rest[1] - 300]], idle.slice(1))
+        : idle.slice();
       if(blinkDue) scheduleMascotBlink();
     }
     var frame = mascotAnim.queue.shift();
