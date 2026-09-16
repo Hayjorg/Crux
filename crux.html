@@ -319,6 +319,12 @@
   /* The hop's vertical lift is applied here, not on .character-wander, so the ground shadow
      (a sibling) only follows Crimpet sideways and stays on the floor through the jump. */
   .character-body{position:relative;transition:transform .15s ease-out;}
+  /* ?mascot=next preview, placement B. The climber sprite is a 2:3 canvas with the feet 12.5% up
+     from its bottom edge. At 50% of the scene width the box is 60% of the scene's height, so a
+     bottom of 8.5% puts the feet 16% up the scene (8.5 + 12.5 x 0.6). The ground shadow is
+     re-centred on that foot line (12.5% up the box) and flattened for the wider stance. */
+  .character-scene.mascot-next .character-wander{width:50%;margin-left:-25%;bottom:8.5%;}
+  .character-scene.mascot-next .character-shadow{width:54%;height:4%;bottom:10.5%;}
   .character-wander img{width:100%;height:auto;display:block;cursor:pointer;position:relative;filter:drop-shadow(0 6px 6px var(--shadow));}
   .character-wander img.evolve{animation:cxEvolve 1s cubic-bezier(.34,1.56,.64,1);}
   @keyframes cxEvolve{0%{transform:scale(1) rotate(0);opacity:1;}30%{transform:scale(0.55) rotate(-10deg);opacity:0.35;}58%{transform:scale(1.3) rotate(7deg);opacity:1;}82%{transform:scale(0.92) rotate(-3deg);}100%{transform:scale(1) rotate(0);}}
@@ -2546,7 +2552,11 @@
     var local = location.protocol==="file:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
     return local ? "local" : "blob";
   })();
-  function asset(file, blobId){ return ASSET_SOURCE==="local" ? "assets/"+file : "/_blob/"+blobId; }
+  // An entry with no blobId exists only in assets/ (not uploaded to the Artifact yet).
+  function asset(file, blobId){ return (ASSET_SOURCE==="local" || !blobId) ? "assets/"+file : "/_blob/"+blobId; }
+  // ?mascot=next previews the new climber mascot (locked idle-01, placement B) in place of
+  // Crimpet. Opt-in only, for approving the new art locally; Crimpet stays the default.
+  var MASCOT_PREVIEW = /[?&]mascot=next\b/.test(location.search);
   var IMG = {
     // Crimpet's hop cycles, one folder per look; frame 01 doubles as that look's resting portrait.
     mascot: {
@@ -2615,6 +2625,11 @@
       wallShelf:     asset("decor/wall-shelf.png",     "c939389ec5775e35abbf5603e59e46c6"),
       climbingShoes: asset("decor/climbing-shoes.png", "86f58628d2ca798e02e666e64732519d"),
       gearBag:       asset("decor/gear-bag.png",       "b5d2e7dbfb0b066f07d33f67a0841da7")
+    },
+    // The new climber mascot, local-only until approved: 640x960 runtime copy of the locked
+    // art-source master (feet at row 839 of 960, centred on x 320). Used only by ?mascot=next.
+    next: {
+      idle: asset("mascot/climber/default/idle/idle-01.png", null)
     }
   };
 
@@ -2659,7 +2674,15 @@
     var sel = state.character.selectedStageId;
     var match = null;
     unlocked.forEach(function(s){ if(s.id===sel) match=s; });
-    return match || unlocked[unlocked.length-1];
+    var stage = match || unlocked[unlocked.length-1];
+    // ?mascot=next: same stage data and unlocks, drawn with the new climber. Only idle-01 exists
+    // so far, so a tap-hop reuses it and the lift comes entirely from hopLift.
+    if(MASCOT_PREVIEW){
+      var still = IMG.next.idle;
+      return Object.assign({}, stage, { img:still, hopFrames:[still, still, still, still, still],
+        hopFrameMs:120, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS });
+    }
+    return stage;
   }
   // The scene behind Crimpet — simple code-drawn props, not illustration, but it's what
   // gives "popping around in an environment" real meaning: a floor to wander on and gear
@@ -3617,6 +3640,7 @@
   window.addEventListener("pageshow", onPageVisible);
 
   /* ---------------- init ---------------- */
+  if(MASCOT_PREVIEW) document.getElementById("characterScene").classList.add("mascot-next");
   applyTheme();
   recomputeProfile();
   saveState();
