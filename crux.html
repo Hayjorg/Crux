@@ -3210,11 +3210,11 @@
     var step = IMG.next.step, jump = IMG.next.jump;
     if(kind==="blink") return { unit:"box", ease:false, travel:[0, 0], frames:[
       [b1, 60, 0, 0], [b2, 90, 0, 0], [b1, 60, 0, 0], [rest, 1, 0, 0]] };
-    // Step art (art-source STEP-SPEC.md): the stride is 92 of the 1024 canvas px, and the
+    // Step art (art-source STEP-SPEC.md): the stride is 50 of the 1024 canvas px, and the
     // progress values keep the planted trail foot still through step-01 and step-02.
-    if(kind==="tap" && step) return { unit:"box", ease:false, travel:[1, 1], stride:92/1024,
+    if(kind==="tap" && step) return { unit:"box", ease:false, travel:[1, 1], stride:50/1024,
       fallback:nextMascotClip("react"), frames:[
-      [step[0], 120, 0, 0], [step[1], 100, 0, 0.1], [step[2], 140, 0, 1], [rest, 1, 0, 1]] };
+      [step[0], 120, 0, 0], [step[1], 100, 0, 0.26], [step[2], 140, 0, 1], [rest, 1, 0, 1]] };
     if(kind==="tap" || kind==="react") return { unit:"box", ease:false, travel:[0, 0], frames:[
       [b1, 60, 0.002, 0], [b2, 90, 0.003, 0], [b1, 60, 0.002, 0], [rest, 120, 0, 0], [rest, 1, 0, 0]] };
     if(kind==="auto") return step ? nextMascotClip("tap") : null;
