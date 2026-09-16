@@ -3244,8 +3244,8 @@
   // painted from, so it never pops. Hops own the sprite while they play; the player waits them out
   // and restarts from the rest pose. Reduced motion never starts it (the rest pose stays put).
   var MASCOT_CLIPS = MASCOT_PREVIEW ? {
-    idle: [[IMG.next.idle[0], 500], [IMG.next.idle[3], 350], [IMG.next.idle[1], 350],
-           [IMG.next.idle[2], 600], [IMG.next.idle[1], 350], [IMG.next.idle[3], 350]],
+    idle: [[IMG.next.idle[0], 900], [IMG.next.idle[1], 300], [IMG.next.idle[2], 400],
+           [IMG.next.idle[3], 300], [IMG.next.idle[2], 300], [IMG.next.idle[1], 350]],
     blink: [[IMG.next.blink[0], 60], [IMG.next.blink[1], 90], [IMG.next.blink[0], 60]]
   } : null;
   var mascotAnim = { queue:[], timer:null, nextBlinkAt:0 };
