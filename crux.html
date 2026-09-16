@@ -2629,7 +2629,16 @@
     // The new climber mascot, local-only until approved: 640x960 runtime copy of the locked
     // art-source master (feet at row 839 of 960, centred on x 320). Used only by ?mascot=next.
     next: {
-      idle: asset("mascot/climber/default/idle/idle-01.png", null)
+      idle: [
+        asset("mascot/climber/default/idle/idle-01.png", null),
+        asset("mascot/climber/default/idle/idle-02.png", null),
+        asset("mascot/climber/default/idle/idle-03.png", null),
+        asset("mascot/climber/default/idle/idle-04.png", null)
+      ],
+      blink: [
+        asset("mascot/climber/default/blink/blink-01.png", null),
+        asset("mascot/climber/default/blink/blink-02.png", null)
+      ]
     }
   };
 
@@ -2675,10 +2684,11 @@
     var match = null;
     unlocked.forEach(function(s){ if(s.id===sel) match=s; });
     var stage = match || unlocked[unlocked.length-1];
-    // ?mascot=next: same stage data and unlocks, drawn with the new climber. Only idle-01 exists
-    // so far, so a tap-hop reuses it and the lift comes entirely from hopLift.
+    // ?mascot=next: same stage data and unlocks, drawn with the new climber. There are no hop
+    // frames yet, so a tap-hop reuses the rest frame and the lift comes entirely from hopLift.
+    // Breathing and blinking are driven separately by the mascot frame player below.
     if(MASCOT_PREVIEW){
-      var still = IMG.next.idle;
+      var still = IMG.next.idle[0];
       return Object.assign({}, stage, { img:still, hopFrames:[still, still, still, still, still],
         hopFrameMs:120, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS });
     }
@@ -3175,6 +3185,7 @@
   function playHop(){
     if(isHopping) return;
     isHopping = true;
+    mascotAnim.queue = []; // the preview player restarts from the rest pose after the hop
     var stage = selectedCharacterStage();
     var frames = stage.hopFrames;
     var img = document.getElementById("characterStage");
@@ -3223,6 +3234,45 @@
       if(!document.getElementById("view-home").hidden) playHop();
       scheduleAutoHop();
     }, 4500 + Math.random()*3500);
+  }
+
+  // ---- new mascot preview (?mascot=next): a tiny data-driven frame player ----
+  // Each clip is a list of [frame, ms]. Breathing plays the frames in order of how far the head
+  // rises in them (measured when the frames were normalized: idle-01 rest, idle-04 +2 px,
+  // idle-02 +3 px, idle-03 +10 px), not in file-name order, so the loop rises and falls smoothly.
+  // A blink only starts where a breathing cycle begins, on the rest pose the blink frames were
+  // painted from, so it never pops. Hops own the sprite while they play; the player waits them out
+  // and restarts from the rest pose. Reduced motion never starts it (the rest pose stays put).
+  var MASCOT_CLIPS = MASCOT_PREVIEW ? {
+    idle: [[IMG.next.idle[0], 500], [IMG.next.idle[3], 350], [IMG.next.idle[1], 350],
+           [IMG.next.idle[2], 600], [IMG.next.idle[1], 350], [IMG.next.idle[3], 350]],
+    blink: [[IMG.next.blink[0], 60], [IMG.next.blink[1], 90], [IMG.next.blink[0], 60]]
+  } : null;
+  var mascotAnim = { queue:[], timer:null, nextBlinkAt:0 };
+  function scheduleMascotBlink(){ mascotAnim.nextBlinkAt = Date.now() + 3000 + Math.random()*3500; }
+  function mascotTick(){
+    mascotAnim.timer = null;
+    var onHome = !document.getElementById("view-home").hidden && document.visibilityState==="visible";
+    if(isHopping || !onHome){
+      mascotAnim.queue = [];
+      mascotAnim.timer = setTimeout(mascotTick, onHome ? 120 : 400);
+      return;
+    }
+    if(!mascotAnim.queue.length){
+      var blinkDue = Date.now() >= mascotAnim.nextBlinkAt;
+      mascotAnim.queue = (blinkDue ? MASCOT_CLIPS.blink.concat(MASCOT_CLIPS.idle) : MASCOT_CLIPS.idle).slice();
+      if(blinkDue) scheduleMascotBlink();
+    }
+    var frame = mascotAnim.queue.shift();
+    var img = document.getElementById("characterStage");
+    if(img.getAttribute("src")!==frame[0]) img.src = frame[0];
+    mascotAnim.timer = setTimeout(mascotTick, frame[1]);
+  }
+  function startMascotPreviewAnimation(){
+    if(!MASCOT_PREVIEW || prefersReducedMotion) return;
+    IMG.next.idle.concat(IMG.next.blink).forEach(function(src){ var im = new Image(); im.src = src; });
+    scheduleMascotBlink();
+    if(!mascotAnim.timer) mascotTick();
   }
 
   /* ---------------- icons ---------------- */
@@ -3646,6 +3696,7 @@
   saveState();
   initAssets();
   scheduleAutoHop();
+  startMascotPreviewAnimation();
   restoreTimer();
   updateWakeLock();
   var activeSession = getActiveSession();
