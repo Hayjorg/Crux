@@ -319,6 +319,9 @@
   /* The hop's vertical lift is applied here, not on .character-wander, so the ground shadow
      (a sibling) only follows Crimpet sideways and stays on the floor through the jump. */
   .character-body{position:relative;transition:transform .15s ease-out;}
+  /* While a grounded motion clip plays, the drawn frames carry the movement: no easing. */
+  .character-wander.in-motion, .character-wander.in-motion .character-body,
+  .character-wander.in-motion .character-shadow{transition:none;}
   /* ?mascot=next preview, placement B. The climber sprite is a 2:3 canvas with the feet 12.5% up
      from its bottom edge. At 50% of the scene width the box is 60% of the scene's height, so a
      bottom of 8.5% puts the feet 16% up the scene (8.5 + 12.5 x 0.6). The ground shadow is
@@ -1917,7 +1920,7 @@
     var freshRow = document.querySelector("#attemptList .attempt-row-wrap");
     if(freshRow) freshRow.classList.add("just-logged");
 
-    if(outcome.leveledUpTo) pulseLevelBadge();
+    if(outcome.leveledUpTo){ pulseLevelBadge(); celebrateLevelUp(); }
     announceOutcome(outcome);
 
     showComposer(attempt);
@@ -2684,14 +2687,9 @@
     var match = null;
     unlocked.forEach(function(s){ if(s.id===sel) match=s; });
     var stage = match || unlocked[unlocked.length-1];
-    // ?mascot=next: same stage data and unlocks, drawn with the new climber. There are no hop
-    // frames yet, so a tap-hop reuses the rest frame and the lift comes entirely from hopLift.
-    // Breathing and blinking are driven separately by the mascot frame player below.
-    if(MASCOT_PREVIEW){
-      var still = IMG.next.idle[0];
-      return Object.assign({}, stage, { img:still, hopFrames:[still, still, still, still, still],
-        hopFrameMs:120, hopLift:HOP5_LIFT, hopProgress:HOP5_PROGRESS });
-    }
+    // ?mascot=next: same stage data and unlocks, drawn with the new climber. Its tap/jump motion
+    // comes from nextMascotClip(); breathing and blinking from the mascot frame player below.
+    if(MASCOT_PREVIEW) return Object.assign({}, stage, { img:IMG.next.idle[0] });
     return stage;
   }
   // The scene behind Crimpet — simple code-drawn props, not illustration, but it's what
@@ -3124,8 +3122,8 @@
     var img = document.getElementById("characterStage");
     var displayChanged = lastDisplayedStageId!==null && stage.id!==lastDisplayedStageId;
     // Mid-hop the image is showing an animation frame, not the resting portrait — don't
-    // stomp on it. playHop() itself restores the correct portrait once it finishes.
-    if(!isHopping && img.getAttribute("src")!==stage.img) img.src = stage.img;
+    // stomp on it. playMotion() itself restores the correct portrait once it finishes.
+    if(!motionPlaying && img.getAttribute("src")!==stage.img) img.src = stage.img;
     renderSceneEnvironment(selectedEnvironment(), stage);
     // Quick-glance level badge floating over the art — reuses Crimpet's own current
     // portrait as the avatar rather than needing a separate asset.
@@ -3177,71 +3175,143 @@
       var im = new Image(); im.src = src;
     });
   })();
-  var isHopping = false;
+  var motionPlaying = false;
   var wanderOffsetX = 0;
+  var wanderFacing = 1;
+  var pendingLevelUpJump = false;
   var prefersReducedMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   var autoHopTimerId = null;
 
-  function playHop(){
-    if(isHopping) return;
-    isHopping = true;
-    mascotAnim.queue = []; // the preview player restarts from the rest pose after the hop
-    var stage = selectedCharacterStage();
-    var frames = stage.hopFrames;
+  // ---- mascot motion clips ----
+  // A clip is { frames, travel, unit, ease }. Each frame is [src, ms, lift, progress, shadow]:
+  //   lift     vertical offset of the body (negative = up), in px when unit is "px" (Crimpet's
+  //            hand-tuned hops), otherwise as a fraction of the mascot box height so it scales;
+  //   progress how far along the sideways move this frame is (0..1);
+  //   shadow   optional ground-shadow scale for that frame (a landing spread), else derived from lift.
+  // travel is [minPx, maxPx] of sideways movement per play ([0, 0] = in place, facing kept).
+  // ease keeps the .15s CSS easing between frames; Crimpet's hop was tuned with it on.
+  function hopClip(stage){
+    return {
+      unit:"px", ease:true, travel:[20, 38],
+      frames: stage.hopFrames.map(function(src, i){
+        return [src, stage.hopFrameMs, stage.hopLift[i], stage.hopProgress[i]];
+      })
+    };
+  }
+  // New climber: grounded motion only. Until step and jump art exists the tap is an in-place
+  // blink with a 1-2 px settle, and the jump path runs its lift/landing curve on the rest pose.
+  function nextMascotClip(kind){
+    var rest = IMG.next.idle[0], b1 = IMG.next.blink[0], b2 = IMG.next.blink[1];
+    var step = IMG.next.step, jump = IMG.next.jump;
+    if(kind==="blink") return { unit:"box", ease:false, travel:[0, 0], frames:[
+      [b1, 60, 0, 0], [b2, 90, 0, 0], [b1, 60, 0, 0], [rest, 1, 0, 0]] };
+    if(kind==="tap" && step) return { unit:"box", ease:false, travel:[12, 24], frames:[
+      [step[0], 110, 0, 0.1], [step[1], 110, 0, 0.55], [step[2], 120, 0, 1], [rest, 1, 0, 1]] };
+    if(kind==="tap") return { unit:"box", ease:false, travel:[0, 0], frames:[
+      [b1, 60, 0.002, 0], [b2, 90, 0.003, 0], [b1, 60, 0.002, 0], [rest, 120, 0, 0], [rest, 1, 0, 0]] };
+    if(kind==="auto") return step ? nextMascotClip("tap") : null;
+    if(kind==="jump"){
+      var f = jump || [rest, rest, rest, rest, rest];
+      return { unit:"box", ease:false, travel:[0, 0], frames:[
+        [f[0], 130, 0, 0],          // crouch
+        [f[1], 70, -0.015, 0],      // takeoff
+        [f[2], 150, -0.05, 0],      // apex
+        [f[1], 70, -0.015, 0],      // fall (takeoff frame reused)
+        [f[3], 90, 0, 0, 1.12],     // land: shadow spreads
+        [f[4], 120, 0, 0],          // recover
+        [rest, 1, 0, 0]] };
+    }
+    return null;
+  }
+  // kind: "tap" (user tap), "auto" (ambient timer), "jump" (level-up and other big moments)
+  function motionClipFor(kind){
+    if(MASCOT_PREVIEW) return nextMascotClip(prefersReducedMotion && kind==="jump" ? "blink" : kind);
+    if(prefersReducedMotion && kind==="jump") return null; // Crimpet has no blink art: stay still
+    return hopClip(selectedCharacterStage());
+  }
+  function playHop(){ playMotion(motionClipFor("tap")); }
+
+  function playMotion(clip){
+    if(!clip || motionPlaying) return;
+    motionPlaying = true;
+    mascotAnim.queue = []; // the preview player restarts from the rest pose afterwards
     var img = document.getElementById("characterStage");
     var wander = document.getElementById("characterWander");
     var body = document.getElementById("characterBody");
     var shadow = document.getElementById("characterShadow");
     var scene = document.getElementById("characterScene");
-    var dir = Math.random()<0.5 ? -1 : 1;
-    var hopDist = 20 + Math.random()*18;
+    var moves = clip.travel[1] > 0;
+    var dir = moves ? (Math.random()<0.5 ? -1 : 1) : wanderFacing;
+    var dist = clip.travel[0] + Math.random()*(clip.travel[1]-clip.travel[0]);
     // Clamp off the actual rendered size, not a hardcoded px number — the scene is a
     // responsive (%-based) box now, so this has to hold on a small phone, a wide tablet,
-    // and everything between without ever letting the hop clip out of its habitat.
+    // and everything between without ever letting the move clip out of its habitat.
     var maxX = Math.max(0, scene.clientWidth/2 - wander.offsetWidth/2 - 6);
     var startX = Math.max(-maxX, Math.min(maxX, wanderOffsetX));
-    var endX = Math.max(-maxX, Math.min(maxX, startX + dir*hopDist));
+    var endX = moves ? Math.max(-maxX, Math.min(maxX, startX + dir*dist)) : startX;
+    var boxH = wander.offsetHeight || wander.offsetWidth*1.5 || 1; // sprite not laid out yet: 2:3 box
+    if(!clip.ease) wander.classList.add("in-motion");
     var frame = 0;
     (function step(){
-      img.src = frames[frame];
-      var lift = stage.hopLift[frame];
-      var x = startX + (endX-startX)*stage.hopProgress[frame];
+      var f = clip.frames[frame];
+      if(img.getAttribute("src")!==f[0]) img.src = f[0];
+      var lift = clip.unit==="px" ? f[2] : f[2]*boxH;
+      var x = startX + (endX-startX)*f[3];
       wander.style.transform = "translateX("+x+"px) scaleX("+(dir<0?-1:1)+")";
       body.style.transform = "translateY("+lift+"px)";
-      // The shadow stays on the floor; it only tightens and fades a little as Crimpet rises.
-      shadow.style.transform = "translateX(-50%) scale("+Math.max(0.6, 1 + lift/60)+")";
-      shadow.style.opacity = String(Math.max(0.5, 1 + lift/48));
+      // The shadow stays on the floor; it only tightens and fades a little as the body rises
+      // (never for a grounded step), and a frame may spread it for a landing.
+      var up = Math.min(0, lift);
+      var scale = clip.unit==="px" ? Math.max(0.6, 1 + up/60) : Math.max(0.6, 1 + 2.5*up/boxH);
+      var alpha = clip.unit==="px" ? Math.max(0.5, 1 + up/48) : Math.max(0.5, 1 + 3*up/boxH);
+      if(f[4]) scale = f[4];
+      shadow.style.transform = scale===1 ? "" : "translateX(-50%) scale("+scale+")";
+      shadow.style.opacity = alpha===1 ? "" : String(alpha);
       frame++;
-      if(frame<frames.length){
-        setTimeout(step, stage.hopFrameMs);
+      if(frame<clip.frames.length){
+        setTimeout(step, f[1]);
       } else {
         wanderOffsetX = endX;
+        wanderFacing = dir;
         wander.style.transform = "translateX("+endX+"px) scaleX("+(dir<0?-1:1)+")";
         body.style.transform = "translateY(0)";
         shadow.style.transform = "";
         shadow.style.opacity = "";
+        void wander.offsetWidth; // commit the rest position before easing comes back on
+        wander.classList.remove("in-motion");
         // Re-read the selected stage rather than reusing the closed-over one — Customize
-        // could have switched looks mid-hop, and the portrait should match whatever's
-        // actually selected now, not what was selected when this hop started.
+        // could have switched looks mid-move, and the portrait should match whatever's
+        // actually selected now, not what was selected when this move started.
         img.src = selectedCharacterStage().img;
-        isHopping = false;
+        motionPlaying = false;
       }
     })();
   }
+  // Level-ups happen mid-session, off the Home view, so the jump waits until the Garage is on screen.
+  function celebrateLevelUp(){
+    if(!document.getElementById("view-home").hidden && document.visibilityState==="visible") playMotion(motionClipFor("jump"));
+    else pendingLevelUpJump = true;
+  }
+  function playPendingLevelUpJump(){
+    if(!pendingLevelUpJump) return;
+    pendingLevelUpJump = false;
+    setTimeout(function(){ playMotion(motionClipFor("jump")); }, 450);
+  }
   function scheduleAutoHop(){
-    if(prefersReducedMotion) return; // ambient/automatic motion only — tap-to-hop still works
+    if(prefersReducedMotion) return; // ambient/automatic motion only — taps still respond
+    // Crimpet keeps its 4.5-8s hop; the climber steps every 12-20s once step art exists.
+    var delay = MASCOT_PREVIEW ? 12000 + Math.random()*8000 : 4500 + Math.random()*3500;
     autoHopTimerId = setTimeout(function(){
-      if(!document.getElementById("view-home").hidden) playHop();
+      if(!document.getElementById("view-home").hidden) playMotion(motionClipFor("auto"));
       scheduleAutoHop();
-    }, 4500 + Math.random()*3500);
+    }, delay);
   }
 
   // ---- new mascot preview (?mascot=next): a tiny data-driven frame player ----
-  // Each clip is a list of [frame, ms]. Breathing plays the frames in order of how far the head
-  // rises in them (measured when the frames were normalized: idle-01 rest, idle-04 +2 px,
-  // idle-02 +3 px, idle-03 +10 px), not in file-name order, so the loop rises and falls smoothly.
-  // A blink only starts where a breathing cycle begins, on the rest pose the blink frames were
-  // painted from, so it never pops. Hops own the sprite while they play; the player waits them out
+  // Each clip is a list of [frame, ms]. Breathing rises through idle-02 and idle-03 (peak), settles
+  // on idle-04, and comes back down; every frame is an edit of idle-01, as are the blink frames.
+  // A blink only plays inside the idle-01 rest hold, the pose it was painted from, so it never
+  // pops. Motion clips (playMotion) own the sprite while they play; the player waits them out
   // and restarts from the rest pose. Reduced motion never starts it (the rest pose stays put).
   var MASCOT_CLIPS = MASCOT_PREVIEW ? {
     idle: [[IMG.next.idle[0], 900], [IMG.next.idle[1], 300], [IMG.next.idle[2], 400],
@@ -3253,7 +3323,7 @@
   function mascotTick(){
     mascotAnim.timer = null;
     var onHome = !document.getElementById("view-home").hidden && document.visibilityState==="visible";
-    if(isHopping || !onHome){
+    if(motionPlaying || !onHome){
       mascotAnim.queue = [];
       mascotAnim.timer = setTimeout(mascotTick, onHome ? 120 : 400);
       return;
@@ -3293,7 +3363,7 @@
     document.getElementById("view-home").hidden = name!=="home";
     document.getElementById("view-session").hidden = name!=="session";
     document.getElementById("view-detail").hidden = name!=="detail";
-    if(name==="home") renderHome();
+    if(name==="home"){ renderHome(); playPendingLevelUpJump(); }
     if(name==="session"){ render(); renderTimer(); }
     if(name==="detail" && currentDetailId) renderDetail(currentDetailId);
     window.scrollTo(0,0);
