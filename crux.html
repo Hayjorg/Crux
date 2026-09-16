@@ -703,7 +703,7 @@
         <div class="character-wander" id="characterWander">
           <div class="character-shadow" id="characterShadow" aria-hidden="true"></div>
           <div class="character-body" id="characterBody">
-            <img id="characterStage" alt="Your Crimpet">
+            <img id="characterStage" alt="Your climber">
           </div>
         </div>
 
@@ -1081,21 +1081,22 @@
 </div>
 
 <div class="modal-overlay" id="customizeOverlay" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Customize Crimpet">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Customize">
     <div class="modal-head">
       <h2>Customize</h2>
       <button type="button" class="icon-btn" id="closeCustomizeBtn" aria-label="Close customize">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
-    <div class="settings-section">
-      <p class="settings-section-title">Crimpet</p>
+    <!-- One climber outfit for now, so the look picker stays hidden until there are more. -->
+    <div class="settings-section" hidden>
+      <p class="settings-section-title">Look</p>
       <p class="settings-section-hint">Any look you've unlocked by level, picked independently of your gym. Auto always shows your newest.</p>
       <div class="picker-grid" id="characterPickerGrid"></div>
     </div>
     <div class="settings-section">
       <p class="settings-section-title">Gym</p>
-      <p class="settings-section-hint">Same idea, separate choice — decorate with any gym you've unlocked, whatever level Crimpet's wearing.</p>
+      <p class="settings-section-hint">Decorate with any gym you've unlocked. Auto always shows your newest.</p>
       <div class="picker-grid" id="environmentPickerGrid"></div>
     </div>
     <div class="settings-section">
@@ -2557,9 +2558,9 @@
   })();
   // An entry with no blobId exists only in assets/ (not uploaded to the Artifact yet).
   function asset(file, blobId){ return (ASSET_SOURCE==="local" || !blobId) ? "assets/"+file : "/_blob/"+blobId; }
-  // ?mascot=next previews the new climber mascot (locked idle-01, placement B) in place of
-  // Crimpet. Opt-in only, for approving the new art locally; Crimpet stays the default.
-  var MASCOT_PREVIEW = /[?&]mascot=next\b/.test(location.search);
+  // The climber (locked idle-01, placement B) is the mascot. Crimpet is retired: its art and
+  // hop data below are no longer shown, and the old ?mascot=next switch is now always on.
+  var MASCOT_PREVIEW = true;
   var IMG = {
     // Crimpet's hop cycles, one folder per look; frame 01 doubles as that look's resting portrait.
     mascot: {
@@ -3156,7 +3157,7 @@
       img.classList.add("evolve");
     }
     if(lastUnlockedCharCount!==null && unlockedChar.length>lastUnlockedCharCount){
-      showToast("New Crimpet look unlocked: "+unlockedChar[unlockedChar.length-1].name+"!");
+      showToast("Unlocked: "+unlockedChar[unlockedChar.length-1].name+"!");
     }
     lastUnlockedCharCount = unlockedChar.length;
     lastDisplayedStageId = stage.id;
