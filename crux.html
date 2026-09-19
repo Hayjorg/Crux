@@ -3132,14 +3132,21 @@
       [b1, 60, 0.002, 0], [b2, 90, 0.003, 0], [b1, 60, 0.002, 0], [rest, 120, 0, 0], [rest, 1, 0, 0]] };
     if(kind==="auto") return mascotClip("tap");
     if(kind==="jump"){
-      // Lifts are in 1536ths of the box height (the master canvas): the art already stands the
-      // takeoff frame tall on its toes, so the code only adds the airborne part.
-      var f = jump.concat(IMG.mascot.land);
+      // Lifts are in 1536ths of the box height (the master canvas). The art already stands the
+      // takeoff frame tall on its toes, so the body's arc is stepped in ~40ms slices, with the
+      // apex high enough that the head clearly rises past that tiptoe pose (dev/jump-lab.html, B).
+      var f = jump.concat(IMG.mascot.land), up = function(px){ return -px/1536; };
       return { travel:[0, 0], frames:[
-        [f[0], 140, 0, 0],             // jump-01 crouch
-        [f[1], 80, 0, 0],              // jump-02 takeoff (toes still down)
-        [f[2], 160, -130/1536, 0],     // jump-03 apex
-        [f[1], 80, -10/1536, 0],       // fall (takeoff frame reused)
+        [f[0], 120, 0, 0],             // jump-01 crouch
+        [f[1], 50, 0, 0],              // jump-02 takeoff (toes still down)
+        [f[1], 40, up(30), 0],         //   leaving the ground
+        [f[2], 40, up(150), 0],        // jump-03 rising
+        [f[2], 40, up(175), 0],
+        [f[2], 60, up(190), 0],        //   apex
+        [f[2], 40, up(175), 0],
+        [f[2], 40, up(150), 0],        //   falling
+        [f[1], 40, up(45), 0],         // jump-02 reused: legs reaching for the floor
+        [f[1], 40, up(15), 0],
         [f[3], 100, 0, 0, 1.12],       // land-01: shadow spreads
         [f[4], 140, 0, 0],             // land-02 recover
         [rest, 1, 0, 0]] };
