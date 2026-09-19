@@ -647,15 +647,24 @@
   .project-row-btn{display:block;width:100%;text-align:left;background:none;border:none;padding:0;cursor:pointer;border-radius:var(--radius-sm);}
   .project-row-btn:hover .project-row{background:var(--surface-2);}
   .project-row-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  .project-row{padding:12px 8px;margin:0 -8px;border-bottom:1px solid var(--border);border-radius:var(--radius-sm);transition:background .12s ease;}
-  .project-row-btn:last-child .project-row{border-bottom:none;}
+  .project-item{border-bottom:1px solid var(--border);}
+  .project-item:last-child{border-bottom:none;}
+  .project-row{padding:12px 8px;margin:0 -8px;border-radius:var(--radius-sm);transition:background .12s ease;}
+  .project-detail{padding:0 0 14px;}
+  .project-notes{margin:0;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;display:flex;flex-direction:column;gap:4px;}
+  .project-notes .pn-date{color:var(--text-dim);font-family:"IBM Plex Mono",monospace;font-size:11px;margin-right:6px;}
+  .project-continue-btn{width:100%;margin-top:12px;}
+  .project-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+  .project-bar .c-label{margin-top:0;min-width:0;}
+  .project-bar select{flex:1;min-width:0;width:auto;}
+  .project-bar-meta{flex-basis:100%;font-size:11.5px;color:var(--text-dim);margin:-2px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .project-main{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;}
   .project-name{font-weight:700;font-size:13.5px;}
   .project-meta{font-size:11.5px;color:var(--text-dim);}
   .project-sent{color:var(--send);font-weight:700;}
   .project-working{color:var(--flash);font-weight:700;}
   .project-chevron{width:14px;height:14px;color:var(--text-dim);margin-left:auto;flex-shrink:0;transition:transform .2s ease;}
-  .project-row-btn.expanded .project-chevron{transform:rotate(90deg);}
+  .project-item.expanded .project-chevron{transform:rotate(90deg);}
   .project-attempts{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
   .project-attempt-row{display:flex;align-items:center;gap:7px;font-size:12.5px;}
   .pa-result{font-weight:600;}
@@ -864,6 +873,11 @@
 
       <section class="card log-card">
         <p class="eyebrow">Log an attempt</p>
+        <div class="project-bar" id="projectBar" hidden>
+          <label class="c-label" for="projectSelect">Project</label>
+          <select id="projectSelect" class="note-input"></select>
+          <p class="project-bar-meta" id="projectBarMeta"></p>
+        </div>
         <div class="log-buttons">
           <button class="log-btn flash" id="logFlash">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
@@ -1057,7 +1071,7 @@
     </div>
     <div class="settings-section">
       <p class="settings-section-title">Projects</p>
-      <p class="settings-section-hint">Climbs you've named come up here with their attempt history — turn on Climb Name in Settings to start building this.</p>
+      <p class="settings-section-hint">Climbs you've named come up here with their attempt history, one per climb and gym or crag — turn on Climb Name in Settings to start building this.</p>
       <div id="projectsList"></div>
     </div>
   </div>
@@ -1245,6 +1259,9 @@
       // reads as lived-in on first look, not an empty test room waiting for Customize.
       character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[] },
       sessions:[],
+      // One entry per climb *at one place*: {id, name, location, createdAt}. Attempts point
+      // at these by projectId (see linkProjects), so same-name climbs at different gyms stay apart.
+      projects:[],
       activeSessionId:null
     };
   }
@@ -1303,7 +1320,8 @@
       settings: Object.assign(base.settings, migrated.settings||{}),
       character: Object.assign(base.character, migrated.character||{}),
       badges: migrated.badges||{},
-      sessions: Array.isArray(migrated.sessions)?migrated.sessions:[]
+      sessions: Array.isArray(migrated.sessions)?migrated.sessions:[],
+      projects: Array.isArray(migrated.projects)?migrated.projects:[]
     });
     // One-time upgrades, each gated on its own settingsVersion so a person's later choice
     // always wins and these never re-fire.
@@ -1324,7 +1342,80 @@
     }
     delete merged.character.decorPositions;
     backfillSeq(merged);
+    linkProjects(merged);
     return merged;
+  }
+
+  /* ---------------- project identity ---------------- */
+  // A project is one named climb at one gym or crag. Its location is fixed when it's first
+  // made, from the session the climb was logged in, and never guessed: named attempts from
+  // sessions with no location share a "location not set" project for that name and are never
+  // folded into a known-location one.
+  function projectKey(s){ return String(s||"").trim().replace(/\s+/g," ").toLowerCase(); }
+  function findProject(id, st){
+    if(!id) return null;
+    var list = (st||state).projects || [];
+    for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; }
+    return null;
+  }
+  function resolveProject(st, name, location){
+    var nk = projectKey(name), lk = projectKey(location);
+    if(!nk) return null;
+    for(var i=0;i<st.projects.length;i++){
+      var p = st.projects[i];
+      if(projectKey(p.name)===nk && projectKey(p.location)===lk) return p;
+    }
+    var fresh = { id:"p-"+uid(), name:String(name).trim().replace(/\s+/g," "), location:String(location||"").trim(), createdAt:Date.now() };
+    st.projects.push(fresh);
+    return fresh;
+  }
+  // Makes every named attempt point at a project and drops projects nothing points at. On load
+  // and backup import this is the migration for saves from before projects existed; it only ever
+  // fills in missing links, so existing attempts, notes, photos and grades are left as they are.
+  function linkProjects(st){
+    st.projects = (Array.isArray(st.projects) ? st.projects : []).filter(function(p){
+      return p && typeof p.id==="string" && typeof p.name==="string" && p.name.trim();
+    });
+    st.projects.forEach(function(p){ if(typeof p.location!=="string") p.location = ""; });
+    var used = {};
+    // Oldest first, so a migrated project keeps the spelling it was first logged with.
+    st.sessions.slice().reverse().forEach(function(s){
+      (s.attempts||[]).slice().reverse().forEach(function(a){
+        if(!(a.climbName||"").trim()){ if(a.projectId) a.projectId = null; return; }
+        var p = findProject(a.projectId, st);
+        if(!p || projectKey(p.name)!==projectKey(a.climbName)) p = resolveProject(st, a.climbName, s.location);
+        a.projectId = p.id;
+        used[p.id] = true;
+      });
+      // A session that was already running before projects existed carries on with the climb it
+      // was last logging, the same way the old "prefill the last climb name" did.
+      if(s.projectId===undefined && !s.endedAt) s.projectId = (s.attempts && s.attempts[0] && s.attempts[0].projectId) || null;
+      if(s.projectId && !findProject(s.projectId, st)) s.projectId = null;
+      if(s.projectId) used[s.projectId] = true;
+    });
+    st.projects = st.projects.filter(function(p){ return used[p.id]; });
+  }
+  // Naming (or renaming) an attempt links it to that climb at the session's place. Renaming the
+  // newest attempt of the running session also changes what the next attempt is logged against.
+  function setAttemptClimbName(session, a, value){
+    a.climbName = value;
+    var cur = findProject(a.projectId);
+    if(!value.trim()) a.projectId = null;
+    else if(!cur || projectKey(cur.name)!==projectKey(value)) a.projectId = resolveProject(state, value, session.location).id;
+    if(session.id===state.activeSessionId && session.attempts[0]===a) session.projectId = a.projectId;
+    linkProjects(state);
+  }
+  // Editing a session's gym/crag moves the climbs that were filed under its old place (that's how
+  // they got that place) to the new one. Climbs continued from somewhere else stay where they are.
+  function relinkSessionLocation(session, oldLocation){
+    if(projectKey(oldLocation)===projectKey(session.location)) return;
+    function move(id){
+      var p = findProject(id);
+      return (p && projectKey(p.location)===projectKey(oldLocation)) ? resolveProject(state, p.name, session.location).id : id;
+    }
+    session.attempts.forEach(function(a){ if(a.projectId) a.projectId = move(a.projectId); });
+    if(session.projectId) session.projectId = move(session.projectId);
+    linkProjects(state);
   }
 
   function saveState(){
@@ -1486,40 +1577,31 @@
     }
     content.innerHTML = group("Boulder", boulderRows) + group("Route", routeRows);
   }
+  // Grouped by projectId, so "Blue Arete" at two gyms is two projects. Newest first.
   function computeProjects(){
     var map = {};
     state.sessions.forEach(function(s){
       s.attempts.forEach(function(a){
-        var name = (a.climbName||"").trim();
-        if(!name) return;
-        var key = name.toLowerCase();
-        if(!map[key]) map[key] = { name:name, attempts:0, sent:false, grade:null, sessionIds:{}, lastTs:0 };
-        var p = map[key];
-        p.attempts += 1;
+        var proj = findProject(a.projectId);
+        if(!proj) return;
+        if(!map[proj.id]) map[proj.id] = { id:proj.id, name:proj.name, location:proj.location, attempts:[], sessionIds:{}, sent:false, grade:null, gradeTs:0, lastTs:0 };
+        var p = map[proj.id];
+        p.attempts.push(a);
         p.sessionIds[s.id] = true;
         if(a.ts > p.lastTs) p.lastTs = a.ts;
         if(a.result==="send" || a.result==="flash") p.sent = true;
-        if(a.grade) p.grade = a.grade;
+        if(a.grade && a.ts>=p.gradeTs){ p.grade = a.grade; p.gradeTs = a.ts; }
       });
     });
     return Object.keys(map).map(function(k){
       var p = map[k];
-      return { name:p.name, attempts:p.attempts, sessions:Object.keys(p.sessionIds).length, sent:p.sent, grade:p.grade, lastTs:p.lastTs };
+      p.attempts.sort(function(a,b){ return b.ts-a.ts; });
+      p.sessions = Object.keys(p.sessionIds).length;
+      return p;
     }).sort(function(a,b){ return b.lastTs-a.lastTs; });
   }
-  // Every attempt (across every session) logged under one climb name, newest first —
-  // powers the tap-to-expand history in the Projects list below.
-  function attemptsForClimbName(name){
-    var key = name.trim().toLowerCase();
-    var rows = [];
-    state.sessions.forEach(function(s){
-      s.attempts.forEach(function(a){
-        if((a.climbName||"").trim().toLowerCase()===key) rows.push(a);
-      });
-    });
-    rows.sort(function(a,b){ return b.ts-a.ts; });
-    return rows;
-  }
+  function projectPlace(p){ return p.location ? escapeHtml(p.location) : "Location not set"; }
+  function shortDate(ts){ return new Date(ts).toLocaleDateString(undefined,{ month:"short", day:"numeric" }); }
   var openProjectKey = null;
   function renderProjectsSection(){
     var projects = computeProjects();
@@ -1528,39 +1610,102 @@
       wrap.innerHTML = '<div class="empty-state">No named climbs yet.</div>';
       return;
     }
+    var advanced = state.settings.mode==="advanced";
     wrap.innerHTML = projects.map(function(p){
-      var key = p.name.toLowerCase();
-      var expanded = openProjectKey===key;
-      var historyHtml = expanded ? attemptsForClimbName(p.name).map(function(a){
-        var extras = [];
-        if(a.effort) extras.push("Effort "+a.effort);
-        if(a.reason) extras.push(a.reason);
-        if(a.note) extras.push("“"+escapeHtml(a.note)+"”");
-        return '<div class="project-attempt-row">'+
-            '<span class="dot '+a.result+'"></span>'+
-            '<span class="pa-result">'+cap(a.result)+'</span>'+
-            (a.grade ? '<span class="pa-grade">'+a.grade+'</span>' : "")+
-            '<span class="pa-date">'+new Date(a.ts).toLocaleDateString(undefined,{ month:"short", day:"numeric" })+'</span>'+
+      var expanded = openProjectKey===p.id;
+      var n = p.attempts.length;
+      var detail = "";
+      if(expanded){
+        var notes = p.attempts.filter(function(a){ return (a.note||"").trim(); }).slice(0,3);
+        var notesHtml = notes.length ? '<p class="eyebrow" style="margin-top:2px;">Latest notes</p><div class="project-notes">'+
+          notes.map(function(a){ return '<div><span class="pn-date">'+shortDate(a.ts)+'</span>“'+escapeHtml(a.note)+'”</div>'; }).join("")+'</div>' : "";
+        var historyHtml = p.attempts.map(function(a){
+          var extras = [];
+          if(a.effort) extras.push("Effort "+a.effort);
+          if(a.reason) extras.push(a.reason);
+          if(a.note) extras.push("“"+escapeHtml(a.note)+"”");
+          return '<div class="project-attempt-row">'+
+              '<span class="dot '+a.result+'"></span>'+
+              '<span class="pa-result">'+cap(a.result)+'</span>'+
+              (a.grade ? '<span class="pa-grade">'+a.grade+'</span>' : "")+
+              '<span class="pa-date">'+shortDate(a.ts)+'</span>'+
+            '</div>'+
+            (extras.length ? '<div class="pa-meta">'+extras.join(" · ")+'</div>' : "");
+        }).join("");
+        detail = '<div class="project-detail">'+notesHtml+
+          '<div class="project-attempts">'+historyHtml+'</div>'+
+          (advanced && !p.sent ? '<button type="button" class="btn btn-primary project-continue-btn" data-id="'+escapeHtml(p.id)+'">Continue this project</button>' : "")+
+        '</div>';
+      }
+      return '<div class="project-item'+(expanded?" expanded":"")+'">'+
+        '<button type="button" class="project-row-btn" data-id="'+escapeHtml(p.id)+'" aria-expanded="'+expanded+'">'+
+          '<div class="project-row">'+
+            '<div class="project-main"><span class="project-name">'+escapeHtml(p.name)+'</span>'+(p.grade ? '<span class="drill-protocol">'+p.grade+'</span>' : "")+
+              '<svg class="project-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>'+
+            '<div class="project-meta">'+(p.sent ? '<span class="project-sent">Sent</span>' : '<span class="project-working">Working on it</span>')+
+              ' · '+projectPlace(p)+' · '+n+' attempt'+(n===1?"":"s")+' · '+p.sessions+' session'+(p.sessions===1?"":"s")+
+              ' · last '+relTime(p.lastTs)+'</div>'+
           '</div>'+
-          (extras.length ? '<div class="pa-meta">'+extras.join(" · ")+'</div>' : "");
-      }).join("") : "";
-      return '<button type="button" class="project-row-btn'+(expanded?" expanded":"")+'" data-key="'+escapeHtml(key)+'">'+
-        '<div class="project-row">'+
-          '<div class="project-main"><span class="project-name">'+escapeHtml(p.name)+'</span>'+(p.grade ? '<span class="drill-protocol">'+p.grade+'</span>' : "")+
-            '<svg class="project-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>'+
-          '<div class="project-meta">'+(p.sent ? '<span class="project-sent">Sent</span>' : '<span class="project-working">Working on it</span>')+
-            ' · '+p.attempts+' attempt'+(p.attempts===1?"":"s")+' · '+p.sessions+' session'+(p.sessions===1?"":"s")+'</div>'+
-          (expanded ? '<div class="project-attempts">'+historyHtml+'</div>' : "")+
-        '</div>'+
-      '</button>';
+        '</button>'+detail+
+      '</div>';
     }).join("");
     wrap.querySelectorAll(".project-row-btn").forEach(function(btn){
       btn.addEventListener("click", function(){
-        var k = btn.dataset.key;
+        var k = btn.dataset.id;
         openProjectKey = (openProjectKey===k) ? null : k;
         renderProjectsSection();
       });
     });
+    wrap.querySelectorAll(".project-continue-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){ continueProject(btn.dataset.id); });
+    });
+  }
+  // Opens the running session (or starts one at the project's gym/crag) with this climb picked,
+  // so every Flash/Send/Fall logs against it until another project is picked.
+  function continueProject(id){
+    var p = findProject(id);
+    if(!p) return;
+    flushPendingSaves();
+    closeProgress();
+    var s = getActiveSession();
+    if(s){
+      s.projectId = p.id;
+      saveState();
+      switchView("session");
+    } else {
+      startSession({ projectId:p.id, location: p.location || state.lastLocation || "" });
+    }
+    showToast("Continuing "+p.name);
+  }
+  // Advanced only: which project the next attempt is logged against. Lists unfinished projects,
+  // plus the current pick if it's since been sent.
+  function renderProjectBar(session){
+    var bar = document.getElementById("projectBar");
+    var show = !!session && state.settings.mode==="advanced";
+    bar.hidden = !show;
+    if(!show) return;
+    var projects = computeProjects();
+    var current = findProject(session.projectId);
+    var options = projects.filter(function(p){ return !p.sent || (current && p.id===current.id); });
+    if(current && !options.some(function(p){ return p.id===current.id; })) options.unshift({ id:current.id, name:current.name, location:current.location, attempts:[], sessions:0, grade:null });
+    var select = document.getElementById("projectSelect");
+    select.innerHTML = '<option value="">No project — just logging</option>'+options.map(function(p){
+      return '<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name)+' — '+projectPlace(p)+'</option>';
+    }).join("");
+    select.value = current ? current.id : "";
+    var meta = "";
+    if(current){
+      var info = projects.find(function(p){ return p.id===current.id; });
+      var bits = [];
+      if(info && info.grade) bits.push(info.grade);
+      if(info) bits.push(info.attempts.length+" attempt"+(info.attempts.length===1?"":"s")+" so far");
+      var lastNote = info && info.attempts.find(function(a){ return (a.note||"").trim(); });
+      if(lastNote) bits.push("“"+lastNote.note+"”");
+      meta = bits.join(" · ");
+    }
+    var metaEl = document.getElementById("projectBarMeta");
+    metaEl.textContent = meta;
+    metaEl.hidden = !meta;
   }
   function openProgress(){ renderPyramidSection(); renderProjectsSection(); document.getElementById("progressOverlay").hidden = false; }
   function closeProgress(){ document.getElementById("progressOverlay").hidden = true; }
@@ -1803,7 +1948,10 @@
       refreshClimbNameList();
       var climbInput = document.getElementById("composerClimbName");
       climbInput.value = attempt.climbName||"";
-      climbInput.addEventListener("input", debounce(function(e){ attempt.climbName = e.target.value; saveState(); }, 350));
+      climbInput.addEventListener("input", debounce(function(e){
+        var session = getActiveSession();
+        if(session){ setAttemptClimbName(session, attempt, e.target.value); saveState(); render(); }
+      }, 350));
       climbInput.addEventListener("input", function(){ resetComposerTimeout(); });
     }
     if(showEffort){
@@ -1891,10 +2039,11 @@
     var session = getActiveSession();
     if(!session) return;
     state.seq = (state.seq||0) + 1;
-    // Prefill the climb name from the last attempt this session — you usually log several
-    // goes in a row on the same problem before moving on.
-    var lastClimbName = (session.attempts[0] && session.attempts[0].climbName) || "";
-    var attempt = { id:uid(), result:result, xp:gainFor(result), ts:Date.now(), seq:state.seq, effort:null, reason:null, note:"", gradeType:state.lastGradeType||"boulder", grade:null, photos:[], climbName:lastClimbName };
+    // Advanced: log against the session's picked project — you usually log several goes in a
+    // row on the same problem before moving on. Simple mode has no project controls, so it
+    // doesn't file anything under one either.
+    var proj = state.settings.mode==="advanced" ? findProject(session.projectId) : null;
+    var attempt = { id:uid(), result:result, xp:gainFor(result), ts:Date.now(), seq:state.seq, effort:null, reason:null, note:"", gradeType:state.lastGradeType||"boulder", grade:null, photos:[], climbName:proj ? proj.name : "", projectId:proj ? proj.id : null };
     session.attempts.unshift(attempt);
     if(session.attempts.length>300) session.attempts.length = 300;
 
@@ -1961,11 +2110,14 @@
   }
 
   /* ---------------- session lifecycle ---------------- */
-  function startSession(){
+  function startSession(opts){
+    opts = opts || {};
     var s = {
       id:uid(), startedAt:Date.now(), endedAt:null,
       timerConfig:{ workSec:state.timerDefaults.workSec, restSec:state.timerDefaults.restSec },
-      attempts:[], note:"", photos:[], satisfaction:null, location:state.lastLocation||""
+      attempts:[], note:"", photos:[], satisfaction:null,
+      location: opts.location!=null ? opts.location : (state.lastLocation||""),
+      projectId: opts.projectId || null
     };
     state.sessions.unshift(s);
     state.activeSessionId = s.id;
@@ -2115,7 +2267,10 @@
   function wireAttemptEditor(container, session, a, onStructuralChange){
     refreshClimbNameList();
     var climbNameInput = container.querySelector(".ae-climbname");
-    climbNameInput.addEventListener("input", debounce(function(e){ a.climbName = e.target.value; saveState(); }, 350));
+    climbNameInput.addEventListener("input", debounce(function(e){
+      setAttemptClimbName(session, a, e.target.value); saveState();
+      if(session.id===state.activeSessionId) renderProjectBar(session);
+    }, 350));
     container.querySelectorAll(".ae-result").forEach(function(btn){
       btn.addEventListener("click", function(){
         var v = btn.dataset.val;
@@ -2239,6 +2394,7 @@
     if(session && document.activeElement!==locInput) locInput.value = session.location||"";
     if(session) refreshLocationList();
     if(session) renderPhotoStrip(document.getElementById("sessionPhotoStrip"), session);
+    if(document.activeElement!==document.getElementById("projectSelect")) renderProjectBar(session);
 
     var finishSub = document.getElementById("finishCtaSub");
     if(finishSub && session){
@@ -3474,6 +3630,30 @@
     var s = getActiveSession();
     if(s){ s.location = e.target.value; state.lastLocation = e.target.value; saveState(); }
   }, 350));
+  // Climbs are refiled once the gym/crag edit is finished (blur or Enter), from what the field
+  // held before editing — never per keystroke, so clearing the field on the way to a new name
+  // doesn't briefly file this session's climbs under "location not set".
+  function wireLocationRelink(input, getSession, after){
+    var before = null;
+    input.addEventListener("focus", function(){ var s = getSession(); before = s ? (s.location||"") : null; });
+    input.addEventListener("change", function(e){
+      var s = getSession();
+      if(!s || before===null) return;
+      s.location = e.target.value;
+      relinkSessionLocation(s, before);
+      before = s.location;
+      saveState();
+      if(after) after(s);
+    });
+  }
+  wireLocationRelink(document.getElementById("sessionLocationInput"), getActiveSession, function(s){ state.lastLocation = s.location; renderProjectBar(s); });
+  wireLocationRelink(document.getElementById("detailLocationInput"), function(){ return state.sessions.find(function(x){ return x.id===currentDetailId; }); });
+  document.getElementById("projectSelect").addEventListener("change", function(e){
+    var s = getActiveSession();
+    if(!s) return;
+    s.projectId = e.target.value || null;
+    saveState(); renderProjectBar(s);
+  });
 
   document.getElementById("detailNoteInput").addEventListener("input", debounce(function(e){
     var s = state.sessions.find(function(x){ return x.id===currentDetailId; });
