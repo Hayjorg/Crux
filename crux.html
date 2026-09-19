@@ -654,10 +654,11 @@
   .project-notes{margin:0;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;display:flex;flex-direction:column;gap:4px;}
   .project-notes .pn-date{color:var(--text-dim);font-family:"IBM Plex Mono",monospace;font-size:11px;margin-right:6px;}
   .project-continue-btn{width:100%;margin-top:12px;}
-  .project-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+  .project-bar{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;min-width:0;}
   .project-bar .c-label{margin-top:0;min-width:0;}
-  .project-bar select{flex:1;min-width:0;width:auto;}
-  .project-bar-meta{flex-basis:100%;font-size:11.5px;color:var(--text-dim);margin:-2px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .project-chip .pc-sub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;opacity:0.75;font-weight:500;}
+  .project-bar-meta{font-size:11.5px;color:var(--text-dim);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .composer-project-hint{font-size:11px;color:var(--text-dim);margin:-5px 0 9px;}
   .project-main{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;}
   .project-name{font-weight:700;font-size:13.5px;}
   .project-meta{font-size:11.5px;color:var(--text-dim);}
@@ -874,8 +875,8 @@
       <section class="card log-card">
         <p class="eyebrow">Log an attempt</p>
         <div class="project-bar" id="projectBar" hidden>
-          <label class="c-label" for="projectSelect">Project</label>
-          <select id="projectSelect" class="note-input"></select>
+          <span class="c-label">Projects</span>
+          <div class="chip-row chip-scroll" id="projectChips" role="group" aria-label="Pick a project"></div>
           <p class="project-bar-meta" id="projectBarMeta"></p>
         </div>
         <div class="log-buttons">
@@ -1397,11 +1398,21 @@
   }
   // Naming (or renaming) an attempt links it to that climb at the session's place. Renaming the
   // newest attempt of the running session also changes what the next attempt is logged against.
+  // A typed name joins the same climb at this gym first. If this session or the existing project
+  // has no gym, the two can't conflict, so it joins that project (most recently climbed first).
+  // Only a name that exists solely at other gyms starts a new project here.
+  function projectForTypedName(name, location){
+    var nk = projectKey(name), lk = projectKey(location);
+    var same = computeProjects().filter(function(p){ return projectKey(p.name)===nk; });
+    var match = same.find(function(p){ return projectKey(p.location)===lk; }) ||
+                same.find(function(p){ return !lk || !projectKey(p.location); });
+    return (match && findProject(match.id)) || resolveProject(state, name, location);
+  }
   function setAttemptClimbName(session, a, value){
     a.climbName = value;
     var cur = findProject(a.projectId);
     if(!value.trim()) a.projectId = null;
-    else if(!cur || projectKey(cur.name)!==projectKey(value)) a.projectId = resolveProject(state, value, session.location).id;
+    else if(!cur || projectKey(cur.name)!==projectKey(value)) a.projectId = projectForTypedName(value, session.location).id;
     if(session.id===state.activeSessionId && session.attempts[0]===a) session.projectId = a.projectId;
     linkProjects(state);
   }
@@ -1677,35 +1688,52 @@
     }
     showToast("Continuing "+p.name);
   }
-  // Advanced only: which project the next attempt is logged against. Lists unfinished projects,
-  // plus the current pick if it's since been sent.
+  // Advanced only: one-tap chips for unfinished projects (this gym's first) right above the log
+  // buttons. The picked one is what the next attempts log against; tap it again to unpick.
   function renderProjectBar(session){
     var bar = document.getElementById("projectBar");
     var show = !!session && state.settings.mode==="advanced";
-    bar.hidden = !show;
-    if(!show) return;
-    var projects = computeProjects();
-    var current = findProject(session.projectId);
-    var options = projects.filter(function(p){ return !p.sent || (current && p.id===current.id); });
-    if(current && !options.some(function(p){ return p.id===current.id; })) options.unshift({ id:current.id, name:current.name, location:current.location, attempts:[], sessions:0, grade:null });
-    var select = document.getElementById("projectSelect");
-    select.innerHTML = '<option value="">No project — just logging</option>'+options.map(function(p){
-      return '<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name)+' — '+projectPlace(p)+'</option>';
+    var projects = show ? computeProjects() : [];
+    var current = show ? findProject(session.projectId) : null;
+    var here = projectKey(session && session.location);
+    var chips = projects.filter(function(p){ return !p.sent || (current && p.id===current.id); });
+    if(current && !chips.some(function(p){ return p.id===current.id; })) chips.push({ id:current.id, name:current.name, location:current.location, attempts:[], grade:null });
+    chips.sort(function(a,b){
+      if(current && (a.id===current.id)!==(b.id===current.id)) return a.id===current.id ? -1 : 1;
+      var ah = projectKey(a.location)===here, bh = projectKey(b.location)===here;
+      return ah===bh ? 0 : (ah ? -1 : 1);
+    });
+    chips = chips.slice(0, 8);
+    bar.hidden = !show || !chips.length;
+    if(bar.hidden) return;
+    var wrap = document.getElementById("projectChips");
+    wrap.innerHTML = chips.map(function(p){
+      var away = projectKey(p.location)!==here;
+      return '<button type="button" class="chip project-chip'+(current && p.id===current.id ? " selected" : "")+'" data-id="'+escapeHtml(p.id)+'" aria-pressed="'+(current && p.id===current.id ? "true" : "false")+'">'+
+        escapeHtml(p.name)+(p.grade ? ' <span class="pc-sub">'+p.grade+'</span>' : "")+(away ? ' <span class="pc-sub">· '+projectPlace(p)+'</span>' : "")+'</button>';
     }).join("");
-    select.value = current ? current.id : "";
-    var meta = "";
+    wrap.querySelectorAll(".project-chip").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var s = getActiveSession();
+        if(!s) return;
+        s.projectId = (s.projectId===btn.dataset.id) ? null : btn.dataset.id;
+        saveState(); renderProjectBar(s);
+      });
+    });
+    var meta = "Tap a project to log your next goes on it.";
     if(current){
       var info = projects.find(function(p){ return p.id===current.id; });
-      var bits = [];
-      if(info && info.grade) bits.push(info.grade);
-      if(info) bits.push(info.attempts.length+" attempt"+(info.attempts.length===1?"":"s")+" so far");
-      var lastNote = info && info.attempts.find(function(a){ return (a.note||"").trim(); });
-      if(lastNote) bits.push("“"+lastNote.note+"”");
+      var bits = [projectPlace(current)];
+      if(info){
+        var last = info.attempts[0];
+        bits.push(info.attempts.length+" attempt"+(info.attempts.length===1?"":"s"));
+        if(last) bits.push("last: "+cap(last.result)+" "+relTime(last.ts));
+        var lastNote = info.attempts.find(function(a){ return (a.note||"").trim(); });
+        if(lastNote) bits.push("“"+escapeHtml(lastNote.note)+"”");
+      }
       meta = bits.join(" · ");
     }
-    var metaEl = document.getElementById("projectBarMeta");
-    metaEl.textContent = meta;
-    metaEl.hidden = !meta;
+    document.getElementById("projectBarMeta").innerHTML = meta;
   }
   function openProgress(){ renderPyramidSection(); renderProjectsSection(); document.getElementById("progressOverlay").hidden = false; }
   function closeProgress(){ document.getElementById("progressOverlay").hidden = true; }
@@ -1930,7 +1958,8 @@
     box.innerHTML =
       '<div class="composer">' +
         '<div class="composer-head"><span>'+cap(attempt.result)+' logged · +'+attempt.xp+' XP</span></div>' +
-        (showClimbName ? '<input type="text" id="composerClimbName" class="note-input" list="climbNameList" maxlength="60" placeholder="Name this climb (optional)" style="margin-bottom:9px;">' : "") +
+        (showClimbName ? '<input type="text" id="composerClimbName" class="note-input" list="climbNameList" maxlength="60" placeholder="Name this climb (optional)" style="margin-bottom:9px;">'+
+          '<p class="composer-project-hint" id="composerProjectHint" hidden></p>' : "") +
         (showGrade ? '<div class="composer-row"><span class="c-label">Felt grade</span><div class="grade-wrap">'+
           '<div class="chip-row grade-type-row" id="gradeTypeRow">'+
             '<button type="button" class="chip grade-type-chip" data-val="boulder">Boulder</button>'+
@@ -1950,8 +1979,9 @@
       climbInput.value = attempt.climbName||"";
       climbInput.addEventListener("input", debounce(function(e){
         var session = getActiveSession();
-        if(session){ setAttemptClimbName(session, attempt, e.target.value); saveState(); render(); }
+        if(session){ setAttemptClimbName(session, attempt, e.target.value); saveState(); render(); updateComposerProjectHint(attempt); }
       }, 350));
+      updateComposerProjectHint(attempt);
       climbInput.addEventListener("input", function(){ resetComposerTimeout(); });
     }
     if(showEffort){
@@ -1994,6 +2024,19 @@
 
     syncComposerSelection(attempt);
     resetComposerTimeout();
+  }
+  // Says which project a named attempt went to, so a same-name climb is never filed somewhere
+  // unexpected without you seeing it.
+  function updateComposerProjectHint(attempt){
+    var el = document.getElementById("composerProjectHint");
+    if(!el) return;
+    var p = findProject(attempt.projectId);
+    el.hidden = !p;
+    if(!p) return;
+    var others = 0;
+    state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ if(a.projectId===p.id && a!==attempt) others++; }); });
+    var where = p.location ? " at "+escapeHtml(p.location) : " (no gym or crag set)";
+    el.innerHTML = others ? "Added to your project"+where+" · "+(others+1)+" attempts" : "New project"+where;
   }
   function closeComposerWithFlourish(){
     var box = document.getElementById("attemptComposer");
@@ -2394,7 +2437,7 @@
     if(session && document.activeElement!==locInput) locInput.value = session.location||"";
     if(session) refreshLocationList();
     if(session) renderPhotoStrip(document.getElementById("sessionPhotoStrip"), session);
-    if(document.activeElement!==document.getElementById("projectSelect")) renderProjectBar(session);
+    renderProjectBar(session);
 
     var finishSub = document.getElementById("finishCtaSub");
     if(finishSub && session){
@@ -3648,12 +3691,6 @@
   }
   wireLocationRelink(document.getElementById("sessionLocationInput"), getActiveSession, function(s){ state.lastLocation = s.location; renderProjectBar(s); });
   wireLocationRelink(document.getElementById("detailLocationInput"), function(){ return state.sessions.find(function(x){ return x.id===currentDetailId; }); });
-  document.getElementById("projectSelect").addEventListener("change", function(e){
-    var s = getActiveSession();
-    if(!s) return;
-    s.projectId = e.target.value || null;
-    saveState(); renderProjectBar(s);
-  });
 
   document.getElementById("detailNoteInput").addEventListener("input", debounce(function(e){
     var s = state.sessions.find(function(x){ return x.id===currentDetailId; });
