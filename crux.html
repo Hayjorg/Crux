@@ -1396,23 +1396,25 @@
     });
     st.projects = st.projects.filter(function(p){ return used[p.id]; });
   }
-  // Naming (or renaming) an attempt links it to that climb at the session's place. Renaming the
-  // newest attempt of the running session also changes what the next attempt is logged against.
-  // A typed name joins the same climb at this gym first. If this session or the existing project
-  // has no gym, the two can't conflict, so it joins that project (most recently climbed first).
-  // Only a name that exists solely at other gyms starts a new project here.
-  function projectForTypedName(name, location){
-    var nk = projectKey(name), lk = projectKey(location);
-    var same = computeProjects().filter(function(p){ return projectKey(p.name)===nk; });
-    var match = same.find(function(p){ return projectKey(p.location)===lk; }) ||
-                same.find(function(p){ return !lk || !projectKey(p.location); });
-    return (match && findProject(match.id)) || resolveProject(state, name, location);
+  // Same-name projects this attempt *could* belong to because the session's or the project's
+  // place is unknown, so the two can't be told apart. The composer offers these as a choice;
+  // they're never linked automatically.
+  function projectChoicesFor(session, a){
+    var p = findProject(a.projectId);
+    if(!p) return [];
+    var nk = projectKey(p.name), lk = projectKey(session.location);
+    return computeProjects().filter(function(q){
+      return q.id!==p.id && projectKey(q.name)===nk && (!lk || !projectKey(q.location));
+    }).slice(0,3);
   }
+  // Naming (or renaming) an attempt links it to the same-name project at the session's place
+  // only, or starts one there. Renaming the newest attempt of the running session also changes
+  // what the next attempt is logged against.
   function setAttemptClimbName(session, a, value){
     a.climbName = value;
     var cur = findProject(a.projectId);
     if(!value.trim()) a.projectId = null;
-    else if(!cur || projectKey(cur.name)!==projectKey(value)) a.projectId = projectForTypedName(value, session.location).id;
+    else if(!cur || projectKey(cur.name)!==projectKey(value)) a.projectId = resolveProject(state, value, session.location).id;
     if(session.id===state.activeSessionId && session.attempts[0]===a) session.projectId = a.projectId;
     linkProjects(state);
   }
@@ -1959,7 +1961,7 @@
       '<div class="composer">' +
         '<div class="composer-head"><span>'+cap(attempt.result)+' logged · +'+attempt.xp+' XP</span></div>' +
         (showClimbName ? '<input type="text" id="composerClimbName" class="note-input" list="climbNameList" maxlength="60" placeholder="Name this climb (optional)" style="margin-bottom:9px;">'+
-          '<p class="composer-project-hint" id="composerProjectHint" hidden></p>' : "") +
+          '<div class="composer-project-hint" id="composerProjectHint" hidden></div>' : "") +
         (showGrade ? '<div class="composer-row"><span class="c-label">Felt grade</span><div class="grade-wrap">'+
           '<div class="chip-row grade-type-row" id="gradeTypeRow">'+
             '<button type="button" class="chip grade-type-chip" data-val="boulder">Boulder</button>'+
@@ -1979,7 +1981,7 @@
       climbInput.value = attempt.climbName||"";
       climbInput.addEventListener("input", debounce(function(e){
         var session = getActiveSession();
-        if(session){ setAttemptClimbName(session, attempt, e.target.value); saveState(); render(); updateComposerProjectHint(attempt); }
+        if(session){ delete projectChoiceSettled[attempt.id]; setAttemptClimbName(session, attempt, e.target.value); saveState(); render(); updateComposerProjectHint(attempt); }
       }, 350));
       updateComposerProjectHint(attempt);
       climbInput.addEventListener("input", function(){ resetComposerTimeout(); });
@@ -2027,16 +2029,42 @@
   }
   // Says which project a named attempt went to, so a same-name climb is never filed somewhere
   // unexpected without you seeing it.
+  // If a same-name project exists where one side's place is unknown, it asks: use that project,
+  // or keep this one separate. Until you pick, the attempt stays on its own project for this place.
+  var projectChoiceSettled = {};
+  function placeSuffix(p){ return p.location ? " at "+escapeHtml(p.location) : " (no gym or crag set)"; }
   function updateComposerProjectHint(attempt){
     var el = document.getElementById("composerProjectHint");
-    if(!el) return;
+    var session = getActiveSession();
+    if(!el || !session) return;
     var p = findProject(attempt.projectId);
     el.hidden = !p;
     if(!p) return;
+    var choices = projectChoiceSettled[attempt.id] ? [] : projectChoicesFor(session, attempt);
+    if(choices.length){
+      el.innerHTML = "New project"+placeSuffix(p)+". Same climb as one you've logged before?"+
+        '<div class="chip-row" style="margin-top:6px;">'+
+          choices.map(function(q){ return '<button type="button" class="link-btn pc-use" data-id="'+escapeHtml(q.id)+'">Use '+escapeHtml(q.name)+placeSuffix(q)+'</button>'; }).join("")+
+          '<button type="button" class="link-btn pc-keep">Keep separate</button>'+
+        '</div>';
+      el.querySelectorAll(".pc-use").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          attempt.projectId = btn.dataset.id;
+          if(session.attempts[0]===attempt) session.projectId = btn.dataset.id;
+          linkProjects(state);
+          projectChoiceSettled[attempt.id] = true;
+          saveState(); render(); updateComposerProjectHint(attempt); resetComposerTimeout();
+        });
+      });
+      el.querySelector(".pc-keep").addEventListener("click", function(){
+        projectChoiceSettled[attempt.id] = true;
+        updateComposerProjectHint(attempt); resetComposerTimeout();
+      });
+      return;
+    }
     var others = 0;
     state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ if(a.projectId===p.id && a!==attempt) others++; }); });
-    var where = p.location ? " at "+escapeHtml(p.location) : " (no gym or crag set)";
-    el.innerHTML = others ? "Added to your project"+where+" · "+(others+1)+" attempts" : "New project"+where;
+    el.innerHTML = others ? "Added to your project"+placeSuffix(p)+" · "+(others+1)+" attempts" : "New project"+placeSuffix(p);
   }
   function closeComposerWithFlourish(){
     var box = document.getElementById("attemptComposer");
@@ -2087,6 +2115,7 @@
     // doesn't file anything under one either.
     var proj = state.settings.mode==="advanced" ? findProject(session.projectId) : null;
     var attempt = { id:uid(), result:result, xp:gainFor(result), ts:Date.now(), seq:state.seq, effort:null, reason:null, note:"", gradeType:state.lastGradeType||"boulder", grade:null, photos:[], climbName:proj ? proj.name : "", projectId:proj ? proj.id : null };
+    if(proj) projectChoiceSettled[attempt.id] = true; // picked on purpose — nothing to ask
     session.attempts.unshift(attempt);
     if(session.attempts.length>300) session.attempts.length = 300;
 
