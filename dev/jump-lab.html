@@ -1,0 +1,79 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jump lab</title>
+<!-- Dev-only comparison of level-up jump timings. Not part of the app or the published page. -->
+<style>
+  body{margin:0;padding:16px;font:14px system-ui,sans-serif;background:#F3EEE2;color:#221E19;}
+  h1{font-size:18px;margin:0 0 4px;} p{margin:0 0 12px;color:#6d655a;max-width:900px;}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+  button{font:inherit;padding:8px 14px;border-radius:999px;border:1px solid #cdbf9f;background:#fff;cursor:pointer;}
+  button.on{background:#0FB8A6;color:#fff;border-color:transparent;}
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .cell{background:#fff;border:1px solid #E3DAC5;border-radius:14px;padding:10px;width:250px;max-width:100%;}
+  .cell h2{font-size:14px;margin:0 0 2px;} .cell small{color:#8A8073;display:block;min-height:34px;}
+  .scene{position:relative;width:100%;aspect-ratio:4/5;overflow:hidden;border-radius:10px;
+    background:linear-gradient(180deg,#d9b98a 0%,#c49a63 78%,#8b7458 78%,#6f5d47 100%);}
+  .wander{position:absolute;bottom:8.5%;left:50%;width:50%;margin-left:-25%;}
+  .shadow{position:absolute;left:50%;bottom:10.5%;width:54%;height:4%;transform:translateX(-50%);border-radius:50%;
+    background:radial-gradient(ellipse, rgba(20,14,8,0.4) 0%, rgba(20,14,8,0.16) 55%, transparent 78%);}
+  .body{position:relative;} .body img{width:100%;display:block;}
+</style></head><body>
+<h1>Level-up jump: timing comparison</h1>
+<p>A is what's live now. B keeps all five frames and gives the body a smooth rise-and-fall arc. C drops the tiptoe takeoff frame so the whole jump is one clean arc on the tucked pose. Nothing here changes the app.</p>
+<div class="controls">
+  <button id="play">Play all</button>
+  <button id="loop">Loop</button>
+  <button data-speed="1" class="on">1×</button>
+  <button data-speed="0.5">½×</button>
+  <button data-speed="0.25">¼×</button>
+</div>
+<div class="row" id="row"></div>
+<script>
+var base = "../assets/mascot/climber/default/";
+var F = { rest:base+"idle/idle-01.png", j1:base+"jump/jump-01.png", j2:base+"jump/jump-02.png",
+          j3:base+"jump/jump-03.png", l1:base+"land/land-01.png", l2:base+"land/land-02.png" };
+Object.keys(F).forEach(function(k){ var im = new Image(); im.src = F[k]; });
+// [frame, ms, lift in master px (up), shadow override]
+var CLIPS = [
+  { name:"A · live now", note:"Tiptoe stretch, tuck, stretch, land.", frames:[
+    ["j1",140,0],["j2",80,0],["j3",160,130],["j2",80,10],["l1",100,0,1.12],["l2",140,0]] },
+  { name:"B · smooth arc, all frames", note:"Same frames; the body rises and falls in small steps, apex 190.", frames:[
+    ["j1",120,0],["j2",50,0],["j2",40,30],["j3",40,150],["j3",40,175],["j3",60,190],["j3",40,175],["j3",40,150],
+    ["j2",40,45],["j2",40,15],["l1",100,0,1.12],["l2",140,0]] },
+  { name:"C · tuck arc, no tiptoe", note:"Crouch, then one clean arc on the tucked pose, apex 130.", frames:[
+    ["j1",140,0],["j3",40,50],["j3",40,95],["j3",40,120],["j3",60,130],["j3",40,120],["j3",40,95],["j3",40,50],
+    ["j3",40,20],["l1",100,0,1.12],["l2",140,0]] }
+];
+var speed = 1, looping = false;
+var row = document.getElementById("row");
+var cells = CLIPS.map(function(c){
+  var el = document.createElement("div"); el.className = "cell";
+  el.innerHTML = '<h2>'+c.name+'</h2><small>'+c.note+'</small><div class="scene"><div class="wander">'+
+    '<div class="shadow"></div><div class="body"><img src="'+F.rest+'" alt=""></div></div></div>';
+  row.appendChild(el);
+  return { clip:c, img:el.querySelector("img"), body:el.querySelector(".body"), shadow:el.querySelector(".shadow"), wander:el.querySelector(".wander") };
+});
+function play(cell, done){
+  var i = 0, frames = cell.clip.frames.concat([["rest",1,0]]);
+  (function step(){
+    var f = frames[i], boxH = cell.wander.offsetHeight || 1;
+    var lift = f[2]/1536*boxH;
+    cell.img.src = F[f[0]];
+    cell.body.style.transform = "translateY("+(-lift)+"px)";
+    var sc = f[3] || Math.max(0.6, 1 - 2.5*lift/boxH), op = Math.max(0.5, 1 - 3*lift/boxH);
+    cell.shadow.style.transform = "translateX(-50%) scale("+sc+")"; cell.shadow.style.opacity = f[3] ? 1 : op;
+    i++;
+    if(i<frames.length) setTimeout(step, f[1]/speed); else done && done();
+  })();
+}
+function playAll(){
+  var left = cells.length;
+  cells.forEach(function(c){ play(c, function(){ if(--left===0 && looping) setTimeout(playAll, 700/speed); }); });
+}
+document.getElementById("play").onclick = playAll;
+document.getElementById("loop").onclick = function(){ looping = !looping; this.classList.toggle("on", looping); if(looping) playAll(); };
+document.querySelectorAll("[data-speed]").forEach(function(b){
+  b.onclick = function(){ speed = +b.dataset.speed; document.querySelectorAll("[data-speed]").forEach(function(x){ x.classList.toggle("on", x===b); }); };
+});
+</script>
+</body></html>
