@@ -418,6 +418,80 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(!saved().sessions.some(function(x){ return x.coach; }), "something was saved as a debrief");
   });
 
+  // A save whose past sessions ended `daysAgo` days back, for the Today's plan rules.
+  function planSave(specs){
+    var s = clone(TEMPLATE), now = Date.now(), seq = 0;
+    s.sessions = specs.map(function(sp, i){
+      var start = now - sp.daysAgo*86400000;
+      return { id:"p"+i, startedAt:start, endedAt:start+60000, timerConfig:{ workSec:(sp.timer||[45,90])[0], restSec:(sp.timer||[45,90])[1] },
+        attempts:(sp.attempts||[["send"]]).map(function(a){ seq++; return { id:"pa"+seq, result:a[0], xp:a[0]==="flash"?30:a[0]==="send"?20:5, ts:start+seq, seq:seq,
+          effort:null, reason:a[2]||null, note:"", gradeType:"boulder", grade:a[1]||null, photos:[], climbName:"" }; }).reverse(),
+        note:"", photos:[], satisfaction:null, location:"Movement" };
+    });
+    s.seq = seq; s.activeSessionId = null;
+    return s;
+  }
+  function planText(){ return { why:$("planWhyShort").textContent, body:$("planBody").textContent }; }
+
+  test("Today's plan: a first session builds a base (Simple mode too)", async function(){
+    await boot(TEMPLATE); await startOrResume();
+    expect(visible("planCard"), "no plan card in the session");
+    var p = planText();
+    expect(/First session/.test(p.why), "why: "+p.why);
+    expect(/2 On \/ 2 Off/.test(p.body) && /Warm-up/.test(p.body) && /Finish/.test(p.body), "plan: "+p.body.slice(0, 160));
+    expect(!/Max Hangs|Repeaters/.test(p.body), "a hangboard protocol was suggested");
+  });
+
+  test("Today's plan: rested means a hard day, and one tap loads its timer", async function(){
+    await boot(planSave([{ daysAgo:3, attempts:[["send","V5"],["fall"]] }])); await startOrResume();
+    var p = planText();
+    expect(/2 rest days/.test(p.why), "why: "+p.why);
+    expect(/Limit Boulder · 60s on \/ 180s off/.test(p.body), "main workout: "+p.body.slice(0, 200));
+    expect(/around V2 and below/.test(p.body), "warm-up not based on the V5 send: "+p.body.slice(0, 120));
+    await click(q(".plan-use-timer"), 200);
+    var s = saved();
+    expect(s.timerDefaults.workSec===60 && s.timerDefaults.restSec===180, "timer is "+s.timerDefaults.workSec+"/"+s.timerDefaults.restSec);
+    expect(/Timer is set/.test(q(".plan-use-timer").textContent), "button didn't confirm");
+  });
+
+  test("Today's plan: back-to-back days go lighter; a busy week says keep it light", async function(){
+    await boot(planSave([{ daysAgo:1 }])); await startOrResume();
+    var p = planText();
+    expect(/Climbed yesterday/.test(p.why) && /2 On \/ 2 Off/.test(p.body), "after yesterday: "+p.why+" / "+p.body.slice(0, 120));
+    await boot(planSave([{ daysAgo:1 }, { daysAgo:3 }, { daysAgo:5 }])); await startOrResume();
+    p = planText();
+    expect(/Session 4 this week: keep it light/.test(p.why), "busy week: "+p.why);
+  });
+
+  test("Today's plan: a long break eases back in; limit bouldering last time means 4x4s", async function(){
+    await boot(planSave([{ daysAgo:10 }])); await startOrResume();
+    expect(/9 days off: ease back in/.test(planText().why), "after 10 days: "+planText().why);
+    await boot(planSave([{ daysAgo:3, timer:[60,180] }])); await startOrResume();
+    expect(/4x4s/.test(planText().body), "didn't alternate to 4x4s: "+planText().body.slice(0, 160));
+  });
+
+  test("Today's plan: the focus line comes from your recent fall reasons", async function(){
+    await boot(planSave([{ daysAgo:2, attempts:[["fall",null,"Footwork"],["fall",null,"Footwork"],["fall",null,"Power"]] }])); await startOrResume();
+    var b = planText().body;
+    expect(/Focus today:/.test(b) && /quiet feet/.test(b) && /footwork/.test(b), "focus: "+b.slice(-160));
+    await boot(planSave([{ daysAgo:2, attempts:[["send"]] }])); await startOrResume();
+    expect(!/Focus today/.test(planText().body), "focus shown with no logged fall reasons");
+  });
+
+  test("Today's plan: Hide sticks after a reload; the timer button won't change a running timer", async function(){
+    await boot(planSave([{ daysAgo:3 }])); await startOrResume();
+    await click("planToggle");
+    expect($("planBody").hidden && /Show/.test($("planToggle").textContent), "plan didn't hide");
+    await boot();
+    expect($("planBody").hidden, "plan reopened after reload");
+    await click("planToggle");
+    await click("startBtn", 300);
+    var before = saved().timerDefaults.workSec;
+    await click(q(".plan-use-timer"), 200);
+    expect(saved().timerDefaults.workSec===before, "the plan changed the timer while it was running");
+    await click("startBtn", 150); await click("resetBtn", 150);
+  });
+
   test("The app is called Crux (never Crimpet)", async function(){
     await boot(TEMPLATE);
     expect(D.title==="Crux", "page title is '"+D.title+"'");

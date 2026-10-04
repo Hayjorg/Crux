@@ -691,6 +691,22 @@
   .end-title{font-family:"Bebas Neue",sans-serif;font-size:32px;margin:4px 0 2px;letter-spacing:0.02em;}
   .end-sub{color:var(--text-dim);font-size:13px;margin:0 0 16px;font-family:"IBM Plex Mono",monospace;}
   .end-done-btn{width:100%;margin-top:18px;}
+  .plan-card{padding:14px 18px;margin-bottom:16px;}
+  .plan-head{display:flex;align-items:center;gap:8px;}
+  .plan-head .eyebrow{margin:0;}
+  .plan-why-short{font-size:11.5px;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .plan-toggle{flex-shrink:0;padding:5px 11px;}
+  .plan-steps{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .plan-step{display:flex;gap:10px;align-items:flex-start;}
+  .plan-num{width:22px;height:22px;border-radius:50%;flex-shrink:0;background:var(--surface-2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--text-dim);}
+  .plan-step.main .plan-num{background:var(--accent);border-color:transparent;color:var(--accent-contrast);}
+  .plan-step-body{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--text-dim);}
+  .plan-step-body b{display:block;font-size:13.5px;color:var(--text);}
+  .plan-step-body .link-btn{margin-top:7px;}
+  .plan-note{margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--border);font-size:12px;line-height:1.45;color:var(--text-dim);}
+  .plan-note b{color:var(--text);}
+  .plan-note-src{opacity:0.8;}
   .coach-box{margin-top:14px;}
   .end-summary-card .coach-box{text-align:center;}
   .coach-text{text-align:left;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;max-height:240px;overflow-y:auto;}
@@ -869,6 +885,15 @@
         <span id="lvXpText">0 / 100 XP</span>
       </div>
     </div>
+
+    <section class="card plan-card" id="planCard" hidden>
+      <div class="plan-head">
+        <p class="eyebrow">Today's plan</p>
+        <span class="plan-why-short" id="planWhyShort"></span>
+        <button type="button" class="link-btn plan-toggle" id="planToggle" aria-expanded="true">Hide</button>
+      </div>
+      <div id="planBody"></div>
+    </section>
 
     <section class="card timer-card" id="timerCard">
       <div class="phase-row">
@@ -2676,6 +2701,103 @@
     syncAeSelection(container, a);
   }
 
+  /* ---------------- today's plan ---------------- */
+  // A simple warm-up -> main workout -> finish plan for the running session, picked by plain
+  // rules from the sessions before it: days since you last climbed, how many sessions this
+  // week, and why you've been falling. No Claude, no cost, instant. The main workout is always
+  // one of the timer drills, which one tap loads. The hangboard protocols (Max Hangs,
+  // Repeaters) are never picked automatically: their finger-injury risk makes them a choice
+  // to make on purpose.
+  var PLAN_WORKOUTS = {
+    limit:  { name:"Limit Boulder", work:60,  rest:180 },
+    onoff:  { name:"2 On / 2 Off",  work:120, rest:120 },
+    fourx4: { name:"4x4s",          work:240, rest:240 }
+  };
+  var PLAN_FOCUS = {
+    Footwork:"quiet feet. Watch each foothold until your toe is on it.",
+    Grip:"relax your grip on the easier moves, and save your fingers for the hard one.",
+    Power:"take the full rest between hard goes, so every go is a real one.",
+    Beta:"plan the moves from the ground before each go, and try a different sequence after two falls.",
+    Mental:"commit to one more move past where you usually let go."
+  };
+  function planDayNum(ts){ var d = new Date(ts); return Math.floor((ts - d.getTimezoneOffset()*60000)/86400000); }
+  function planFor(session){
+    var before = state.sessions.filter(function(x){ return x.endedAt && x.id!==session.id && x.startedAt<session.startedAt; })
+      .sort(function(a,b){ return b.endedAt-a.endedAt; });
+    var last = before[0] || null;
+    var days = last ? planDayNum(session.startedAt) - planDayNum(last.endedAt) : null; // 1 = climbed yesterday
+    var thisWeek = before.filter(function(x){ return session.startedAt - x.startedAt < 7*86400000; }).length;
+    var top = -1, reasons = {};
+    before.forEach(function(x, i){
+      x.attempts.forEach(function(a){
+        if((a.result==="send"||a.result==="flash") && a.gradeType==="boulder" && a.grade) top = Math.max(top, BOULDER_GRADES.indexOf(a.grade));
+        if(i<2 && a.result==="fall" && a.reason && PLAN_FOCUS[a.reason]) reasons[a.reason] = (reasons[a.reason]||0)+1;
+      });
+    });
+    var proj = findProject(session.projectId);
+
+    var kind, why;
+    if(!last){ kind = "start"; why = "First session: build a base"; }
+    else if(days>=8){ kind = "back"; why = (days-1)+" days off: ease back in"; }
+    else if(days<=1 && thisWeek>=3){ kind = "easy"; why = "Session "+(thisWeek+1)+" this week: keep it light"; }
+    else if(days<=1){ kind = "light"; why = days===0 ? "Second session today: go lighter" : "Climbed yesterday: go lighter"; }
+    else {
+      var lastWasLimit = last.timerConfig && last.timerConfig.workSec===60 && last.timerConfig.restSec===180;
+      kind = lastWasLimit ? "volume" : "hard";
+      why = (days-1)+" rest day"+(days-1===1?"":"s")+": you're fresh";
+    }
+    var w = (kind==="hard") ? PLAN_WORKOUTS.limit : (kind==="volume") ? PLAN_WORKOUTS.fourx4 : PLAN_WORKOUTS.onoff;
+    var main = {
+      start: "Easy problems for 2 minutes, rest 2, about 5 rounds. Lots of easy moves is how good movement gets built.",
+      back:  "Moderate problems for 2 minutes, rest 2, 4–5 rounds. Save your hardest climbs for next time.",
+      easy:  "Easy problems only, 2 on and 2 off for 4 rounds, and stop early if anything aches. A rest day counts as training too.",
+      light: "Moderate problems, 2 on and 2 off for 4 rounds. Nothing at your limit two days in a row.",
+      hard:  (proj ? "Go for "+proj.name+": " : "Your hardest problem: ")+"up to a minute per go, then a full 3 minutes' rest. 4–6 goes.",
+      volume:"Pick 4 problems a bit below your limit and climb them back to back, rest 4 minutes, and repeat 4 times. You did limit bouldering last time, so today builds staying power."
+    }[kind];
+    var hardDay = kind==="hard" || kind==="volume";
+    var focusReason = Object.keys(reasons).sort(function(a,b){ return reasons[b]-reasons[a]; })[0];
+    return {
+      kind:kind, why:why, workout:w,
+      steps:[
+        { title:"Warm-up · 10–15 min", text: top>=3
+            ? "Easy climbs around "+BOULDER_GRADES[top-3]+" and below, getting slightly harder."
+            : "Your easiest climbs, getting slightly harder. Keep your arms loose." },
+        { title:w.name+" · "+w.work+"s on / "+w.rest+"s off", text:main, main:true },
+        { title: hardDay ? "Finish · 10 min" : "Finish", text: hardDay
+            ? "Easy climbing to cool down, then stretch your forearms and shoulders."
+            : "Stop while it still feels good, then stretch your forearms and shoulders." }
+      ],
+      focus: focusReason && reasons[focusReason]>=2 ? { reason:focusReason, text:PLAN_FOCUS[focusReason] } : null
+    };
+  }
+  function renderPlan(session){
+    var card = document.getElementById("planCard");
+    card.hidden = !session;
+    if(!session) return;
+    var p = planFor(session), open = !session.planHidden;
+    document.getElementById("planWhyShort").textContent = p.why;
+    var toggle = document.getElementById("planToggle");
+    toggle.textContent = open ? "Hide" : "Show";
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    var body = document.getElementById("planBody");
+    body.hidden = !open;
+    if(!open) return;
+    var set = state.timerDefaults.workSec===p.workout.work && state.timerDefaults.restSec===p.workout.rest;
+    body.innerHTML = '<ol class="plan-steps">'+p.steps.map(function(s, i){
+      return '<li class="plan-step'+(s.main?" main":"")+'"><span class="plan-num">'+(i+1)+'</span><div class="plan-step-body"><b>'+escapeHtml(s.title)+'</b>'+escapeHtml(s.text)+
+        (s.main ? '<br><button type="button" class="link-btn plan-use-timer">'+(set ? "✓ Timer is set" : "Use this timer")+'</button>' : "")+
+      '</div></li>';
+    }).join("")+'</ol>'+
+    (p.focus ? '<p class="plan-note"><b>Focus today:</b> '+escapeHtml(p.focus.text)+' <span class="plan-note-src">(your recent falls: '+escapeHtml(p.focus.reason.toLowerCase())+')</span></p>' : "");
+    body.querySelector(".plan-use-timer").addEventListener("click", function(){
+      if(timer.phase!=="idle"){ showToast("Reset the timer first to switch workouts"); return; }
+      setWork(p.workout.work); setRest(p.workout.rest);
+      showToast("Timer set: "+p.workout.name+" ("+p.workout.work+"s on / "+p.workout.rest+"s off)");
+      renderPlan(session);
+    });
+  }
+
   function render(){
     var need = xpForLevel(state.level);
     document.getElementById("lvBadge").textContent = state.level;
@@ -2739,6 +2861,7 @@
     if(session && document.activeElement!==locInput) locInput.value = session.location||"";
     if(session) refreshLocationList();
     if(session) renderPhotoStrip(document.getElementById("sessionPhotoStrip"), session);
+    renderPlan(session);
     renderProjectBar(session);
 
     var finishSub = document.getElementById("finishCtaSub");
@@ -4133,6 +4256,12 @@
     setRest(parseInt(chip.dataset.rest,10));
   });
 
+  document.getElementById("planToggle").addEventListener("click", function(){
+    var s = getActiveSession();
+    if(!s) return;
+    s.planHidden = !s.planHidden;
+    saveState(); renderPlan(s);
+  });
   document.getElementById("logFlash").addEventListener("click", function(){ logAttempt("flash"); });
   document.getElementById("logSend").addEventListener("click", function(){ logAttempt("send"); });
   document.getElementById("logFall").addEventListener("click", function(){ logAttempt("fall"); });
