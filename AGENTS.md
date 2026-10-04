@@ -73,9 +73,20 @@ the timer drills, and a finish.
 - **Keep the advice conservative** and the copy short.
 - **Its tests** are the "Today's plan" checks in `dev/tests.html`.
 
-## Coach
+## Real coaches (planned, not built)
 
-The coach writes a short debrief of a finished session, and a "what to try next" tip for a
+The design for linking athletes to real coaches is in `docs/coaching/DESIGN.md`, with a draft
+database schema in `docs/coaching/schema.sql`.
+- **Hard limits:** no messaging, chat, comments, feeds or followers. The only text allowed is a
+  coach note on a workout and an athlete note on a result.
+- **Don't start a phase without the owner's go-ahead,** and say which phase you're working on
+  in commit messages.
+- **The workout format** in DESIGN.md section 5 is the shared contract. Don't change it in one
+  place only.
+
+## Coach (AI, being phased out)
+
+The AI coach writes a short debrief of a finished session, and a "what to try next" tip for a
 project. It uses the published page's `sample` capability (see `/* ---- coach ---- */` in
 `crux.html`).
 - **Only on a tap, never automatically.** Each answer uses the viewer's own Claude usage, and the
