@@ -707,6 +707,42 @@
   .plan-note{margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--border);font-size:12px;line-height:1.45;color:var(--text-dim);}
   .plan-note b{color:var(--text);}
   .plan-note-src{opacity:0.8;}
+  .plan-step.done .plan-num{background:color-mix(in srgb, var(--send) 18%, var(--surface-2));border-color:color-mix(in srgb, var(--send) 45%, var(--border));color:var(--send);}
+  .plan-step.skipped{opacity:0.6;}
+  .plan-switch{margin-top:12px;}
+  .wo-progress{display:block;margin-top:6px;}
+  .plan-step-body .wo-count{display:inline;font-size:13px;color:var(--text);font-family:"IBM Plex Mono",monospace;}
+  .wo-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;align-items:center;}
+  .wo-controls .btn{padding:8px 16px;font-size:13px;}
+  .wo-controls .link-btn{margin-top:0;}
+  .home-workouts-row{display:flex;justify-content:center;margin:-12px 0 20px;}
+  .wo-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .wo-row:last-child{border-bottom:none;}
+  .wo-row-main{flex:1;min-width:0;}
+  .wo-row-title{display:block;font-weight:700;font-size:13.5px;}
+  .wo-row-steps{display:block;font-size:11.5px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .wo-row-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+  .wo-start{padding:7px 14px;font-size:12.5px;}
+  .wo-ed-step{border:1px dashed var(--border);border-radius:var(--radius-md);background:var(--surface-2);padding:10px 12px;margin-bottom:10px;}
+  .wo-ed-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;}
+  .wo-ed-moves{margin-left:auto;display:flex;gap:5px;}
+  .wo-ed-moves .link-btn{padding:4px 9px;}
+  .wo-ed-moves .link-btn:disabled{opacity:0.35;}
+  .wo-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;}
+  .wo-field{display:flex;flex-direction:column;gap:3px;font-size:10.5px;color:var(--text-dim);letter-spacing:0.04em;text-transform:uppercase;min-width:0;}
+  .wo-field.wide{grid-column:1 / -1;}
+  .wo-field .note-input{text-transform:none;letter-spacing:0;font-size:13px;padding:7px 8px;}
+  .wo-error{color:var(--fall);font-size:12.5px;margin:12px 0 0;}
+  .workout-result{text-align:left;margin-top:14px;}
+  .workout-result .eyebrow{margin-bottom:2px;}
+  .wr-sub{font-size:12px;color:var(--text-dim);margin:0 0 8px;}
+  .wr-list{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:5px;}
+  .wr-row{display:flex;align-items:baseline;gap:8px;font-size:12.5px;}
+  .wr-row.skipped{opacity:0.6;}
+  .wr-mark{width:16px;flex-shrink:0;text-align:center;font-weight:700;color:var(--text-dim);}
+  .wr-row.done .wr-mark{color:var(--send);}
+  .wr-title{font-weight:600;}
+  .wr-detail{margin-left:auto;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;font-size:11px;white-space:nowrap;}
   .coach-box{margin-top:14px;}
   .end-summary-card .coach-box{text-align:center;}
   .coach-text{text-align:left;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;max-height:240px;overflow-y:auto;}
@@ -857,6 +893,12 @@
         <span class="sub" id="startCtaSub">45s work / 90s rest</span>
       </span>
     </button>
+    <div class="home-workouts-row">
+      <button type="button" class="link-btn" id="openWorkoutsBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>
+        Workouts
+      </button>
+    </div>
 
     <section class="history-section">
       <p class="eyebrow">Session History</p>
@@ -893,6 +935,15 @@
         <button type="button" class="link-btn plan-toggle" id="planToggle" aria-expanded="true">Hide</button>
       </div>
       <div id="planBody"></div>
+    </section>
+
+    <section class="card plan-card workout-card" id="workoutCard" hidden>
+      <div class="plan-head">
+        <p class="eyebrow">Workout</p>
+        <span class="plan-why-short" id="workoutTitle"></span>
+        <button type="button" class="link-btn plan-toggle" id="workoutStopBtn">Stop</button>
+      </div>
+      <div id="workoutBody"></div>
     </section>
 
     <section class="card timer-card" id="timerCard">
@@ -1039,6 +1090,7 @@
       <p class="eyebrow">Attempts</p>
       <ul class="attempt-list" id="detailAttemptList" style="max-height:none;"></ul>
     </section>
+    <section class="card workout-result" id="detailWorkout" style="padding:18px;margin-top:16px;" hidden></section>
     <section class="card coach-box" id="detailCoach" style="padding:18px;margin-top:16px;" hidden>
       <p class="eyebrow">Coach's take</p>
       <div class="coach-text" id="detailCoachText" hidden></div>
@@ -1167,6 +1219,55 @@
 <datalist id="climbNameList"></datalist>
 <datalist id="locationList"></datalist>
 
+<div class="modal-overlay" id="workoutsOverlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Workouts">
+    <div class="modal-head">
+      <h2>Workouts</h2>
+      <button type="button" class="icon-btn" id="closeWorkoutsBtn" aria-label="Close workouts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <p class="settings-section-hint" id="workoutsHint"></p>
+    <div class="settings-section">
+      <p class="settings-section-title">Your workouts</p>
+      <div id="workoutsMine"></div>
+      <button type="button" class="btn btn-ghost" id="newWorkoutBtn" style="width:100%;margin-top:10px;">New workout</button>
+    </div>
+    <div class="settings-section">
+      <p class="settings-section-title">Examples</p>
+      <div id="workoutsExamples"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="workoutEditorOverlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Edit workout">
+    <div class="modal-head">
+      <h2>Workout</h2>
+      <button type="button" class="icon-btn" id="closeWorkoutEditorBtn" aria-label="Close editor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <input type="text" id="woTitleInput" class="note-input" maxlength="80" placeholder="Workout name, e.g. Power day" style="margin-bottom:12px;">
+    <div id="woSteps"></div>
+    <p class="settings-section-title" style="margin-top:14px;">Add a step</p>
+    <div class="chip-row" id="woAddRow">
+      <button type="button" class="chip" data-add="instruction">+ Instruction</button>
+      <button type="button" class="chip" data-add="timed">+ Timed</button>
+      <button type="button" class="chip" data-add="intervals">+ Intervals</button>
+      <button type="button" class="chip" data-add="climbing">+ Climbing target</button>
+      <button type="button" class="chip" data-add="setsReps">+ Sets + reps</button>
+      <button type="button" class="chip" data-add="rest">+ Rest</button>
+    </div>
+    <p class="wo-error" id="workoutEditorError" hidden></p>
+    <div class="theme-row" style="margin-top:16px;">
+      <button type="button" class="btn btn-primary" id="saveWorkoutBtn" style="flex:1;">Save</button>
+      <button type="button" class="btn btn-ghost" id="cancelWorkoutBtn" style="flex:1;">Cancel</button>
+    </div>
+    <button type="button" class="link-btn danger" id="deleteWorkoutBtn" style="margin-top:12px;" hidden>Delete workout</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="progressOverlay" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-label="Climbing progress">
     <div class="modal-head">
@@ -1256,6 +1357,7 @@
     <div class="end-highlights" id="endHighlights" hidden></div>
     <div class="rating-row" id="endRatingRow"></div>
     <p class="rating-label" id="endRatingLabel">Tap to rate how it felt</p>
+    <div class="workout-result" id="endWorkout" hidden></div>
     <div class="coach-box" id="endCoach" hidden>
       <button type="button" class="link-btn coach-btn" id="endCoachBtn"></button>
       <div class="coach-text" id="endCoachText" hidden></div>
@@ -1416,6 +1518,8 @@
       // One entry per climb *at one place*: {id, name, location, createdAt}. Attempts point
       // at these by projectId (see linkProjects), so same-name climbs at different gyms stay apart.
       projects:[],
+      // Your own workouts (Workout document v1, docs/coaching/DESIGN.md section 5): {id, workout, createdAt, updatedAt}.
+      workouts:[],
       activeSessionId:null
     };
   }
@@ -1475,7 +1579,8 @@
       character: Object.assign(base.character, migrated.character||{}),
       badges: migrated.badges||{},
       sessions: Array.isArray(migrated.sessions)?migrated.sessions:[],
-      projects: Array.isArray(migrated.projects)?migrated.projects:[]
+      projects: Array.isArray(migrated.projects)?migrated.projects:[],
+      workouts: Array.isArray(migrated.workouts)?migrated.workouts.filter(function(w){ return w && typeof w==="object"; }):[]
     });
     // One-time upgrades, each gated on its own settingsVersion so a person's later choice
     // always wins and these never re-fire.
@@ -1930,6 +2035,22 @@
   function phaseDurationMs(phase){
     return (phase==="rest" ? state.timerDefaults.restSec : state.timerDefaults.workSec)*1000;
   }
+  // ---- timer programs ----
+  // A workout step can load a program: a fixed list of phases, each {kind:"work"|"rest", label,
+  // ms, tag}. The same timestamp engine runs it, one phase after another, and stops at the end
+  // instead of looping. With no program loaded, everything below behaves exactly as before.
+  // timerProgramDoneHook (set by the workout runner) hears when a program finishes.
+  var timerProgramDoneHook = null;
+  function loadTimerProgram(program, meta){
+    stopTimerTicking();
+    timer = idleTimer();
+    if(program && program.length){
+      timer.program = program; timer.pIndex = 0; timer.programMeta = meta || null;
+      timer.remainingMs = program[0].ms;
+    }
+    persistTimer(); renderTimer();
+  }
+  function programPhase(){ return timer.program ? timer.program[timer.pIndex] : null; }
   function timerRemainingMs(now){
     return timer.running ? Math.max(0, timer.phaseEndsAt-now) : timer.remainingMs;
   }
@@ -1960,8 +2081,26 @@
   function syncTimer(now){
     if(!timer.running) return false;
     var changed = false;
-    while(now >= timer.phaseEndsAt){
+    while(timer.running && now >= timer.phaseEndsAt){
       var fresh = now - timer.phaseEndsAt < 1000;
+      if(timer.program){
+        var ended = timer.program[timer.pIndex];
+        if(fresh){ if(ended.kind==="work"){ beep(880,220,0.1); buzz([40,60,40]); } else { beep(440,220,0.1); buzz(120); } }
+        if(ended.kind==="work") timer.round += 1;
+        changed = true;
+        if(timer.pIndex >= timer.program.length-1){
+          // the last phase is over: stop, and tell the runner (after this sync has finished)
+          var meta = timer.programMeta;
+          timer.running = false; timer.phaseEndsAt = null; timer.remainingMs = 0; timer.phase = "done";
+          stopTimerTicking();
+          setTimeout(function(){ if(timerProgramDoneHook) timerProgramDoneHook(meta); }, 0);
+          break;
+        }
+        timer.pIndex += 1;
+        timer.phase = timer.program[timer.pIndex].kind;
+        timer.phaseEndsAt += timer.program[timer.pIndex].ms;
+        continue;
+      }
       if(timer.phase==="work"){ timer.round += 1; if(fresh){ beep(880,220,0.1); buzz([40,60,40]); } }
       else if(fresh){ beep(440,220,0.1); buzz(120); }
       timer.phase = timer.phase==="work" ? "rest" : "work";
@@ -1976,6 +2115,7 @@
     var s = getActiveSession();
     if(!s) return;
     s.timerState = { phase:timer.phase, running:timer.running, round:timer.round, phaseEndsAt:timer.phaseEndsAt, remainingMs:timer.remainingMs };
+    if(timer.program){ s.timerState.program = timer.program; s.timerState.pIndex = timer.pIndex; s.timerState.programMeta = timer.programMeta; }
     saveState();
   }
   // Rebuild the in-memory timer from the active session — on load, and after an import.
@@ -1984,10 +2124,18 @@
     timer = idleTimer();
     var s = getActiveSession();
     var t = s && s.timerState;
+    if(t && Array.isArray(t.program) && t.program.length){
+      timer.program = t.program; timer.pIndex = Math.min(t.pIndex||0, t.program.length-1); timer.programMeta = t.programMeta || null;
+      if(t.phase==="idle" || t.phase==="done"){
+        timer.phase = t.phase; timer.round = t.round||0;
+        timer.remainingMs = t.phase==="done" ? 0 : (typeof t.remainingMs==="number" ? t.remainingMs : t.program[timer.pIndex].ms);
+        return;
+      }
+    }
     if(!t || (t.phase!=="work" && t.phase!=="rest")) return;
     timer.phase = t.phase;
     timer.round = t.round||0;
-    timer.remainingMs = typeof t.remainingMs==="number" ? t.remainingMs : phaseDurationMs(t.phase);
+    timer.remainingMs = typeof t.remainingMs==="number" ? t.remainingMs : (timer.program ? timer.program[timer.pIndex].ms : phaseDurationMs(t.phase));
     timer.running = !!t.running && typeof t.phaseEndsAt==="number";
     timer.phaseEndsAt = timer.running ? t.phaseEndsAt : null;
     if(timer.running){
@@ -1999,7 +2147,10 @@
   function startTimer(){
     if(timer.running) return;
     ensureAudio();
-    if(timer.phase==="idle"){ timer.phase="work"; timer.round=0; timer.remainingMs=phaseDurationMs("work"); }
+    if(timer.program){
+      if(timer.phase==="done") return; // finished: the runner loads the next step's program
+      if(timer.phase==="idle"){ timer.pIndex = 0; timer.phase = timer.program[0].kind; timer.round = 0; timer.remainingMs = timer.program[0].ms; }
+    } else if(timer.phase==="idle"){ timer.phase="work"; timer.round=0; timer.remainingMs=phaseDurationMs("work"); }
     timer.running = true;
     timer.phaseEndsAt = Date.now() + timer.remainingMs;
     startTimerTicking();
@@ -2020,7 +2171,11 @@
   }
   function resetTimer(){
     stopTimerTicking();
+    // Reset inside a running workout restarts the current step's program; anywhere else (a new
+    // or finished session, an import, Reset progress) it clears the program as before.
+    var prog = timer.program, meta = timer.programMeta, s = getActiveSession();
     timer = idleTimer();
+    if(prog && s && s.workout){ timer.program = prog; timer.pIndex = 0; timer.programMeta = meta; timer.remainingMs = prog[0].ms; }
     persistTimer();
     renderTimer();
   }
@@ -2040,16 +2195,24 @@
     var secs = Math.ceil(timerRemainingMs(Date.now())/1000);
     timer.lastShownSec = secs;
     var card = document.getElementById("timerCard");
-    card.classList.remove("phase-idle","phase-work","phase-rest");
+    card.classList.remove("phase-idle","phase-work","phase-rest","phase-done");
     card.classList.add("phase-"+timer.phase);
-    document.getElementById("phaseLabel").textContent = timer.phase==="idle" ? "READY" : (timer.phase==="work" ? "WORK" : "REST");
-    document.getElementById("roundLabel").textContent = timer.round>0 ? ("ROUND "+timer.round) : " ";
+    var pp = programPhase();
+    if(pp){
+      document.getElementById("phaseLabel").textContent = timer.phase==="done" ? "DONE" : timer.phase==="idle" ? "READY · "+pp.label : pp.label;
+      document.getElementById("roundLabel").textContent = timer.phase==="done" ? " " : (pp.tag || " ");
+    } else {
+      document.getElementById("phaseLabel").textContent = timer.phase==="idle" ? "READY" : (timer.phase==="work" ? "WORK" : "REST");
+      document.getElementById("roundLabel").textContent = timer.round>0 ? ("ROUND "+timer.round) : " ";
+    }
     document.getElementById("countdown").textContent = fmtClock(Math.max(secs,0));
-    var total = phaseDurationMs(timer.phase)/1000;
+    var total = pp ? pp.ms/1000 : phaseDurationMs(timer.phase)/1000;
     var pct = total>0 ? Math.max(0,Math.min(100,(secs/total)*100)) : 0;
     document.getElementById("timerFill").style.width = pct+"%";
-    document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : "Resume");
-    var idle = timer.phase==="idle";
+    document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : timer.phase==="done" ? "Done" : "Resume");
+    document.getElementById("startBtn").disabled = timer.phase==="done";
+    // A workout step's program owns the timer; the free work/rest settings wait until it's unloaded.
+    var idle = timer.phase==="idle" && !timer.program;
     document.getElementById("workInput").disabled = !idle;
     document.getElementById("restInput").disabled = !idle;
     ["workMinus","workPlus","restMinus","restPlus"].forEach(function(id){ document.getElementById(id).disabled = !idle; });
@@ -2084,7 +2247,7 @@
   function setWork(v){
     state.timerDefaults.workSec = clampSec(v);
     var s = getActiveSession(); if(s) s.timerConfig.workSec = state.timerDefaults.workSec;
-    if(timer.phase==="idle") timer.remainingMs = state.timerDefaults.workSec*1000;
+    if(timer.phase==="idle" && !timer.program) timer.remainingMs = state.timerDefaults.workSec*1000;
     saveState(); renderTimer();
   }
   function setRest(v){
@@ -2308,6 +2471,7 @@
     buddyReact(result==="fall" ? "sheepish" : (outcome.leveledUpTo ? "surprised" : "stoked"));
     buzz(outcome.leveledUpTo ? [30,70,30,70,60] : (result==="fall" ? 10 : 18));
 
+    if(session.workout){ workoutOnLog(session, attempt); render(); }
     showComposer(attempt);
   }
 
@@ -2368,6 +2532,7 @@
       location: opts.location!=null ? opts.location : (state.lastLocation||""),
       projectId: opts.projectId || null
     };
+    if(opts.workout) s.workout = opts.workout;
     state.sessions.unshift(s);
     state.activeSessionId = s.id;
     saveState();
@@ -2380,6 +2545,7 @@
     if(!s) return;
     flushPendingSaves();
     pauseTimer();
+    finalizeWorkout(s);
     s.endedAt = Date.now();
     delete s.timerState;
     state.activeSessionId = null;
@@ -2417,6 +2583,7 @@
     hlEl.hidden = !hls.length;
     setBuddy("endBuddy", (counts.flash+counts.send)>0 ? "stoked" : (total>0 ? "sheepish" : "neutral"));
     endSummarySession = s;
+    renderWorkoutResult(document.getElementById("endWorkout"), s);
     var endCoachText = document.getElementById("endCoachText");
     endCoachText.hidden = true; endCoachText.textContent = "";
     document.getElementById("endSessionOverlay").hidden = false;
@@ -2692,6 +2859,7 @@
     container.querySelector(".ae-delete").addEventListener("click", function(){
       var idx = session.attempts.findIndex(function(x){ return x.id===a.id; });
       if(idx>-1) session.attempts.splice(idx,1);
+      workoutOnRemove(session, a.id);
       editingAttemptId = null;
       var outcome = recomputeProfile();
       saveState();
@@ -2773,8 +2941,8 @@
   }
   function renderPlan(session){
     var card = document.getElementById("planCard");
-    card.hidden = !session;
-    if(!session) return;
+    card.hidden = !session || !!session.workout; // a workout you're running replaces the plan
+    if(card.hidden) return;
     var p = planFor(session), open = !session.planHidden;
     document.getElementById("planWhyShort").textContent = p.why;
     var toggle = document.getElementById("planToggle");
@@ -2789,13 +2957,521 @@
         (s.main ? '<br><button type="button" class="link-btn plan-use-timer">'+(set ? "✓ Timer is set" : "Use this timer")+'</button>' : "")+
       '</div></li>';
     }).join("")+'</ol>'+
-    (p.focus ? '<p class="plan-note"><b>Focus today:</b> '+escapeHtml(p.focus.text)+' <span class="plan-note-src">(your recent falls: '+escapeHtml(p.focus.reason.toLowerCase())+')</span></p>' : "");
+    (p.focus ? '<p class="plan-note"><b>Focus today:</b> '+escapeHtml(p.focus.text)+' <span class="plan-note-src">(your recent falls: '+escapeHtml(p.focus.reason.toLowerCase())+')</span></p>' : "")+
+    '<button type="button" class="link-btn plan-switch" id="planRunWorkout">Or run a workout instead</button>';
+    body.querySelector("#planRunWorkout").addEventListener("click", openWorkouts);
     body.querySelector(".plan-use-timer").addEventListener("click", function(){
       if(timer.phase!=="idle"){ showToast("Reset the timer first to switch workouts"); return; }
       setWork(p.workout.work); setRest(p.workout.rest);
       showToast("Timer set: "+p.workout.name+" ("+p.workout.work+"s on / "+p.workout.rest+"s off)");
       renderPlan(session);
     });
+  }
+
+  /* ---------------- workouts (Phase 0: local) ---------------- */
+  // Workout document v1 (docs/coaching/DESIGN.md section 5): {v:1, title, steps:[...]}, six step
+  // types, all durations in seconds. Later the same document arrives from a coach as a frozen
+  // assignment; Phase 0 runs your own workouts and the built-in examples, entirely on this device.
+  // Timed parts compile to timer programs (loadTimerProgram), climbing targets count the normal
+  // Flash/Send/Fall logs, and the result is saved on the session as session.workout.
+  var STEP_TYPES = ["instruction","timed","intervals","climbing","setsReps","rest"];
+  var STEP_NAMES = { instruction:"Instruction", timed:"Timed", intervals:"Intervals", climbing:"Climbing target", setsReps:"Sets + reps", rest:"Rest" };
+  var CLIMB_TARGETS = { attempts:"attempts", sends:"sends", problems:"problems" };
+  var EXAMPLE_WORKOUTS = [
+    { id:"ex-limit", workout:{ v:1, title:"Limit bouldering", steps:[
+      { id:"s1", type:"timed", title:"Warm-up", duration:900, text:"Easy climbs, getting slightly harder." },
+      { id:"s2", type:"climbing", title:"Limit attempts", target:"attempts", count:6, restBetween:180, text:"Your hardest problem. Take the full rest between goes." },
+      { id:"s3", type:"instruction", title:"Cool down", text:"10 minutes of easy climbing, then stretch your forearms and shoulders." } ] } },
+    { id:"ex-4x4", workout:{ v:1, title:"4x4s", steps:[
+      { id:"s1", type:"timed", title:"Warm-up", duration:900, text:"Easy climbs, getting slightly harder." },
+      { id:"s2", type:"intervals", title:"4x4s", work:240, rest:240, rounds:4, text:"4 problems back to back, a bit below your limit, then rest." },
+      { id:"s3", type:"instruction", title:"Cool down", text:"Easy climbing, then stretch." } ] } },
+    { id:"ex-arc", workout:{ v:1, title:"ARC endurance", steps:[
+      { id:"s1", type:"timed", title:"Warm-up", duration:600, text:"Easy moves to get loose." },
+      { id:"s2", type:"intervals", title:"ARC", work:1200, rest:600, rounds:2, text:"Keep moving on easy terrain. A light pump is fine, never a burn." },
+      { id:"s3", type:"instruction", title:"Stretch", text:"Forearms and shoulders, 5 minutes." } ] } },
+    { id:"ex-cond", workout:{ v:1, title:"Conditioning", steps:[
+      { id:"s1", type:"setsReps", title:"Pull-ups", sets:3, reps:8, restBetween:120, text:"Swap for rows if pull-ups are hard." },
+      { id:"s2", type:"setsReps", title:"Push-ups", sets:3, reps:12, restBetween:90 },
+      { id:"s3", type:"timed", title:"Plank", duration:45 },
+      { id:"s4", type:"rest", duration:60 },
+      { id:"s5", type:"instruction", title:"Stretch", text:"Chest, shoulders and hips." } ] } }
+  ];
+  function fmtDur(sec){
+    if(sec<60) return sec+"s";
+    var m = Math.floor(sec/60), s = sec%60;
+    return s ? m+" min "+s+"s" : m+" min";
+  }
+  function intIn(v, lo, hi, dflt){ var n = Math.round(Number(v)); return isFinite(n) && n>=lo && n<=hi ? n : dflt; }
+  function textIn(v, max){ return typeof v==="string" ? v.trim().slice(0, max) : ""; }
+  // Checks a workout document and returns a clean copy, or {error}.
+  function validateWorkout(doc){
+    if(!doc || typeof doc!=="object") return { error:"Not a workout." };
+    var title = textIn(doc.title, 80);
+    if(!title) return { error:"Give the workout a name." };
+    if(!Array.isArray(doc.steps) || !doc.steps.length) return { error:"Add at least one step." };
+    if(doc.steps.length>30) return { error:"A workout can have up to 30 steps." };
+    var seen = {}, steps = [];
+    for(var i=0;i<doc.steps.length;i++){
+      var s = doc.steps[i] || {}, n = i+1;
+      if(STEP_TYPES.indexOf(s.type)<0) return { error:"Step "+n+" has an unknown type." };
+      var id = (typeof s.id==="string" && s.id && !seen[s.id]) ? s.id : "s"+n;
+      while(seen[id]) id = id+"x";
+      seen[id] = true;
+      var c = { id:id, type:s.type, title:textIn(s.title, 80) || STEP_NAMES[s.type] };
+      var text = textIn(s.text, 300); if(text) c.text = text;
+      if(s.type==="timed" || s.type==="rest"){
+        c.duration = intIn(s.duration, 1, s.type==="rest" ? 3600 : 10800, 0);
+        if(!c.duration) return { error:"Step "+n+" needs a duration." };
+      } else if(s.type==="intervals"){
+        c.work = intIn(s.work, 1, 3600, 0); c.rest = intIn(s.rest, 0, 3600, -1); c.rounds = intIn(s.rounds, 1, 50, 0);
+        if(!c.work || c.rest<0 || !c.rounds) return { error:"Step "+n+" needs work, rest and rounds." };
+        c.sets = intIn(s.sets, 1, 20, 1);
+        if(c.sets>1) c.setRest = intIn(s.setRest, 0, 3600, c.rest);
+      } else if(s.type==="climbing"){
+        c.target = CLIMB_TARGETS[s.target] ? s.target : "attempts";
+        c.count = intIn(s.count, 1, 100, 0);
+        if(!c.count) return { error:"Step "+n+" needs a target number." };
+        var rb = intIn(s.restBetween, 0, 1800, 0); if(rb) c.restBetween = rb;
+        if(s.grade && typeof s.grade==="object"){
+          var gt = s.grade.type==="route" ? "route" : "boulder", scale = gt==="route" ? ROUTE_GRADES : BOULDER_GRADES;
+          var g = { type:gt };
+          if(scale.indexOf(s.grade.min)>-1) g.min = s.grade.min;
+          if(scale.indexOf(s.grade.max)>-1) g.max = s.grade.max;
+          if(g.min || g.max) c.grade = g;
+        }
+      } else if(s.type==="setsReps"){
+        c.sets = intIn(s.sets, 1, 20, 0); c.reps = intIn(s.reps, 1, 200, 0);
+        if(!c.sets || !c.reps) return { error:"Step "+n+" needs sets and reps." };
+        var rs = intIn(s.restBetween, 0, 1800, 0); if(rs) c.restBetween = rs;
+      }
+      steps.push(c);
+    }
+    return { workout:{ v:1, title:title, steps:steps } };
+  }
+  function stepSummary(s){
+    switch(s.type){
+      case "timed": return fmtDur(s.duration);
+      case "rest": return fmtDur(s.duration);
+      case "intervals": return s.work+"s on / "+s.rest+"s off × "+s.rounds+(s.sets>1 ? ", "+s.sets+" sets" : "");
+      case "climbing":
+        var g = s.grade ? " · "+(s.grade.min||"")+(s.grade.min&&s.grade.max&&s.grade.min!==s.grade.max ? "–"+s.grade.max : (!s.grade.min ? s.grade.max : "")) : "";
+        return s.count+" "+CLIMB_TARGETS[s.target]+g+(s.restBetween ? " · rest "+fmtDur(s.restBetween) : "");
+      case "setsReps": return s.sets+" × "+s.reps+(s.restBetween ? " · rest "+fmtDur(s.restBetween) : "");
+      default: return "";
+    }
+  }
+  function isTimerStep(s){ return s.type==="timed" || s.type==="rest" || s.type==="intervals"; }
+  // A step's timer program: the list of phases the timer engine runs.
+  function compileStep(s){
+    if(s.type==="timed") return [{ kind:"work", label:s.title.toUpperCase(), ms:s.duration*1000, tag:fmtDur(s.duration) }];
+    if(s.type==="rest") return [{ kind:"rest", label:"REST", ms:s.duration*1000, tag:fmtDur(s.duration) }];
+    if(s.type!=="intervals") return null;
+    var out = [];
+    for(var set=1; set<=s.sets; set++){
+      for(var r=1; r<=s.rounds; r++){
+        var tag = "ROUND "+r+"/"+s.rounds+(s.sets>1 ? " · SET "+set+"/"+s.sets : "");
+        out.push({ kind:"work", label:"WORK", ms:s.work*1000, tag:tag });
+        if(r<s.rounds && s.rest>0) out.push({ kind:"rest", label:"REST", ms:s.rest*1000, tag:tag });
+      }
+      if(set<s.sets && (s.setRest||0)>0) out.push({ kind:"rest", label:"SET REST", ms:s.setRest*1000, tag:"SET "+set+"/"+s.sets+" DONE" });
+    }
+    return out;
+  }
+  function restProgram(sec, tag){ return [{ kind:"rest", label:"REST", ms:sec*1000, tag:tag||"" }]; }
+
+  // ---- the runner ----
+  // session.workout = { source:{kind:"mine"|"example", id}, doc (a frozen copy), index (current
+  // step; doc.steps.length = all done), steps:{stepId: {status, ...}}, startedAt, result:{rpe, note} }
+  // Step status: pending | active | done | partial | skipped. Climbing steps keep the ids of the
+  // attempts logged during them; counts are always read back from the session's attempts, so
+  // editing or deleting an attempt later stays consistent.
+  function workoutStep(w){ return w && w.index < w.doc.steps.length ? w.doc.steps[w.index] : null; }
+  function stepRes(w, step){ return w.steps[step.id] || (w.steps[step.id] = { status:"pending" }); }
+  function climbCounts(session, res){
+    var ids = res.attemptIds || [], c = { attempts:0, flash:0, send:0, fall:0, problems:0 }, names = {};
+    session.attempts.forEach(function(a){
+      if(ids.indexOf(a.id)<0) return;
+      c.attempts++; c[a.result]++;
+      var k = projectKey(a.climbName); if(!k) c.problems++; else if(!names[k]){ names[k] = 1; c.problems++; }
+    });
+    c.sends = c.flash + c.send;
+    return c;
+  }
+  function climbProgress(session, step, res){ var c = climbCounts(session, res); return step.target==="sends" ? c.sends : step.target==="problems" ? c.problems : c.attempts; }
+
+  function startWorkout(source, doc){
+    var clean = validateWorkout(doc);
+    if(clean.error){ showToast(clean.error); return; }
+    var w = { source:source, doc:clean.workout, index:0, steps:{}, startedAt:Date.now(), result:{ rpe:null, note:"" } };
+    var s = getActiveSession();
+    closeWorkouts();
+    if(s){
+      if(s.workout && workoutStep(s.workout)){ showToast("Finish or stop the current workout first"); switchView("session"); return; }
+      s.workout = w;
+      saveState();
+      switchView("session");
+    } else {
+      startSession({ workout:w });
+      s = getActiveSession();
+    }
+    enterWorkoutStep(s);
+  }
+  // Makes the current step active and gets the timer ready for it (never starts it by itself).
+  function enterWorkoutStep(s){
+    var w = s.workout, step = workoutStep(w);
+    if(step){
+      var res = stepRes(w, step);
+      if(res.status==="pending") res.status = "active";
+      if(!timer.running){
+        if(isTimerStep(step)) loadTimerProgram(compileStep(step), { stepId:step.id, kind:"step" });
+        else if(timer.program) loadTimerProgram(null);
+      }
+    } else if(!timer.running && timer.program){
+      loadTimerProgram(null);
+    }
+    saveState();
+    render();
+  }
+  // Leaves the current step: Next (status from what happened) or Skip.
+  function leaveWorkoutStep(s, skip){
+    var w = s.workout, step = workoutStep(w);
+    if(!step) return;
+    var res = stepRes(w, step);
+    var ownsTimer = timer.program && timer.programMeta && timer.programMeta.stepId===step.id;
+    if(isTimerStep(step) && res.status!=="done"){
+      var started = ownsTimer && (timer.running || timer.phase!=="idle");
+      if(step.type==="intervals" && ownsTimer) res.roundsDone = timer.round;
+      res.status = started ? "partial" : "skipped";
+    } else if(step.type==="climbing" && res.status!=="done"){
+      res.status = climbProgress(s, step, res)>=step.count ? "done" : (res.attemptIds && res.attemptIds.length ? "partial" : "skipped");
+    } else if(step.type==="setsReps" && res.status!=="done"){
+      res.status = (res.setsDone||0)>=step.sets ? "done" : ((res.setsDone||0)>0 ? "partial" : "skipped");
+    } else if(res.status!=="done"){
+      res.status = skip ? "skipped" : "done";
+    }
+    if(ownsTimer && timer.running) loadTimerProgram(null);
+    w.index++;
+    enterWorkoutStep(s);
+  }
+  // The timer finished a program: a step's own countdown completes that step and moves on; a rest
+  // between climbing goes or sets just ends.
+  timerProgramDoneHook = function(meta){
+    var s = getActiveSession();
+    if(!s || !s.workout || !meta) return;
+    var step = workoutStep(s.workout);
+    if(meta.kind==="step" && step && step.id===meta.stepId){
+      var res = stepRes(s.workout, step);
+      res.status = "done";
+      if(step.type==="intervals") res.roundsDone = step.rounds*step.sets;
+      s.workout.index++;
+      enterWorkoutStep(s);
+      showToast(step.title+" done");
+    } else {
+      if(timer.program && timer.phase==="done") loadTimerProgram(null);
+      render();
+    }
+  };
+  // Called from logAttempt: a go logged during a climbing step counts toward it.
+  function workoutOnLog(s, attempt){
+    var w = s.workout, step = workoutStep(w);
+    if(!step || step.type!=="climbing") return;
+    var res = stepRes(w, step);
+    res.attemptIds = (res.attemptIds||[]).concat([attempt.id]);
+    var met = climbProgress(s, step, res)>=step.count;
+    if(met && res.status!=="done"){ res.status = "done"; showToast(step.title+": target reached"); }
+    else if(step.restBetween && !timer.running){
+      loadTimerProgram(restProgram(step.restBetween, "AFTER GO "+res.attemptIds.length), { stepId:step.id, kind:"between" });
+      startTimer();
+    }
+    saveState();
+  }
+  // Called when an attempt is undone or deleted.
+  function workoutOnRemove(s, attemptId){
+    if(!s || !s.workout) return;
+    Object.keys(s.workout.steps).forEach(function(k){
+      var r = s.workout.steps[k];
+      if(r.attemptIds) r.attemptIds = r.attemptIds.filter(function(id){ return id!==attemptId; });
+    });
+  }
+  function workoutSetDone(s){
+    var w = s.workout, step = workoutStep(w);
+    if(!step || step.type!=="setsReps") return;
+    var res = stepRes(w, step);
+    res.setsDone = Math.min(step.sets, (res.setsDone||0)+1);
+    if(res.setsDone>=step.sets){ res.status = "done"; showToast(step.title+" done"); }
+    else if(step.restBetween && !timer.running){
+      loadTimerProgram(restProgram(step.restBetween, "SET "+res.setsDone+"/"+step.sets+" DONE"), { stepId:step.id, kind:"between" });
+      startTimer();
+    }
+    saveState(); render();
+  }
+  function stopWorkout(s){
+    var w = s.workout;
+    while(workoutStep(w)) leaveWorkoutStep(s, true);
+  }
+  // At Finish Session: anything not finished is recorded as partial or skipped.
+  function finalizeWorkout(s){
+    if(!s.workout) return;
+    if(workoutStep(s.workout)) stopWorkout(s);
+    s.workout.finishedAt = Date.now();
+  }
+
+  var STATUS_MARK = { done:"✓", partial:"½", skipped:"–" };
+  function stepResultText(s, step, res){
+    if(step.type==="climbing"){ var c = climbCounts(s, res); return c.attempts+" go"+(c.attempts===1?"":"es")+" · "+c.sends+" sent"; }
+    if(step.type==="setsReps") return (res.setsDone||0)+" of "+step.sets+" sets";
+    if(step.type==="intervals" && res.status!=="skipped") return (res.status==="done" ? step.rounds*step.sets : (res.roundsDone||0))+" of "+(step.rounds*step.sets)+" rounds";
+    return "";
+  }
+  function renderWorkoutCard(session){
+    var card = document.getElementById("workoutCard");
+    var w = session && session.workout;
+    card.hidden = !w;
+    if(!w) return;
+    var cur = workoutStep(w), total = w.doc.steps.length;
+    document.getElementById("workoutTitle").textContent = w.doc.title+" · "+(cur ? "step "+(w.index+1)+" of "+total : "all steps done");
+    document.getElementById("workoutStopBtn").hidden = !cur;
+    var html = '<ol class="plan-steps">'+w.doc.steps.map(function(step, i){
+      var res = w.steps[step.id] || { status:"pending" }, isCur = i===w.index;
+      var cls = "plan-step"+(isCur ? " main" : "")+(res.status==="done" ? " done" : "")+(res.status==="skipped"||res.status==="partial" ? " skipped" : "");
+      var body = '<b>'+escapeHtml(step.title)+(stepSummary(step) ? ' · '+escapeHtml(stepSummary(step)) : '')+'</b>';
+      if(isCur){
+        if(step.text) body += escapeHtml(step.text);
+        var ctl = [];
+        if(step.type==="instruction") ctl.push('<button type="button" class="btn btn-primary wo-ctl" data-act="done">Done</button>');
+        if(isTimerStep(step)){
+          var owns = timer.program && timer.programMeta && timer.programMeta.stepId===step.id;
+          body += '<span class="wo-progress">'+(owns ? (timer.running ? "Running on the timer below." : "Ready on the timer below. Tap Start.") : "The timer is busy.")+'</span>';
+          if(!owns) ctl.push('<button type="button" class="link-btn wo-ctl" data-act="load">Use the timer for this step</button>');
+        }
+        if(step.type==="climbing"){
+          var got = climbProgress(session, step, stepRes(w, step));
+          body += '<span class="wo-progress"><b class="wo-count">'+got+' / '+step.count+'</b> '+CLIMB_TARGETS[step.target]+(got>=step.count ? ' ✓' : '')+'. Log each go with Flash, Send or Fall.'+
+            (step.restBetween ? ' The rest timer starts after each go.' : '')+'</span>';
+        }
+        if(step.type==="setsReps"){
+          var sd = stepRes(w, step).setsDone||0;
+          body += '<span class="wo-progress"><b class="wo-count">Set '+Math.min(sd+1, step.sets)+' of '+step.sets+'</b> · '+step.reps+' reps'+(sd>=step.sets ? ' ✓' : '')+'</span>';
+          if(sd<step.sets) ctl.push('<button type="button" class="btn btn-primary wo-ctl" data-act="set">Set done</button>');
+        }
+        if(step.type!=="instruction") ctl.push('<button type="button" class="link-btn wo-ctl" data-act="next">Next step</button>');
+        ctl.push('<button type="button" class="link-btn wo-ctl" data-act="skip">Skip</button>');
+        body += '<div class="wo-controls">'+ctl.join("")+'</div>';
+      } else if(res.status!=="pending" && res.status!=="active"){
+        var rt = stepResultText(session, step, res);
+        if(rt) body += escapeHtml(rt);
+      }
+      var mark = STATUS_MARK[res.status] || String(i+1);
+      return '<li class="'+cls+'"><span class="plan-num">'+mark+'</span><div class="plan-step-body">'+body+'</div></li>';
+    }).join("")+'</ol>'+
+    (cur ? "" : '<p class="plan-note"><b>Workout complete.</b> Tap Finish Session to save it with your RPE and a note.</p>');
+    var bodyEl = document.getElementById("workoutBody");
+    bodyEl.innerHTML = html;
+    bodyEl.querySelectorAll(".wo-ctl").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var s = getActiveSession(); if(!s || !s.workout) return;
+        var act = btn.dataset.act, step = workoutStep(s.workout);
+        if(act==="done" || act==="next") leaveWorkoutStep(s, false);
+        else if(act==="skip") leaveWorkoutStep(s, true);
+        else if(act==="set") workoutSetDone(s);
+        else if(act==="load"){
+          if(timer.running){ showToast("Pause or reset the timer first"); return; }
+          if(step && isTimerStep(step)) loadTimerProgram(compileStep(step), { stepId:step.id, kind:"step" });
+          render();
+        }
+      });
+    });
+  }
+  // ---- the library (Workouts sheet) and the editor ----
+  // Everyone can run their own workouts and the examples; building and editing them is an
+  // Advanced-mode control.
+  function openWorkouts(){ renderWorkoutsModal(); document.getElementById("workoutsOverlay").hidden = false; }
+  function closeWorkouts(){ document.getElementById("workoutsOverlay").hidden = true; }
+  function workoutRowHTML(kind, id, doc, canEdit){
+    return '<div class="wo-row"><div class="wo-row-main"><span class="wo-row-title">'+escapeHtml(doc.title)+'</span>'+
+      '<span class="wo-row-steps">'+doc.steps.map(function(s){ return escapeHtml(s.title); }).join(" · ")+'</span></div>'+
+      '<div class="wo-row-actions">'+
+        (canEdit ? '<button type="button" class="link-btn wo-lib" data-act="'+(kind==="mine" ? "edit" : "copy")+'" data-kind="'+kind+'" data-id="'+escapeHtml(id)+'">'+(kind==="mine" ? "Edit" : "Copy")+'</button>' : '')+
+        '<button type="button" class="btn btn-primary wo-lib wo-start" data-act="start" data-kind="'+kind+'" data-id="'+escapeHtml(id)+'">Start</button>'+
+      '</div></div>';
+  }
+  function renderWorkoutsModal(){
+    var advanced = state.settings.mode==="advanced";
+    var mine = (state.workouts||[]).filter(function(x){ return x && x.workout && !validateWorkout(x.workout).error; });
+    var s = getActiveSession();
+    document.getElementById("workoutsHint").textContent = s && s.workout && workoutStep(s.workout)
+      ? "A workout is already running in this session."
+      : s ? "Starting one adds it to the session you're in." : "Starting one starts a session.";
+    document.getElementById("workoutsMine").innerHTML = mine.length
+      ? mine.map(function(x){ return workoutRowHTML("mine", x.id, x.workout, advanced); }).join("")
+      : '<div class="empty-state">'+(advanced ? "No workouts of your own yet. Tap New workout, or copy an example." : "No workouts of your own yet. Switch to Advanced in Settings to build your own.")+'</div>';
+    document.getElementById("workoutsExamples").innerHTML = EXAMPLE_WORKOUTS.map(function(x){ return workoutRowHTML("example", x.id, x.workout, advanced); }).join("");
+    document.getElementById("newWorkoutBtn").hidden = !advanced;
+  }
+  function findWorkoutEntry(kind, id){
+    var list = kind==="mine" ? (state.workouts||[]) : EXAMPLE_WORKOUTS;
+    for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; }
+    return null;
+  }
+  document.getElementById("workoutsOverlay").addEventListener("click", function(e){
+    if(e.target.id==="workoutsOverlay"){ closeWorkouts(); return; }
+    var btn = e.target.closest(".wo-lib");
+    if(!btn) return;
+    var entry = findWorkoutEntry(btn.dataset.kind, btn.dataset.id);
+    if(!entry) return;
+    if(btn.dataset.act==="start") startWorkout({ kind:btn.dataset.kind, id:entry.id }, entry.workout);
+    else if(btn.dataset.act==="edit") openWorkoutEditor(entry.id, entry.workout);
+    else if(btn.dataset.act==="copy") openWorkoutEditor(null, JSON.parse(JSON.stringify(entry.workout)));
+  });
+
+  var woDraft = null; // {id|null, workout} while the editor is open
+  function openWorkoutEditor(id, workout){
+    woDraft = { id:id, workout:JSON.parse(JSON.stringify(workout || { v:1, title:"", steps:[] })) };
+    document.getElementById("workoutEditorError").hidden = true;
+    document.getElementById("deleteWorkoutBtn").hidden = !id;
+    resetDeleteWorkoutConfirm();
+    renderWorkoutEditor();
+    document.getElementById("workoutEditorOverlay").hidden = false;
+  }
+  function closeWorkoutEditor(){ woDraft = null; document.getElementById("workoutEditorOverlay").hidden = true; }
+  function newStep(type){
+    var base = { type:type, title:STEP_NAMES[type] };
+    if(type==="timed") base.duration = 600;
+    if(type==="rest") base.duration = 120;
+    if(type==="intervals"){ base.work = 60; base.rest = 120; base.rounds = 4; }
+    if(type==="climbing"){ base.target = "attempts"; base.count = 6; }
+    if(type==="setsReps"){ base.sets = 3; base.reps = 8; base.restBetween = 90; }
+    return base;
+  }
+  function edField(i, key, label, value, kind, extra){
+    var v = value==null ? "" : value;
+    if(kind==="select") return '<label class="wo-field"><span>'+label+'</span><select class="note-input" data-i="'+i+'" data-k="'+key+'">'+extra+'</select></label>';
+    if(kind==="text") return '<label class="wo-field wide"><span>'+label+'</span><input type="text" class="note-input" maxlength="'+(extra||80)+'" data-i="'+i+'" data-k="'+key+'" value="'+escapeHtml(v)+'"></label>';
+    return '<label class="wo-field"><span>'+label+'</span><input type="number" inputmode="decimal" min="0" class="note-input" data-i="'+i+'" data-k="'+key+'" value="'+escapeHtml(v)+'"></label>';
+  }
+  function gradeOptions(scale, sel){ return '<option value="">Any</option>'+scale.map(function(g){ return '<option'+(g===sel?" selected":"")+'>'+g+'</option>'; }).join(""); }
+  function renderWorkoutEditor(){
+    var d = woDraft.workout, n = d.steps.length;
+    document.getElementById("woTitleInput").value = d.title || "";
+    document.getElementById("woSteps").innerHTML = d.steps.map(function(s, i){
+      var f = [edField(i, "title", "Name", s.title, "text")];
+      if(s.type==="timed") f.push(edField(i, "durationMin", "Minutes", s.duration ? Math.round(s.duration/6)/10 : ""));
+      if(s.type==="rest") f.push(edField(i, "duration", "Seconds", s.duration));
+      if(s.type==="intervals"){
+        f.push(edField(i, "work", "Work (s)", s.work), edField(i, "rest", "Rest (s)", s.rest), edField(i, "rounds", "Rounds", s.rounds),
+               edField(i, "sets", "Sets", s.sets||1), edField(i, "setRest", "Rest between sets (s)", s.setRest));
+      }
+      if(s.type==="climbing"){
+        var gt = (s.grade && s.grade.type)==="route" ? "route" : "boulder", scale = gt==="route" ? ROUTE_GRADES : BOULDER_GRADES;
+        f.push(edField(i, "target", "Count", null, "select", Object.keys(CLIMB_TARGETS).map(function(k){ return '<option value="'+k+'"'+(s.target===k?" selected":"")+'>'+cap(CLIMB_TARGETS[k])+'</option>'; }).join("")),
+               edField(i, "count", "Target", s.count), edField(i, "restBetween", "Rest after each go (s)", s.restBetween),
+               edField(i, "gradeType", "Grades", null, "select", '<option value="boulder"'+(gt==="boulder"?" selected":"")+'>Boulder</option><option value="route"'+(gt==="route"?" selected":"")+'>Route</option>'),
+               edField(i, "gradeMin", "From", null, "select", gradeOptions(scale, s.grade && s.grade.min)),
+               edField(i, "gradeMax", "To", null, "select", gradeOptions(scale, s.grade && s.grade.max)));
+      }
+      if(s.type==="setsReps") f.push(edField(i, "sets", "Sets", s.sets), edField(i, "reps", "Reps", s.reps), edField(i, "restBetween", "Rest between sets (s)", s.restBetween));
+      if(s.type!=="rest") f.push(edField(i, "text", s.type==="instruction" ? "Instructions" : "Notes", s.text, "text", 300));
+      return '<div class="wo-ed-step"><div class="wo-ed-head"><span class="plan-num">'+(i+1)+'</span><b>'+STEP_NAMES[s.type]+'</b>'+
+        '<span class="wo-ed-moves">'+
+          '<button type="button" class="link-btn wo-ed" data-act="up" data-i="'+i+'"'+(i===0?" disabled":"")+' aria-label="Move up">↑</button>'+
+          '<button type="button" class="link-btn wo-ed" data-act="down" data-i="'+i+'"'+(i===n-1?" disabled":"")+' aria-label="Move down">↓</button>'+
+          '<button type="button" class="link-btn danger wo-ed" data-act="remove" data-i="'+i+'" aria-label="Remove step">✕</button>'+
+        '</span></div><div class="wo-fields">'+f.join("")+'</div></div>';
+    }).join("") || '<div class="empty-state">No steps yet. Add one below.</div>';
+  }
+  // Inputs write straight into the draft; validation happens on Save.
+  function onWorkoutEditorInput(e){
+    var el = e.target, i = el.dataset.i, k = el.dataset.k;
+    if(i==null || !k || !woDraft) return;
+    var s = woDraft.workout.steps[+i], v = el.value;
+    if(k==="durationMin"){ s.duration = v==="" ? null : Math.round(Number(v)*60); return; }
+    if(k==="gradeType" || k==="gradeMin" || k==="gradeMax"){
+      s.grade = s.grade || { type:"boulder" };
+      if(k==="gradeType"){ s.grade = { type:v }; renderWorkoutEditor(); return; }
+      if(v) s.grade[k==="gradeMin" ? "min" : "max"] = v; else delete s.grade[k==="gradeMin" ? "min" : "max"];
+      return;
+    }
+    s[k] = (k==="title" || k==="text" || k==="target") ? v : (v==="" ? null : Number(v));
+  }
+  document.getElementById("woSteps").addEventListener("input", onWorkoutEditorInput);
+  document.getElementById("woSteps").addEventListener("change", onWorkoutEditorInput);
+  document.getElementById("woTitleInput").addEventListener("input", function(e){ if(woDraft) woDraft.workout.title = e.target.value; });
+  document.getElementById("woSteps").addEventListener("click", function(e){
+    var btn = e.target.closest(".wo-ed"); if(!btn || !woDraft) return;
+    var steps = woDraft.workout.steps, i = +btn.dataset.i;
+    if(btn.dataset.act==="remove") steps.splice(i, 1);
+    if(btn.dataset.act==="up" && i>0) steps.splice(i-1, 0, steps.splice(i, 1)[0]);
+    if(btn.dataset.act==="down" && i<steps.length-1) steps.splice(i+1, 0, steps.splice(i, 1)[0]);
+    renderWorkoutEditor();
+  });
+  document.getElementById("woAddRow").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-add]"); if(!btn || !woDraft) return;
+    woDraft.workout.steps.push(newStep(btn.dataset.add));
+    renderWorkoutEditor();
+  });
+  function saveWorkoutDraft(){
+    var clean = validateWorkout(woDraft.workout), err = document.getElementById("workoutEditorError");
+    if(clean.error){ err.textContent = clean.error; err.hidden = false; return; }
+    state.workouts = state.workouts || [];
+    var now = Date.now(), existing = woDraft.id && findWorkoutEntry("mine", woDraft.id);
+    if(existing){ existing.workout = clean.workout; existing.updatedAt = now; }
+    else state.workouts.push({ id:"w-"+uid(), workout:clean.workout, createdAt:now, updatedAt:now });
+    saveState();
+    closeWorkoutEditor();
+    renderWorkoutsModal();
+    showToast("Workout saved");
+  }
+  var deletingWorkout = false;
+  function resetDeleteWorkoutConfirm(){ deletingWorkout = false; document.getElementById("deleteWorkoutBtn").textContent = "Delete workout"; }
+  document.getElementById("saveWorkoutBtn").addEventListener("click", saveWorkoutDraft);
+  document.getElementById("cancelWorkoutBtn").addEventListener("click", closeWorkoutEditor);
+  document.getElementById("closeWorkoutEditorBtn").addEventListener("click", closeWorkoutEditor);
+  document.getElementById("deleteWorkoutBtn").addEventListener("click", function(){
+    if(!woDraft || !woDraft.id) return;
+    if(!deletingWorkout){ deletingWorkout = true; this.textContent = "Really delete? Tap again"; setTimeout(function(){ if(deletingWorkout) resetDeleteWorkoutConfirm(); }, 3500); return; }
+    state.workouts = (state.workouts||[]).filter(function(x){ return x.id!==woDraft.id; });
+    saveState(); closeWorkoutEditor(); renderWorkoutsModal(); showToast("Workout deleted");
+  });
+  document.getElementById("newWorkoutBtn").addEventListener("click", function(){ openWorkoutEditor(null, null); });
+  document.getElementById("closeWorkoutsBtn").addEventListener("click", closeWorkouts);
+  document.getElementById("openWorkoutsBtn").addEventListener("click", openWorkouts);
+  document.getElementById("workoutStopBtn").addEventListener("click", function(){
+    var s = getActiveSession(); if(!s || !s.workout) return;
+    stopWorkout(s); showToast("Workout stopped. What you did is kept.");
+  });
+
+  // The result block: on the end-of-session summary and in session history. RPE and the note
+  // save as you go.
+  function renderWorkoutResult(container, s){
+    var w = s && s.workout;
+    container.hidden = !w;
+    if(!w) return;
+    var done = w.doc.steps.filter(function(st){ return (w.steps[st.id]||{}).status==="done"; }).length;
+    var rows = w.doc.steps.map(function(st){
+      var res = w.steps[st.id] || { status:"skipped" }, rt = stepResultText(s, st, res);
+      return '<li class="wr-row '+res.status+'"><span class="wr-mark">'+(STATUS_MARK[res.status]||"–")+'</span><span class="wr-title">'+escapeHtml(st.title)+'</span>'+
+        (rt ? '<span class="wr-detail">'+escapeHtml(rt)+'</span>' : '')+'</li>';
+    }).join("");
+    container.innerHTML =
+      '<p class="eyebrow">Workout · '+escapeHtml(w.doc.title)+'</p>'+
+      '<p class="wr-sub">'+done+' of '+w.doc.steps.length+' steps done</p>'+
+      '<ul class="wr-list">'+rows+'</ul>'+
+      '<div class="composer-row wr-rpe"><span class="c-label">Workout RPE</span><div class="grade-wrap"><div class="chip-row chip-scroll">'+
+        RPE_SCALE.map(function(n){ return '<button type="button" class="chip wr-rpe-chip'+(w.result.rpe===n?" selected":"")+'" data-val="'+n+'">'+n+'</button>'; }).join("")+
+      '</div><span class="c-hint">How hard the whole workout felt: 1 easy, 10 all-out</span></div></div>'+
+      '<input type="text" class="note-input wr-note" maxlength="500" placeholder="How did it go? (optional)">';
+    container.querySelectorAll(".wr-rpe-chip").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = parseInt(btn.dataset.val, 10);
+        w.result.rpe = w.result.rpe===v ? null : v;
+        saveState();
+        container.querySelectorAll(".wr-rpe-chip").forEach(function(b){ b.classList.toggle("selected", parseInt(b.dataset.val,10)===w.result.rpe); });
+      });
+    });
+    var note = container.querySelector(".wr-note");
+    note.value = w.result.note || "";
+    note.addEventListener("input", debounce(function(e){ w.result.note = e.target.value.slice(0, 500); saveState(); }, 350));
   }
 
   function render(){
@@ -2862,6 +3538,7 @@
     if(session) refreshLocationList();
     if(session) renderPhotoStrip(document.getElementById("sessionPhotoStrip"), session);
     renderPlan(session);
+    renderWorkoutCard(session);
     renderProjectBar(session);
 
     var finishSub = document.getElementById("finishCtaSub");
@@ -2983,6 +3660,7 @@
     if(document.activeElement!==detailLocInput) detailLocInput.value = s.location||"";
     refreshLocationList();
     renderPhotoStrip(document.getElementById("detailPhotoStrip"), s);
+    renderWorkoutResult(document.getElementById("detailWorkout"), s);
     var coachOut = document.getElementById("detailCoachText");
     if(detailCoachFor!==s.id){ if(coachCtl) coachCtl.abort(); detailCoachFor = s.id; coachOut.hidden = true; coachOut.textContent = ""; }
     wireSessionCoach(document.getElementById("detailCoach"), document.getElementById("detailCoachBtn"), coachOut, s);
@@ -3160,6 +3838,7 @@
     var idx = session.attempts.findIndex(function(x){ return x.id===id; });
     if(idx<0) return;
     session.attempts.splice(idx,1);
+    workoutOnRemove(session, id);
     recomputeProfile();
     // drop any highlight that attempt was responsible for
     session.highlights = (session.highlights||[]).filter(function(h){
@@ -4200,6 +4879,8 @@
     ["mediaLightboxOverlay", closeLightbox],
     ["endSessionOverlay", closeEndSummary],
     ["customizeOverlay", closeCustomize],
+    ["workoutEditorOverlay", closeWorkoutEditor],
+    ["workoutsOverlay", closeWorkouts],
     ["progressOverlay", closeProgress],
     ["drillsOverlay", closeDrills],
     ["settingsOverlay", closeSettings]
@@ -4337,6 +5018,7 @@
     fresh.timerDefaults = keep.timerDefaults;
     fresh.lastGradeType = keep.lastGradeType;
     fresh.character = keep.character;
+    fresh.workouts = keep.workouts; // your workout library is setup, not history
     state = fresh;
     recomputeProfile();
   }

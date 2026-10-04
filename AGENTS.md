@@ -73,6 +73,22 @@ the timer drills, and a finish.
 - **Keep the advice conservative** and the copy short.
 - **Its tests** are the "Today's plan" checks in `dev/tests.html`.
 
+## Workouts (Phase 0, built 2026-10-04)
+
+There's a local workout library (`state.workouts`), built-in examples, an editor (Advanced
+only), and a runner that steps through a workout inside a normal session. The code is in
+`/* ---- workouts (Phase 0: local) ---- */` in `crux.html`.
+- **The format** is Workout document v1 (`docs/coaching/DESIGN.md` section 5), checked by
+  `validateWorkout()`.
+- **Timed parts** run on the existing timer through `loadTimerProgram()`, a list of phases.
+  With no program loaded, the timer must behave exactly as it always has, and the tests check
+  this.
+- **A climbing step** counts the normal Flash/Send/Fall logs. **Undo and deleting an attempt**
+  call `workoutOnRemove()`.
+- **The result** is saved on the session as `session.workout`: per-step status, plus
+  `result: {rpe, note}`.
+- **No hangboard protocols** among the built-in examples.
+
 ## Real coaches (planned, not built)
 
 The design for linking athletes to real coaches is in `docs/coaching/DESIGN.md`, with a draft
@@ -86,8 +102,8 @@ database schema in `docs/coaching/schema.sql`.
   - It has six primitives: instruction, timed, intervals, climbing, setsReps and rest.
   - Templates are frozen into assignments.
   - Training blocks are real objects.
-- **The model is in owner review (revision 2).** Phase 0 hasn't started, so don't implement it
-  yet.
+- **The model was approved on 2026-10-04,** with all three open questions answered as proposed.
+  Phase 0 is built (see Workouts above). Phases 1+ need the owner's go-ahead.
 
 ## Coach (AI, being phased out)
 
@@ -105,11 +121,12 @@ project. It uses the published page's `sample` capability (see `/* ---- coach --
 
 Open http://localhost:8765/dev/tests.html (any static server pointed at this folder works). It
 loads the real `crux.html` with its own private, in-memory save, so it never touches real data.
-It checks about 20 things in roughly 30 seconds:
+It runs about 40 checks in roughly 2 minutes:
 - logging, Undo, sessions and reloads
 - the save key
 - old-save migration and backup import/export
 - every project rule
+- Today's plan, and every workout step type on the real timer
 - that only the climber art is used
 - publish readiness
 

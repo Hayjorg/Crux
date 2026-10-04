@@ -492,6 +492,158 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("startBtn", 150); await click("resetBtn", 150);
   });
 
+  // ---- Workouts (Phase 0) ----
+  // A quick workout with 1-second timers so the real timer engine can be exercised fast.
+  var QUICK = { v:1, title:"Quick test", steps:[
+    { id:"s1", type:"timed", title:"Warm-up", duration:1 },
+    { id:"s2", type:"intervals", title:"Pulls", work:1, rest:1, rounds:2 },
+    { id:"s3", type:"climbing", title:"Goes", target:"attempts", count:2, restBetween:1 },
+    { id:"s4", type:"setsReps", title:"Push-ups", sets:2, reps:5, restBetween:1 },
+    { id:"s5", type:"instruction", title:"Stretch", text:"Forearms." },
+    { id:"s6", type:"rest", duration:1 } ] };
+  function workoutSave(mode){
+    var s = clone(TEMPLATE);
+    s.settings.mode = mode || "advanced";
+    s.workouts = [{ id:"w-quick", workout:clone(QUICK), createdAt:1, updatedAt:1 }];
+    return s;
+  }
+  function activeWorkout(){ var a = active(); return a && a.workout; }
+  function stepStatus(id){ var w = activeWorkout(); return w && w.steps[id] ? w.steps[id].status : "pending"; }
+  async function startQuick(){
+    await goHome(); await click("openWorkoutsBtn");
+    await click(q('#workoutsMine .wo-start[data-id="w-quick"]'), 300);
+  }
+  async function woAct(act){ var b = q('#workoutBody .wo-ctl[data-act="'+act+'"]'); expect(b, "no '"+act+"' button on the current step"); await click(b, 250); }
+
+  test("Workouts: examples are listed and Start begins a session with the runner", async function(){
+    await boot(TEMPLATE); await goHome();
+    await click("openWorkoutsBtn");
+    var rows = qa("#workoutsExamples .wo-row");
+    expect(rows.length===4, rows.length+" examples");
+    expect(!/Max Hangs|Repeaters|hangboard/i.test($("workoutsExamples").textContent), "a hangboard workout is offered");
+    await click(qa("#workoutsExamples .wo-start").find(function(b){ return b.dataset.id==="ex-4x4"; }), 300);
+    var w = activeWorkout();
+    expect(w && w.doc.title==="4x4s", "no 4x4s workout on the new session");
+    expect(visible("workoutCard") && !visible("planCard"), "runner card not shown in place of Today's plan");
+    expect(/READY · WARM-UP/.test($("phaseLabel").textContent) && $("countdown").textContent==="15:00", "timer not loaded: "+$("phaseLabel").textContent+" "+$("countdown").textContent);
+  });
+
+  test("Workouts: timed and interval steps run on the timer and move on by themselves", async function(){
+    await boot(workoutSave()); await startQuick();
+    await click("startBtn", 1800);
+    expect(stepStatus("s1")==="done", "timed step is "+stepStatus("s1"));
+    expect(activeWorkout().index===1 && /READY · WORK/.test($("phaseLabel").textContent), "intervals not loaded next: "+$("phaseLabel").textContent);
+    expect(/ROUND 1\/2/.test($("roundLabel").textContent), "round label: "+$("roundLabel").textContent);
+    await click("startBtn", 3900);
+    var w = activeWorkout();
+    expect(w.steps.s2.status==="done" && w.steps.s2.roundsDone===2, "intervals: "+JSON.stringify(w.steps.s2));
+    expect(w.index===2, "didn't move to the climbing step");
+  });
+
+  test("Workouts: climbing counts logged goes, starts the rest timer, and Undo takes one back", async function(){
+    var s = workoutSave("simple"); await boot(s); await startQuick();   // Simple: the log toast carries Undo
+    await woAct("next"); await woAct("next");               // straight to the climbing step
+    await log("fall"); await closeComposer();
+    expect(/1 \/ 2/.test($("workoutBody").textContent), "progress after one go");
+    expect(/REST/.test($("phaseLabel").textContent), "rest timer didn't start after the go: "+$("phaseLabel").textContent);
+    await log("fall");
+    var undo = qa("#toastStack .toast-action").pop(); expect(undo, "no Undo"); await click(undo, 250);
+    expect(/1 \/ 2/.test($("workoutBody").textContent), "Undo didn't take the go back");
+    await wait(1200);
+    await log("send"); await closeComposer();
+    expect(stepStatus("s3")==="done", "target met but step is "+stepStatus("s3"));
+    expect(/2 go/.test($("workoutBody").textContent) || /2 \/ 2/.test($("workoutBody").textContent), "counts not shown");
+  });
+
+  test("Workouts: sets + reps count sets with rests; instruction and rest steps finish", async function(){
+    await boot(workoutSave()); await startQuick();
+    await woAct("skip"); await woAct("skip"); await woAct("skip");   // to sets + reps
+    await woAct("set");
+    expect(activeWorkout().steps.s4.setsDone===1 && /REST/.test($("phaseLabel").textContent), "set 1 / rest timer");
+    await wait(1300);
+    await woAct("set");
+    expect(stepStatus("s4")==="done", "sets step is "+stepStatus("s4"));
+    await woAct("next");
+    await woAct("done");                                          // instruction
+    expect(stepStatus("s5")==="done", "instruction is "+stepStatus("s5"));
+    await click("startBtn", 1700);                                // rest step
+    expect(stepStatus("s6")==="done" && /Workout complete/.test($("workoutBody").textContent), "rest step / completion");
+    expect(stepStatus("s1")==="skipped" && stepStatus("s2")==="skipped", "skipped steps not recorded");
+  });
+
+  test("Workouts: a running step timer survives a reload and still finishes the step", async function(){
+    var s = workoutSave(); s.workouts[0].workout.steps[0].duration = 3; await boot(s); await startQuick();
+    await click("startBtn", 900);
+    await boot();
+    expect(/WARM-UP/.test($("phaseLabel").textContent) && $("startBtn").textContent==="Pause", "timer lost on reload: "+$("phaseLabel").textContent);
+    await wait(2700);
+    expect(stepStatus("s1")==="done" && activeWorkout().index===1, "step didn't finish after reload");
+  });
+
+  test("Workouts: Finish saves the result with RPE and a note, shown later in history", async function(){
+    await boot(workoutSave()); await startQuick();
+    await click("startBtn", 1800);                                // s1 done
+    await click("finishSessionBtn", 400);
+    expect(visible("endWorkout") && /1 of 6 steps done/.test($("endWorkout").textContent), "end summary: "+$("endWorkout").textContent.slice(0, 80));
+    await click(qa("#endWorkout .wr-rpe-chip").find(function(b){ return b.dataset.val==="7"; }));
+    await type(q("#endWorkout .wr-note"), "Felt strong on the warm-up");
+    var s = saved(), done = s.sessions.find(function(x){ return x.workout; });
+    expect(done.endedAt && done.workout.result.rpe===7 && /Felt strong/.test(done.workout.result.note), "result not saved: "+JSON.stringify(done.workout.result));
+    expect(done.workout.steps.s1.status==="done" && done.workout.steps.s2.status==="skipped" && done.workout.steps.s6.status==="skipped", "statuses: "+JSON.stringify(done.workout.steps));
+    expect(!s.activeSessionId, "session still active");
+    await click("endSummaryDoneBtn", 200);
+    await click(q('#historyList .session-card[data-id="'+done.id+'"]'), 250);
+    expect(visible("detailWorkout") && /Quick test/.test($("detailWorkout").textContent) && q("#detailWorkout .wr-rpe-chip.selected").dataset.val==="7", "history doesn't show the result");
+  });
+
+  test("Workouts: the plain timer is unchanged outside a workout", async function(){
+    await boot(workoutSave()); await startQuick();
+    await click("finishSessionBtn", 400); await click("endSummaryDoneBtn", 200);
+    await startOrResume();
+    expect($("phaseLabel").textContent==="READY" && !$("workInput").disabled, "a workout's program leaked into a plain session");
+    await click("startBtn", 300);
+    expect($("phaseLabel").textContent==="WORK", "plain timer label: "+$("phaseLabel").textContent);
+    await click("resetBtn", 200);
+    expect($("countdown").textContent==="00:45" && $("phaseLabel").textContent==="READY", "reset: "+$("countdown").textContent);
+  });
+
+  test("Workouts: build, edit and delete your own in Advanced; Simple can only run them", async function(){
+    await boot(workoutSave()); await goHome(); await click("openWorkoutsBtn");
+    await click("newWorkoutBtn");
+    await click(q('#woAddRow [data-add="timed"]')); await click(q('#woAddRow [data-add="climbing"]'));
+    await click("saveWorkoutBtn");
+    expect(visible("workoutEditorError") && /name/.test($("workoutEditorError").textContent), "saved without a name");
+    var t = $("woTitleInput"); t.value = "Power day"; fire(t, "input");
+    var mins = q('#woSteps input[data-k="durationMin"]'); mins.value = "12"; fire(mins, "input");
+    await click("saveWorkoutBtn", 200);
+    var mine = saved().workouts.find(function(x){ return x.workout.title==="Power day"; });
+    expect(mine && mine.workout.steps.length===2 && mine.workout.steps[0].duration===720 && mine.workout.steps[1].count===6, "saved: "+JSON.stringify(mine && mine.workout));
+    await click(q('#workoutsMine .wo-lib[data-act="edit"][data-id="'+mine.id+'"]'));
+    t = $("woTitleInput"); t.value = "Power day 2"; fire(t, "input");
+    await click(q('#woSteps .wo-ed[data-act="down"][data-i="0"]'));
+    await click("saveWorkoutBtn", 200);
+    mine = saved().workouts.find(function(x){ return x.id===mine.id; });
+    expect(mine.workout.title==="Power day 2" && mine.workout.steps[0].type==="climbing", "edit didn't save");
+    await click(q('#workoutsMine .wo-lib[data-act="edit"][data-id="'+mine.id+'"]'));
+    await click("deleteWorkoutBtn"); await click("deleteWorkoutBtn", 200);
+    expect(!saved().workouts.some(function(x){ return x.id===mine.id; }), "delete didn't remove it");
+    await click("closeWorkoutsBtn");
+    await setMode("simple"); await click("openWorkoutsBtn");
+    expect(!visible("newWorkoutBtn") && !q("#workoutsMine .wo-lib[data-act=\"edit\"]") && q('#workoutsMine .wo-start'), "Simple mode shows editing controls or can't start");
+    await click("closeWorkoutsBtn");
+  });
+
+  test("Workouts: old saves load without a library; backups keep workouts and results", async function(){
+    var old = clone(TEMPLATE); delete old.workouts;
+    await boot(old); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    expect(Array.isArray(saved().workouts) && saved().workouts.length===0, "old save didn't get an empty library");
+    await boot(workoutSave()); await startQuick(); await click("startBtn", 1800);
+    await click("finishSessionBtn", 400); await click("endSummaryDoneBtn", 200);
+    var json = await exportJson(), before = STORE[KEY];
+    await importText(json);
+    expect(STORE[KEY]===before, "backup round trip changed workouts or results");
+  });
+
   test("The app is called Crux (never Crimpet)", async function(){
     await boot(TEMPLATE);
     expect(D.title==="Crux", "page title is '"+D.title+"'");

@@ -1,7 +1,11 @@
 # Crux coaching: design for v1
 
-Status: **proposal, revision 2 (2026-10-04). Not built.** It's waiting for the owner's review
-before Phase 0. The draft database schema is in [`schema.sql`](schema.sql).
+Status: **revision 2, approved 2026-10-04.**
+- **The three open decisions in section 10** were all approved as proposed.
+- **Phase 0 (the local workout runner) is built.**
+- **Phases 1–4 aren't started.**
+
+The draft database schema is in [`schema.sql`](schema.sql).
 
 **What changed in revision 2:**
 - Hosting and Supabase are confirmed.
@@ -308,11 +312,20 @@ optional **timer program**: a list of phases, each with a label and a duration i
   result, and no messaging of any kind.
 - **Phase 0:** waits until this model has been reviewed.
 
-**Still open:**
-1. **History window default:** all history, or only from the connection date? The proposal says
-   **all**, because coaches need context, but the athlete can choose "from today" when inviting.
-2. **Workout RPE:** should it be shared even when the `effort` scope is off? The proposal says
-   **yes**, since it's on a result the athlete deliberately submits. Per-attempt RPE still follows
-   the scope.
-3. **Editing an assignment:** can the coach edit the note or date after the athlete has started
-   the workout? The proposal says **no**: they're locked once a result exists.
+**Also decided (2026-10-04), as proposed:**
+1. **History window:** the default is all history. The athlete can choose "from today" when
+   inviting.
+2. **Workout RPE:** shared with the assigning coach even when the `effort` scope is off, because
+   the athlete deliberately submits it. Per-attempt RPE still follows the scope.
+3. **Editing an assignment:** the coach can't change its note or date once a result exists.
+
+**Phase 0 as built:**
+- **The library and editor:** a local library (`state.workouts`) and four built-in examples
+  (Limit bouldering, 4x4s, ARC, Conditioning). The editor is Advanced-only.
+- **The runner card:** it replaces Today's plan in the session. It loads the timer program
+  without starting it, and a step's own countdown completes the step and moves on.
+- **Climbing and sets steps:** they start a rest countdown after each go or set, when the step
+  has a rest set.
+- **The result block:** workout RPE and a note, shown on the summary and in history.
+- **Reload safety:** a running program survives a reload.
+- **Tests:** 9 new workout tests in `dev/tests.html`.
