@@ -22,8 +22,10 @@ and a decoratable gym scene ("the Garage").
    file storage. The page declares three capabilities, and all of them must stay:
    - `assets` for photos,
    - `downloads` for backup export,
-   - `sample` for the coach (asking Claude). This one is new since version 42 and must be added
-     on the next publish.
+   - `sample` for the coach (asking Claude), live since version 43.
+
+   The page runs on runtime contract 0.2.67 (version 44). Don't change the contract unless the
+   owner asks.
 2. **Images.** Every image goes through `asset(file, blobId)` in `crux.html`. Locally it loads
    `assets/<file>`; when published it loads `/_blob/<blobId>`. A new or changed image must be
    uploaded to the Artifact and its blob id filled in before publishing, or it will be broken live.
