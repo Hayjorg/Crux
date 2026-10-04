@@ -1,12 +1,5 @@
-<!doctype html>
-<html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F2ECE1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1A1714" media="(prefers-color-scheme: dark)">
-<meta name="description" content="Crimpet: a climbing session timer and send log with a little climber who levels up with you.">
 <script>(function(){try{var raw=localStorage.getItem("crux-app-state-v2");var t=raw&&JSON.parse(raw).settings&&JSON.parse(raw).settings.theme;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
-<title>Crimpet</title>
+<title>Crux</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -186,7 +179,7 @@
   }
   .hero-brand{text-align:center;flex:1;min-width:0;padding-top:2px;}
   .hero-brand h1{
-    font-family:"Bebas Neue",system-ui,sans-serif;font-size:clamp(23px,6.8vw,38px);white-space:nowrap;
+    font-family:"Bebas Neue",system-ui,sans-serif;font-size:clamp(28px,8vw,38px);
     letter-spacing:0.03em;margin:0;line-height:0.9;color:#FBF6E8;
     text-shadow:0 2px 10px rgba(0,0,0,0.6);
   }
@@ -698,46 +691,6 @@
   /* ---------- toasts ---------- */
   /* Above .modal-overlay (100): feedback raised from inside a modal (backup export/import)
      must not render underneath it. pointer-events:none, so it never blocks the modal. */
-
-  /* ---- polish pass ---- */
-  /* Timer settings live behind a disclosure: set once, then out of the way while you climb. */
-  .timer-settings{margin-top:14px;border-top:1px dashed var(--border);padding-top:10px;}
-  .timer-settings-summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;
-    padding:8px 4px;border-radius:10px;font-size:13px;font-weight:700;color:var(--text-dim);user-select:none;}
-  .timer-settings-summary::-webkit-details-marker{display:none;}
-  .timer-settings-summary .timer-settings-now{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:12px;}
-  .timer-settings-summary .chev{width:16px;height:16px;transition:transform .2s ease;flex:none;}
-  .timer-settings[open] .timer-settings-summary .chev{transform:rotate(180deg);}
-  .timer-settings[open] .timer-config{margin-top:8px;}
-
-  /* A small Crimpet who watches you log. Head-and-shoulders crop of the full sprite. */
-  .log-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px;}
-  .log-head .eyebrow{margin-bottom:10px;}
-  .buddy{position:relative;width:64px;height:54px;overflow:hidden;flex:none;border-radius:14px;}
-  .buddy img{position:absolute;left:-16px;top:-27px;width:96px;height:auto;display:block;pointer-events:none;}
-  .buddy .buddy-face{height:144px;}
-  .buddy.hop{animation:buddyhop .5s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes buddyhop{0%{transform:translateY(0)}35%{transform:translateY(-7px) scale(1.04)}100%{transform:translateY(0)}}
-  .buddy-lg{width:120px;height:96px;margin:0 auto 4px;}
-  .buddy-lg img{left:-30px;top:-50px;width:180px;}
-  .buddy-lg .buddy-face{height:270px;}
-  @media (prefers-reduced-motion: reduce){ .buddy.hop{animation:none;} }
-
-  /* What happened this session, called out on the summary instead of lost in toasts. */
-  .end-highlights{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:4px 0 14px;}
-  .end-highlights .hl{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
-    font-size:12.5px;font-weight:700;background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--text);
-    border:1px solid color-mix(in srgb, var(--accent) 40%, transparent);}
-  .end-highlights .hl svg{width:14px;height:14px;}
-
-  .danger-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;}
-  .toast.has-action{pointer-events:auto;display:flex;align-items:center;gap:14px;padding-right:8px;}
-  .toast-action{background:color-mix(in srgb, var(--accent-contrast) 18%, transparent);color:inherit;border:0;
-    font:inherit;font-weight:800;padding:6px 12px;border-radius:999px;cursor:pointer;}
-  .legal-body h3{font-size:14px;margin:18px 0 6px;letter-spacing:.01em;}
-  .legal-body h3:first-child{margin-top:4px;}
-  .legal-body p{font-size:13px;line-height:1.55;color:var(--text-dim);margin:0 0 8px;}
-  .legal-actions{position:sticky;bottom:-24px;margin:8px -22px -24px;padding:12px 22px 20px;background:var(--surface);border-top:1px solid var(--border);}
   .toast-stack{position:fixed;left:0;right:0;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:150;}
   .toast{background:var(--accent);color:var(--accent-contrast);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:0 6px 18px var(--shadow);animation:toastin .4s cubic-bezier(.34,1.56,.64,1), toastout .4s ease 2.6s forwards;}
   @keyframes toastin{from{transform:translateY(10px) scale(0.9);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
@@ -772,8 +725,8 @@
             <span class="lv-tag">Lv <span id="heroLevelNum">1</span></span>
           </div>
           <div class="hero-brand">
-            <h1>CRIMPET</h1>
-            <p>timer · send log</p>
+            <h1>CRUX</h1>
+            <p>training timer · send log</p>
           </div>
           <div class="scene-icon-row">
             <button type="button" class="scene-icon-btn" id="openDrillsBtn" aria-label="Training drills guide">
@@ -847,8 +800,8 @@
     </section>
 
     <footer>
-      <span>Your sessions stay on this device. Climbing is dangerous — you climb at your own risk.</span>
-      <button type="button" class="link-btn" id="openLegalFromHomeBtn">Safety, privacy &amp; terms</button>
+      <span>Session data is saved locally in this browser; photos are stored with this Crux page.</span>
+      <button class="link-btn danger" id="resetProgressBtn">Reset progress</button>
     </footer>
   </div>
 
@@ -877,12 +830,6 @@
         <button class="btn btn-primary" id="startBtn">Start</button>
         <button class="btn btn-ghost" id="resetBtn">Reset</button>
       </div>
-      <details class="timer-settings" id="timerSettings">
-      <summary class="timer-settings-summary">
-        <span>Timer settings</span>
-        <span class="timer-settings-now" id="timerSettingsNow">45s work · 90s rest</span>
-        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-      </summary>
       <div class="timer-config">
         <div class="field">
           <label for="workInput">Work (sec)</label>
@@ -912,18 +859,27 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         What are these workouts for?
       </button>
-      </details>
     </section>
 
     <div class="grid">
-      <section class="card log-card">
-        <div class="log-head">
-          <p class="eyebrow">Log an attempt</p>
-          <div class="buddy" id="logBuddy" aria-hidden="true">
-            <img class="buddy-sprite" id="logBuddySprite" alt="">
-            <img class="buddy-face" id="logBuddyFace" alt="" hidden>
-          </div>
+      <section class="card progress-card">
+        <p class="eyebrow">Progress</p>
+        <div class="xp-row"><span class="num" id="xpCurrentLabel">Level 1</span><span class="num" id="xpNextLabel">0 / 100 XP</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+        <div class="stat-strip">
+          <div class="stat-tile flash"><div class="n" id="statFlash">0</div><div class="l">Flash</div></div>
+          <div class="stat-tile send"><div class="n" id="statSend">0</div><div class="l">Send</div></div>
+          <div class="stat-tile fall"><div class="n" id="statFall">0</div><div class="l">Fall</div></div>
+          <div class="stat-tile"><div class="n" id="statTotal">0</div><div class="l">Logged</div></div>
         </div>
+        <div class="streak-row">
+          <div><div class="big" id="streakNow">0</div><div class="cap">Current streak</div></div>
+          <div style="text-align:right"><div class="big" id="streakBest">0</div><div class="cap">Best streak</div></div>
+        </div>
+      </section>
+
+      <section class="card log-card">
+        <p class="eyebrow">Log an attempt</p>
         <div class="project-bar" id="projectBar" hidden>
           <span class="c-label">Projects</span>
           <div class="chip-row chip-scroll" id="projectChips" role="group" aria-label="Pick a project"></div>
@@ -946,21 +902,6 @@
         <div id="attemptComposer"></div>
         <p class="eyebrow" style="margin-top:2px;">Recent this session</p>
         <ul class="attempt-list" id="attemptList"></ul>
-      </section>
-      <section class="card progress-card">
-        <p class="eyebrow">Progress</p>
-        <div class="xp-row"><span class="num" id="xpCurrentLabel">Level 1</span><span class="num" id="xpNextLabel">0 / 100 XP</span></div>
-        <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
-        <div class="stat-strip">
-          <div class="stat-tile flash"><div class="n" id="statFlash">0</div><div class="l">Flash</div></div>
-          <div class="stat-tile send"><div class="n" id="statSend">0</div><div class="l">Send</div></div>
-          <div class="stat-tile fall"><div class="n" id="statFall">0</div><div class="l">Fall</div></div>
-          <div class="stat-tile"><div class="n" id="statTotal">0</div><div class="l">Logged</div></div>
-        </div>
-        <div class="streak-row">
-          <div><div class="big" id="streakNow">0</div><div class="cap">Current streak</div></div>
-          <div style="text-align:right"><div class="big" id="streakBest">0</div><div class="cap">Best streak</div></div>
-        </div>
       </section>
     </div>
 
@@ -1089,7 +1030,7 @@
 
     <div class="settings-section" id="backupSection">
       <p class="settings-section-title">Backup</p>
-      <p class="settings-section-hint">Your sessions are saved only in this browser. Export a backup now and then — importing one replaces everything here with the backup. Photos and videos stay stored with this Crimpet page; a backup keeps the links to them.</p>
+      <p class="settings-section-hint">Your sessions are saved only in this browser. Export a backup now and then — importing one replaces everything here with the backup. Photos and videos stay stored with this Crux page; a backup keeps the links to them.</p>
       <div class="theme-row">
         <button type="button" class="btn btn-ghost" id="exportBackupBtn" style="flex:1;padding:10px 12px;">Export backup</button>
         <button type="button" class="btn btn-ghost" id="importBackupBtn" style="flex:1;padding:10px 12px;">Import backup</button>
@@ -1106,20 +1047,10 @@
         <p class="settings-section-hint">Saving files isn't available here. Copy this text and keep it somewhere safe — save it as a .json file to import it later.</p>
         <textarea id="exportFallbackText" class="note-input" rows="5" readonly style="font-family:'IBM Plex Mono',monospace;font-size:11px;"></textarea>
       </div>
-      <div class="danger-row">
-        <button type="button" class="link-btn danger" id="resetProgressBtn">Reset progress</button>
-        <button type="button" class="link-btn danger" id="resetAllDataBtn">Reset all data</button>
-      </div>
-      <p class="settings-section-hint" style="margin-top:6px;">Reset progress clears sessions, XP and badges but keeps your settings and room. Reset all data wipes everything.</p>
+      <button type="button" class="link-btn danger" id="resetAllDataBtn" style="margin-top:14px;">Reset all data</button>
     </div>
 
-    <div class="settings-section">
-      <p class="settings-section-title">About &amp; legal</p>
-      <p class="settings-section-hint">Safety notice, privacy, and terms of use.</p>
-      <button type="button" class="btn btn-ghost" id="openLegalBtn" style="width:100%;padding:10px 12px;">Safety, privacy &amp; terms</button>
-    </div>
-
-    <div class="settings-section" id="developerSection" hidden>
+    <div class="settings-section" id="developerSection">
       <p class="settings-section-title">Developer</p>
       <div class="switch-row">
         <div><div class="switch-label">Room Lab</div><div class="switch-desc">Placement-testing squares in Customize and the Garage</div></div>
@@ -1174,7 +1105,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
-    <div class="settings-section" id="gymPickerSection">
+    <div class="settings-section">
       <p class="settings-section-title">Gym</p>
       <p class="settings-section-hint">Decorate with any gym you've unlocked. Auto always shows your newest.</p>
       <div class="picker-grid" id="environmentPickerGrid"></div>
@@ -1211,53 +1142,15 @@
 <div class="modal-overlay" id="endSessionOverlay" hidden>
   <div class="modal-card end-summary-card" role="dialog" aria-modal="true" aria-label="Session complete">
     <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
-    <div class="buddy buddy-lg" id="endBuddy" aria-hidden="true">
-      <img class="buddy-sprite" id="endBuddySprite" alt="">
-      <img class="buddy-face" id="endBuddyFace" alt="" hidden>
-    </div>
     <h2 class="end-title" id="endTitle">Session complete</h2>
     <p class="end-sub" id="endSub">—</p>
     <div class="stat-strip" id="endStats"></div>
-    <div class="end-highlights" id="endHighlights" hidden></div>
     <div class="rating-row" id="endRatingRow"></div>
     <p class="rating-label" id="endRatingLabel">Tap to rate how it felt</p>
     <button type="button" class="btn btn-primary end-done-btn" id="endSummaryDoneBtn">Back to home</button>
   </div>
 </div>
 
-
-<div class="modal-overlay" id="legalOverlay" hidden>
-  <div class="modal-card legal-card" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
-    <div class="modal-head">
-      <h2 id="legalTitle">Safety, privacy &amp; terms</h2>
-      <button type="button" class="icon-btn" id="closeLegalBtn" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div class="legal-body">
-      <h3>Climbing is dangerous</h3>
-      <p>Climbing, bouldering, and hangboard or finger training carry an inherent risk of serious injury, including falls, tendon and pulley injuries, and injuries that can be permanent or fatal. Crimpet is a timer and logbook. It doesn't supervise, spot, or assess you, and it can't tell whether a climb, a fall zone, or a workout is safe for you.</p>
-      <p>Use proper equipment and padding, get instruction from a qualified person, follow your gym's rules, and stop if something hurts.</p>
-
-      <h3>Not medical or coaching advice</h3>
-      <p>Workout descriptions and timer presets are general information for experienced climbers, not personal coaching, medical, or physical-therapy advice. Talk to a doctor before starting a training program, especially if you're new to finger training, returning from injury, or have a health condition. Levels, badges, and streaks are for fun, not a measure of what you're ready for.</p>
-
-      <h3>Kids</h3>
-      <p>Anyone under 18 should use Crimpet, and climb or train, only with a parent or guardian's permission and appropriate supervision.</p>
-
-      <h3>Your data</h3>
-      <p>There's no account, no ads, and no analytics. Your sessions, notes, and progress are saved only in this browser on this device, and nobody else, including the maker of Crimpet, can see them. Clearing your browser data or uninstalling deletes them, so use Export backup in Settings to keep a copy.</p>
-      <p>Photos and videos you add are stored with the copy of Crimpet you're using, so treat them as you would anything you upload. The app loads its fonts from Google Fonts, which means Google receives your IP address when those fonts load.</p>
-
-      <h3>Terms of use</h3>
-      <p>Crimpet is provided free, "as is", without warranties of any kind. To the fullest extent the law allows, the maker of Crimpet isn't responsible for any injury, loss, or damage, including lost data, that comes from using it or relying on it. By using Crimpet you agree that you climb and train at your own risk and are responsible for your own safety.</p>
-      <p>Crimpet isn't affiliated with or endorsed by any climbing gym, brand, or organization. Grade scales are used descriptively.</p>
-    </div>
-    <div class="legal-actions" id="legalAckRow" hidden>
-      <button type="button" class="btn btn-primary" id="legalAckBtn" style="width:100%;">I understand — let's climb</button>
-    </div>
-  </div>
-</div>
 <div class="toast-stack" id="toastStack"></div>
 
 <script>
@@ -1407,7 +1300,7 @@
         endedAt: Math.max.apply(null, tsList),
         timerConfig:{ workSec:base.timerDefaults.workSec, restSec:base.timerDefaults.restSec },
         attempts: legacy,
-        note:"Imported from an earlier version of Crimpet.",
+        note:"Imported from an earlier version of Crux.",
         photos:[],
         satisfaction:null,
         location:""
@@ -1642,7 +1535,6 @@
       ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
       state.character.selectedEnvironmentId, "pick-env", ""
     );
-    document.getElementById("gymPickerSection").hidden = ENVIRONMENTS.length<=1;
     document.getElementById("decoratePickerGrid").innerHTML = decorateItemsHTML();
     document.getElementById("roomLabSection").hidden = !state.settings.devRoomLab;
     renderRoomLabList();
@@ -1908,8 +1800,8 @@
     var changed = false;
     while(now >= timer.phaseEndsAt){
       var fresh = now - timer.phaseEndsAt < 1000;
-      if(timer.phase==="work"){ timer.round += 1; if(fresh){ beep(880,220,0.1); buzz([40,60,40]); } }
-      else if(fresh){ beep(440,220,0.1); buzz(120); }
+      if(timer.phase==="work"){ timer.round += 1; if(fresh) beep(880,220,0.1); }
+      else if(fresh){ beep(440,220,0.1); }
       timer.phase = timer.phase==="work" ? "rest" : "work";
       timer.phaseEndsAt += phaseDurationMs(timer.phase);
       changed = true;
@@ -2065,7 +1957,7 @@
     // Nothing turned on in Settings → stay out of the way entirely, just confirm the log.
     if(!showClimbName && !showGrade && !showEffort && !showReason && !showNote){
       box.innerHTML = "";
-      showToast(cap(attempt.result)+" logged · +"+attempt.xp+" XP", { label:"Undo", fn:function(){ undoAttempt(attempt.id); } });
+      showToast(cap(attempt.result)+" logged · +"+attempt.xp+" XP");
       return;
     }
 
@@ -2245,15 +2137,6 @@
     if(outcome.leveledUpTo){ pulseLevelBadge(); celebrateLevelUp(); }
     announceOutcome(outcome);
 
-    // Remember the big moments so the summary can show them after the toasts are gone.
-    session.highlights = session.highlights || [];
-    if(outcome.leveledUpTo) session.highlights.push({ type:"level", text:"Level "+outcome.leveledUpTo });
-    outcome.newlyUnlocked.forEach(function(b){ session.highlights.push({ type:"badge", text:b.name }); });
-    if(outcome.leveledUpTo || outcome.newlyUnlocked.length) saveState();
-
-    buddyReact(result==="fall" ? "sheepish" : (outcome.leveledUpTo ? "surprised" : "stoked"));
-    buzz(outcome.leveledUpTo ? [30,70,30,70,60] : (result==="fall" ? 10 : 18));
-
     showComposer(attempt);
   }
 
@@ -2354,14 +2237,6 @@
     endRatingRow.innerHTML = ratingRowHTML(s.satisfaction);
     wireRatingRow(endRatingRow, s, endRatingLabel);
     endRatingLabel.textContent = s.satisfaction ? SATISFACTION_LABELS[s.satisfaction-1] : "Tap to rate how it felt";
-    clearToasts();
-    var seen = {}, hls = (s.highlights||[]).filter(function(h){ var k=h.type+h.text; if(seen[k]) return false; seen[k]=1; return true; });
-    var hlEl = document.getElementById("endHighlights");
-    hlEl.innerHTML = hls.map(function(h){
-      return '<span class="hl">'+(h.type==="level" ? iconChevrons() : iconMountain())+escapeHtml(h.type==="level" ? h.text+" reached" : h.text)+'</span>';
-    }).join("");
-    hlEl.hidden = !hls.length;
-    setBuddy("endBuddy", (counts.flash+counts.send)>0 ? "stoked" : (total>0 ? "sheepish" : "neutral"));
     document.getElementById("endSessionOverlay").hidden = false;
     if(total>0) spawnConfetti(document.getElementById("confettiLayer"));
     // Crimpet reacts when you get back to him: stoked if anything went, sheepish if it was all falls.
@@ -2594,9 +2469,6 @@
 
     document.getElementById("workInput").value = state.timerDefaults.workSec;
     document.getElementById("restInput").value = state.timerDefaults.restSec;
-    document.getElementById("timerSettingsNow").textContent =
-      state.timerDefaults.workSec+"s work · "+state.timerDefaults.restSec+"s rest";
-    if(!buddyTimer) setBuddy("logBuddy", "focused");
 
     var noteInput = document.getElementById("sessionNoteInput");
     if(session && document.activeElement!==noteInput) noteInput.value = session.note||"";
@@ -2863,81 +2735,13 @@
     el.classList.add("pop");
     setTimeout(function(){ el.classList.remove("pop"); }, 550);
   }
-  function showToast(msg, action){
+  function showToast(msg){
     var stack = document.getElementById("toastStack");
-    // Never more than two at once: a burst of level-up + badges + log confirmations
-    // used to stack six deep and cover the Finish button and the summary.
-    while(stack.children.length>=2) stack.removeChild(stack.firstChild);
     var t = document.createElement("div");
     t.className = "toast"; t.textContent = msg;
-    var life = 3100;
-    if(action){
-      // Room to react: an Undo that vanishes in three seconds is an Undo nobody catches.
-      life = 4600;
-      t.classList.add("has-action");
-      t.style.animation = "toastin .4s cubic-bezier(.34,1.56,.64,1), toastout .4s ease 4.1s forwards";
-      var btn = document.createElement("button");
-      btn.type = "button"; btn.className = "toast-action"; btn.textContent = action.label;
-      btn.addEventListener("click", function(){ t.remove(); action.fn(); });
-      t.appendChild(btn);
-    }
     stack.appendChild(t);
-    setTimeout(function(){ t.remove(); }, life);
+    setTimeout(function(){ t.remove(); }, 3100);
   }
-
-  function clearToasts(){ var st = document.getElementById("toastStack"); if(st) st.innerHTML = ""; }
-
-  // A short buzz confirms a tap without looking - useful with chalky hands, and when the phone
-  // is on the mat and a timer beep might be muted. Does nothing where vibration isn't supported.
-  function buzz(pattern){ try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){} }
-
-  // Undo the most recent log straight from its confirmation - mis-taps happen between burns.
-  function undoAttempt(id){
-    var session = getActiveSession();
-    if(!session) return;
-    var idx = session.attempts.findIndex(function(x){ return x.id===id; });
-    if(idx<0) return;
-    session.attempts.splice(idx,1);
-    recomputeProfile();
-    // drop any highlight that attempt was responsible for
-    session.highlights = (session.highlights||[]).filter(function(h){
-      if(h.type==="level") return state.level >= parseInt(h.text.replace(/\D/g,""),10);
-      return BADGES.some(function(b){ return b.name===h.text && state.badges[b.id]; });
-    });
-    saveState();
-    hideComposer();
-    render();
-    clearTimeout(buddyTimer); buddyTimer = null;
-    setBuddy("logBuddy", "focused");
-    buzz(8);
-    showToast("Removed");
-  }
-
-  // ---- Crimpet cameos: a small head-and-shoulders version on the session and summary ----
-  // Reuses the resting sprite plus the expression overlays, so there's no new art. Guarded
-  // because render() can run before the mascot section of this script has set things up.
-  var buddyTimer = null;
-  function setBuddy(prefix, mood){
-    var sprite = document.getElementById(prefix+"Sprite"), face = document.getElementById(prefix+"Face");
-    if(!sprite || !IMG || !IMG.mascot) return;
-    if(sprite.getAttribute("src")!==IMG.mascot.idle[0]) sprite.src = IMG.mascot.idle[0];
-    var faces = (typeof MASCOT_FACES!=="undefined" && MASCOT_FACES) || {};
-    var broken = typeof mascotMood!=="undefined" && mascotMood && mascotMood.broken;
-    var want = faces[mood];
-    if(want && !broken){ if(face.getAttribute("src")!==want) face.src = want; face.hidden = false; }
-    else face.hidden = true;
-  }
-  function buddyReact(mood){
-    setBuddy("logBuddy", mood);
-    var el = document.getElementById("logBuddy");
-    if(el){ el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop"); }
-    clearTimeout(buddyTimer);
-    buddyTimer = setTimeout(function(){ setBuddy("logBuddy", "focused"); }, 2200);
-  }
-  ["logBuddyFace","endBuddyFace"].forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.addEventListener("error", function(){ this.hidden = true; });
-  });
 
   /* ---------------- session satisfaction rating ---------------- */
   // Shared by the end-of-session summary and the session detail view — tap a peak to
@@ -3050,13 +2854,11 @@
   // minLevel gates pulled in from 1/5/10/20/35 — combined with the lighter xpForLevel above,
   // these come noticeably sooner without needing yet another number to tune independently.
   var CHARACTER_STAGES = [
-    // He's always just Crimpet - no evolving titles. These tiers now only unlock gear for the
-    // Garage; ids are kept as-is so existing saves still line up.
-    { id:"chalkling",    minLevel:1,  gear:null,             props:[] },
-    { id:"boulderbud",   minLevel:4,  gear:"a crash pad",    props:["pad"] },
-    { id:"crimper",      minLevel:8,  gear:"wall holds",     props:["pad","holds"] },
-    { id:"dynomite",     minLevel:15, gear:"a potted plant", props:["pad","holds","plant"] },
-    { id:"summitfriend", minLevel:25, gear:"string lights",  props:["pad","holds","plant","lights"] }
+    { id:"chalkling",    minLevel:1,  name:"Chalkling",     props:[] },
+    { id:"boulderbud",   minLevel:4,  name:"Boulder Bud",   props:["pad"] },
+    { id:"crimper",      minLevel:8,  name:"Crimper",       props:["pad","holds"] },
+    { id:"dynomite",     minLevel:15, name:"Dynomite",      props:["pad","holds","plant"] },
+    { id:"summitfriend", minLevel:25, name:"Summit Friend", props:["pad","holds","plant","lights"] }
   ];
   function unlockedCharacterStages(){
     return CHARACTER_STAGES.filter(function(s){ return state.level>=s.minLevel; });
@@ -3213,12 +3015,12 @@
   // looks (matching the original spacing), just not absurdly slower.
   var ENVIRONMENTS = [
     // artReady: this room has finished production art, so Auto may select it (see selectedEnvironment).
-    // Home Wall, The Local, The Mountain Club and The Dream Gym are planned, but they come
-    // back only once each has finished art - an unlock that reveals a flat-colour placeholder
-    // feels like a broken promise. Their old placeholder colours: #A8763F/#6B5744,
-    // #B8AFA0/#3E3A35, #8CA0B3/#C4BCA8, #3F4A45/#A8896B (minLevel 8/15/24/40).
     { id:"garage",   name:"The Garage",      minLevel:1,  artReady:true, wallColor:"#C9A876", floorColor:"#8B8378",
       wallImg:IMG.garage.wallTile, floorImg:IMG.garage.floorTile, props:[] },
+    { id:"homewall", name:"Home Wall",       minLevel:8,  wallColor:"#A8763F", floorColor:"#6B5744", wallImg:null, floorImg:null, props:[] },
+    { id:"local",    name:"The Local",       minLevel:15, wallColor:"#B8AFA0", floorColor:"#3E3A35", wallImg:null, floorImg:null, props:[] },
+    { id:"mtnclub",  name:"The Mountain Club", minLevel:24, wallColor:"#8CA0B3", floorColor:"#C4BCA8", wallImg:null, floorImg:null, props:[] },
+    { id:"dreamgym", name:"The Dream Gym",   minLevel:40, wallColor:"#3F4A45", floorColor:"#A8896B", wallImg:null, floorImg:null, props:[] }
     // Real modular pieces (wall modules, pads, plants, gear, signs, furniture — the reference
     // sheet with dozens of them) go in a given room's `props` array as { img, x, y, w }
     // (percent-of-scene) once they exist with genuine alpha transparency; see the note where
@@ -3248,7 +3050,7 @@
   // anywhere in the scene, and the override is saved per accessory id. Applies in whatever
   // gym is selected, since these are yours, not the room's.
   var ACCESSORIES = [
-    { id:"haybail",     name:"Hay Bale",     img:IMG.decor.hayBale,     x:4,  y:81, w:24 },
+    { id:"haybail",     name:"Hay Bail",     img:IMG.decor.hayBale,     x:4,  y:81, w:24 },
     { id:"crashpad2",   name:"Crash Pad",    img:IMG.decor.crashPad,    x:34, y:78, w:26 },
     { id:"chalkbag",    name:"Chalk Bag",    img:IMG.decor.chalkBag,    x:58, y:74, w:16 },
     { id:"pottedplant2",name:"Potted Plant", img:IMG.gear.pottedPlant,  x:6,  y:64, w:16 },
@@ -3503,14 +3305,14 @@
     var avatarImg = document.getElementById("heroAvatarImg");
     if(avatarImg.getAttribute("src")!==stage.img) avatarImg.src = stage.img;
     document.getElementById("heroLevelNum").textContent = state.level;
-    document.getElementById("characterStageName").textContent = "Crimpet";
+    document.getElementById("characterStageName").textContent = stage.name;
     document.getElementById("characterSub").textContent = "Level "+state.level+" · "+mood.caption;
     var nextStage = CHARACTER_STAGES[unlockedChar.length];
     document.getElementById("characterHint").textContent = nextStage
-      ? "Level "+nextStage.minLevel+" unlocks "+nextStage.gear+" for the Garage"
-      : "Every piece of gear unlocked.";
+      ? "Level "+nextStage.minLevel+": "+nextStage.name
+      : "All ranks unlocked.";
     if(lastUnlockedCharCount!==null && unlockedChar.length>lastUnlockedCharCount){
-      showToast("New gear for the Garage: "+unlockedChar[unlockedChar.length-1].gear+"!");
+      showToast("Unlocked: "+unlockedChar[unlockedChar.length-1].name+"!");
     }
     lastUnlockedCharCount = unlockedChar.length;
 
@@ -3911,30 +3713,7 @@
   document.getElementById("mediaLightboxOverlay").addEventListener("click", function(e){ if(e.target.id==="mediaLightboxOverlay") closeLightbox(); });
   // Escape closes whichever modal is on top. The lightbox and the end-of-session summary can
   // sit above the others, so they're checked first.
-  var legalNeedsAck = false;
-  function openLegal(requireAck){
-    legalNeedsAck = !!requireAck;
-    document.getElementById("legalAckRow").hidden = !legalNeedsAck;
-    document.getElementById("closeLegalBtn").hidden = legalNeedsAck;
-    document.getElementById("legalOverlay").hidden = false;
-  }
-  function closeLegal(){
-    if(legalNeedsAck) return; // the first-run notice needs a tap on "I understand"
-    document.getElementById("legalOverlay").hidden = true;
-  }
-  document.getElementById("closeLegalBtn").addEventListener("click", closeLegal);
-  document.getElementById("openLegalBtn").addEventListener("click", function(){ openLegal(false); });
-  document.getElementById("openLegalFromHomeBtn").addEventListener("click", function(){ openLegal(false); });
-  document.getElementById("legalAckBtn").addEventListener("click", function(){
-    state.settings.ackSafety = Date.now();
-    saveState();
-    legalNeedsAck = false;
-    closeLegal();
-  });
-  if(!state.settings.ackSafety) openLegal(true);
-
   var MODAL_CLOSERS = [
-    ["legalOverlay", closeLegal],
     ["mediaLightboxOverlay", closeLightbox],
     ["endSessionOverlay", closeEndSummary],
     ["customizeOverlay", closeCustomize],
@@ -3975,9 +3754,7 @@
     });
   });
 
-  document.getElementById("startBtn").addEventListener("click", function(){
-    if(timer.running) pauseTimer(); else { startTimer(); document.getElementById("timerSettings").open = false; }
-  });
+  document.getElementById("startBtn").addEventListener("click", function(){ if(timer.running) pauseTimer(); else startTimer(); });
   document.getElementById("resetBtn").addEventListener("click", resetTimer);
 
   document.getElementById("workInput").addEventListener("change", function(e){ setWork(e.target.value); });
@@ -4088,7 +3865,6 @@
     resetTimer();
     updateWakeLock();
     resetBtn.textContent = "Reset progress";
-    closeSettings();
     showToast("Progress reset");
     switchView("home");
   });
@@ -4106,7 +3882,7 @@
   function backupFilename(){
     var d = new Date();
     function p(n){ return (n<10?"0":"")+n; }
-    return "crimpet-backup-"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+".json";
+    return "crux-backup-"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+".json";
   }
   function showExportFallback(json){
     var ta = document.getElementById("exportFallbackText");
@@ -4130,7 +3906,7 @@
     });
   }
 
-  // Accepts a Crimpet export ({kind:"crux-backup", data}) or a raw saved state. Anything without a
+  // Accepts a Crux export ({kind:"crux-backup", data}) or a raw saved state. Anything without a
   // sessions array (or the pre-sessions legacy attempts array) is rejected, rather than being
   // normalized into an empty state that would wipe this device on confirm.
   function parseBackup(text){
@@ -4149,7 +3925,7 @@
     reader.onload = function(){
       var backup;
       try{ backup = parseBackup(String(reader.result)); }
-      catch(e){ showToast("That file isn't a Crimpet backup"); return; }
+      catch(e){ showToast("That file isn't a Crux backup"); return; }
       pendingImport = backup.state;
       var sessions = backup.state.sessions.length;
       var attempts = backup.state.sessions.reduce(function(n, s){ return n+s.attempts.length; }, 0);
