@@ -83,6 +83,11 @@ database schema in `docs/coaching/schema.sql`.
   in commit messages.
 - **The workout format** in DESIGN.md section 5 is the shared contract. Don't change it in one
   place only.
+  - It has six primitives: instruction, timed, intervals, climbing, setsReps and rest.
+  - Templates are frozen into assignments.
+  - Training blocks are real objects.
+- **The model is in owner review (revision 2).** Phase 0 hasn't started, so don't implement it
+  yet.
 
 ## Coach (AI, being phased out)
 

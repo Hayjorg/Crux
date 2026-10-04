@@ -1,23 +1,38 @@
 # Crux coaching: design for v1
 
-Status: **proposal, not built.** Written 2026-10-04. The draft database schema is in
-[`schema.sql`](schema.sql).
+Status: **proposal, revision 2 (2026-10-04). Not built.** It's waiting for the owner's review
+before Phase 0. The draft database schema is in [`schema.sql`](schema.sql).
+
+**What changed in revision 2:**
+- Hosting and Supabase are confirmed.
+- Connections are many-to-many.
+- A disconnect revokes all coach access, including past results.
+- Training blocks are now real objects.
+- There are six workout primitives.
+- Share scopes are persistent and more fine-grained.
+- The no-messaging rule is now enforced in the schema.
+- Coach access is tied to a specific connection, so a reconnect never re-exposes old results.
 
 ## What v1 is (and isn't)
 
-An athlete links a real coach to their Crux account. The coach sees only the training data the
-athlete chose to share, builds structured workouts, and assigns them. The athlete runs those
-workouts with Crux's existing timer, logging and session flow. The result flows back to the coach.
+An athlete links one or more real coaches to their Crux account. Each coach sees only the
+training data the athlete chose to share with *that* coach. A coach builds structured workouts
+and multi-week training blocks and assigns them. The athlete runs them with Crux's existing
+timer, logging and session flow, and results flow back to the assigning coach.
 
 ```
-Athlete account <-> Coach connection <-> Coach account
+Athlete account <-> Coach connection (many-to-many) <-> Coach account
 
-Workout template -> Workout assignment -> Athlete runs it in a Crux session -> Workout result
+Workout template --assign--> Workout assignment (frozen snapshot) --run in Crux--> Workout result
+
+Block template --assign--> Training block (a real object, start-end dates)
+                              +-- Workout assignment (Mon wk 1)
+                              +-- Workout assignment (Thu wk 1)
+                              +-- ... (each a frozen snapshot, each with its own result)
 ```
 
 **Not in v1, by design:**
-- DMs, chat, comments, feeds, followers, video, or any general messaging. The only free text is a
-  coach note on a template or assignment, and one athlete note on a result.
+- DMs, chat, replies, threads, an inbox, comments, feeds, followers or video.
 - Discovery, payments, ratings or verification.
 
 ## 1. Why the current setup can't do this
@@ -25,207 +40,279 @@ Workout template -> Workout assignment -> Athlete runs it in a Crux session -> W
 | Today | Problem for coaching |
 |---|---|
 | Hosted as a Claude Artifact | The page's network is blocked, so it can't reach any server. |
-| The Artifact's own database (`db` capability) | Only signed-in Claude users the page is shared with can use it. Every coach and athlete would need a claude.ai account and access to the page. Its rules are by access level, so they can't say "this coach sees this athlete's sessions but not their notes". |
+| The Artifact's own database (`db` capability) | Only signed-in Claude users the page is shared with can use it. Its rules are by access level, so they can't express "this coach sees these categories of this athlete's data". |
 | All data in `localStorage` | Per browser. A coach can't see it, and it doesn't follow you between devices. |
 | Photos in the Artifact's asset store | Only reachable from the Artifact page. |
 
-**Conclusion:** coaching needs (a) ordinary web hosting and (b) a small backend with real accounts
-and server-enforced permissions.
+**Decided:** move to normal hosting, and use Supabase as the backend.
 
-## 2. Proposed architecture: the smallest clean option
+## 2. Architecture
 
 | Piece | Choice | Why |
 |---|---|---|
-| Hosting | **Cloudflare Pages or Netlify**, auto-deploying from `Hayjorg/Crux` | Free, static, and works from a private repo. (GitHub Pages from a private repo needs a paid plan.) Same single HTML file, no build step. |
-| Backend | **Supabase** (Postgres + Auth + Row Level Security) | No server code to write or run. Permissions are enforced in the database itself (RLS), so a buggy page can't leak data. The JS client loads from jsDelivr into a plain HTML page. Free tier: 50k monthly users, 500 MB database. |
-| Sign-in | Supabase **email one-time code** | No passwords to manage. Works on phones. |
-| Coach app | A second page, **`coach.html`**, in the same repo and site | Keeps the athlete app small. Coaches get a dashboard-shaped tool. Shares the same backend and workout format. |
+| Hosting | **Cloudflare Pages or Netlify**, auto-deploying from `Hayjorg/Crux` | Free, static, works from a private repo, no build step |
+| Backend | **Supabase**: Postgres + Auth + Row Level Security | No server code. Permissions are enforced inside the database. The JS client loads from jsDelivr. |
+| Sign-in | Email one-time code | No passwords. Works on phones. |
+| Coach app | **`coach.html`**, same repo and site | Keeps the athlete app small, and shares the backend and workout format |
 
 **Things that stay the same:**
-- **Crux stays local-first.** It works fully without an account, exactly as today. Signing in
-  only *adds* backup, sync and coaching.
-- **localStorage stays the on-device copy.** Changes upload in the background, and offline
-  results are queued.
-
-Rejected alternatives:
-- **Firebase.** Its security rules and document model make "relationship plus share scopes" and
-  the relational parts (connections, assignments) harder to express.
-- **A custom Node server.** More to build, run and secure for no v1 gain.
-- **Claude Artifact `db`.** See section 1.
+- **Crux stays local-first.** It works fully without an account. Signing in adds sync and coaching.
+- **localStorage stays the on-device copy.** Changes upload in the background.
 
 ## 3. Data model
 
-All tables have Row Level Security on. Full SQL, policies and functions are in `schema.sql`.
+There are no message, comment or thread tables, and adding one breaks the design.
 
-| Table | Holds | Who can read |
+| Object | Table | Owned by | Notes |
+|---|---|---|---|
+| Profile | `profiles` | the user | name, `is_coach`, coach's gym, adult confirmation |
+| Coach connection | `coach_connections` | the athlete | athlete ↔ coach, status, **persistent share scopes**, how far back history is shared |
+| Athlete's sessions | `training_sessions` | the athlete | Crux's session JSON, unchanged. Coaches never read this table directly. |
+| Athlete's projects | `training_projects` | the athlete | name, gym |
+| Workout template | `workout_templates` | the coach | reusable workout in the coach's library |
+| Block template | `block_templates` and `block_template_items` | the coach | reusable plan: "Red River Prep: 4 weeks" with workouts placed on day offsets |
+| Training block | `training_blocks` | coach + athlete | **an assigned block**: title, coach note, start and end dates, source template |
+| Workout assignment | `workout_assignments` | coach + athlete | **a frozen snapshot** of a workout, a date, an optional `block_id`, one coach note |
+| Workout result | `workout_results` | the athlete | per-step outcomes, RPE, one reflection note, the Crux session it was done in |
+
+### Many-to-many coaching
+
+- **Any number of coaches per athlete,** and any number of athletes per coach.
+- **One active connection per pair.**
+- **Scopes are per connection,** so a strength coach and a technique coach can see different things.
+- **Each connection is its own row.**
+  - Assignments and blocks belong to the connection they were created under.
+  - Disconnecting ends that row.
+  - Reconnecting later creates a **new** row. The coach doesn't regain anything from the old one.
+- **The first UI can still be simple:** one "Coaches" list with **Invite a coach**.
+
+### Share scopes
+
+Scopes are stored on the connection and enforced on every read. They're persistent, not a report.
+
+| Scope | Default | What that coach sees |
 |---|---|---|
-| `profiles` | display name, `is_coach`, coach's gym | yourself, plus the other person in an active connection (name only) |
-| `coach_connections` | athlete, coach, status (`pending`/`active`/`ended`), **share scopes**, hashed invite code | the two people in it |
-| `training_sessions` | your Crux sessions, stored as the same JSON Crux keeps today (attempts included) | **only you**. Coaches never read this table directly. |
-| `training_projects` | your projects (name, gym) | only you |
-| `workout_templates` | a coach's library: single workouts and blocks | that coach |
-| `workout_assignments` | a workout sent to an athlete: a **frozen copy** of its steps, coach note, date, group | that athlete, plus the coach while connected |
-| `workout_results` | how it went: per-step outcome, RPE, one athlete note, the Crux session it was done in | that athlete, plus the coach while connected |
+| `sessions` | **on** | session summaries: date, gym, duration, flash/send/fall counts, timer used, how it felt |
+| `projects` | **on** | projects and grades: names, gyms, grades and grade type, attempts and sends per project |
+| `attempts` | **on** | each attempt: result (flash/send/fall) and time |
+| `effort` | **on** | RPE per attempt |
+| `fall_reasons` | **on** | why each fall happened |
+| `notes` | off | session and attempt notes |
+| `photos` | off | photos and videos (reserved: served only once photo storage exists) |
 
-### Share scopes (permission categories)
-
-The athlete ticks these. Defaults are the first three, as decided 2026-10-04.
-
-| Scope | What the coach sees |
-|---|---|
-| `sessions` (default on) | dates, gyms, duration, flash/send/fall per attempt, timer used, how it felt |
-| `projects` (default on) | climb names, projects, grades, grade type |
-| `effort` (default on) | RPE and fall reasons |
-| `notes` (default **off**) | session and attempt notes |
-
-**Never shared:**
-- photos and videos
-- AI coach debriefs
-- device settings
+**What's never shared:**
+- XP and levels
 - the Garage
-- XP
+- settings
+- AI coach text
 
-### How the coach sees data
+**History window.** The connection also stores `history_from`:
+- `null` means all history.
+- A date means "only from here on".
+- The default is an open decision (section 9).
 
-- **Coaches read through one database function,** `coach_view_sessions(athlete)`. It checks for an
-  active connection, then builds each session from an **allow-list** of fields for the granted
-  scopes.
-  - A field Crux adds in future is **not** shared until someone adds it to that list on purpose.
-  - Changing scopes or disconnecting takes effect on the coach's next read.
-- **Workout results** for a coach's own assignments are always visible to that coach while
-  connected. The athlete attaches the RPE and note specifically for them.
+**How enforcement works:** coaches read only through `coach_view_sessions` and
+`coach_view_projects`.
+- They check that the calling coach has an **active** connection with this athlete.
+- They build each row from an **allow-list** of fields for that connection's scopes.
+- A field Crux adds later stays private until someone deliberately adds it to the list.
+- Changing scopes or disconnecting takes effect on the coach's next read.
 
-## 4. Linking a coach (consent first)
+### Workout results and scopes
 
-1. **Athlete:** opens Settings → Coach → **Invite a coach**, ticks the scopes, and gets a code like
-   `7F3K-92QD-XW4M`. It's single-use, expires in 7 days, and only a hash is stored. They give it
-   to the coach in person, or by text or email.
-2. **Coach:** signs in to `coach.html`, confirms "I coach climbers" and that they're 18+, and
-   enters the code.
-3. **Both sides:**
-   - The athlete sees "Connected to **Sam Lee** (Movement)" with the scopes listed, plus
-     **Change what's shared** and **Disconnect**.
-   - The coach sees the athlete in their list.
-4. **Disconnect** (either side) ends the connection immediately. Then:
-   - The coach loses access to everything, including past results (privacy first).
-   - The athlete keeps every assigned workout and result.
+A result is something the athlete sends to the assigning coach. So the coach can see the result
+itself (step outcomes, workout RPE and reflection note) while that assignment's connection is
+active, whatever the scopes say. The UI labels the note **"Note for your coach"**. The Crux
+session the workout ran in is still filtered by the scopes.
 
-Under-18 athletes:
-- See a "get a parent or guardian's OK first" notice before creating an invite.
-- Coaches must confirm they're 18+.
-- The legal sheet gets a section on coaching.
+### Disconnect
 
-## 5. Workouts: one format everywhere
+Either side can disconnect, and it takes effect immediately.
+- **The coach** loses access to everything from that connection: sessions, projects, blocks,
+  assignments and results, past ones included. Every coach policy checks that *the specific
+  connection* is active.
+- **The athlete** keeps all of it.
+- **The coach's own templates** stay in their library, because they're the coach's work.
+- **The athlete can still see the former coach's name** on the workouts they keep. The coach can
+  no longer see the athlete at all.
 
-Templates, assignments and the local runner all use the same JSON. Every step is one of four types.
+## 4. Linking (consent first)
+
+1. **Athlete:** opens Settings → Coaches → **Invite a coach**, chooses scopes (the five defaults
+   are pre-ticked) and the history window, and gets a code like `7F3K-92QD-XW4M`. It's single-use,
+   expires in 7 days, and only a hash is stored.
+2. **Coach:** signs in to `coach.html`, turns on their coach profile (name, gym, "I'm 18 or
+   older"), and enters the code.
+3. **Athlete:** sees exactly who is connected: name, gym, connected since, what's shared,
+   **Change what's shared** and **Disconnect**.
+
+**Under-18 athletes** see a "get a parent or guardian's OK first" notice before making an invite.
+
+## 5. The workout model
+
+### Lifecycle
+
+| Stage | What it is | Can change? |
+|---|---|---|
+| Workout template | the coach's reusable definition | yes. It never affects anything already assigned. |
+| Workout assignment | a **frozen snapshot** of the template, plus date, coach note and optional block | **Until it's done**, the coach can change its date or note, or withdraw it. The steps stay frozen; to change steps, withdraw it and assign again. |
+| Workout result | the athlete's outcome for one assignment | the athlete can redo it (replaces it). Only one result per assignment. |
+| Block template | a reusable multi-week plan: title, length in days, and items of (day offset, workout template) | yes. It never affects assigned blocks. |
+| Training block | an assigned block: title, coach note, start and end dates, and its assignments (each a snapshot) | the coach can add, re-date or withdraw unfinished assignments inside it, or withdraw the whole block |
+
+**Ways to send work:**
+- **One workout:** a single assignment, not in a block.
+- **Several workouts:** several assignments, each with its own date.
+- **A block:** one training block with all its assignments, created in one step from a block
+  template and a start date.
+
+Every assignment carries **one** optional `coach_note`. A block and a template each carry one too.
+Every result carries **one** optional `athlete_note`. There are no replies.
+
+### Workout document
+
+Templates and assignments store the same JSON, with format version 1. All durations are in
+seconds. Every step has a stable `id`, so results can refer to it.
 
 ```json
 {
+  "v": 1,
   "title": "Power day",
-  "coachNote": "Full rests. Stop if fingers tweak.",
   "steps": [
-    { "type": "timed",     "title": "Warm-up",       "minutes": 15, "note": "V0-V2, getting harder" },
-    { "type": "intervals", "title": "Limit Boulder", "work": 60, "rest": 180, "rounds": 6, "note": "Blue Arete" },
-    { "type": "climbs",    "title": "Flash attempts", "goal": 5, "note": "new problems, V3-V4" },
-    { "type": "task",      "title": "Stretch",        "note": "forearms + shoulders, 5 min" }
+    { "id": "s1", "type": "timed",     "title": "Warm-up", "duration": 900, "text": "V0-V2, getting harder" },
+    { "id": "s2", "type": "climbing",  "title": "Limit attempts", "target": "attempts", "count": 6,
+      "restBetween": 180, "grade": { "type": "boulder", "min": "V5", "max": "V6" }, "text": "your project" },
+    { "id": "s3", "type": "rest",      "duration": 300 },
+    { "id": "s4", "type": "intervals", "title": "4x4s", "work": 240, "rest": 240, "rounds": 4,
+      "text": "4 problems back to back, 2-3 grades below max" },
+    { "id": "s5", "type": "setsReps",  "title": "Pull-ups", "sets": 3, "reps": 8, "restBetween": 120 },
+    { "id": "s6", "type": "instruction", "title": "Stretch", "text": "forearms and shoulders, 5 min" }
   ]
 }
 ```
 
-| Step type | Runs on (existing system) | Recorded in the result |
-|---|---|---|
-| `intervals` | **the existing timer**, loaded with work/rest, plus a **rounds target** that stops it when reached | rounds completed |
-| `timed` | the existing timer as a single countdown (`work = minutes×60`, 1 round) | done / skipped |
-| `climbs` | **the existing Flash/Send/Fall logging**. It counts attempts logged during the step, and the project chip is picked if the note names a project. | attempts and results |
-| `task` | a checkbox | done / skipped |
+### The six primitives
 
-**Sending one, several, or a block:**
-- A coach can send **one workout**, **several workouts at once** (they share a `group_id` and
-  group title), or a **block**.
-- A block is a template of the form `{workouts:[{day:1,…},{day:3,…}]}`. When it's assigned with a
-  start date, it becomes one dated assignment per workout.
-- Assignments are frozen copies, so editing a template later never changes what was already sent.
+| Type | Fields | Runs on (existing Crux systems) | Result records |
+|---|---|---|---|
+| `instruction` | title, text | a **Done** tick | done / skipped |
+| `timed` | title, `duration`, text | **the Crux timer** as one countdown | done / partial (seconds done) / skipped |
+| `intervals` | title, `work`, `rest`, `rounds`, optional `sets` + `setRest`, text | **the Crux timer** (work/rest phases, auto-stops at the target) | rounds and sets completed |
+| `climbing` | title, `target` (`attempts` or `sends` or `problems`), `count`, optional `grade` range, optional `restBetween`, text | **the Crux Flash/Send/Fall logging**. It counts logs made during the step. With `restBetween`, the timer starts a rest countdown after each log. | the ids of the attempts logged, counts by result, target met? |
+| `setsReps` | title, `sets`, `reps`, optional `restBetween`, text (load or variation) | a set counter. **The Crux timer** runs the rest between sets. | sets done (and reps per set if edited) |
+| `rest` | `duration`, optional text | **the Crux timer** as a rest countdown | done / skipped |
 
-## 6. Running an assigned workout (reusing Crux)
+**How common workouts compose:**
 
-1. **Assigned workouts show on Home:** "From Sam: Power day (Tue)", with its coach note. They
-   replace **Today's plan** when one is due. Today's plan stays as the fallback when nothing is
-   assigned.
-2. **Tap Start:** this runs the normal `startSession()`. The session gets
-   `workout: {assignmentId, steps, progress}`.
-3. **A Workout card steps through the plan,** styled like Today's plan:
-   - It highlights the current step.
-   - It loads the timer for timed and interval steps.
-   - It counts logged attempts for climbs steps.
+| Workout | Built from |
+|---|---|
+| **4x4s** | `intervals` 240/240 × 4 |
+| **Repeaters** | `intervals` 7/3 × 6, `sets` 6, `setRest` 180 |
+| **ARC** | `timed` 1200 s, or `intervals` 1200/600 × 3 |
+| **Limit attempts** | `climbing` attempts × 6 with `restBetween` 180 |
+| **Movement drills** | `instruction` steps, or `climbing` problems × N with a drill in `text` |
+| **Conditioning** | `setsReps` steps with `rest` between |
+| **Projecting** | `climbing` sends × 1 on a named project |
+
+The steps are a flat list, with no nesting or loops in v1. Intervals and sets already cover
+repetition, and a flat list keeps the runner, the editor and the results simple. Nested
+"repeat this group" could be added later as `v: 2`.
+
+### Timer reuse
+
+Today the Crux timer alternates work and rest forever, counting rounds, and it's driven by
+timestamps so it survives screen locks and reloads. Phase 0 extends that **same engine** with an
+optional **timer program**: a list of phases, each with a label and a duration in milliseconds.
+
+- **Building the phases:** `timed`, `rest`, `intervals` and the rests inside `climbing` and
+  `setsReps` all compile to a phase list. For example, `intervals` 240/240 × 4 becomes
+  Work, Rest, Work, Rest, Work, Rest, Work.
+- **No program means no change:** when there's no program, the timer behaves exactly as it does
+  today.
+- **What's reused unchanged:** beeps, the wake lock, reload-safe saving
+  (`session.timerState`) and the countdown display.
+
+## 6. Running an assigned workout
+
+1. **Home shows what's due:** "From Sam Lee · Red River Prep (week 2): Power day", with the coach
+   note. A due workout takes the place of **Today's plan**, which stays as the fallback.
+2. **Start** runs the normal `startSession()`. The session gets
+   `workout: {assignmentId, snapshot, stepIndex, stepResults}`.
+3. **The Workout card** highlights the current step:
+   - Timed steps load the timer program.
+   - Climbing steps count Flash/Send/Fall logs.
    - **Next** and **Skip** buttons move between steps.
+   - XP, badges, projects and the mascot work as usual.
 4. **Finish Session** shows the usual summary plus a **Workout** section:
-   - each step marked done or skipped (filled in automatically),
-   - **RPE 1–10** (the existing effort chips),
-   - an optional one-line note for the coach (500 characters max).
-5. **The result saves locally and uploads.** If you're offline, it's queued and sent later.
+   - each step's outcome (filled in automatically and editable),
+   - **workout RPE 1–10**, using the existing effort chips,
+   - **Note for your coach**, one optional line of up to 500 characters.
+5. **The result saves locally and uploads.** If you're offline, it's queued. The coach sees it on
+   their next load.
 
-**Smallest change to existing code:**
-- The timer gains one optional field, `targetRounds`, which stops the timer when reached.
-- `startSession(opts)` already takes options, from Continue-a-project.
-- Logging, XP, badges and the mascot are untouched.
+**Phase 0 runs all of this locally, with no account.** Athletes can build their own workouts
+(no blocks yet) in the same format. Later, coach assignments plug into the same runner.
 
 ## 7. Sync
 
 **Push:**
-- On sign-in, local sessions upload (upsert by their existing ids).
-- After that, each `saveState()` marks the session as changed, and a debounced background push
-  sends it.
+- On sign-in, local sessions and projects upload, keyed by their existing ids.
+- After that, changed sessions push in the background after `saveState()`.
 
 **Pull:**
-- Assignments download on app open and when the app comes back to the foreground.
-- Your own sessions also pull, so a second phone gets your history (v1.1).
+- Assignments and blocks download on app open and when the app comes back to the foreground.
+- Your own sessions pull too (for a second device, v1.1).
 
-**Conflicts:** in practice only the athlete writes their own sessions, so the newest `updated_at`
-wins per session.
+**Conflicts:** only the athlete writes their own sessions, so the newest `updated_at` wins.
 
-**Offline:** everything works. Uploads wait in a queue.
+**Offline:** everything works, and uploads queue.
 
-**Privacy copy:** signing in means your log is stored on Crux's server (Supabase), not only in
-your browser. The sign-in screen and the legal sheet have to say this plainly. Whoever runs the
-Supabase project can technically read stored data, so keep the project owner-only.
+**Privacy copy:**
+- Signing in stores your log on Crux's server (Supabase), and the sign-in screen and legal sheet
+  must say so.
+- Whoever runs the Supabase project can technically read stored data, so the project stays
+  owner-only.
 
 ## 8. Moving off the Claude Artifact
 
-- **Data:** each browser's data is tied to the site it was saved on. Moving to the new site uses
-  the **existing backup export/import** (Settings → Export on the old page, Import on the new
-  one). We should add a clear "We've moved" banner to the Artifact page.
-- **Images:** `asset()` gains a "self-hosted" mode that loads `assets/` from the site, with no
-  blob ids needed.
-- **Photos already uploaded:** these live in the Artifact's store. v1 keeps them viewable only
-  on the old page. Proper photo storage (Supabase Storage) can come later.
-- **The AI coach** (`sample`): it isn't available off-Artifact. It already hides itself there, so
-  nothing breaks. Plan to remove it.
-- **Downloads:** backup export falls back to a normal browser download (to add: a plain `<a
-  download>`).
+- **Data:** moves with the existing backup export/import. The Artifact gets a "We've moved"
+  banner.
+- **Images:** `asset()` gains a self-hosted mode that loads `assets/` directly.
+- **Photos already uploaded:** they stay viewable on the old page. Proper photo storage
+  (Supabase Storage) is later, and so is the `photos` scope.
+- **The AI coach:** it's unavailable off-Artifact. It already hides itself there; remove it later.
+- **Backup export:** falls back to a plain browser download.
 
 ## 9. Build order
 
-| Phase | What | Needs a backend? | Who |
-|---|---|---|---|
-| **0** | Workout format, the **Workout card and runner** with `targetRounds`, the result capture screen, and local "My workouts" (athletes can build their own). Tests. | No | Claude, in `crux.html` |
-| **1** | Hosting move (Cloudflare Pages or Netlify), self-hosted asset mode, "We've moved" banner, normal downloads | No | either |
-| **2** | Supabase project, `schema.sql` applied, email-code sign-in, upload and pull of own sessions | Yes | Claude (schema) + owner (account) |
-| **3** | Invite codes, connect/disconnect, scopes UI (athlete). `coach.html`: sign in, enter code, athlete list, read-only athlete view. | Yes | split: athlete side vs `coach.html` |
-| **4** | Coach templates (workout + block editor), assign (one / several / block), assignments into Crux, results back | Yes | split |
-| later | discovery, verification, payments, photo storage | | |
+| Phase | What | Backend? |
+|---|---|---|
+| **0** | Workout document v1, the timer program, the Workout card and runner, result capture, local "My workouts" (single workouts). Tests. | no |
+| **1** | Hosting move, self-hosted assets, "We've moved" banner, plain downloads | no |
+| **2** | Supabase project, `schema.sql`, email-code sign-in, upload and pull of own sessions | yes |
+| **3** | Coaches list, invite, scopes and history window, disconnect (athlete). `coach.html`: coach profile, enter code, athletes, read-only athlete view. | yes |
+| **4** | Workout and block template editors, assign (one / several / block), due workouts in Crux, results back, block progress | yes |
+| later | discovery, verification, payments, photo storage and the `photos` scope | |
 
-Phase 0 is useful on its own (custom workouts with real timers), and it's the foundation
-everything else plugs into.
+## 10. Decisions
 
-## 10. Open decisions (owner)
+**Decided (2026-10-04):**
+- **Hosting:** normal hosting plus Supabase.
+- **Disconnect:** it revokes everything, past results included.
+- **Connections:** many-to-many.
+- **Assignments:** frozen snapshots.
+- **Training blocks:** real objects.
+- **Scopes:** persistent on the connection. Defaults are sessions, projects, attempts, effort and
+  fall reasons. Notes and photos stay off unless deliberately enabled.
+- **Notes:** one coach note per assignment (and per block or template), one athlete note per
+  result, and no messaging of any kind.
+- **Phase 0:** waits until this model has been reviewed.
 
-1. **Move hosting off the Claude Artifact.** Required for accounts. Pick Cloudflare Pages or
-   Netlify; both are free. A custom domain is optional.
-2. **Create the Supabase project** (free). This has to be the owner's account. Claude then
-   writes and checks the setup.
-3. **Should the coach keep past results after a disconnect?** This proposal says **no** (privacy
-   first).
-4. **Can one athlete have more than one coach?** The schema allows it, and the UI could start
-   with one.
-5. **Can anyone switch on "I coach climbers"?** This proposal says yes for v1: there's no
-   verification, but a coach only sees athletes who invited them.
+**Still open:**
+1. **History window default:** all history, or only from the connection date? The proposal says
+   **all**, because coaches need context, but the athlete can choose "from today" when inviting.
+2. **Workout RPE:** should it be shared even when the `effort` scope is off? The proposal says
+   **yes**, since it's on a result the athlete deliberately submits. Per-attempt RPE still follows
+   the scope.
+3. **Editing an assignment:** can the coach edit the note or date after the athlete has started
+   the workout? The proposal says **no**: they're locked once a result exists.
