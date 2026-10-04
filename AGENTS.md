@@ -62,6 +62,17 @@ A project is **one named climb at one gym or crag**, and attempts link to it by 
 
 See `linkProjects()` and `projectChoicesFor()` in `crux.html`.
 
+## Today's plan
+
+At the top of each session, `planFor()` in `crux.html` picks a warm-up, a main workout from
+the timer drills, and a finish.
+- **It runs on plain rules,** with no Claude involved: days since the last session, sessions
+  this week, the hardest boulder send, and recent fall reasons.
+- **Never auto-suggest the hangboard protocols** (Max Hangs, Repeaters) because of their
+  finger-injury risk.
+- **Keep the advice conservative** and the copy short.
+- **Its tests** are the "Today's plan" checks in `dev/tests.html`.
+
 ## Coach
 
 The coach writes a short debrief of a finished session, and a "what to try next" tip for a
