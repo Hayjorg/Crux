@@ -418,6 +418,14 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(!saved().sessions.some(function(x){ return x.coach; }), "something was saved as a debrief");
   });
 
+  test("The app is called Crux (never Crimpet)", async function(){
+    await boot(TEMPLATE);
+    expect(D.title==="Crux", "page title is '"+D.title+"'");
+    expect(/CRUX/i.test(q(".hero-brand h1").textContent), "header says '"+q(".hero-brand h1").textContent+"'");
+    var hits = SRC.split("\n").map(function(l, i){ return /crimpet/i.test(l) ? (i+1)+": "+l.trim().slice(0, 80) : null; }).filter(Boolean);
+    expect(!hits.length, "'Crimpet' appears in crux.html:\n"+hits.slice(0, 5).join("\n"));
+  });
+
   test("Only the climber mascot is used (old pebble art stays retired)", async function(){
     var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });
     var old = paths.filter(function(p){ return !/^mascot\/climber\//.test(p); });

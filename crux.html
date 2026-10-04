@@ -4,9 +4,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F2ECE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1714" media="(prefers-color-scheme: dark)">
-<meta name="description" content="Crimpet: a climbing session timer and send log with a little climber who levels up with you.">
+<meta name="description" content="Crux: a climbing session timer and send log with a little climber who levels up with you.">
 <script>(function(){try{var raw=localStorage.getItem("crux-app-state-v2");var t=raw&&JSON.parse(raw).settings&&JSON.parse(raw).settings.theme;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
-<title>Crimpet</title>
+<title>Crux</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -334,7 +334,7 @@
   .character-wander.in-motion, .character-wander.in-motion .character-body,
   .character-wander.in-motion .character-shadow{transition:none;}
   .character-wander img{width:100%;height:auto;display:block;cursor:pointer;position:relative;filter:drop-shadow(0 6px 6px var(--shadow));}
-  /* Crimpet's eyes: a transparent layer holding only the edited eye pixels, stacked exactly on
+  /* The climber's eyes: a transparent layer holding only the edited eye pixels, stacked exactly on
      the sprite (same 2:3 canvas). Shown over the four breathing frames, whose eyes are
      pixel-identical; hidden for blinks and motion clips, which draw their own eyes. */
   .character-wander img.character-face{position:absolute;inset:0;width:100%;height:100%;filter:none;pointer-events:none;cursor:default;}
@@ -715,7 +715,7 @@
   .timer-settings[open] .timer-settings-summary .chev{transform:rotate(180deg);}
   .timer-settings[open] .timer-config{margin-top:8px;}
 
-  /* A small Crimpet who watches you log. Head-and-shoulders crop of the full sprite. */
+  /* A small climber who watches you log. Head-and-shoulders crop of the full sprite. */
   .log-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px;}
   .log-head .eyebrow{margin-bottom:10px;}
   .buddy{position:relative;width:64px;height:54px;overflow:hidden;flex:none;border-radius:14px;}
@@ -777,7 +777,7 @@
             <span class="lv-tag">Lv <span id="heroLevelNum">1</span></span>
           </div>
           <div class="hero-brand">
-            <h1>CRIMPET</h1>
+            <h1>CRUX</h1>
             <p>timer · send log</p>
           </div>
           <div class="scene-icon-row">
@@ -1099,7 +1099,7 @@
 
     <div class="settings-section" id="backupSection">
       <p class="settings-section-title">Backup</p>
-      <p class="settings-section-hint">Your sessions are saved only in this browser. Export a backup now and then — importing one replaces everything here with the backup. Photos and videos stay stored with this Crimpet page; a backup keeps the links to them.</p>
+      <p class="settings-section-hint">Your sessions are saved only in this browser. Export a backup now and then — importing one replaces everything here with the backup. Photos and videos stay stored with this Crux page; a backup keeps the links to them.</p>
       <div class="theme-row">
         <button type="button" class="btn btn-ghost" id="exportBackupBtn" style="flex:1;padding:10px 12px;">Export backup</button>
         <button type="button" class="btn btn-ghost" id="importBackupBtn" style="flex:1;padding:10px 12px;">Import backup</button>
@@ -1250,23 +1250,23 @@
     </div>
     <div class="legal-body">
       <h3>Climbing is dangerous</h3>
-      <p>Climbing, bouldering, and hangboard or finger training carry an inherent risk of serious injury, including falls, tendon and pulley injuries, and injuries that can be permanent or fatal. Crimpet is a timer and logbook. It doesn't supervise, spot, or assess you, and it can't tell whether a climb, a fall zone, or a workout is safe for you.</p>
+      <p>Climbing, bouldering, and hangboard or finger training carry an inherent risk of serious injury, including falls, tendon and pulley injuries, and injuries that can be permanent or fatal. Crux is a timer and logbook. It doesn't supervise, spot, or assess you, and it can't tell whether a climb, a fall zone, or a workout is safe for you.</p>
       <p>Use proper equipment and padding, get instruction from a qualified person, follow your gym's rules, and stop if something hurts.</p>
 
       <h3>Not medical or coaching advice</h3>
       <p>Workout descriptions and timer presets are general information for experienced climbers, not personal coaching, medical, or physical-therapy advice. Talk to a doctor before starting a training program, especially if you're new to finger training, returning from injury, or have a health condition. Levels, badges, and streaks are for fun, not a measure of what you're ready for.</p>
 
       <h3>Kids</h3>
-      <p>Anyone under 18 should use Crimpet, and climb or train, only with a parent or guardian's permission and appropriate supervision.</p>
+      <p>Anyone under 18 should use Crux, and climb or train, only with a parent or guardian's permission and appropriate supervision.</p>
 
       <h3>Your data</h3>
-      <p>There's no account, no ads, and no analytics. Your sessions, notes, and progress are saved only in this browser on this device, and nobody else, including the maker of Crimpet, can see them. Clearing your browser data or uninstalling deletes them, so use Export backup in Settings to keep a copy.</p>
+      <p>There's no account, no ads, and no analytics. Your sessions, notes, and progress are saved only in this browser on this device, and nobody else, including the maker of Crux, can see them. Clearing your browser data or uninstalling deletes them, so use Export backup in Settings to keep a copy.</p>
       <p>The coach is optional. Only when you tap a coach button, the climbing log it needs (that session or project, plus a few recent sessions) is sent to Claude on your own Claude account to write the answer, and it uses your Claude usage. The coach's tips are general suggestions, not professional coaching or medical advice.</p>
-      <p>Photos and videos you add are stored with the copy of Crimpet you're using, so treat them as you would anything you upload. The app loads its fonts from Google Fonts, which means Google receives your IP address when those fonts load.</p>
+      <p>Photos and videos you add are stored with the copy of Crux you're using, so treat them as you would anything you upload. The app loads its fonts from Google Fonts, which means Google receives your IP address when those fonts load.</p>
 
       <h3>Terms of use</h3>
-      <p>Crimpet is provided free, "as is", without warranties of any kind. To the fullest extent the law allows, the maker of Crimpet isn't responsible for any injury, loss, or damage, including lost data, that comes from using it or relying on it. By using Crimpet you agree that you climb and train at your own risk and are responsible for your own safety.</p>
-      <p>Crimpet isn't affiliated with or endorsed by any climbing gym, brand, or organization. Grade scales are used descriptively.</p>
+      <p>Crux is provided free, "as is", without warranties of any kind. To the fullest extent the law allows, the maker of Crux isn't responsible for any injury, loss, or damage, including lost data, that comes from using it or relying on it. By using Crux you agree that you climb and train at your own risk and are responsible for your own safety.</p>
+      <p>Crux isn't affiliated with or endorsed by any climbing gym, brand, or organization. Grade scales are used descriptively.</p>
     </div>
     <div class="legal-actions" id="legalAckRow" hidden>
       <button type="button" class="btn btn-primary" id="legalAckBtn" style="width:100%;">I understand — let's climb</button>
@@ -1422,7 +1422,7 @@
         endedAt: Math.max.apply(null, tsList),
         timerConfig:{ workSec:base.timerDefaults.workSec, restSec:base.timerDefaults.restSec },
         attempts: legacy,
-        note:"Imported from an earlier version of Crimpet.",
+        note:"Imported from an earlier version of Crux.",
         photos:[],
         satisfaction:null,
         location:""
@@ -2397,7 +2397,7 @@
     document.getElementById("endSessionOverlay").hidden = false;
     wireSessionCoach(document.getElementById("endCoach"), document.getElementById("endCoachBtn"), endCoachText, s);
     if(total>0) spawnConfetti(document.getElementById("confettiLayer"));
-    // Crimpet reacts when you get back to him: stoked if anything went, sheepish if it was all falls.
+    // The climber reacts when you get back: stoked if anything went, sheepish if it was all falls.
     var sent = counts.flash + counts.send;
     if(sent>0) pendingMascotMoods = (pendingMascotMoods||[]).concat([["stoked",9000]]);
     else if(total>0) pendingMascotMoods = (pendingMascotMoods||[]).concat([["sheepish",6000]]);
@@ -3052,7 +3052,7 @@
     showToast("Removed");
   }
 
-  // ---- Crimpet cameos: a small head-and-shoulders version on the session and summary ----
+  // ---- Climber cameos: a small head-and-shoulders version on the session and summary ----
   // Reuses the resting sprite plus the expression overlays, so there's no new art. Guarded
   // because render() can run before the mascot section of this script has set things up.
   var buddyTimer = null;
@@ -3189,7 +3189,7 @@
   // minLevel gates pulled in from 1/5/10/20/35 — combined with the lighter xpForLevel above,
   // these come noticeably sooner without needing yet another number to tune independently.
   var CHARACTER_STAGES = [
-    // He's always just Crimpet - no evolving titles. These tiers now only unlock gear for the
+    // No evolving titles any more. These tiers now only unlock gear for the
     // Garage; ids are kept as-is so existing saves still line up.
     { id:"chalkling",    minLevel:1,  gear:null,             props:[] },
     { id:"boulderbud",   minLevel:4,  gear:"a crash pad",    props:["pad"] },
@@ -3642,7 +3642,7 @@
     var avatarImg = document.getElementById("heroAvatarImg");
     if(avatarImg.getAttribute("src")!==stage.img) avatarImg.src = stage.img;
     document.getElementById("heroLevelNum").textContent = state.level;
-    document.getElementById("characterStageName").textContent = "Crimpet";
+    document.getElementById("characterStageName").textContent = "Your climber";
     document.getElementById("characterSub").textContent = "Level "+state.level+" · "+mood.caption;
     var nextStage = CHARACTER_STAGES[unlockedChar.length];
     document.getElementById("characterHint").textContent = nextStage
@@ -3837,7 +3837,7 @@
   };
   var mascotAnim = { queue:[], timer:null, nextBlinkAt:0 };
 
-  // ---- Crimpet's expressions ----
+  // ---- The climber's expressions ----
   // Built by faces.py from idle-01: lids and highlights only, so the head, texture and lighting
   // are untouched. A baseline mood comes from context; reactions to what you did override it for
   // a few seconds and then fall back.
@@ -4245,7 +4245,7 @@
   function backupFilename(){
     var d = new Date();
     function p(n){ return (n<10?"0":"")+n; }
-    return "crimpet-backup-"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+".json";
+    return "crux-backup-"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+".json";
   }
   function showExportFallback(json){
     var ta = document.getElementById("exportFallbackText");
@@ -4269,7 +4269,7 @@
     });
   }
 
-  // Accepts a Crimpet export ({kind:"crux-backup", data}) or a raw saved state. Anything without a
+  // Accepts a Crux export ({kind:"crux-backup", data}) or a raw saved state. Anything without a
   // sessions array (or the pre-sessions legacy attempts array) is rejected, rather than being
   // normalized into an empty state that would wipe this device on confirm.
   function parseBackup(text){
@@ -4288,7 +4288,7 @@
     reader.onload = function(){
       var backup;
       try{ backup = parseBackup(String(reader.result)); }
-      catch(e){ showToast("That file isn't a Crimpet backup"); return; }
+      catch(e){ showToast("That file isn't a Crux backup"); return; }
       pendingImport = backup.state;
       var sessions = backup.state.sessions.length;
       var attempts = backup.state.sessions.reduce(function(n, s){ return n+s.attempts.length; }, 0);

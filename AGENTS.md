@@ -34,11 +34,12 @@ and a decoratable gym scene ("the Garage").
    - migrate older saves in `normalizeState()`, which both loading and backup import run, and
    - keep older backup files importing correctly (Settings → Import backup).
    - Never drop or rewrite attempts, notes, photos, grades or session history.
-4. **The mascot is the climber.** Since the Sep 26 pass, the app and the climber are *named*
-   "Crimpet" in the UI. That's fine. What's retired is the **old pebble mascot art** (the
-   `mascot/chalkling`, `boulderbud`, `crimper` and `summitfriend` folders). The owner was
-   unhappy when a test brought it back. Never show, restore or switch back to that art. Only
-   `mascot/climber/` images belong in the app.
+4. **The app is called Crux, and the mascot is the climber.**
+   - **The name:** never call the app or the climber "Crimpet". The owner confirmed this on
+     2026-10-03, after a rename slipped in. The climber is simply "your climber".
+   - **The art:** the old pebble mascot art is retired too (the `mascot/chalkling`,
+     `boulderbud`, `crimper` and `summitfriend` folders). The owner was unhappy when a test
+     brought it back. Only `mascot/climber/` images belong in the app.
 5. **Keep the climber on-model.** `idle-01` is the locked master (see
    `../art-source/mascot/climber/default/LOCKED.md`), so don't redesign the head or face. The owner
    prefers small pixel edits of idle-01 over freshly generated art for subtle motion.
