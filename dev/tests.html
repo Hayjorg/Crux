@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crux tests</title>
+<!-- Dev-only regression tests for crux.html. Not part of the app and never published.
+     Open http://localhost:8765/dev/tests.html (any static server works). It loads the real
+     ../crux.html in a frame whose localStorage is an in-memory stand-in, so the save in this
+     browser is never read or written. Results: the page, document.title, and window.cruxTestResults. -->
+<style>
+  body{margin:0;padding:16px;font:14px system-ui,sans-serif;background:#F3EEE2;color:#221E19;}
+  h1{font-size:18px;margin:0 0 4px;} p{margin:0 0 10px;color:#6d655a;max-width:820px;}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 14px;}
+  button{font:inherit;padding:8px 14px;border-radius:999px;border:1px solid #cdbf9f;background:#fff;cursor:pointer;}
+  #summary{font-weight:700;}
+  .layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+  #results{flex:1;min-width:300px;list-style:none;margin:0;padding:0;}
+  #results li{background:#fff;border:1px solid #E3DAC5;border-radius:10px;padding:8px 10px;margin-bottom:6px;}
+  #results .name{font-weight:600;} #results .detail{color:#6d655a;font-size:12.5px;white-space:pre-wrap;margin-top:3px;}
+  .pass .tag{color:#1f8a4c;} .fail .tag{color:#c0392b;} .warn .tag{color:#b7791f;} .run .tag{color:#6d655a;}
+  .fail{border-color:#e8a59d !important;} .warn{border-color:#efd29a !important;}
+  iframe{width:390px;height:760px;border:1px solid #E3DAC5;border-radius:12px;background:#fff;}
+</style></head><body>
+<h1>Crux tests</h1>
+<p>Checks the things that must never break: logging, sessions, saved data, old saves and backups,
+and the project rules. It runs on its own private copy of the data, never your real save. Takes about a minute.</p>
+<div class="bar"><button id="runBtn">Run again</button><span id="summary">Starting…</span></div>
+<div class="layout"><ul id="results"></ul><iframe id="app" title="App under test"></iframe></div>
+<script>
+(function(){
+  var KEY = "crux-app-state-v2";
+  var STORE = {};                 // what the app under test sees as localStorage
+  window.__cruxStore = STORE;
+  window.__appErrors = [];
+  var SRC = null, W = null, D = null, TEMPLATE = null;
+  var results = [];
+  window.cruxTestResults = results;
+
+  var SHIM = '<base href="/"><script>(function(){var S=parent.__cruxStore;' +
+    'var ls={getItem:function(k){return Object.prototype.hasOwnProperty.call(S,k)?S[k]:null;},setItem:function(k,v){S[k]=String(v);},' +
+    'removeItem:function(k){delete S[k];},clear:function(){Object.keys(S).forEach(function(k){delete S[k];});},' +
+    'key:function(i){return Object.keys(S)[i]||null;},get length(){return Object.keys(S).length;}};' +
+    'Object.defineProperty(window,"localStorage",{configurable:true,get:function(){return ls;}});' +
+    'window.addEventListener("error",function(e){parent.__appErrors.push("error: "+e.message);});' +
+    'window.addEventListener("unhandledrejection",function(e){parent.__appErrors.push("rejection: "+(e.reason&&e.reason.message||e.reason));});' +
+    'var ce=console.error;console.error=function(){parent.__appErrors.push("console.error: "+[].map.call(arguments,String).join(" "));ce.apply(console,arguments);};' +
+    '})();<\/script>';
+
+  /* ---------- harness ---------- */
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function $(id){ var el = D.getElementById(id); if(!el) throw new Error("missing #"+id); return el; }
+  function q(sel){ return D.querySelector(sel); }
+  function qa(sel){ return Array.prototype.slice.call(D.querySelectorAll(sel)); }
+  function visible(id){ var el = D.getElementById(id); return !!el && !el.hidden && !el.closest("[hidden]"); }
+  async function click(el, ms){ if(typeof el==="string") el = $(el); el.click(); await wait(ms==null ? 150 : ms); }
+  function fire(el, type){ el.dispatchEvent(new W.Event(type, { bubbles:true })); }
+  async function type(el, value){ el.value = value; fire(el, "input"); await wait(450); }
+  async function setGym(el, value){ fire(el, "focus"); el.value = value; fire(el, "input"); await wait(450); fire(el, "change"); await wait(100); }
+  function saved(){ return JSON.parse(STORE[KEY] || "null"); }
+  function active(s){ s = s || saved(); return s.sessions.find(function(x){ return x.id===s.activeSessionId; }); }
+  function where(s, id){ var p = (s.projects||[]).find(function(p){ return p.id===id; }); return p ? p.name+"@"+(p.location||"(not set)") : "none"; }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function sameExceptProject(a, b){ var x = clone(a), y = clone(b); delete x.projectId; delete y.projectId; return JSON.stringify(x)===JSON.stringify(y); }
+
+  // Boots a fresh copy of the app on whatever is in STORE (pass a state to replace it first).
+  async function boot(seed){
+    if(seed!==undefined){ Object.keys(STORE).forEach(function(k){ delete STORE[k]; }); if(seed) STORE[KEY] = JSON.stringify(seed); }
+    var frame = document.getElementById("app");
+    await new Promise(function(resolve){
+      frame.onload = resolve;
+      var i = SRC.search(/<meta charset[^>]*>/i);
+      var at = i<0 ? 0 : i + SRC.match(/<meta charset[^>]*>/i)[0].length;
+      frame.srcdoc = SRC.slice(0, at) + SHIM + SRC.slice(at);
+    });
+    W = frame.contentWindow; D = frame.contentDocument;
+    await wait(350);
+    if(W.localStorage instanceof W.Storage) throw new Error("storage stand-in not installed: the real save would be used");
+  }
+  async function ackSafety(){ if(visible("legalOverlay") && visible("legalAckBtn")) await click("legalAckBtn"); }
+  async function goHome(){ if(!D.getElementById("view-session").hidden) await click("sessionHomeBtn"); if(!D.getElementById("view-detail").hidden) await click("backFromDetailBtn"); }
+  async function startOrResume(){ await goHome(); await click("startSessionBtn", 250); }
+  async function log(kind, name){
+    await click("log"+kind[0].toUpperCase()+kind.slice(1), 200);
+    if(name!=null){ await type($("composerClimbName"), name); }
+  }
+  async function closeComposer(){ var b = D.getElementById("composerDone"); if(b){ b.click(); await wait(320); } }
+  async function setMode(mode){
+    await goHome(); await click("openSettingsBtn");
+    await click(q('#modeRow [data-mode-val="'+mode+'"]'));
+    await click("closeSettingsBtn");
+  }
+  async function exportJson(){
+    await goHome(); await click("openSettingsBtn"); await click("exportBackupBtn", 250);
+    var json = $("exportFallbackText").value; await click("closeSettingsBtn"); return json;
+  }
+  async function importText(text, confirm){
+    await goHome(); await click("openSettingsBtn");
+    var inp = $("importBackupInput"), dt = new W.DataTransfer();
+    dt.items.add(new W.File([text], "backup.json", { type:"application/json" }));
+    inp.files = dt.files; fire(inp, "change"); await wait(300);
+    var msg = visible("importConfirm") ? $("importConfirmText").textContent : "";
+    if(msg) await click(confirm===false ? "importCancelBtn" : "importConfirmBtn", 300);
+    if(visible("settingsOverlay")) await click("closeSettingsBtn");
+    return msg;
+  }
+
+  /* ---------- fixtures ---------- */
+  // A save from before projects existed: same-name climbs at two gyms, one with no gym,
+  // plus notes, photos, grades and efforts that must survive untouched.
+  function oldFormatSave(){
+    var s = clone(TEMPLATE), D_ = 86400000, now = Date.now(), seq = 0;
+    function att(r, name, ts, extra){ seq++; return Object.assign({ id:"a"+seq, result:r, xp:r==="flash"?30:r==="send"?20:5, ts:ts, seq:seq, effort:null, reason:null, note:"", gradeType:"boulder", grade:null, photos:[], climbName:name }, extra||{}); }
+    function sess(id, loc, day, atts){ return { id:id, startedAt:now-day*D_, endedAt:now-day*D_+3600000, timerConfig:{ workSec:45, restSec:90 }, attempts:atts.reverse(), note:"session "+id, photos:[], satisfaction:null, location:loc }; }
+    s.sessions = [
+      sess("s4", "", 3, [att("fall", "Crimp", now-3*D_, { note:"left sloper", photos:[{ id:"ph1", kind:"image" }] })]),
+      sess("s3", "Mesa Rim", 5, [att("fall", "Roof", now-5*D_, { grade:"V5" }), att("send", "Blue Arete", now-5*D_+9000, { grade:"V3" })]),
+      sess("s2", "Movement", 8, [att("fall", "Pink Slab", now-8*D_, { grade:"V2", effort:6 })]),
+      sess("s1", "Movement", 10, [att("fall", "Blue Arete", now-10*D_, { grade:"V4", note:"heel hook on the lip", effort:7, reason:"Pumped" }), att("fall", "Blue Arete", now-10*D_+5000)])
+    ];
+    s.seq = seq; s.activeSessionId = null; s.lastLocation = "Movement";
+    s.settings.mode = "advanced"; s.settings.askClimbName = true; s.settings.ackSafety = Date.now();
+    delete s.projects;
+    return s;
+  }
+  function allAttempts(s){ var out = []; s.sessions.forEach(function(x){ x.attempts.forEach(function(a){ out.push(a); }); }); return out; }
+
+  /* ---------- tests ---------- */
+  var TESTS = [];
+  function test(name, fn){ TESTS.push({ name:name, fn:fn }); }
+  function expect(cond, msg){ if(!cond) throw new Error(msg); }
+  function warn(msg){ var e = new Error(msg); e.warn = true; throw e; }
+
+  test("Fresh install starts cleanly and shows the safety notice once", async function(){
+    await boot(null);
+    expect(!D.getElementById("view-home").hidden, "home screen isn't showing");
+    expect(visible("legalOverlay"), "first-run safety notice didn't appear");
+    await ackSafety();
+    expect(!visible("legalOverlay"), "notice didn't close after 'I understand'");
+    expect(saved() && saved().settings.ackSafety, "acknowledgement wasn't saved");
+    TEMPLATE = saved();
+    await boot();
+    expect(!visible("legalOverlay"), "notice came back after reload");
+  });
+
+  test("Saves only under the crux-app-state-v2 key", async function(){
+    await boot(TEMPLATE); await startOrResume(); await log("send");
+    var keys = Object.keys(STORE);
+    expect(keys.indexOf(KEY)>=0, "nothing saved under "+KEY);
+    var other = keys.filter(function(k){ return k!==KEY; });
+    expect(!other.some(function(k){ return /crux|crimpet|state/i.test(k); }), "app also saves under: "+other.join(", "));
+  });
+
+  test("Logging Flash, Send and Fall saves attempts, XP and counts", async function(){
+    await boot(TEMPLATE); await startOrResume();
+    await log("flash"); await log("send"); await log("fall");
+    var s = saved(), a = active(s);
+    expect(a, "no active session saved");
+    expect(a.attempts.map(function(x){ return x.result; }).join()==="fall,send,flash", "attempts saved as "+a.attempts.map(function(x){ return x.result; }).join());
+    expect(s.counts.flash===1 && s.counts.send===1 && s.counts.fall===1, "counts are "+JSON.stringify(s.counts));
+    expect(s.totalAttempts===3, "totalAttempts is "+s.totalAttempts);
+    var xpSum = a.attempts.reduce(function(n, x){ return n+x.xp; }, 0);
+    expect(xpSum===55, "attempt XP adds up to "+xpSum+", expected 30+20+5");
+  });
+
+  test("Undo on the log toast removes that attempt and its XP", async function(){
+    await boot(TEMPLATE); await startOrResume(); await log("flash");
+    var before = saved(); await log("send");
+    var undo = qa("#toastStack .toast-action").pop();
+    expect(undo, "no Undo button on the toast");
+    await click(undo, 250);
+    var after = saved();
+    expect(active(after).attempts.length===1, "session has "+active(after).attempts.length+" attempts after undo");
+    expect(after.xp===before.xp && after.level===before.level, "XP/level not restored: "+[after.level, after.xp]+" vs "+[before.level, before.xp]);
+  });
+
+  test("A running session survives a reload and Finish ends it", async function(){
+    await boot(TEMPLATE); await startOrResume(); await log("send"); await log("fall");
+    var id = saved().activeSessionId;
+    await boot();
+    expect(saved().activeSessionId===id, "active session lost on reload");
+    expect(!D.getElementById("view-session").hidden, "reload didn't reopen the running session");
+    await goHome();
+    expect(/Resume/i.test($("startSessionBtn").textContent), "home doesn't offer Resume Session");
+    await startOrResume();
+    await click("finishSessionBtn", 300);
+    var s = saved(), done = s.sessions.find(function(x){ return x.id===id; });
+    expect(!s.activeSessionId, "session still active after Finish");
+    expect(done && done.endedAt && done.attempts.length===2, "finished session not saved with its 2 attempts");
+    expect(visible("endSessionOverlay"), "end summary didn't show");
+    await click("endSummaryDoneBtn", 200);
+    expect(q('#historyList .session-card[data-id="'+id+'"]'), "finished session missing from history");
+  });
+
+  test("An old save (before projects) loads with every attempt detail unchanged", async function(){
+    var old = oldFormatSave(); await boot(old); await goHome();
+    var s = saved() || old; // the app may not re-save until something changes
+    await click("openSettingsBtn"); await click("closeSettingsBtn"); s = saved();
+    var oldA = allAttempts(old), newA = allAttempts(s);
+    expect(newA.length===oldA.length, newA.length+" attempts after load, expected "+oldA.length);
+    var changed = oldA.filter(function(a){ var n = newA.find(function(x){ return x.id===a.id; }); return !n || !sameExceptProject(a, n); });
+    expect(!changed.length, "attempts changed by migration: "+changed.map(function(a){ return a.id; }).join());
+    expect(s.totalAttempts===oldA.length, "profile counts "+s.totalAttempts+" attempts");
+  });
+
+  test("Same-name climbs at different gyms stay separate; no-gym entries aren't merged", async function(){
+    await boot(oldFormatSave()); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    var s = saved(), names = s.projects.map(function(p){ return p.name+"@"+(p.location||"(not set)"); }).sort();
+    var want = ["Blue Arete@Mesa Rim", "Blue Arete@Movement", "Crimp@(not set)", "Pink Slab@Movement", "Roof@Mesa Rim"];
+    expect(JSON.stringify(names)===JSON.stringify(want), "projects are "+names.join(", "));
+    var s1 = s.sessions.find(function(x){ return x.id==="s1"; });
+    expect(s1.attempts.every(function(a){ return where(s, a.projectId)==="Blue Arete@Movement"; }), "Movement Blue Arete attempts not on one project");
+  });
+
+  test("Very old saves (before sessions existed) still load", async function(){
+    var now = Date.now();
+    await boot({ xp:40, level:1, attempts:[{ id:"x1", result:"send", xp:20, ts:now-5000 }, { id:"x2", result:"fall", xp:5, ts:now-9000 }] });
+    await ackSafety(); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    var s = saved();
+    expect(s && s.sessions.length===1 && s.sessions[0].attempts.length===2, "legacy attempts not kept: "+JSON.stringify(s && s.sessions.map(function(x){ return x.attempts.length; })));
+    expect(s.totalAttempts===2, "totalAttempts is "+s.totalAttempts);
+  });
+
+  test("Backup export then import gives back identical data", async function(){
+    await boot(oldFormatSave()); await startOrResume(); await log("flash"); await closeComposer();
+    var json = await exportJson();
+    var wrapped = JSON.parse(json);
+    expect(wrapped.kind==="crux-backup" && wrapped.data && Array.isArray(wrapped.data.sessions), "export isn't a crux-backup file");
+    var before = STORE[KEY];
+    var msg = await importText(json);
+    expect(/Replace everything/.test(msg), "no import confirmation shown");
+    expect(STORE[KEY]===before, "data changed after importing its own backup");
+  });
+
+  test("Old-format and raw backups import, with details kept", async function(){
+    var old = oldFormatSave();
+    await boot(TEMPLATE);
+    var msg = await importText(JSON.stringify({ kind:"crux-backup", version:1, exportedAt:new Date().toISOString(), data:old }));
+    expect(/4 sessions, 6 attempts/.test(msg), "confirm text: "+msg);
+    var s = saved(), oldA = allAttempts(old);
+    expect(oldA.every(function(a){ var n = allAttempts(s).find(function(x){ return x.id===a.id; }); return n && sameExceptProject(a, n); }), "attempt details changed on old-format import");
+    expect(s.projects.length===5, "old-format import made "+s.projects.length+" projects, expected 5");
+    await importText(JSON.stringify(old));
+    expect(saved().projects.length===5 && allAttempts(saved()).length===oldA.length, "raw saved-state import failed");
+  });
+
+  test("A file that isn't a backup is rejected; Cancel changes nothing", async function(){
+    await boot(oldFormatSave()); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    var before = STORE[KEY];
+    var msg = await importText("{}");
+    expect(!msg, "an empty object was offered for import");
+    expect(STORE[KEY]===before, "data changed after a rejected file");
+    await importText(JSON.stringify(TEMPLATE), false);
+    expect(STORE[KEY]===before, "data changed after Cancel");
+  });
+
+  test("Continue with no session starts one at the project's gym with it picked", async function(){
+    await boot(oldFormatSave()); await goHome();
+    await click("openProgressBtn");
+    var row = qa("#projectsList .project-row-btn").find(function(b){ return /Pink Slab/.test(b.textContent); });
+    expect(row, "Pink Slab not in the Projects list"); await click(row);
+    var cont = q(".project-continue-btn"); expect(cont, "no Continue button on an unfinished project");
+    await click(cont, 300);
+    var s = saved(), a = active(s);
+    expect(a, "no session started");
+    expect(a.location==="Movement", "session gym is '"+a.location+"'");
+    expect(where(s, a.projectId)==="Pink Slab@Movement", "picked project is "+where(s, a.projectId));
+    await log("fall"); await closeComposer();
+    s = saved(); a = active(s);
+    expect(a.attempts[0].climbName==="Pink Slab" && where(s, a.attempts[0].projectId)==="Pink Slab@Movement", "next go not logged to Pink Slab");
+  });
+
+  test("Continue with a session running reuses it", async function(){
+    await boot(oldFormatSave()); await startOrResume(); await log("fall"); await closeComposer();
+    var id = saved().activeSessionId, n = saved().sessions.length;
+    await goHome(); await click("openProgressBtn");
+    await click(qa("#projectsList .project-row-btn").find(function(b){ return /Blue Arete/.test(b.textContent) && /Movement/.test(b.textContent); }));
+    await click(q(".project-continue-btn"), 300);
+    var s = saved();
+    expect(s.activeSessionId===id, "a different session became active");
+    expect(s.sessions.length===n, "session count went "+n+" → "+s.sessions.length);
+    expect(where(s, active(s).projectId)==="Blue Arete@Movement", "picked "+where(s, active(s).projectId));
+  });
+
+  test("Switching projects doesn't relabel earlier attempts; the pick survives reload", async function(){
+    await boot(oldFormatSave()); await startOrResume();
+    var chip = function(re){ return qa(".project-chip").find(function(b){ return re.test(b.textContent); }); };
+    expect(chip(/Blue Arete/), "no project chips in the session");
+    await click(chip(/Blue Arete/)); await log("fall"); await closeComposer(); await log("fall"); await closeComposer();
+    var earlier = clone(active().attempts);
+    await click(chip(/Pink Slab/)); await log("send"); await closeComposer();
+    var s = saved(), a = active(s);
+    expect(JSON.stringify(a.attempts.slice(1))===JSON.stringify(earlier), "earlier attempts changed after switching");
+    expect(where(s, a.attempts[0].projectId)==="Pink Slab@Movement", "new go logged to "+where(s, a.attempts[0].projectId));
+    await boot();
+    expect(where(saved(), active().projectId)==="Pink Slab@Movement", "pick lost on reload");
+    await startOrResume();
+    var sel = qa(".project-chip.selected").map(function(b){ return b.textContent; });
+    expect(sel.length===1 && /Pink Slab/.test(sel[0]), "selected chip after reload: "+sel.join());
+  });
+
+  test("Typed names only auto-join the same name at the same gym; unknown gyms ask first", async function(){
+    await boot(oldFormatSave()); await startOrResume(); // session at Movement
+    await log("fall", "blue arete");
+    var s = saved();
+    expect(where(s, active(s).attempts[0].projectId)==="Blue Arete@Movement", "same gym went to "+where(s, active(s).attempts[0].projectId));
+    expect(!q("#composerProjectHint .pc-use"), "asked a question for a same-gym match");
+    await closeComposer();
+    await log("fall", "Roof"); s = saved();
+    expect(where(s, active(s).attempts[0].projectId)==="Roof@Movement", "Roof (only at Mesa Rim) went to "+where(s, active(s).attempts[0].projectId));
+    await closeComposer();
+    await log("fall", "Crimp"); s = saved();
+    expect(where(s, active(s).attempts[0].projectId)==="Crimp@Movement", "unknown-gym match was linked automatically: "+where(s, active(s).attempts[0].projectId));
+    var use = q("#composerProjectHint .pc-use"), keep = q("#composerProjectHint .pc-keep");
+    expect(use && keep, "no Use / Keep separate choice offered");
+    await click(use, 200); s = saved();
+    expect(where(s, active(s).attempts[0].projectId)==="Crimp@(not set)", "Use didn't link to the no-gym Crimp");
+    await closeComposer();
+    var sel = qa(".project-chip.selected"); if(sel[0]) await click(sel[0]);
+    await log("fall", "Crimp"); await click(q("#composerProjectHint .pc-keep"), 200); s = saved();
+    expect(where(s, active(s).attempts[0].projectId)==="Crimp@Movement", "Keep separate didn't keep it at Movement");
+  });
+
+  test("Simple mode hides project controls and doesn't file attempts under a project", async function(){
+    await boot(oldFormatSave()); await startOrResume();
+    await click(qa(".project-chip").find(function(b){ return /Blue Arete/.test(b.textContent); }));
+    await setMode("simple"); await startOrResume();
+    expect(!visible("projectBar"), "project chips show in Simple mode");
+    await log("send");
+    var s = saved(), a = active(s);
+    expect(!a.attempts[0].projectId && !a.attempts[0].climbName, "Simple-mode attempt was filed under "+where(s, a.attempts[0].projectId));
+    expect(where(s, a.projectId)==="Blue Arete@Movement", "the Advanced pick was lost");
+    await setMode("advanced");
+  });
+
+  test("Changing a session's gym keeps every attempt detail and leaves other sessions alone", async function(){
+    await boot(oldFormatSave()); await goHome();
+    await click(q('#historyList .session-card[data-id="s1"]') || (await (async function(){ var x = D.getElementById("historyExpandBtn"); if(x && !x.hidden) await click(x); return q('#historyList .session-card[data-id="s1"]'); })()), 250);
+    var before = saved();
+    await setGym($("detailLocationInput"), "Movement Gym");
+    var after = saved();
+    var b1 = before.sessions.find(function(x){ return x.id==="s1"; }), a1 = after.sessions.find(function(x){ return x.id==="s1"; });
+    expect(a1.location==="Movement Gym", "gym not saved");
+    expect(b1.attempts.every(function(x, i){ return sameExceptProject(x, a1.attempts[i]); }), "attempt details changed");
+    expect(a1.attempts.every(function(x){ return where(after, x.projectId)==="Blue Arete@Movement Gym"; }), "climbs didn't follow the gym");
+    var others = before.sessions.filter(function(x){ return x.id!=="s1"; });
+    expect(others.every(function(o){ return JSON.stringify(o)===JSON.stringify(after.sessions.find(function(x){ return x.id===o.id; })); }), "another session changed");
+    expect(others.every(function(o){ return o.attempts.every(function(x){ return where(before, x.projectId)===where(after, x.projectId); }); }), "another session's climbs moved project");
+    expect(after.xp===before.xp && after.level===before.level, "XP/level changed");
+  });
+
+  test("Only the climber mascot is used (old pebble art stays retired)", async function(){
+    var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });
+    var old = paths.filter(function(p){ return !/^mascot\/climber\//.test(p); });
+    expect(paths.length, "no mascot images found at all");
+    expect(!old.length, "non-climber mascot art referenced: "+old.join(", "));
+  });
+
+  test("Publish readiness: every image has an uploaded copy", async function(){
+    var calls = SRC.match(/asset\("[^"]+"(\s*,\s*"[^"]*")?\s*\)/g) || [];
+    var missing = calls.filter(function(c){ return !/,\s*"[0-9a-f]{8,}/.test(c); }).map(function(c){ return c.match(/"([^"]+)"/)[1]; });
+    if(missing.length) warn(missing.length+" image(s) would be broken if published now (upload them first):\n"+missing.join("\n"));
+  });
+
+  /* ---------- runner ---------- */
+  var running = false;
+  async function runAll(){
+    if(running) return; running = true;
+    results.length = 0;
+    var list = document.getElementById("results"); list.innerHTML = "";
+    document.getElementById("summary").textContent = "Running…";
+    document.title = "Crux tests: running";
+    var realBefore = (function(){ try{ return localStorage.getItem(KEY); }catch(e){ return "unavailable"; } })();
+    try{ SRC = await (await fetch("../crux.html", { cache:"no-store" })).text(); }
+    catch(e){ document.getElementById("summary").textContent = "Couldn't load ../crux.html: "+e.message; running = false; return; }
+    var dup = SRC.toLowerCase().indexOf("<!doctype", 1); if(dup>0) SRC = SRC.slice(dup); // drop a dev server's wrapper
+    for(var i=0;i<TESTS.length;i++){
+      var t = TESTS[i], li = document.createElement("li");
+      li.className = "run"; li.innerHTML = '<span class="tag">…</span> <span class="name"></span><div class="detail"></div>';
+      li.querySelector(".name").textContent = t.name; list.appendChild(li);
+      window.__appErrors.length = 0;
+      var r = { name:t.name, status:"pass", detail:"" };
+      try{
+        if(!TEMPLATE && i>0) throw new Error("skipped: the first test didn't produce a fresh-install save");
+        await t.fn();
+        if(window.__appErrors.length) throw new Error("app errors:\n"+window.__appErrors.slice(0, 5).join("\n"));
+      }catch(e){ r.status = e.warn ? "warn" : "fail"; r.detail = e.message; }
+      results.push(r);
+      li.className = r.status; li.querySelector(".tag").textContent = r.status==="pass" ? "PASS" : r.status==="warn" ? "WARN" : "FAIL";
+      li.querySelector(".detail").textContent = r.detail;
+    }
+    var realAfter = (function(){ try{ return localStorage.getItem(KEY); }catch(e){ return "unavailable"; } })();
+    // Belt and braces: if the stand-in ever failed, put the real save back exactly as it was.
+    if(realAfter!==realBefore && realBefore!=="unavailable"){ try{ if(realBefore===null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, realBefore); }catch(e){} }
+    results.push({ name:"Your real save in this browser was not touched", status: realAfter===realBefore ? "pass" : "fail", detail: realAfter===realBefore ? "" : "the real "+KEY+" changed during the run" });
+    var last = results[results.length-1], li2 = document.createElement("li");
+    li2.className = last.status; li2.innerHTML = '<span class="tag">'+(last.status==="pass"?"PASS":"FAIL")+'</span> <span class="name"></span><div class="detail"></div>';
+    li2.querySelector(".name").textContent = last.name; li2.querySelector(".detail").textContent = last.detail; list.appendChild(li2);
+    var fails = results.filter(function(r){ return r.status==="fail"; }).length, warns = results.filter(function(r){ return r.status==="warn"; }).length;
+    var text = fails ? fails+" FAILED of "+results.length : "All "+(results.length-warns)+" checks passed"+(warns ? " · "+warns+" warning"+(warns>1?"s":"") : "");
+    document.getElementById("summary").textContent = text;
+    document.title = "Crux tests: "+(fails ? "FAIL" : "PASS")+" ("+text+")";
+    window.cruxTestsDone = true; running = false;
+  }
+  document.getElementById("runBtn").addEventListener("click", runAll);
+  runAll();
+})();
+</script>
+</body></html>

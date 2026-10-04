@@ -31,9 +31,11 @@ and a decoratable gym scene ("the Garage").
    - migrate older saves in `normalizeState()`, which both loading and backup import run, and
    - keep older backup files importing correctly (Settings → Import backup).
    - Never drop or rewrite attempts, notes, photos, grades or session history.
-4. **The mascot is the climber.** The old pebble mascot "Crimpet" is retired, and the owner was
-   unhappy when a test brought it back. Don't show it, restore it, or switch the app back to it,
-   unless the owner explicitly asks for Crimpet work.
+4. **The mascot is the climber.** Since the Sep 26 pass, the app and the climber are *named*
+   "Crimpet" in the UI. That's fine. What's retired is the **old pebble mascot art** (the
+   `mascot/chalkling`, `boulderbud`, `crimper` and `summitfriend` folders). The owner was
+   unhappy when a test brought it back. Never show, restore or switch back to that art. Only
+   `mascot/climber/` images belong in the app.
 5. **Keep the climber on-model.** `idle-01` is the locked master (see
    `../art-source/mascot/climber/default/LOCKED.md`), so don't redesign the head or face. The owner
    prefers small pixel edits of idle-01 over freshly generated art for subtle motion.
@@ -53,6 +55,27 @@ A project is **one named climb at one gym or crag**, and attempts link to it by 
   automatically.
 
 See `linkProjects()` and `projectChoicesFor()` in `crux.html`.
+
+## Tests: run them before every commit that touches `crux.html`
+
+Open http://localhost:8765/dev/tests.html (any static server pointed at this folder works). It
+loads the real `crux.html` with its own private, in-memory save, so it never touches real data.
+It checks about 20 things in roughly 30 seconds:
+- logging, Undo, sessions and reloads
+- the save key
+- old-save migration and backup import/export
+- every project rule
+- that only the climber art is used
+- publish readiness
+
+- **All checks must pass before you commit.** A FAIL means you broke something the owner relies
+  on. Fix the app, not the test. Change a test only when the owner has explicitly changed the
+  behaviour it checks, and say so in the commit message.
+- **A WARN isn't a blocker for local work,** but it must be cleared before publishing. Right now
+  it lists images with no uploaded copy.
+- **New behaviour the owner cares about gets a test** in `dev/tests.html`.
+- **Results** are on the page, in `document.title` ("Crux tests: PASS …" or "FAIL …"), and in
+  `window.cruxTestResults` for scripts.
 
 ## Working practice
 
