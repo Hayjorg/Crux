@@ -1,0 +1,373 @@
+<title>The Wall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  /* Layout: one phone-width column. A sticky streak card on top, the plywood wall in the middle
+     (climbed bottom to top), a fixed "log today" bar at the bottom. Crux's own palette and type. */
+  :root{
+    --bg:#F3EEE2; --surface:#FFFFFF; --surface-2:#F7F2E7; --border:#E3DAC5;
+    --text:#221E19; --dim:#8A8073; --accent:#0FB8A6; --accent-ink:#FFFFFF;
+    --flash:#FFAB1F; --send:#29C56F; --fall:#FF5C5C; --purple:#8A6FD1; --gold:#E0A83A;
+    --wood:#D6B47F; --wood-2:#C49A63; --wood-grain:rgba(120,80,30,0.10); --tnut:rgba(60,40,15,0.30);
+    --hold-off:rgba(60,40,15,0.18); --rope:#B5532E; --shadow:rgba(34,30,25,0.18);
+    --display:"Bebas Neue",Impact,"Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg:#181511; --surface:#221E18; --surface-2:#2B261F; --border:#3A342A;
+    --text:#F5F0E4; --dim:#A79E8C; --accent:#2FE7D6; --accent-ink:#08211F;
+    --flash:#FFC24D; --send:#4FE28F; --fall:#FF7A6E; --purple:#A994F0; --gold:#F3C766;
+    --wood:#6F5434; --wood-2:#5A432A; --wood-grain:rgba(0,0,0,0.18); --tnut:rgba(0,0,0,0.45);
+    --hold-off:rgba(255,240,210,0.14); --rope:#D9774F; --shadow:rgba(0,0,0,0.5); color-scheme:dark; } }
+  :root[data-theme="dark"]{
+    --bg:#181511; --surface:#221E18; --surface-2:#2B261F; --border:#3A342A;
+    --text:#F5F0E4; --dim:#A79E8C; --accent:#2FE7D6; --accent-ink:#08211F;
+    --flash:#FFC24D; --send:#4FE28F; --fall:#FF7A6E; --purple:#A994F0; --gold:#F3C766;
+    --wood:#6F5434; --wood-2:#5A432A; --wood-grain:rgba(0,0,0,0.18); --tnut:rgba(0,0,0,0.45);
+    --hold-off:rgba(255,240,210,0.14); --rope:#D9774F; --shadow:rgba(0,0,0,0.5); color-scheme:dark; }
+
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);margin:0;-webkit-font-smoothing:antialiased;}
+  .page{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:14px 180px;}
+  h1,h2{text-wrap:balance;}
+  button{font-family:inherit;cursor:pointer;}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  /* ---- streak card ---- */
+  .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding-block:0 10px;background:linear-gradient(var(--bg) 85%, transparent);}
+  .brand{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 8px;}
+  .brand h1{font-family:var(--display);font-size:30px;letter-spacing:0.04em;margin:0;line-height:1;}
+  .brand span{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:0.06em;text-transform:uppercase;}
+  .streak{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:11px 14px;box-shadow:0 4px 16px -6px var(--shadow);display:grid;gap:8px;}
+  .streak-row{display:flex;align-items:center;gap:14px;}
+  .flame{width:44px;height:44px;flex-shrink:0;border-radius:16px;display:grid;place-items:center;
+    background:color-mix(in srgb, var(--flash) 16%, var(--surface-2));color:var(--flash);}
+  .flame svg{width:30px;height:30px;}
+  .flame.cold{background:var(--surface-2);color:var(--dim);}
+  .flame.pop{animation:flamePop .6s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes flamePop{40%{transform:scale(1.25) rotate(-6deg);}100%{transform:none;}}
+  .streak-num{font-family:var(--display);font-size:34px;line-height:0.9;letter-spacing:0.02em;}
+  .streak-num small{font-size:18px;color:var(--dim);margin-left:4px;}
+  .streak-msg{font-size:12.5px;color:var(--dim);margin-top:2px;}
+  .streak-msg b{color:var(--text);}
+  .stats{margin-left:auto;text-align:right;font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.6;font-variant-numeric:tabular-nums;}
+  .stats b{color:var(--text);font-weight:600;}
+  .days{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;}
+  .day{aspect-ratio:1;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--accent-ink);}
+  .day svg{width:62%;height:62%;}
+  .day.climb{background:var(--accent);border-color:transparent;}
+  .day.workout{background:var(--flash);border-color:transparent;}
+  .day.rest{background:var(--purple);border-color:transparent;}
+  .day.today{outline:2px solid var(--text);outline-offset:1px;}
+  .ledge-progress{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim);}
+  .bar{flex:1;height:7px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;}
+  .bar i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .6s ease;}
+
+  /* ---- the wall ---- */
+  .wall{position:relative;margin-top:6px;border-radius:20px;overflow:hidden;border:1px solid var(--border);
+    background:
+      radial-gradient(circle, var(--tnut) 1.6px, transparent 2.2px) 0 0 / 34px 34px,
+      repeating-linear-gradient(92deg, transparent 0 22px, var(--wood-grain) 22px 23px, transparent 23px 47px),
+      linear-gradient(180deg, var(--wood) 0%, var(--wood-2) 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px -10px var(--shadow);}
+  .wall-ground{position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(180deg, transparent, rgba(30,20,10,0.35));}
+  .wall-ground span{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,248,235,0.8);}
+  svg.rope{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+  .hold{position:absolute;width:44px;height:44px;transform:translate(-50%,-50%);display:grid;place-items:center;}
+  .hold svg.shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 3px 2px rgba(0,0,0,0.3));}
+  .hold.off svg.shape{filter:none;opacity:0.9;}
+  .hold .tag{position:absolute;right:-8px;bottom:-6px;width:20px;height:20px;border-radius:50%;background:var(--surface);color:var(--text);display:grid;place-items:center;box-shadow:0 1px 4px var(--shadow);}
+  .hold .tag svg{width:12px;height:12px;}
+  .hold .star{position:absolute;left:-7px;top:-7px;width:18px;height:18px;color:var(--gold);filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35));}
+  .hold .num{position:relative;font-family:var(--mono);font-size:10px;font-weight:600;color:rgba(255,255,255,0.92);text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+  .hold.off .num{color:rgba(255,248,235,0.55);text-shadow:none;}
+  .hold.next::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px dashed rgba(255,248,235,0.9);animation:spin 9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .ledge{position:absolute;left:10px;right:10px;height:30px;transform:translateY(-50%);border-radius:8px;display:flex;align-items:center;gap:8px;padding:0 10px;
+    background:linear-gradient(180deg, rgba(255,250,240,0.92), rgba(240,228,205,0.92));color:#3A2A14;font-size:12px;font-weight:700;box-shadow:0 4px 0 rgba(60,40,15,0.35), 0 8px 14px -6px rgba(0,0,0,0.4);}
+  .ledge svg{width:16px;height:16px;flex-shrink:0;}
+  .ledge .lv{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.06em;color:#8A6A3A;margin-left:auto;white-space:nowrap;}
+  .ledge.locked{background:rgba(30,20,10,0.42);color:rgba(255,248,235,0.85);box-shadow:none;}
+  .ledge.locked .lv{color:rgba(255,248,235,0.65);}
+  .ledge.got{background:linear-gradient(180deg, #FBE7B0, #F3C766);}
+  .climber{position:absolute;width:62px;height:93px;transform:translateX(-50%);pointer-events:none;z-index:3;
+    transition:left .7s cubic-bezier(.3,1.35,.5,1), top .7s cubic-bezier(.3,1.35,.5,1);}
+  .climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 6px 5px rgba(0,0,0,0.35));}
+
+  /* ---- log bar ---- */
+  .logbar{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));
+    background:color-mix(in srgb, var(--surface) 94%, transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--border);}
+  .logbar-in{max-width:480px;margin:0 auto;display:grid;gap:8px;}
+  .log-q{font-size:12.5px;color:var(--dim);display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .log-q b{color:var(--text);font-size:13.5px;}
+  .log-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .log-btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12.5px;font-weight:700;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+  .log-btn svg{width:22px;height:22px;}
+  .log-btn:active{transform:scale(0.93);}
+  .log-btn.climb svg{color:var(--accent);} .log-btn.workout svg{color:var(--flash);} .log-btn.rest svg{color:var(--purple);}
+  .log-btn[aria-pressed="true"]{border-color:transparent;color:var(--accent-ink);}
+  .log-btn.climb[aria-pressed="true"]{background:var(--accent);} .log-btn.workout[aria-pressed="true"]{background:var(--flash);} .log-btn.rest[aria-pressed="true"]{background:var(--purple);}
+  .log-btn[aria-pressed="true"] svg{color:inherit;}
+  .log-btn:disabled{opacity:0.45;cursor:default;}
+  .link{background:none;border:none;padding:0;color:var(--accent);font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:2px;}
+  .demo{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:8px;border-top:1px dashed var(--border);}
+  .demo-label{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-right:2px;}
+  .chip{border:1px solid var(--border);background:transparent;color:var(--dim);border-radius:99px;padding:6px 11px;font-size:11.5px;font-weight:700;}
+  .chip:active{transform:scale(0.94);}
+
+  /* ---- reward + toast ---- */
+  .toast{position:fixed;left:50%;bottom:calc(180px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;background:var(--text);color:var(--bg);
+    padding:9px 16px;border-radius:99px;font-size:13px;font-weight:700;box-shadow:0 6px 18px var(--shadow);white-space:nowrap;animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,8px) scale(0.9);}}
+  .reward{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:rgba(20,15,10,0.55);}
+  .reward-card{position:relative;overflow:hidden;width:100%;max-width:340px;background:var(--surface);border-radius:22px;padding:26px 22px 20px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:pop .45s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes pop{from{transform:scale(0.85);opacity:0;}}
+  .reward-card h2{font-family:var(--display);font-size:34px;letter-spacing:0.03em;margin:6px 0 2px;}
+  .reward-card p{margin:0 0 16px;color:var(--dim);font-size:13.5px;line-height:1.45;}
+  .reward-card .prize{display:inline-flex;align-items:center;gap:8px;background:color-mix(in srgb, var(--gold) 22%, var(--surface-2));border:1px solid color-mix(in srgb, var(--gold) 50%, var(--border));
+    border-radius:99px;padding:8px 14px;font-weight:700;margin-bottom:18px;}
+  .reward-card .prize svg{width:18px;height:18px;color:var(--gold);}
+  .btn{width:100%;border:none;border-radius:14px;background:var(--accent);color:var(--accent-ink);padding:12px;font-size:15px;font-weight:700;}
+  .confetti{position:absolute;inset:0;pointer-events:none;}
+  .confetti i{position:absolute;top:30%;left:50%;width:7px;height:12px;border-radius:2px;animation:burst 1s ease-out forwards;}
+  @keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0;}}
+  .note{font-size:12px;color:var(--dim);line-height:1.5;margin:14px 4px 0;}
+  .note b{color:var(--text);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important;}
+  }
+</style>
+
+<div class="page">
+  <div class="brand"><h1>THE WALL</h1><span>Crux · prototype</span></div>
+  <div class="top">
+    <section class="streak" aria-label="Your streak">
+      <div class="streak-row">
+        <div class="flame" id="flame" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.1-1.9-5-3-7.3-.5 1.6-1.4 2.6-2.4 3C13.8 7.5 12 4.6 9.5 2c.3 3.4-1.5 5.3-3 7.4C5.4 10.9 5 12.6 5 14.6 5 19 7.8 22 12 22z"/></svg>
+        </div>
+        <div>
+          <div class="streak-num"><span id="streakNum">0</span><small>day streak</small></div>
+          <div class="streak-msg" id="streakMsg"></div>
+        </div>
+        <div class="stats">best <b id="bestNum">0</b><br>holds <b id="holdsNum">0</b></div>
+      </div>
+      <div class="days" id="days" aria-label="Last 14 days"></div>
+      <div class="ledge-progress"><span id="ledgeText"></span><div class="bar"><i id="ledgeBar"></i></div></div>
+    </section>
+  </div>
+
+  <section class="wall" id="wall" aria-label="The wall: one hold per day you log">
+    <svg class="rope" id="rope" aria-hidden="true"></svg>
+    <div id="wallItems"></div>
+    <div class="climber" id="climber"><img id="climberImg" src="__IDLE__" alt="Your climber"></div>
+    <div class="wall-ground"><span>Start</span></div>
+  </section>
+
+  <p class="note"><b>How it works:</b> log a climbing session, a workout or a rest day and your climber moves up one hold. One hold a day, however much you log. Workouts earn a star. Missing a day ends the streak, but you never lose holds you've climbed. Every 7th hold is a ledge with a reward.</p>
+  <p class="note">This is a prototype with example history. The buttons under "Prototype" let you jump days ahead to try streaks, misses and ledges. Nothing here touches the real Crux app.</p>
+</div>
+
+<div class="logbar">
+  <div class="logbar-in">
+    <div class="log-q"><b id="logTitle">What did you do today?</b><button type="button" class="link" id="backfillBtn" hidden>Forgot yesterday? Log a rest day</button></div>
+    <div class="log-btns">
+      <button type="button" class="log-btn climb" data-type="climb" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>Climbed</button>
+      <button type="button" class="log-btn workout" data-type="workout" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Workout</button>
+      <button type="button" class="log-btn rest" data-type="rest" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Rest day</button>
+    </div>
+    <div class="demo">
+      <span class="demo-label">Prototype</span>
+      <button type="button" class="chip" id="nextDayBtn">Next day →</button>
+      <button type="button" class="chip" id="skipDayBtn">Miss a day</button>
+      <button type="button" class="chip" id="resetBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var IDLE = "__IDLE__", JUMP = "__JUMP__";
+  var KEY = "crux-wall-prototype-v1";
+  var LEDGE_EVERY = 7, WALL_HOLDS = 42, GAP = 86, BOTTOM = 70;
+  var REWARDS = [
+    { name:"Chalk bucket",   kind:"Garage decoration" },
+    { name:"Victory wave",   kind:"Climber animation" },
+    { name:"Neon chalk",     kind:"Chalk colour" },
+    { name:"Home Wall",      kind:"New gym" },
+    { name:"Summit flag",    kind:"Garage decoration" },
+    { name:"Golden shoes",   kind:"Climber outfit" }
+  ];
+  var COLORS = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--purple)","var(--gold)"];
+  var SHAPES = [
+    "M6 23c0-9 7-15 15-15s15 5 15 12-6 14-16 14S6 31 6 23z",
+    "M3 21c3-5 10-8 18-8s15 3 16 7-4 9-17 9S1 26 3 21z",
+    "M5 27c0-10 7-19 16-19s15 7 15 17c0 4-3 6-16 6S5 31 5 27z",
+    "M13 5c6-2 11 3 12 10s2 15-4 18-13 0-13-8-1-18 5-20z"
+  ];
+  var ICONS = {
+    climb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>',
+    workout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
+    rest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+    star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
+    gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7C10 3 6.5 4 7.5 6.5 8 7.5 12 7 12 7zm0 0c2-4 5.5-3 4.5-.5C16 7.5 12 7 12 7z"/></svg>',
+    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>'
+  };
+
+  // Days are whole numbers; "today" moves forward with the prototype buttons.
+  function seed(){
+    var pattern = ["climb","rest","climb","workout",null,null,"climb","workout","rest","climb","climb","rest","workout","climb"];
+    var log = {};
+    pattern.forEach(function(t, i){ if(t) log[i - pattern.length] = t; });   // days -14 .. -1
+    return { today:0, log:log };
+  }
+  var state;
+  try{ state = JSON.parse(localStorage.getItem(KEY)) || seed(); }catch(e){ state = seed(); }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+  function loggedDays(){ return Object.keys(state.log).map(Number).filter(function(d){ return d<=state.today; }).sort(function(a,b){ return a-b; }); }
+  function holdsClimbed(){ return loggedDays().length; }
+  function streak(){
+    var d = state.log[state.today] ? state.today : state.today-1, n = 0;
+    while(state.log[d]){ n++; d--; }
+    return n;
+  }
+  function bestStreak(){
+    var days = loggedDays(), best = 0, run = 0, prev = null;
+    days.forEach(function(d){ run = (prev!==null && d===prev+1) ? run+1 : 1; best = Math.max(best, run); prev = d; });
+    return best;
+  }
+
+  // ---- layout of the wall: hold i (1-based) sits i*GAP above the start ----
+  var wall = document.getElementById("wall"), items = document.getElementById("wallItems");
+  var height = BOTTOM + WALL_HOLDS*GAP + 70;
+  wall.style.height = height+"px";
+  function holdPos(i){
+    if(i<=0) return { x:50, y:height-34 };
+    return { x:50 + 27*Math.sin(i*0.95) + 6*Math.sin(i*2.3), y:height - BOTTOM - i*GAP };
+  }
+
+  function render(animateTo){
+    var climbed = holdsClimbed(), days = loggedDays();
+    var html = "";
+    for(var i=1;i<=WALL_HOLDS;i++){
+      var p = holdPos(i), on = i<=climbed, day = days[i-1], type = on ? state.log[day] : null;
+      if(i % LEDGE_EVERY === 0){
+        var r = REWARDS[i/LEDGE_EVERY - 1], got = climbed>=i;
+        html += '<div class="ledge '+(got ? "got" : "locked")+'" style="top:'+(p.y-40)+'px">'+(got ? ICONS.check : ICONS.lock)+
+          '<span>'+r.name+'</span><span class="lv">LEDGE '+(i/LEDGE_EVERY)+' · '+r.kind.toUpperCase()+'</span></div>';
+      }
+      var color = on ? COLORS[(i*5) % COLORS.length] : "var(--hold-off)";
+      html += '<div class="hold'+(on ? "" : " off")+(i===climbed+1 ? " next" : "")+'" style="left:'+p.x+'%;top:'+p.y+'px">'+
+        '<svg class="shape" viewBox="0 0 40 40"><path d="'+SHAPES[i%SHAPES.length]+'" fill="'+color+'"/><circle cx="20" cy="21" r="2.6" fill="rgba(0,0,0,0.35)"/></svg>'+
+        '<span class="num">'+i+'</span>'+
+        (on ? '<span class="tag" title="'+type+'">'+ICONS[type]+'</span>' : '')+
+        (on && type==="workout" ? '<span class="star">'+ICONS.star+'</span>' : '')+
+      '</div>';
+    }
+    items.innerHTML = html;
+
+    // rope: solid up to the climber, then faint
+    var pts = [], k;
+    for(k=0;k<=WALL_HOLDS;k++){ var q = holdPos(k); pts.push([q.x/100*wall.clientWidth, q.y]); }
+    function path(a, b){ var d = "M"+pts[a][0]+" "+pts[a][1]; for(var j=a+1;j<=b;j++){ var m = (pts[j-1][1]+pts[j][1])/2; d += " C"+pts[j-1][0]+" "+m+" "+pts[j][0]+" "+m+" "+pts[j][0]+" "+pts[j][1]; } return d; }
+    document.getElementById("rope").innerHTML =
+      '<path d="'+path(Math.max(climbed,0), WALL_HOLDS)+'" fill="none" stroke="rgba(255,248,235,0.35)" stroke-width="2.5" stroke-dasharray="6 7"/>'+
+      (climbed>0 ? '<path d="'+path(0, climbed)+'" fill="none" stroke="var(--rope)" stroke-width="3.5" stroke-linecap="round"/>' : '');
+
+    // the climber stands on the newest hold
+    var c = document.getElementById("climber"), img = document.getElementById("climberImg"), cp = holdPos(climbed);
+    if(animateTo){ img.src = JUMP; setTimeout(function(){ img.src = IDLE; }, 650); }
+    c.style.left = cp.x+"%"; c.style.top = (cp.y - 93*0.875 + 8)+"px";
+
+    // streak card
+    var s = streak(), loggedToday = !!state.log[state.today];
+    document.getElementById("streakNum").textContent = s;
+    document.getElementById("bestNum").textContent = Math.max(bestStreak(), s);
+    document.getElementById("holdsNum").textContent = climbed;
+    var flame = document.getElementById("flame"); flame.classList.toggle("cold", s===0);
+    document.getElementById("streakMsg").innerHTML = loggedToday ? "<b>Logged today.</b> See you tomorrow."
+      : s>0 ? "Log today to make it <b>"+(s+1)+" days</b>."
+      : state.log[state.today-1]===undefined && climbed>0 ? "Streak ended. <b>Start a new one today.</b>" : "Log today to start a streak.";
+    var nextLedge = Math.ceil((climbed+1)/LEDGE_EVERY)*LEDGE_EVERY, left = nextLedge - climbed;
+    var reward = REWARDS[nextLedge/LEDGE_EVERY - 1];
+    document.getElementById("ledgeText").textContent = reward ? left+" hold"+(left===1?"":"s")+" to "+reward.name : "Top of the prototype wall";
+    document.getElementById("ledgeBar").style.width = ((LEDGE_EVERY - left)/LEDGE_EVERY*100)+"%";
+
+    var dh = "";
+    for(var d=state.today-13; d<=state.today; d++){
+      var t = state.log[d];
+      dh += '<span class="day'+(t ? " "+t : "")+(d===state.today ? " today" : "")+'" title="'+(d===state.today ? "Today" : (state.today-d)+" days ago")+(t ? ": "+t : "")+'">'+(t ? ICONS[t] : "")+'</span>';
+    }
+    document.getElementById("days").innerHTML = dh;
+
+    document.querySelectorAll(".log-btn").forEach(function(b){
+      b.setAttribute("aria-pressed", state.log[state.today]===b.dataset.type ? "true" : "false");
+    });
+    document.getElementById("logTitle").textContent = loggedToday ? "Today: logged. Tap another to change it." : "What did you do today?";
+    document.getElementById("backfillBtn").hidden = !!state.log[state.today-1] || !!state.log[state.today] || climbed===0;
+  }
+
+  function toast(msg){
+    var old = document.querySelector(".toast"); if(old) old.remove();
+    var t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2200);
+  }
+  function scrollToClimber(){
+    var c = document.getElementById("climber");
+    var r = c.getBoundingClientRect(), target = window.scrollY + r.top - window.innerHeight*0.45;
+    window.scrollTo({ top:Math.max(0, target), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+  function celebrate(ledgeIndex){
+    var r = REWARDS[ledgeIndex-1]; if(!r) return;
+    var box = document.createElement("div"); box.className = "reward";
+    box.innerHTML = '<div class="reward-card" role="dialog" aria-modal="true" aria-labelledby="rwT"><div class="confetti"></div>'+
+      '<div class="demo-label">Ledge '+ledgeIndex+' · '+(ledgeIndex*LEDGE_EVERY)+' holds</div><h2 id="rwT">Ledge reached!</h2>'+
+      '<p>Seven more days of showing up. Here\'s what you unlocked:</p>'+
+      '<div class="prize">'+ICONS.gift+r.name+' <span style="font-weight:500;color:var(--dim)">· '+r.kind+'</span></div>'+
+      '<button type="button" class="btn">Keep climbing</button></div>';
+    var conf = box.querySelector(".confetti"), cols = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--gold)"];
+    for(var i=0;i<22;i++){ var p = document.createElement("i"); p.style.background = cols[i%cols.length];
+      p.style.setProperty("--dx", Math.round(Math.random()*300-150)+"px"); p.style.setProperty("--dy", Math.round(Math.random()*240-40)+"px");
+      p.style.setProperty("--r", Math.round(Math.random()*600-300)+"deg"); p.style.animationDelay = (Math.random()*0.15)+"s"; conf.appendChild(p); }
+    box.querySelector(".btn").addEventListener("click", function(){ box.remove(); });
+    box.addEventListener("click", function(e){ if(e.target===box) box.remove(); });
+    document.body.appendChild(box);
+    box.querySelector(".btn").focus();
+  }
+
+  function logDay(day, type){
+    var before = holdsClimbed(), wasLogged = !!state.log[day];
+    state.log[day] = type;
+    save();
+    var after = holdsClimbed();
+    render(after>before);
+    if(after>before){
+      var f = document.getElementById("flame"); f.classList.remove("pop"); void f.offsetWidth; f.classList.add("pop");
+      setTimeout(scrollToClimber, 80);
+      if(after % LEDGE_EVERY === 0) setTimeout(function(){ celebrate(after/LEDGE_EVERY); }, 750);
+      else toast(type==="rest" ? "Rest day logged. Up a hold." : type==="workout" ? "Workout logged. Up a hold, plus a star." : "Climb logged. Up a hold.");
+    } else if(wasLogged){ toast("Changed to "+(type==="climb" ? "a climbing day" : type==="workout" ? "a workout day" : "a rest day")); }
+  }
+
+  document.querySelectorAll(".log-btn").forEach(function(b){ b.addEventListener("click", function(){ logDay(state.today, b.dataset.type); }); });
+  document.getElementById("backfillBtn").addEventListener("click", function(){ logDay(state.today-1, "rest"); });
+  document.getElementById("nextDayBtn").addEventListener("click", function(){ state.today++; save(); render(false); toast("A new day"); });
+  document.getElementById("skipDayBtn").addEventListener("click", function(){ state.today += 2; save(); render(false); toast("You missed a day"); });
+  document.getElementById("resetBtn").addEventListener("click", function(){ state = seed(); save(); render(false); scrollToClimber(); toast("Example history restored"); });
+  window.addEventListener("resize", function(){ render(false); });
+
+  render(false);
+  // land on your climber, not the top of the wall
+  setTimeout(scrollToClimber, 60);
+  window.addEventListener("load", function(){ setTimeout(scrollToClimber, 120); });
+})();
+</script>
