@@ -41,6 +41,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     'Object.defineProperty(window,"localStorage",{configurable:true,get:function(){return ls;}});' +
     'window.addEventListener("error",function(e){parent.__appErrors.push("error: "+e.message);});' +
     'window.addEventListener("unhandledrejection",function(e){parent.__appErrors.push("rejection: "+(e.reason&&e.reason.message||e.reason));});' +
+    'if(parent.__fakeClaude){var F=parent.__fakeClaude;window.claude={use:function(n){return Promise.resolve(n==="sample"?F:null);}};}' +
     'var ce=console.error;console.error=function(){parent.__appErrors.push("console.error: "+[].map.call(arguments,String).join(" "));ce.apply(console,arguments);};' +
     '})();<\/script>';
 
@@ -346,6 +347,77 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(after.xp===before.xp && after.level===before.level, "XP/level changed");
   });
 
+  // A stand-in for the published page's `sample` capability (asking Claude): records each prompt.
+  function fakeSample(reply){
+    var f = function(input, opts){
+      f.calls.push(input);
+      if(reply.code) return Promise.reject({ code:reply.code, message:"fake" });
+      if(opts && opts.onText) opts.onText({ text:reply.text, delta:reply.text });
+      return Promise.resolve({ text:reply.text, truncated:false, modelTierApplied:"default" });
+    };
+    f.calls = []; return f;
+  }
+  async function finishWithClimbs(){
+    await startOrResume();
+    await click(qa(".project-chip").find(function(b){ return /Blue Arete/.test(b.textContent); }));
+    await log("fall"); await closeComposer(); await log("send"); await closeComposer();
+    await click("finishSessionBtn", 300);
+  }
+
+  test("Coach stays hidden where Claude isn't available", async function(){
+    await boot(oldFormatSave()); await finishWithClimbs();
+    expect(!visible("endCoach"), "coach button shows on the end summary without Claude");
+    await click("endSummaryDoneBtn", 200);
+    await click(q('#historyList .session-card[data-id="s1"]'), 250);
+    expect(!visible("detailCoach"), "coach section shows in session detail without Claude");
+    await goHome(); await click("openProgressBtn");
+    await click(qa("#projectsList .project-row-btn").find(function(b){ return /Pink Slab/.test(b.textContent); }));
+    expect(!q(".project-coach-btn"), "project coach button shows without Claude");
+    await click("closeProgressBtn");
+  });
+
+  test("Coach debrief: only on a tap, uses this session's log, and is saved", async function(){
+    var fake = window.__fakeClaude = fakeSample({ text:"• Stick the heel hook earlier on Blue Arete.\n• Rest 3 min between goes." });
+    await boot(oldFormatSave()); await finishWithClimbs();
+    expect(visible("endCoach"), "no coach button on the end summary");
+    expect(fake.calls.length===0, "Claude was asked before anyone tapped");
+    await click("endCoachBtn", 250);
+    expect(fake.calls.length===1, fake.calls.length+" calls after one tap");
+    var prompt = String(fake.calls[0]);
+    expect(/Blue Arete/.test(prompt) && /Movement/.test(prompt) && /send/.test(prompt), "prompt is missing this session's climbs/gym");
+    expect(/heel hook on the lip/.test(prompt) || /Pink Slab/.test(prompt), "prompt is missing recent history");
+    expect(/heel hook earlier/.test($("endCoachText").textContent), "answer not shown");
+    var s = saved(), done = s.sessions.find(function(x){ return x.endedAt && x.attempts.length===2 && /Blue Arete/.test(x.attempts[0].climbName); });
+    expect(done && done.coach && /heel hook earlier/.test(done.coach.text), "debrief not saved with the session");
+    await click("endSummaryDoneBtn", 200);
+    await click(q('#historyList .session-card[data-id="'+done.id+'"]'), 250);
+    expect(visible("detailCoach") && /heel hook earlier/.test($("detailCoachText").textContent), "saved debrief not shown in session detail");
+    expect(fake.calls.length===1, "reopening the session asked Claude again");
+  });
+
+  test("Coach project tip uses that project's history (Advanced)", async function(){
+    var fake = window.__fakeClaude = fakeSample({ text:"• Try the left-hand sloper with your feet higher." });
+    await boot(oldFormatSave()); await goHome(); await click("openProgressBtn");
+    await click(qa("#projectsList .project-row-btn").find(function(b){ return /Crimp/.test(b.textContent); }));
+    var btn = q(".project-coach-btn"); expect(btn, "no coach button on the project");
+    expect(fake.calls.length===0, "Claude was asked before anyone tapped");
+    await click(btn, 250);
+    var prompt = String(fake.calls[0] || "");
+    expect(/Crimp/.test(prompt) && /left sloper/.test(prompt), "prompt is missing the project's attempts/notes");
+    expect(!/Blue Arete/.test(prompt), "prompt includes other projects' climbs");
+    expect(/feet higher/.test(q(".project-detail .coach-text").textContent), "tip not shown");
+    await click("closeProgressBtn");
+  });
+
+  test("Coach hides itself if permission is declined", async function(){
+    var fake = window.__fakeClaude = fakeSample({ code:"not_granted" });
+    await boot(oldFormatSave()); await finishWithClimbs();
+    await click("endCoachBtn", 250);
+    expect(!visible("endCoach"), "coach still offered after the viewer declined");
+    await click("endSummaryDoneBtn", 200);
+    expect(!saved().sessions.some(function(x){ return x.coach; }), "something was saved as a debrief");
+  });
+
   test("Only the climber mascot is used (old pebble art stays retired)", async function(){
     var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });
     var old = paths.filter(function(p){ return !/^mascot\/climber\//.test(p); });
@@ -376,6 +448,7 @@ and the project rules. It runs on its own private copy of the data, never your r
       li.className = "run"; li.innerHTML = '<span class="tag">…</span> <span class="name"></span><div class="detail"></div>';
       li.querySelector(".name").textContent = t.name; list.appendChild(li);
       window.__appErrors.length = 0;
+      window.__fakeClaude = null; // tests that need Claude set a stand-in themselves
       var r = { name:t.name, status:"pass", detail:"" };
       try{
         if(!TEMPLATE && i>0) throw new Error("skipped: the first test didn't produce a fresh-install save");

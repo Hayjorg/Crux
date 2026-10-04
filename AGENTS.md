@@ -19,8 +19,11 @@ and a decoratable gym scene ("the Garage").
 1. **Publishing.** The app is published as a Claude Artifact at
    https://claude.ai/code/artifact/1dd25e22-1714-4393-964c-6ec37735a770. Only publish when the
    owner asks, and only to that same link: every image on the live page points at that Artifact's
-   file storage. The page declares the `assets` (photos) and `downloads` (backup export) capabilities,
-   and both must stay.
+   file storage. The page declares three capabilities, and all of them must stay:
+   - `assets` for photos,
+   - `downloads` for backup export,
+   - `sample` for the coach (asking Claude). This one is new since version 42 and must be added
+     on the next publish.
 2. **Images.** Every image goes through `asset(file, blobId)` in `crux.html`. Locally it loads
    `assets/<file>`; when published it loads `/_blob/<blobId>`. A new or changed image must be
    uploaded to the Artifact and its blob id filled in before publishing, or it will be broken live.
@@ -55,6 +58,18 @@ A project is **one named climb at one gym or crag**, and attempts link to it by 
   automatically.
 
 See `linkProjects()` and `projectChoicesFor()` in `crux.html`.
+
+## Coach
+
+The coach writes a short debrief of a finished session, and a "what to try next" tip for a
+project. It uses the published page's `sample` capability (see `/* ---- coach ---- */` in
+`crux.html`).
+- **Only on a tap, never automatically.** Each answer uses the viewer's own Claude usage, and the
+  first asks permission.
+- **Fully hidden where Claude isn't available,** including local testing. Use the fake Claude in
+  `dev/tests.html` to see it locally.
+- **Session debriefs are saved** on the session as `coach: {text, ts}`.
+- **Keep the privacy note** in the Safety, privacy & terms sheet accurate if what's sent changes.
 
 ## Tests: run them before every commit that touches `crux.html`
 

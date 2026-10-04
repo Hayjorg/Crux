@@ -691,6 +691,11 @@
   .end-title{font-family:"Bebas Neue",sans-serif;font-size:32px;margin:4px 0 2px;letter-spacing:0.02em;}
   .end-sub{color:var(--text-dim);font-size:13px;margin:0 0 16px;font-family:"IBM Plex Mono",monospace;}
   .end-done-btn{width:100%;margin-top:18px;}
+  .coach-box{margin-top:14px;}
+  .end-summary-card .coach-box{text-align:center;}
+  .coach-text{text-align:left;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;max-height:240px;overflow-y:auto;}
+  .coach-text.thinking{color:var(--text-dim);}
+  .coach-text .coach-when{display:block;margin-top:6px;font-size:11px;color:var(--text-dim);}
   .confetti-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
   .confetti-piece{position:absolute;top:30%;left:50%;width:7px;height:13px;border-radius:2px;animation:confettiBurst .9s ease-out forwards;}
   @keyframes confettiBurst{0%{transform:translate(0,0) rotate(0);opacity:1;}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0;}}
@@ -1009,6 +1014,11 @@
       <p class="eyebrow">Attempts</p>
       <ul class="attempt-list" id="detailAttemptList" style="max-height:none;"></ul>
     </section>
+    <section class="card coach-box" id="detailCoach" style="padding:18px;margin-top:16px;" hidden>
+      <p class="eyebrow">Coach's take</p>
+      <div class="coach-text" id="detailCoachText" hidden></div>
+      <button type="button" class="link-btn coach-btn" id="detailCoachBtn"></button>
+    </section>
     <section class="card notes-card" style="margin-top:16px;">
       <p class="eyebrow">Location</p>
       <input type="text" id="detailLocationInput" class="note-input" list="locationList" maxlength="60" placeholder="Gym or crag (optional)" style="margin-bottom:14px;">
@@ -1221,6 +1231,10 @@
     <div class="end-highlights" id="endHighlights" hidden></div>
     <div class="rating-row" id="endRatingRow"></div>
     <p class="rating-label" id="endRatingLabel">Tap to rate how it felt</p>
+    <div class="coach-box" id="endCoach" hidden>
+      <button type="button" class="link-btn coach-btn" id="endCoachBtn"></button>
+      <div class="coach-text" id="endCoachText" hidden></div>
+    </div>
     <button type="button" class="btn btn-primary end-done-btn" id="endSummaryDoneBtn">Back to home</button>
   </div>
 </div>
@@ -1247,6 +1261,7 @@
 
       <h3>Your data</h3>
       <p>There's no account, no ads, and no analytics. Your sessions, notes, and progress are saved only in this browser on this device, and nobody else, including the maker of Crimpet, can see them. Clearing your browser data or uninstalling deletes them, so use Export backup in Settings to keep a copy.</p>
+      <p>The coach is optional. Only when you tap a coach button, the climbing log it needs (that session or project, plus a few recent sessions) is sent to Claude on your own Claude account to write the answer, and it uses your Claude usage. The coach's tips are general suggestions, not professional coaching or medical advice.</p>
       <p>Photos and videos you add are stored with the copy of Crimpet you're using, so treat them as you would anything you upload. The app loads its fonts from Google Fonts, which means Google receives your IP address when those fonts load.</p>
 
       <h3>Terms of use</h3>
@@ -1730,6 +1745,7 @@
   function projectPlace(p){ return p.location ? escapeHtml(p.location) : "Location not set"; }
   function shortDate(ts){ return new Date(ts).toLocaleDateString(undefined,{ month:"short", day:"numeric" }); }
   var openProjectKey = null;
+  var projectCoachText = {}; // coach answers per project, kept for this visit only
   function renderProjectsSection(){
     var projects = computeProjects();
     var wrap = document.getElementById("projectsList");
@@ -1762,6 +1778,8 @@
         detail = '<div class="project-detail">'+notesHtml+
           '<div class="project-attempts">'+historyHtml+'</div>'+
           (advanced && !p.sent ? '<button type="button" class="btn btn-primary project-continue-btn" data-id="'+escapeHtml(p.id)+'">Continue this project</button>' : "")+
+          (advanced && coachAvailable() ? '<div class="coach-box"><button type="button" class="link-btn coach-btn project-coach-btn" data-id="'+escapeHtml(p.id)+'">'+(projectCoachText[p.id] ? "Ask the coach again" : "✦ What should I try next?")+'</button>'+
+            '<div class="coach-text"'+(projectCoachText[p.id] ? "" : " hidden")+'>'+escapeHtml(projectCoachText[p.id]||"")+'</div></div>' : "")+
         '</div>';
       }
       return '<div class="project-item'+(expanded?" expanded":"")+'">'+
@@ -1785,6 +1803,17 @@
     });
     wrap.querySelectorAll(".project-continue-btn").forEach(function(btn){
       btn.addEventListener("click", function(){ continueProject(btn.dataset.id); });
+    });
+    wrap.querySelectorAll(".project-coach-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var p = projects.find(function(x){ return x.id===btn.dataset.id; });
+        if(!p) return;
+        coachAsk(projectCoachPrompt(p), btn.parentNode.querySelector(".coach-text"), btn, !!projectCoachText[p.id], function(text){
+          projectCoachText[p.id] = text;
+          btn.textContent = "Ask the coach again";
+          if(!btn.isConnected) renderProjectsSection(); // the list was redrawn while it was thinking
+        });
+      });
     });
   }
   // Opens the running session (or starts one at the project's gym/crag) with this climb picked,
@@ -2362,7 +2391,11 @@
     }).join("");
     hlEl.hidden = !hls.length;
     setBuddy("endBuddy", (counts.flash+counts.send)>0 ? "stoked" : (total>0 ? "sheepish" : "neutral"));
+    endSummarySession = s;
+    var endCoachText = document.getElementById("endCoachText");
+    endCoachText.hidden = true; endCoachText.textContent = "";
     document.getElementById("endSessionOverlay").hidden = false;
+    wireSessionCoach(document.getElementById("endCoach"), document.getElementById("endCoachBtn"), endCoachText, s);
     if(total>0) spawnConfetti(document.getElementById("confettiLayer"));
     // Crimpet reacts when you get back to him: stoked if anything went, sheepish if it was all falls.
     var sent = counts.flash + counts.send;
@@ -2370,8 +2403,110 @@
     else if(total>0) pendingMascotMoods = (pendingMascotMoods||[]).concat([["sheepish",6000]]);
   }
   function closeEndSummary(){
+    if(coachCtl) coachCtl.abort();
     document.getElementById("endSessionOverlay").hidden = true;
     switchView("home");
+  }
+
+  /* ---------------- coach ---------------- */
+  // Asks Claude about climbing that's already logged, through the published page's `sample`
+  // capability. Only ever on a tap: each answer uses the viewer's own Claude usage, and the first
+  // asks their permission. Everything coach-related stays hidden wherever Claude isn't available
+  // (local testing, a declined permission, an account without it).
+  var coachNS = null, coachOff = false, coachCtl = null, endSummarySession = null;
+  if(window.claude && typeof window.claude.use==="function"){
+    window.claude.use("sample").then(function(ns){ coachNS = ns; refreshCoachUI(); }).catch(function(){ coachNS = null; });
+  }
+  function coachAvailable(){ return !!coachNS && !coachOff; }
+  var COACH_HIDE = ["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"];
+  var COACH_SAYS = {
+    rate_limited:"The coach needs a breather. Try again in a bit.",
+    session_expired:"Sign in to Claude again to ask the coach.",
+    refused:"The coach couldn't answer that one.",
+    empty_completion:"The coach came up empty. Try again."
+  };
+  var COACH_RULES =
+    "You are a friendly, experienced climbing coach. Someone logged their climbing in an app and wants your take. "+
+    "Reply with 2-3 bullet points, each starting with \"• \" and one sentence long, under 70 words in total. "+
+    "Be specific to what they logged: name climbs, grades, gyms, falls and why. Include one concrete thing to try next time. "+
+    "Plain text only: no headings, no bold, no intro or sign-off. Never invent details that aren't in the log. "+
+    "If a note suggests pain or an injury, tell them to rest and see a professional instead of giving medical advice. "+
+    "In the log, flash = topped it first try, send = topped it after earlier tries, fall = didn't top it; effort is RPE 1-10 (10 = all-out).";
+  function coachDate(ts){ return new Date(ts).toLocaleDateString(undefined,{ weekday:"short", month:"short", day:"numeric" }); }
+  function coachAttemptLine(a){
+    var p = [a.result];
+    if(a.climbName) p.push('"'+a.climbName+'"');
+    if(a.grade) p.push("felt "+a.grade);
+    if(a.effort) p.push("effort "+a.effort);
+    if(a.reason) p.push("why: "+a.reason);
+    if(a.note) p.push('note: "'+a.note+'"');
+    return "- "+p.join(", ");
+  }
+  function coachSessionText(s){
+    var durMin = s.endedAt ? Math.max(1, Math.round((s.endedAt-s.startedAt)/60000)) : null;
+    var head = coachDate(s.startedAt)+(s.location ? " at "+s.location : "")+(durMin ? ", "+durMin+" min" : "")+
+      (s.satisfaction ? ", felt "+SATISFACTION_LABELS[s.satisfaction-1].toLowerCase() : "");
+    var lines = s.attempts.slice(0, 60).reverse().map(coachAttemptLine);
+    return head+"\nAttempts, oldest first:\n"+(lines.join("\n") || "- none")+(s.note ? '\nSession note: "'+s.note.slice(0, 400)+'"' : "");
+  }
+  function coachRecentText(exceptId){
+    return state.sessions.filter(function(x){ return x.endedAt && x.id!==exceptId; })
+      .sort(function(a,b){ return b.startedAt-a.startedAt; }).slice(0, 6).map(function(x){
+        var c = { flash:0, send:0, fall:0 }, named = {};
+        x.attempts.forEach(function(a){ c[a.result]++; if(a.climbName) named[a.climbName] = (named[a.climbName]||"")+a.result[0]; });
+        return "- "+coachDate(x.startedAt)+(x.location ? " at "+x.location : "")+": "+c.flash+" flash, "+c.send+" send, "+c.fall+" fall"+
+          (Object.keys(named).length ? "; climbs: "+Object.keys(named).slice(0, 6).join(", ") : "");
+      }).join("\n") || "- none logged yet";
+  }
+  function sessionCoachPrompt(s){
+    return COACH_RULES+"\n\nDebrief THIS session:\n"+coachSessionText(s)+"\n\nTheir recent sessions before it, newest first (context only):\n"+coachRecentText(s.id);
+  }
+  function projectCoachPrompt(p){
+    var lines = p.attempts.slice(0, 40).reverse().map(function(a){ return coachDate(a.ts)+" "+coachAttemptLine(a).slice(2); });
+    return COACH_RULES+"\n\nThey're working on a project and want to know what to try next time they're on it. "+
+      'Project: "'+p.name+'"'+(p.location ? " at "+p.location : " (gym not recorded)")+", "+(p.sent ? "already sent" : "not sent yet")+
+      ", "+p.attempts.length+" attempts over "+p.sessions+" session"+(p.sessions===1?"":"s")+".\nEvery attempt, oldest first:\n"+lines.join("\n");
+  }
+  // One ask: shows "Thinking…", streams the answer into `out`, and calls done(text) on success.
+  function coachAsk(prompt, out, btn, fresh, done){
+    if(!coachAvailable()) return;
+    if(coachCtl) coachCtl.abort();
+    var ctl = coachCtl = new AbortController();
+    btn.disabled = true;
+    out.hidden = false; out.classList.add("thinking"); out.textContent = "Thinking…";
+    // An aborted call (summary closed, another session opened, a newer ask) leaves the screen alone.
+    coachNS(prompt, { signal:ctl.signal, cache: fresh ? false : true, onText:function(u){ if(ctl.signal.aborted) return; out.classList.remove("thinking"); out.textContent = u.text; } })
+      .then(function(r){ if(ctl.signal.aborted) return; out.classList.remove("thinking"); out.textContent = r.text; if(done) done(r.text); })
+      .catch(function(e){
+        var code = e && e.code;
+        if(code==="cancelled" || ctl.signal.aborted) return;
+        out.classList.remove("thinking");
+        if(COACH_HIDE.indexOf(code)>=0){ coachOff = true; refreshCoachUI(); return; }
+        out.textContent = ((e && e.text) ? e.text+"\n\n" : "")+(COACH_SAYS[code] || "Couldn't reach the coach. Try again.");
+      })
+      .then(function(){ if(coachCtl===ctl) coachCtl = null; btn.disabled = false; });
+  }
+  function coachSavedHtml(c){ return escapeHtml(c.text)+'<span class="coach-when">'+coachDate(c.ts)+'</span>'; }
+  // The debrief is kept with the session, so it can be reread later without asking again.
+  function wireSessionCoach(box, btn, out, s){
+    box.hidden = !coachAvailable() || !s || !s.attempts.length;
+    if(box.hidden) return;
+    if(s.coach && s.coach.text){ out.hidden = false; out.classList.remove("thinking"); out.innerHTML = coachSavedHtml(s.coach); }
+    btn.textContent = s.coach ? "Ask the coach again" : "✦ Coach's take on this session";
+    btn.onclick = function(){
+      coachAsk(sessionCoachPrompt(s), out, btn, !!s.coach, function(text){
+        s.coach = { text:text, ts:Date.now() };
+        saveState();
+        out.innerHTML = coachSavedHtml(s.coach);
+        btn.textContent = "Ask the coach again";
+      });
+    };
+  }
+  function refreshCoachUI(){
+    if(endSummarySession && !document.getElementById("endSessionOverlay").hidden)
+      wireSessionCoach(document.getElementById("endCoach"), document.getElementById("endCoachBtn"), document.getElementById("endCoachText"), endSummarySession);
+    if(!document.getElementById("view-detail").hidden && currentDetailId) renderDetail(currentDetailId);
+    if(!document.getElementById("progressOverlay").hidden) renderProjectsSection();
   }
   function spawnConfetti(container){
     if(!container) return;
@@ -2725,7 +2860,11 @@
     if(document.activeElement!==detailLocInput) detailLocInput.value = s.location||"";
     refreshLocationList();
     renderPhotoStrip(document.getElementById("detailPhotoStrip"), s);
+    var coachOut = document.getElementById("detailCoachText");
+    if(detailCoachFor!==s.id){ if(coachCtl) coachCtl.abort(); detailCoachFor = s.id; coachOut.hidden = true; coachOut.textContent = ""; }
+    wireSessionCoach(document.getElementById("detailCoach"), document.getElementById("detailCoachBtn"), coachOut, s);
   }
+  var detailCoachFor = null;
   function showDetail(id){
     currentDetailId = id;
     editingAttemptId = null;
