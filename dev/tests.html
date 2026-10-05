@@ -644,6 +644,66 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(STORE[KEY]===before, "backup round trip changed workouts or results");
   });
 
+  // ---- The Wall (removable feature) ----
+  // spec: [{daysAgo, workout?}] -> sessions with one logged go (or one finished workout step)
+  function wallSave(specs, extra){
+    var s = clone(TEMPLATE), now = Date.now(), seq = 0;
+    s.sessions = specs.map(function(sp, i){
+      var start = now - sp.daysAgo*86400000, ses = { id:"w"+i, startedAt:start, endedAt:start+60000, timerConfig:{ workSec:45, restSec:90 }, attempts:[], note:"", photos:[], satisfaction:null, location:"" };
+      if(sp.workout) ses.workout = { source:{ kind:"example", id:"ex-4x4" }, doc:{ v:1, title:"4x4s", steps:[{ id:"s1", type:"instruction", title:"Go" }] }, index:1, steps:{ s1:{ status:"done" } }, startedAt:start, result:{ rpe:null, note:"" } };
+      else { seq++; ses.attempts = [{ id:"wa"+seq, result:"send", xp:20, ts:start+1, seq:seq, effort:null, reason:null, note:"", gradeType:"boulder", grade:null, photos:[], climbName:"" }]; }
+      return ses;
+    });
+    s.seq = seq; s.activeSessionId = null;
+    return Object.assign(s, extra||{});
+  }
+  async function openWallView(){ await goHome(); await click("wallCard", 3400); }
+  function closeSheet(){ var b = q(".wl-sheet [data-close]"); if(b) b.click(); }
+
+  test("The Wall: holds come from logged days, with a streak card on Home", async function(){
+    await boot(wallSave([{ daysAgo:3 }, { daysAgo:2, workout:true }, { daysAgo:1 }])); await goHome();
+    expect(visible("wallCard") && /3 day streak/.test($("wallCardTitle").textContent), "Home card: "+$("wallCard").textContent.trim().slice(0, 80));
+    await openWallView();
+    expect($("wallHolds").textContent==="3" && $("wallStreak").textContent==="3", "holds/streak: "+$("wallHolds").textContent+"/"+$("wallStreak").textContent);
+    var sheet = q(".wl-sheet");
+    expect(sheet && /Hold 3 unlocked/i.test(sheet.textContent) && /Gumby/.test(sheet.textContent), "no reveal for the newest hold: "+(sheet && sheet.textContent.slice(0, 80)));
+    expect(saved().wallSeen===3, "wallSeen is "+saved().wallSeen);
+    expect(q('.wl-hold[data-i="2"] .wl-star'), "the workout day has no star");
+    closeSheet();
+  });
+
+  test("The Wall: rest days climb a hold, can be backfilled for yesterday, and taken back", async function(){
+    await boot(wallSave([{ daysAgo:3 }])); await openWallView(); closeSheet(); await wait(150);
+    expect(visible("wallBackfillBtn"), "no backfill link for an empty yesterday");
+    await click("wallBackfillBtn", 2700);
+    expect($("wallHolds").textContent==="2" && /Mint chalk/.test((q(".wl-sheet")||{}).textContent||""), "backfill didn't climb hold 2");
+    closeSheet(); await wait(150);
+    await click("wallRestBtn", 2700);
+    expect($("wallHolds").textContent==="3" && $("wallStreak").textContent==="2", "rest today: holds "+$("wallHolds").textContent+", streak "+$("wallStreak").textContent);
+    expect(saved().restDays.length===2, "restDays: "+JSON.stringify(saved().restDays));
+    closeSheet(); await wait(150);
+    await click("wallRestBtn", 250);
+    expect($("wallHolds").textContent==="2" && saved().restDays.length===1, "taking today's rest day back didn't work");
+  });
+
+  test("The Wall: a climbing day can't also be a rest day; older saves load without rest days", async function(){
+    var old = wallSave([{ daysAgo:0 }]); delete old.restDays; delete old.wallSeen;
+    await boot(old); await openWallView(); closeSheet(); await wait(150);
+    expect($("wallRestBtn").disabled && /Logged today/.test($("wallRestLabel").textContent), "rest allowed on a climbing day");
+    expect(Array.isArray(saved().restDays) && saved().restDays.length===0, "older save didn't get an empty rest-day list");
+  });
+
+  test("The Wall: every 7th hold is a ledge with a big reveal", async function(){
+    await boot(wallSave([{ daysAgo:6 },{ daysAgo:5 },{ daysAgo:4 },{ daysAgo:3 },{ daysAgo:2 },{ daysAgo:1 }], { wallSeen:6 }));
+    await openWallView();
+    expect(!q(".wl-sheet"), "a reveal played with nothing new");
+    await click("wallRestBtn", 2800);
+    var sheet = q(".wl-sheet");
+    expect(sheet && /Ledge reached/.test(sheet.textContent) && /Crash pad/.test(sheet.textContent), "ledge reveal: "+(sheet && sheet.textContent.slice(0, 90)));
+    expect(sheet.querySelectorAll(".wl-confetti i").length>0, "no confetti on a ledge");
+    closeSheet();
+  });
+
   test("The app is called Crux (never Crimpet)", async function(){
     await boot(TEMPLATE);
     expect(D.title==="Crux", "page title is '"+D.title+"'");

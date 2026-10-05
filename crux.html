@@ -803,6 +803,143 @@
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;}
   }
+
+  /* ==== THE WALL (removable feature; see AGENTS.md "The Wall") ==== */
+  #view-wall, .wl-sheet, .wl-card{--wl-purple:#8A6FD1;--wl-gold:#E0A83A;--wl-gold-hi:#FBE7B0;--wl-rope:#C2562F;--wl-rope-hi:#F08A5D;}
+  .wl-card{width:100%;display:flex;align-items:center;gap:12px;text-align:left;margin:-8px 0 14px;padding:11px 14px;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);color:var(--text);box-shadow:0 3px 14px -4px var(--shadow);}
+  .wl-card:active{transform:scale(0.98);}
+  .wl-card .wl-flame{width:42px;height:42px;}
+  .wl-card-main{display:block;flex:1;min-width:0;overflow:hidden;}
+  .wl-card-title{display:block;font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:0.02em;line-height:1;white-space:nowrap;}
+  .wl-card-sub{display:block;font-size:12px;color:var(--text-dim);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .wl-card-sub b{color:var(--text);}
+  .wl-new{flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:4px 9px;border-radius:99px;background:var(--wl-gold);color:#3A2410;animation:wlNew 1.6s ease-in-out infinite;}
+  @keyframes wlNew{50%{transform:scale(1.08);}}
+  .wl-flame{position:relative;width:46px;height:46px;flex-shrink:0;border-radius:15px;display:grid;place-items:center;background:color-mix(in srgb, var(--wl-fl) 16%, var(--surface-2));--wl-fl:var(--flash);}
+  .wl-flame svg{width:28px;height:28px;color:var(--wl-fl);transform-origin:50% 90%;animation:wlFlicker 1.6s ease-in-out infinite;}
+  .wl-flame.t2{--wl-fl:#FF6A3D;} .wl-flame.t3{--wl-fl:#5B8CFF;}
+  .wl-flame.cold{--wl-fl:var(--text-dim);} .wl-flame.cold svg{animation:none;opacity:0.55;}
+  .wl-flame.pop{animation:wlPop .7s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes wlFlicker{0%,100%{transform:scale(1) rotate(0);}30%{transform:scale(1.06,0.96) rotate(-3deg);}60%{transform:scale(0.97,1.05) rotate(2deg);}}
+  @keyframes wlPop{40%{transform:scale(1.3) rotate(-8deg);}100%{transform:none;}}
+  .wl-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;padding-block:0 10px;background:linear-gradient(var(--bg) 82%, transparent);}
+  .wl-hud{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:11px 14px;box-shadow:0 6px 18px -8px var(--shadow);display:grid;gap:9px;}
+  .wl-hud-row{display:flex;align-items:center;gap:12px;}
+  .wl-num{font-family:"Bebas Neue",sans-serif;font-size:34px;line-height:0.9;letter-spacing:0.02em;}
+  .wl-num small{font-size:17px;color:var(--text-dim);margin-left:4px;}
+  .wl-msg{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+  .wl-msg b{color:var(--text);}
+  .wl-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+  .wl-stats{text-align:right;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .wl-stats b{color:var(--text);}
+  .wl-bag{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:99px;padding:5px 10px;font-size:11.5px;font-weight:700;}
+  .wl-bag svg{width:14px;height:14px;color:var(--wl-gold);}
+  .wl-days{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;}
+  .wl-day{aspect-ratio:1;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:#fff;}
+  .wl-day svg{width:62%;height:62%;}
+  .wl-day.climb{background:var(--accent);border-color:transparent;color:var(--accent-contrast);}
+  .wl-day.workout{background:var(--flash);border-color:transparent;color:#2A1A00;}
+  .wl-day.rest{background:var(--wl-purple);border-color:transparent;}
+  .wl-day.today{outline:2px solid var(--text);outline-offset:1px;}
+  .wl-day.today.empty{animation:wlToday 1.8s ease-in-out infinite;}
+  @keyframes wlToday{50%{outline-color:var(--accent);}}
+  .wl-next{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-dim);}
+  .wl-next b{color:var(--text);}
+  .wl-thumb{width:30px;height:30px;flex-shrink:0;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;}
+  .wl-thumb img{max-width:80%;max-height:80%;}
+  .wl-bar{flex:1;height:7px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;min-width:40px;}
+  .wl-bar i{display:block;height:100%;background:linear-gradient(90deg, var(--wl-gold), var(--flash));border-radius:99px;transition:width .6s ease;}
+  .wl-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px;}
+  .wl-act{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12.5px;font-weight:700;}
+  .wl-act svg{width:21px;height:21px;}
+  .wl-act.climb svg{color:var(--accent);} .wl-act.workout svg{color:var(--flash);} .wl-act.rest svg{color:var(--wl-purple);}
+  .wl-act.done{background:var(--wl-purple);color:#fff;border-color:transparent;} .wl-act.done svg{color:#fff;}
+  .wl-act:active{transform:scale(0.94);}
+  .wl-backfill{background:none;border:none;padding:0;margin:-4px 0 10px;color:var(--accent);font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:2px;}
+  .wl-wall{position:relative;border-radius:22px;overflow:hidden;isolation:isolate;background-color:#C99A5B;background-size:180px 180px;box-shadow:0 0 0 1px rgba(0,0,0,0.12), 0 14px 30px -12px var(--shadow);}
+  .wl-wall::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:repeating-linear-gradient(180deg, transparent 0 539px, rgba(40,22,6,0.35) 539px 541px, rgba(255,240,210,0.16) 541px 542px, transparent 542px 540px),
+      radial-gradient(120% 420px at 50% 0, rgba(255,214,140,0.45), transparent 70%),
+      linear-gradient(90deg, rgba(20,12,4,0.45), transparent 14%, transparent 86%, rgba(20,12,4,0.45));}
+  .wl-stud{position:absolute;top:0;bottom:0;width:16px;z-index:1;pointer-events:none;background:repeating-linear-gradient(180deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 23px), linear-gradient(90deg,#8C5E2C,#B7814A 45%,#7A4F22);box-shadow:0 0 12px rgba(0,0,0,0.35);}
+  .wl-stud.l{left:0;} .wl-stud.r{right:0;}
+  .wl-bulb{position:absolute;top:-6px;left:50%;width:46px;transform:translateX(-50%);z-index:2;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,0.35));}
+  .wl-glow{position:absolute;top:40px;left:50%;width:300px;height:220px;transform:translateX(-50%);z-index:1;pointer-events:none;background:radial-gradient(closest-side, rgba(255,214,140,0.55), rgba(255,190,100,0.12) 60%, transparent);animation:wlBulb 5s ease-in-out infinite;}
+  @keyframes wlBulb{0%,100%{opacity:1;}47%{opacity:0.85;}50%{opacity:1;}72%{opacity:0.92;}}
+  .wl-mote{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,236,200,0.85);z-index:2;pointer-events:none;animation:wlMote 9s ease-in-out infinite;}
+  @keyframes wlMote{0%{transform:translate(0,0);opacity:0;}15%{opacity:0.9;}50%{transform:translate(8px,-28px);opacity:0.5;}100%{transform:translate(-6px,-56px);opacity:0;}}
+  svg.wl-rope{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible;}
+  .wl-hold{position:absolute;z-index:3;width:var(--s,56px);height:var(--s,56px);transform:translate(-50%,-50%);border:none;background:none;padding:0;display:grid;place-items:center;}
+  .wl-hold img{max-width:100%;max-height:100%;transform:rotate(var(--rot,0deg));filter:drop-shadow(0 4px 3px rgba(0,0,0,0.45));}
+  .wl-hold.off img{filter:grayscale(0.95) brightness(0.62) contrast(0.9) drop-shadow(0 2px 2px rgba(0,0,0,0.3));opacity:0.82;}
+  .wl-hold.on::after{content:"";position:absolute;inset:18% 22%;border-radius:50%;background:radial-gradient(closest-side, rgba(255,255,255,0.55), transparent);mix-blend-mode:screen;pointer-events:none;}
+  .wl-hold.fresh img{animation:wlLock .8s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes wlLock{0%{transform:rotate(var(--rot)) scale(0.6);filter:grayscale(1) brightness(1.6);}60%{transform:rotate(var(--rot)) scale(1.25);}100%{transform:rotate(var(--rot)) scale(1);}}
+  .wl-hold.next::before{content:"";position:absolute;inset:-9px;border-radius:50%;box-shadow:0 0 0 3px rgba(255,236,190,0.9), 0 0 22px 6px rgba(255,214,140,0.65);animation:wlNext 1.8s ease-in-out infinite;}
+  @keyframes wlNext{50%{transform:scale(1.12);opacity:0.55;}}
+  .wl-tag{position:absolute;right:-9px;bottom:-7px;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:2px solid rgba(255,250,240,0.95);}
+  .wl-tag svg{width:11px;height:11px;}
+  .wl-tag.climb{background:var(--accent);color:var(--accent-contrast);} .wl-tag.workout{background:var(--flash);color:#2A1A00;} .wl-tag.rest{background:var(--wl-purple);}
+  .wl-star{position:absolute;left:-9px;top:-9px;width:19px;height:19px;color:var(--wl-gold);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
+  .wl-hnum{position:absolute;left:50%;top:100%;transform:translate(-50%,2px);font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;color:rgba(255,248,235,0.9);text-shadow:0 1px 2px rgba(0,0,0,0.7);}
+  .wl-bubble{position:absolute;z-index:4;transform:translate(-50%,-100%);display:flex;align-items:center;gap:6px;padding:5px 9px 5px 5px;border-radius:12px;background:rgba(255,250,240,0.96);color:#3A2A14;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,0.35);animation:wlBob 2.4s ease-in-out infinite;pointer-events:none;}
+  .wl-bubble::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-bottom:0;border-top-color:rgba(255,250,240,0.96);}
+  .wl-bubble .bi{width:28px;height:28px;border-radius:8px;background:#EFE4CC;display:grid;place-items:center;overflow:hidden;}
+  .wl-bubble .bi img{max-width:84%;max-height:84%;}
+  .wl-bubble small{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;color:#8A6A3A;letter-spacing:0.05em;}
+  @keyframes wlBob{50%{transform:translate(-50%,calc(-100% - 5px));}}
+  .wl-qd{position:absolute;z-index:2;width:12px;height:30px;transform:translate(-50%,0);pointer-events:none;}
+  .wl-ledge{position:absolute;left:18px;right:18px;z-index:3;height:22px;transform:translateY(-50%);border-radius:4px;background:linear-gradient(180deg,#E9C48C,#C99350 55%,#9C6A33);box-shadow:0 6px 0 #6E4720, 0 12px 18px -6px rgba(0,0,0,0.55);}
+  .wl-ledge .prize{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);height:58px;display:flex;align-items:flex-end;}
+  .wl-ledge .prize img{max-height:58px;max-width:110px;filter:drop-shadow(0 4px 3px rgba(0,0,0,0.45));}
+  .wl-ledge.locked .prize img{filter:brightness(0) opacity(0.4);}
+  .wl-ledge .label{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:0.06em;color:#3A2410;display:flex;align-items:center;gap:4px;}
+  .wl-ledge .label svg{width:11px;height:11px;}
+  .wl-ledge .lname{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#3A2410;}
+  .wl-ground{position:absolute;left:0;right:0;bottom:0;height:54px;z-index:2;background:linear-gradient(180deg, transparent, rgba(30,18,6,0.55));}
+  .wl-ground span{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,248,235,0.85);}
+  .wl-climber{position:absolute;z-index:5;width:106px;height:159px;left:0;top:0;pointer-events:none;will-change:transform;}
+  .wl-climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 7px 5px rgba(0,0,0,0.4));}
+  .wl-puff{position:absolute;z-index:4;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);pointer-events:none;animation:wlPuff .9s ease-out forwards;}
+  @keyframes wlPuff{to{transform:translate(var(--dx),var(--dy)) scale(3.2);opacity:0;}}
+  .wl-note{font-size:12px;color:var(--text-dim);line-height:1.5;margin:14px 4px 0;}
+  .wl-sheet{position:fixed;inset:0;z-index:120;display:grid;place-items:end center;background:rgba(15,10,5,0.6);}
+  .wl-sheet-card{position:relative;overflow:hidden;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;background:var(--surface);border-radius:26px 26px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom,0px));text-align:center;box-shadow:0 -20px 50px rgba(0,0,0,0.4);animation:wlUp .45s cubic-bezier(.22,1.2,.36,1);}
+  @keyframes wlUp{from{transform:translateY(100%);}}
+  .wl-rays{position:absolute;left:50%;top:118px;width:420px;height:420px;margin:-210px 0 0 -210px;pointer-events:none;opacity:0.5;background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--wl-gold) 55%, transparent) 0 10deg, transparent 10deg 20deg);-webkit-mask:radial-gradient(closest-side, #000 30%, transparent);mask:radial-gradient(closest-side, #000 30%, transparent);animation:wlSpin 14s linear infinite;}
+  @keyframes wlSpin{to{transform:rotate(360deg);}}
+  .wl-kicker{position:relative;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);}
+  .wl-prize{position:relative;height:150px;display:grid;place-items:center;margin:4px 0 6px;}
+  .wl-prize img{max-height:130px;max-width:190px;filter:drop-shadow(0 10px 12px rgba(0,0,0,0.35));animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .wl-prize .swatch{width:96px;height:96px;border-radius:50%;box-shadow:inset 0 -10px 18px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.3);animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .wl-prize .plate{font-family:"Bebas Neue",sans-serif;font-size:38px;letter-spacing:0.04em;padding:10px 22px;border-radius:14px;background:linear-gradient(180deg,var(--wl-gold-hi),var(--wl-gold));color:#3A2410;box-shadow:0 10px 20px rgba(0,0,0,0.3);animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .wl-prize .mv, .wl-pic .mv{display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb, var(--accent) 20%, var(--surface));color:var(--accent);}
+  .wl-prize .mv{width:96px;height:96px;animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;} .wl-prize .mv svg{width:50px;height:50px;}
+  @keyframes wlPrize{0%{transform:scale(0.2) rotate(-25deg);opacity:0;}60%{transform:scale(1.15) rotate(6deg);opacity:1;}100%{transform:none;}}
+  .wl-sheet-card h2{position:relative;font-family:"Bebas Neue",sans-serif;font-size:36px;letter-spacing:0.03em;margin:0;line-height:1;}
+  .wl-kind{position:relative;display:inline-block;margin:8px 0 6px;padding:4px 11px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text-dim);}
+  .wl-sheet-card p{position:relative;margin:4px auto 18px;color:var(--text-dim);font-size:13.5px;line-height:1.45;max-width:34ch;}
+  .wl-btn{position:relative;width:100%;border:none;border-radius:14px;background:var(--accent);color:var(--accent-contrast);padding:13px;font-size:15px;font-weight:700;}
+  .wl-confetti{position:absolute;inset:0;pointer-events:none;}
+  .wl-confetti i{position:absolute;top:120px;left:50%;width:7px;height:12px;border-radius:2px;animation:wlBurst 1.2s ease-out forwards;}
+  @keyframes wlBurst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0;}}
+  .wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;max-height:58vh;overflow-y:auto;padding:2px;text-align:center;}
+  .wl-item{border:1px solid var(--border);border-radius:14px;background:var(--surface-2);padding:8px 6px 7px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;}
+  .wl-pic{height:46px;display:grid;place-items:center;}
+  .wl-pic img{max-height:46px;max-width:70px;}
+  .wl-pic .swatch{width:34px;height:34px;border-radius:50%;}
+  .wl-pic .plate{font-family:"Bebas Neue",sans-serif;font-size:15px;letter-spacing:0.03em;padding:3px 8px;border-radius:7px;background:linear-gradient(180deg,var(--wl-gold-hi),var(--wl-gold));color:#3A2410;}
+  .wl-pic .mv{width:40px;height:40px;} .wl-pic .mv svg{width:22px;height:22px;}
+  .wl-item .nm{font-size:11px;font-weight:700;line-height:1.2;}
+  .wl-item .hd{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--text-dim);}
+  .wl-item.locked .wl-pic{filter:grayscale(1) brightness(0.35) opacity(0.5);}
+  .wl-item.locked .nm{color:var(--text-dim);}
+  .wl-item.ledge-item{border-color:color-mix(in srgb, var(--wl-gold) 60%, var(--border));}
+  .wl-sheet-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;text-align:left;}
+  .wl-sheet-head h2{font-size:28px;}
+  .wl-sheet-head span{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);}
+  @media (prefers-reduced-motion: reduce){ #view-wall *, .wl-sheet *, .wl-card *{animation:none !important;transition:none !important;} }
+  /* ==== END THE WALL ==== */
 </style>
 
 <div class="app">
@@ -899,6 +1036,13 @@
         Workouts
       </button>
     </div>
+    <!-- ==== THE WALL (removable feature) ==== -->
+    <button type="button" class="wl-card" id="wallCard" hidden>
+      <span class="wl-flame" id="wallCardFlame" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.1-1.9-5-3-7.3-.5 1.6-1.4 2.6-2.4 3C13.8 7.5 12 4.6 9.5 2c.3 3.4-1.5 5.3-3 7.4C5.4 10.9 5 12.6 5 14.6 5 19 7.8 22 12 22z"/></svg></span>
+      <span class="wl-card-main"><span class="wl-card-title" id="wallCardTitle">The Wall</span><span class="wl-card-sub" id="wallCardSub"></span></span>
+      <span class="wl-new" id="wallCardNew" hidden>New hold!</span>
+    </button>
+    <!-- ==== END THE WALL ==== -->
 
     <section class="history-section">
       <p class="eyebrow">Session History</p>
@@ -1068,6 +1212,50 @@
       <span class="sub" id="finishCtaSub">Nothing logged yet</span>
     </button>
   </div>
+
+  <!-- ==== THE WALL (removable feature; see AGENTS.md "The Wall") ==== -->
+  <div id="view-wall" hidden>
+    <div class="topbar">
+      <button class="topbar-btn" id="wallHomeBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        <span>Home</span>
+      </button>
+    </div>
+    <div class="wl-top">
+      <section class="wl-hud" aria-label="Your streak">
+        <div class="wl-hud-row">
+          <span class="wl-flame" id="wallFlame" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.1-1.9-5-3-7.3-.5 1.6-1.4 2.6-2.4 3C13.8 7.5 12 4.6 9.5 2c.3 3.4-1.5 5.3-3 7.4C5.4 10.9 5 12.6 5 14.6 5 19 7.8 22 12 22z"/></svg></span>
+          <div style="min-width:0;">
+            <div class="wl-num"><span id="wallStreak">0</span><small>day streak</small></div>
+            <div class="wl-msg" id="wallMsg"></div>
+          </div>
+          <div class="wl-side">
+            <div class="wl-stats">best <b id="wallBest">0</b> · holds <b id="wallHolds">0</b></div>
+            <button type="button" class="wl-bag" id="wallBagBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7C10 3 6.5 4 7.5 6.5 8 7.5 12 7 12 7zm0 0c2-4 5.5-3 4.5-.5C16 7.5 12 7 12 7z"/></svg><span id="wallBagCount">0/42</span></button>
+          </div>
+        </div>
+        <div class="wl-days" id="wallDays" aria-label="Last 14 days"></div>
+        <div class="wl-next" id="wallNext"></div>
+      </section>
+    </div>
+    <div class="wl-actions">
+      <button type="button" class="wl-act climb" id="wallClimbBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg><span>Climb</span></button>
+      <button type="button" class="wl-act workout" id="wallWorkoutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg><span>Workout</span></button>
+      <button type="button" class="wl-act rest" id="wallRestBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="wallRestLabel">Rest day</span></button>
+    </div>
+    <button type="button" class="wl-backfill" id="wallBackfillBtn" hidden>Forgot yesterday? Log it as a rest day</button>
+    <section class="wl-wall" id="wallWall" aria-label="The wall: one hold per day you log">
+      <div class="wl-stud l"></div><div class="wl-stud r"></div>
+      <div class="wl-glow" aria-hidden="true"></div>
+      <img class="wl-bulb" id="wallBulb" alt="">
+      <svg class="wl-rope" id="wallRope" aria-hidden="true"></svg>
+      <div id="wallItems"></div>
+      <div class="wl-climber" id="wallClimber"><img id="wallClimberImg" alt="Your climber"></div>
+      <div class="wl-ground"><span>Start</span></div>
+    </section>
+    <p class="wl-note">Every day you log a climbing session, a workout or a rest day, your climber moves up one hold, and every hold unlocks something. Every 7th hold is a ledge with a bigger prize. Workouts earn a star. Missing a day ends your streak, but you never lose holds. Tap a hold to see its day.</p>
+  </div>
+  <!-- ==== END THE WALL ==== -->
 
   <!-- ================= SESSION DETAIL ================= -->
   <div id="view-detail" hidden>
@@ -1520,6 +1708,9 @@
       projects:[],
       // Your own workouts (Workout document v1, docs/coaching/DESIGN.md section 5): {id, workout, createdAt, updatedAt}.
       workouts:[],
+      // THE WALL (removable): rest days you logged (local day numbers), and how many holds you have
+      // already watched your climber reach (null until you first open The Wall).
+      restDays:[], wallSeen:null,
       activeSessionId:null
     };
   }
@@ -1580,7 +1771,8 @@
       badges: migrated.badges||{},
       sessions: Array.isArray(migrated.sessions)?migrated.sessions:[],
       projects: Array.isArray(migrated.projects)?migrated.projects:[],
-      workouts: Array.isArray(migrated.workouts)?migrated.workouts.filter(function(w){ return w && typeof w==="object"; }):[]
+      workouts: Array.isArray(migrated.workouts)?migrated.workouts.filter(function(w){ return w && typeof w==="object"; }):[],
+      restDays: Array.isArray(migrated.restDays)?migrated.restDays.filter(function(d){ return typeof d==="number" && isFinite(d); }):[]
     });
     // One-time upgrades, each gated on its own settingsVersion so a person's later choice
     // always wins and these never re-fire.
@@ -3554,6 +3746,7 @@
 
   var historyExpanded = false;
   function renderHome(){
+    renderWallCard(); // THE WALL hook
     renderCharacterCard();
     var advanced = state.settings.mode==="advanced";
     document.querySelector(".profile-card").hidden = !advanced;
@@ -3981,7 +4174,39 @@
         asset("mascot/climber/default/land/land-01.png", "1da2311a039586be5ad3c8615826e39b"),
         asset("mascot/climber/default/land/land-02.png", "1370cb3987dc3213a293b8642c946b69")
       ]
+    },
+    // ==== THE WALL (removable feature; see AGENTS.md "The Wall") ==== small trimmed copies made
+    // by dev/build-wall-prototype.ps1 -AppAssets
+    wall: {
+      tile:  asset("wall/tile.png", "a86d922de41afa7087ac384e78fee1b6"),
+      bulb:  asset("wall/bulb.png", "b3294c256fa17ded91c7236de3e2aa53"),
+      h_jug: asset("wall/h_jug.png", "165c9cd2b8a685cd2ce23bc1a45f3ea9"),
+      h_slot: asset("wall/h_slot.png", "c5c3f768ba7d8360e585e92629a484bb"),
+      h_foot: asset("wall/h_foot.png", "3d41cbce2db5676adc0c1714f1d7d189"),
+      h_red: asset("wall/h_red.png", "6ed6d7abfd6f482fc83c3cfd2bd45ce9"),
+      h_purple: asset("wall/h_purple.png", "5b6da6362745eb647f18b9cd82b20c48"),
+      h_gray: asset("wall/h_gray.png", "2b3ea462b15c9a10d69cf09538998c8d"),
+      h_yellow: asset("wall/h_yellow.png", "f5a9a9937fec64307eec1af80e8be9ae"),
+      h_volume: asset("wall/h_volume.png", "223ba348bc06c8c2ff19d5938ce17ffa"),
+      h_green: asset("wall/h_green.png", "825759a112ae3979581192dac1428b27"),
+      h_yellow2: asset("wall/h_yellow2.png", "dd12f9ec2482604450b031d9abd8ce33"),
+      r_chalkbag: asset("wall/r_chalkbag.png", "0f1a4728774a4d267ff7a6371b70f0ba"),
+      r_shoes: asset("wall/r_shoes.png", "eb9f5a8a77f22659b72392475ccaabaf"),
+      r_pad: asset("wall/r_pad.png", "e6a2df8cab3c4cdebdba3ff9b727788a"),
+      r_notes: asset("wall/r_notes.png", "6622b3df779c736a081128c196a03a08"),
+      r_hangboard: asset("wall/r_hangboard.png", "1f9100ba2314f706fa53c013c68dd3b9"),
+      r_lamp: asset("wall/r_lamp.png", "d455c4ba9d06fc53757ff5dc175a18ad"),
+      r_gearbag: asset("wall/r_gearbag.png", "70ed7ba375edca7580dd0d9e5f7b6c33"),
+      r_rolled: asset("wall/r_rolled.png", "89364c8e26987922a5d4ec4576ae2409"),
+      r_shelf: asset("wall/r_shelf.png", "c4918662992636e9280fce21639d4d95"),
+      r_print: asset("wall/r_print.png", "048b833caa2dfe6436fd34e729cc4892"),
+      r_lights: asset("wall/r_lights.png", "770c8a642248deee7f8ed4c63f8a6753"),
+      r_plant: asset("wall/r_plant.png", "1edf7b1cd5ad6ab2bdf5faef8282e69f"),
+      r_hay: asset("wall/r_hay.png", "79c2d4e1511a4adc983534aa518f1e8f"),
+      r_basket: asset("wall/r_basket.png", "f8fafb0aff963bbf57604c296d71d02f"),
+      r_fridge: asset("wall/r_fridge.png", "e977b8def8f4837b7c377290743be5f6")
     }
+    // ==== END THE WALL ====
   };
 
   /* ---------------- the climber character ---------------- */
@@ -4737,16 +4962,311 @@
   function iconList(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>'; }
   function iconRebound(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="100%" height="100%"><path d="M4 12a8 8 0 1 1 3 6.3M4 12v5h5"/></svg>'; }
 
+  /* ==== THE WALL (removable feature; see AGENTS.md "The Wall") ====================================
+     A streak ladder: every day you log something (a session with climbs, a workout, or a rest day)
+     your climber moves up one hold, and every hold unlocks something. Holds are worked out from your
+     history, never stored; only rest days (state.restDays) and how far you've watched your climber
+     go (state.wallSeen) are saved. Set WALL_ENABLED = false to switch the whole thing off. */
+  var WALL_ENABLED = true;
+  var WALL_N = 42, WALL_LEDGE = 7, WALL_GAP = 98, WALL_BOTTOM = 92, WALL_TOPPAD = 150;
+  var WI = {
+    climb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>',
+    workout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
+    rest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+    star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
+    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>',
+    move:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M5.6 5.6l2.8 2.8M3 12h4M18.4 5.6l-2.8 2.8M21 12h-4"/><circle cx="12" cy="15" r="4"/></svg>'
+  };
+  var WALL_REWARDS = [null,
+    { name:"Chalk bag", kind:"decor", img:"r_chalkbag" }, { name:"Mint chalk", kind:"chalk", c:"#7FE3C8" }, { name:"Gumby", kind:"title" },
+    { name:"Climbing shoes", kind:"decor", img:"r_shoes" }, { name:"Blue sloper", kind:"hold", img:"h_volume" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62" },
+    { name:"Crash pad", kind:"decor", img:"r_pad" }, { name:"Route notes", kind:"decor", img:"r_notes" }, { name:"Crimper", kind:"title" },
+    { name:"Purple pinch", kind:"hold", img:"h_purple" }, { name:"Chalk clap", kind:"move" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
+    { name:"Lilac chalk", kind:"chalk", c:"#C3A8F5" }, { name:"Clamp lamp", kind:"decor", img:"r_lamp" }, { name:"Jug", kind:"hold", img:"h_jug" },
+    { name:"Flash Kid", kind:"title" }, { name:"Gear bag", kind:"decor", img:"r_gearbag" }, { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF" },
+    { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move" }, { name:"The Home Wall", kind:"gym", img:"tile" },
+    { name:"Yellow pyramid", kind:"hold", img:"h_yellow" }, { name:"Dyno Machine", kind:"title" }, { name:"Wall shelf", kind:"decor", img:"r_shelf" },
+    { name:"Neon chalk", kind:"chalk", c:"#C6FF4A" }, { name:"Mountain print", kind:"decor", img:"r_print" }, { name:"Victory wave", kind:"move" },
+    { name:"String lights", kind:"decor", img:"r_lights" }, { name:"Slotted edge", kind:"hold", img:"h_slot" }, { name:"Sloper Whisperer", kind:"title" },
+    { name:"Potted plant", kind:"decor", img:"r_plant" }, { name:"Gold chalk", kind:"chalk", c:"#F3C766" }, { name:"Foothold", kind:"hold", img:"h_foot" },
+    { name:"Happy dance", kind:"move" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Grey pocket", kind:"hold", img:"h_gray" },
+    { name:"Send Train", kind:"title" }, { name:"Laundry basket", kind:"decor", img:"r_basket" }, { name:"Midnight chalk", kind:"chalk", c:"#3C3F7A" },
+    { name:"Hay bale", kind:"decor", img:"r_hay" }, { name:"Wall Legend", kind:"title" }, { name:"Golden shoes", kind:"outfit", img:"r_shoes", gold:true }
+  ];
+  var WALL_KIND = { decor:"Garage decoration", hold:"Hold for your Garage wall", chalk:"Chalk colour", title:"Climber title", move:"Climber move", gym:"New gym", outfit:"Climber outfit" };
+  var WALL_HOLD_ART = ["h_jug","h_red","h_slot","h_yellow","h_purple","h_foot","h_gray","h_green","h_volume","h_yellow2"];
+  var GOLD_FILTER = "sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1)";
+
+  // ---- the day model: everything below is read from what you've logged ----
+  function wallToday(){ return planDayNum(Date.now()); }
+  function wallDayMap(){
+    var m = {};
+    (state.restDays||[]).forEach(function(d){ m[d] = "rest"; });
+    state.sessions.forEach(function(s){
+      var steps = s.workout && s.workout.steps || {};
+      var worked = Object.keys(steps).some(function(k){ return steps[k].status==="done" || steps[k].status==="partial"; });
+      if(!s.attempts.length && !worked) return;
+      var d = planDayNum(s.startedAt);
+      if(worked) m[d] = "workout"; else if(m[d]!=="workout") m[d] = "climb";
+    });
+    return m;
+  }
+  function wallInfo(){
+    var m = wallDayMap(), today = wallToday();
+    var days = Object.keys(m).map(Number).filter(function(d){ return d<=today; }).sort(function(a,b){ return a-b; });
+    var d = m[today] ? today : today-1, streak = 0; while(m[d]){ streak++; d--; }
+    var best = 0, run = 0, prev = null;
+    days.forEach(function(x){ run = (prev!==null && x===prev+1) ? run+1 : 1; best = Math.max(best, run); prev = x; });
+    return { map:m, days:days, today:today, holds:Math.min(WALL_N, days.length), streak:streak, best:Math.max(best, streak) };
+  }
+  function wallDate(d){ return new Date((d+1)*86400000 - 1 + new Date().getTimezoneOffset()*60000).toLocaleDateString(undefined,{ weekday:"short", month:"short", day:"numeric" }); }
+
+  // ---- Home card ----
+  function renderWallCard(){
+    var card = document.getElementById("wallCard");
+    card.hidden = !WALL_ENABLED;
+    if(!WALL_ENABLED) return;
+    var w = wallInfo(), next = w.holds<WALL_N ? WALL_REWARDS[w.holds+1] : null;
+    wallFlameClass(document.getElementById("wallCardFlame"), w.streak);
+    document.getElementById("wallCardTitle").textContent = w.streak ? w.streak+" day streak" : "The Wall";
+    document.getElementById("wallCardSub").innerHTML = (w.map[w.today] ? "Logged today · " : w.streak ? "Log today to keep it going · " : "Log a day to climb a hold · ") +
+      (next ? "next: <b>"+escapeHtml(next.name)+"</b>" : "<b>top of the wall!</b>");
+    document.getElementById("wallCardNew").hidden = !(state.wallSeen!=null && w.holds>state.wallSeen);
+  }
+  function wallFlameClass(el, s){ el.classList.toggle("cold", s===0); el.classList.toggle("t2", s>=7 && s<14); el.classList.toggle("t3", s>=14); }
+
+  // ---- the wall view ----
+  var wallEl = document.getElementById("wallWall"), wallItems = document.getElementById("wallItems");
+  var WALL_H = WALL_BOTTOM + WALL_N*WALL_GAP + WALL_TOPPAD;
+  wallEl.style.height = WALL_H+"px";
+  wallEl.style.backgroundImage = "url("+IMG.wall.tile+")";
+  document.getElementById("wallBulb").src = IMG.wall.bulb;
+  (function(){ for(var k=0;k<6;k++){ var e = document.createElement("span"); e.className = "wl-mote"; e.style.left = (30+k*8)+"%"; e.style.top = (70+(k%3)*40)+"px"; e.style.animationDelay = (k*1.4)+"s"; wallEl.appendChild(e); } })();
+  function wallPos(i){ return i<=0 ? { x:50, y:WALL_H-50 } : { x:50 + 25*Math.sin(i*0.92) + 9*Math.sin(i*2.3+1), y:WALL_H - WALL_BOTTOM - i*WALL_GAP }; }
+  function wallPx(p){ return { x:p.x/100*wallEl.clientWidth, y:p.y }; }
+  function wallRot(i){ return Math.round(Math.sin(i*12.9898)*43758.5453 % 1 * 50); }
+  function wallArtFor(i){ return WALL_HOLD_ART[(i*7) % WALL_HOLD_ART.length]; }
+  function wallPic(r, plateCls){
+    if(r.kind==="chalk") return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
+    if(r.kind==="title") return '<span class="'+(plateCls||"plate")+'">'+escapeHtml(r.name)+'</span>';
+    if(r.kind==="move") return '<span class="mv">'+WI.move+'</span>';
+    return '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.gold ? ' style="filter:'+GOLD_FILTER+'"' : '')+'>';
+  }
+  function wallSmallPic(r){
+    return r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="chalk" ? '<span style="width:16px;height:16px;border-radius:50%;background:'+r.c+'"></span>'
+      : r.kind==="move" ? '<span style="color:var(--accent);width:18px;height:18px;display:grid">'+WI.move+'</span>' : '<span style="color:var(--wl-gold);width:18px;height:18px;display:grid">'+WI.star+'</span>';
+  }
+  var wallHopping = false;
+  function renderWall(shownHolds, fresh){
+    var w = wallInfo(), h = shownHolds==null ? w.holds : shownHolds, html = "";
+    for(var i=1;i<=WALL_N;i++){
+      var p = wallPos(i), on = i<=h, d = w.days[i-1], type = on ? w.map[d] : null;
+      if(i % WALL_LEDGE===0){
+        var r = WALL_REWARDS[i], got = h>=i;
+        html += '<div class="wl-ledge '+(got ? "got" : "locked")+'" style="top:'+(p.y-48)+'px"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.gold && got ? ' style="filter:'+GOLD_FILTER+'"' : '')+'>' : '')+'</div>'+
+          '<span class="lname">'+escapeHtml(r.name)+'</span><span class="label">'+(got ? WI.check : WI.lock)+'LEDGE '+(i/WALL_LEDGE)+'</span></div>';
+      }
+      html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+(wallArtFor(i)==="h_volume" ? 62 : 54)+'px;--rot:'+wallRot(i)+'deg" aria-label="Hold '+i+'">'+
+        '<img src="'+IMG.wall[wallArtFor(i)]+'" alt="">'+(on && type ? '<span class="wl-tag '+type+'">'+WI[type]+'</span>' : '')+
+        (on && type==="workout" ? '<span class="wl-star">'+WI.star+'</span>' : '')+'<span class="wl-hnum">'+i+'</span></button>';
+      if(on && i%3===0) html += '<svg class="wl-qd" viewBox="0 0 12 30" style="left:calc('+p.x+'% + 22px);top:'+(p.y-6)+'px"><rect x="4" y="9" width="4" height="12" rx="2" fill="#2E2E33"/><path d="M6 2a3.5 3.5 0 0 0-3.5 3.5V10M6 2a3.5 3.5 0 0 1 3.5 3.5V10" stroke="#C9CDD4" stroke-width="1.6" fill="none"/><path d="M6 28a3.5 3.5 0 0 1-3.5-3.5V20M6 28a3.5 3.5 0 0 0 3.5-3.5V20" stroke="#C9CDD4" stroke-width="1.6" fill="none"/></svg>';
+    }
+    if(h<WALL_N){ var np = wallPos(h+1), nr = WALL_REWARDS[h+1];
+      html += '<div class="wl-bubble" style="left:'+np.x+'%;top:'+(np.y-38)+'px"><span class="bi">'+wallSmallPic(nr)+'</span><span><small>NEXT UNLOCK</small>'+escapeHtml(nr.name)+'</span></div>'; }
+    wallItems.innerHTML = html;
+    var pts = []; for(var k=0;k<=WALL_N;k++) pts.push(wallPx(wallPos(k)));
+    function path(a, b){ var dd = "M"+pts[a].x+" "+pts[a].y; for(var j=a+1;j<=b;j++){ var m = (pts[j-1].y+pts[j].y)/2; dd += " C"+pts[j-1].x+" "+m+" "+pts[j].x+" "+m+" "+pts[j].x+" "+pts[j].y; } return dd; }
+    var done = h>0 ? path(0, h) : "";
+    document.getElementById("wallRope").innerHTML = '<path d="'+path(h, WALL_N)+'" fill="none" stroke="rgba(255,248,235,0.4)" stroke-width="2.5" stroke-dasharray="5 8"/>'+
+      (done ? '<path d="'+done+'" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="6" stroke-linecap="round" transform="translate(1.5,2.5)"/><path d="'+done+'" fill="none" stroke="var(--wl-rope)" stroke-width="4.5" stroke-linecap="round"/><path d="'+done+'" fill="none" stroke="var(--wl-rope-hi)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="3 5"/>' : '');
+    if(!wallHopping){ var t = wallHoldTop(h); wallSetClimber(t.x, t.y); }
+    // HUD
+    wallFlameClass(document.getElementById("wallFlame"), w.streak);
+    document.getElementById("wallStreak").textContent = w.streak;
+    document.getElementById("wallBest").textContent = w.best;
+    document.getElementById("wallHolds").textContent = w.holds;
+    document.getElementById("wallBagCount").textContent = w.holds+"/"+WALL_N;
+    var todayType = w.map[w.today];
+    document.getElementById("wallMsg").innerHTML = todayType ? "<b>Logged today.</b> See you tomorrow."
+      : w.streak>0 ? "Log today to make it <b>"+(w.streak+1)+" days</b>." : w.holds>0 ? "Streak ended. <b>Start a new one today.</b>" : "Log today to start your streak.";
+    var nr2 = w.holds<WALL_N ? WALL_REWARDS[w.holds+1] : null, nextLedge = Math.ceil((w.holds+1)/WALL_LEDGE)*WALL_LEDGE;
+    document.getElementById("wallNext").innerHTML = nr2 ? '<span class="wl-thumb">'+wallSmallPic(nr2)+'</span><span>Next: <b>'+escapeHtml(nr2.name)+'</b></span><div class="wl-bar"><i style="width:'+((w.holds % WALL_LEDGE)/WALL_LEDGE*100)+'%"></i></div><span>'+(nextLedge-w.holds)+' to ledge</span>'
+      : '<span><b>Top of the wall!</b> Every unlock collected.</span>';
+    var dh = "";
+    for(var x=w.today-13; x<=w.today; x++){ var tt = w.map[x]; dh += '<span class="wl-day'+(tt ? " "+tt : " empty")+(x===w.today ? " today" : "")+'" title="'+wallDate(x)+(tt ? ": "+tt : "")+'">'+(tt ? WI[tt] : "")+'</span>'; }
+    document.getElementById("wallDays").innerHTML = dh;
+    var rest = document.getElementById("wallRestBtn");
+    rest.classList.toggle("done", todayType==="rest");
+    rest.disabled = todayType==="climb" || todayType==="workout";
+    document.getElementById("wallRestLabel").textContent = todayType==="rest" ? "Rest day ✓" : todayType ? "Logged today" : "Rest day";
+    document.querySelector("#wallClimbBtn span").textContent = getActiveSession() ? "Resume" : "Climb";
+    document.getElementById("wallBackfillBtn").hidden = !!w.map[w.today-1] || w.days.length===0;
+  }
+
+  // ---- the climber: the real idle, blink, jump and land frames ----
+  var wallClimber = document.getElementById("wallClimber"), wallCImg = document.getElementById("wallClimberImg");
+  var WCW = 106, WCH = 159, wallFacing = 1, wallIdleT = null, wallIdleI = 0, wallBlinkAt = 0;
+  function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px) scaleX("+wallFacing+")"; }
+  function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
+  var WALL_IDLE = [[0,900],[1,300],[2,400],[3,300],[2,300],[1,350]];
+  function wallIdleTick(){
+    if(wallHopping || prefersReducedMotion || document.getElementById("view-wall").hidden || document.visibilityState!=="visible"){ wallIdleT = setTimeout(wallIdleTick, 600); return; }
+    var f = WALL_IDLE[wallIdleI % WALL_IDLE.length];
+    if(f[0]===0 && Date.now()>wallBlinkAt){
+      wallBlinkAt = Date.now() + 3000 + Math.random()*4000;
+      var seq = [[IMG.mascot.blink[0],60],[IMG.mascot.blink[1],90],[IMG.mascot.blink[0],60],[IMG.mascot.idle[0],600]], k = 0;
+      (function b(){ if(wallHopping) return; wallCImg.src = seq[k][0]; var ms = seq[k][1]; k++; wallIdleT = setTimeout(k<seq.length ? b : function(){ wallIdleI++; wallIdleTick(); }, ms); })();
+      return;
+    }
+    wallCImg.src = IMG.mascot.idle[f[0]]; wallIdleI++;
+    wallIdleT = setTimeout(wallIdleTick, f[1]);
+  }
+  function wallStartIdle(){ clearTimeout(wallIdleT); wallIdleI = 0; wallCImg.src = IMG.mascot.idle[0]; wallIdleT = setTimeout(wallIdleTick, 400); }
+  function wallStopIdle(){ clearTimeout(wallIdleT); wallIdleT = null; }
+  function wallPuff(x, y){
+    if(prefersReducedMotion) return;
+    for(var k=0;k<7;k++){
+      var p = document.createElement("span"); p.className = "wl-puff"; p.style.left = (x-5)+"px"; p.style.top = (y-5)+"px";
+      p.style.setProperty("--dx", Math.round((Math.random()-0.5)*60)+"px"); p.style.setProperty("--dy", Math.round(-Math.random()*26)+"px");
+      wallEl.appendChild(p); setTimeout(function(el){ return function(){ el.remove(); }; }(p), 1000);
+    }
+  }
+  function wallHop(from, to, done){
+    var a = wallHoldTop(from), b = wallHoldTop(to);
+    if(prefersReducedMotion){ wallSetClimber(b.x, b.y); done(); return; }
+    wallHopping = true; wallStopIdle();
+    wallFacing = b.x < a.x - 4 ? -1 : 1;
+    function seq(src, ms, next){ wallCImg.src = src; setTimeout(next, ms); }
+    wallSetClimber(a.x, a.y);
+    seq(IMG.mascot.jump[0], 150, function(){ seq(IMG.mascot.jump[1], 90, function(){
+      wallCImg.src = IMG.mascot.jump[2];
+      var t0 = performance.now(), dur = 620, peak = Math.min(a.y, b.y) - 70, landed = false;
+      // animation frames pause in the background, so a timer makes sure the jump always lands
+      function land(){ if(landed) return; landed = true; wallSetClimber(b.x, b.y); wallPuff(b.x, b.y);
+        seq(IMG.mascot.land[0], 110, function(){ seq(IMG.mascot.land[1], 160, function(){ wallHopping = false; wallStartIdle(); done(); }); }); }
+      setTimeout(land, dur + 250);
+      (function fly(now){ if(landed) return;
+        var t = Math.min(1, (now-t0)/dur), e = t<0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+        wallSetClimber(a.x + (b.x-a.x)*e, (1-e)*(1-e)*a.y + 2*(1-e)*e*peak + e*e*b.y);
+        if(t<1) requestAnimationFrame(fly); else land();
+      })(t0);
+    }); });
+  }
+  function wallScrollTo(i, smooth){
+    var p = wallPos(i), r = wallEl.getBoundingClientRect();
+    window.scrollTo({ top:Math.max(0, window.scrollY + r.top + p.y - window.innerHeight*0.5), behavior: smooth && !prefersReducedMotion ? "smooth" : "auto" });
+  }
+
+  // ---- unlock reveal and collection ----
+  function wallSheet(inner){
+    var box = document.createElement("div"); box.className = "wl-sheet";
+    box.innerHTML = '<div class="wl-sheet-card" role="dialog" aria-modal="true">'+inner+'</div>';
+    function close(){ box.remove(); document.removeEventListener("keydown", esc); }
+    function esc(e){ if(e.key==="Escape") close(); }
+    box.addEventListener("click", function(e){ if(e.target===box || e.target.closest("[data-close]")) close(); });
+    document.addEventListener("keydown", esc);
+    document.body.appendChild(box);
+    var b = box.querySelector("[data-close]"); if(b) b.focus();
+  }
+  function wallReveal(i, extra){
+    var r = WALL_REWARDS[i], big = i % WALL_LEDGE===0, conf = "";
+    if(big && !prefersReducedMotion){ var cols = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--wl-gold)","var(--wl-purple)"];
+      for(var k=0;k<26;k++) conf += '<i style="background:'+cols[k%cols.length]+';--dx:'+Math.round(Math.random()*340-170)+'px;--dy:'+Math.round(Math.random()*260-60)+'px;--r:'+Math.round(Math.random()*700-350)+'deg;animation-delay:'+(Math.random()*0.2).toFixed(2)+'s"></i>'; }
+    wallSheet('<div class="wl-rays"></div><div class="wl-confetti">'+conf+'</div>'+
+      '<div class="wl-kicker">'+(big ? "Ledge "+(i/WALL_LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
+      '<div class="wl-prize">'+wallPic(r, "plate")+'</div>'+
+      '<h2>'+(big ? "Ledge reached!" : escapeHtml(r.name))+'</h2>'+
+      '<span class="wl-kind">'+(big ? escapeHtml(r.name)+" · " : "")+WALL_KIND[r.kind]+'</span>'+
+      '<p>'+(extra ? escapeHtml(extra)+" " : "")+(big ? "Seven days of showing up. " : "")+"It's in your unlocks. Using it in the app comes in a later update.</p>"+
+      '<button type="button" class="wl-btn" data-close>Keep climbing</button>');
+  }
+  function wallCollection(){
+    var h = wallInfo().holds, cells = "";
+    for(var i=1;i<=WALL_N;i++){ var r = WALL_REWARDS[i], got = i<=h;
+      cells += '<div class="wl-item'+(got ? "" : " locked")+(i%WALL_LEDGE===0 ? " ledge-item" : "")+'"><span class="wl-pic">'+wallPic(r)+'</span><span class="nm">'+(i<=h+1 ? escapeHtml(r.name) : "???")+'</span><span class="hd">'+(i%WALL_LEDGE===0 ? "LEDGE · " : "")+"HOLD "+i+'</span></div>'; }
+    wallSheet('<div class="wl-sheet-head"><h2>Unlocks</h2><span>'+h+' of '+WALL_N+'</span></div><div class="wl-grid">'+cells+'</div><button type="button" class="wl-btn" style="margin-top:14px" data-close>Close</button>');
+  }
+
+  // ---- opening the wall plays whatever you've climbed since you last looked ----
+  function openWall(){
+    if(!WALL_ENABLED) return;
+    switchView("wall");
+  }
+  function onWallShown(){
+    var w = wallInfo();
+    if(state.wallSeen==null){ state.wallSeen = Math.max(0, w.holds-1); saveState(); }
+    var seen = Math.min(state.wallSeen, w.holds), gained = w.holds - seen;
+    renderWall(gained>0 ? seen : null);
+    wallStartIdle();
+    setTimeout(function(){ wallScrollTo(gained>0 ? seen : w.holds, false); }, 30);
+    if(gained>0) wallClimbTo(w.holds, gained>1 ? "You climbed "+gained+" holds since you last looked." : null, 700);
+  }
+  function wallClimbTo(target, extra, delay){
+    var from = target-1;
+    if(wallHopping) return;
+    wallHopping = true; // claim it before the delay so a second tap can't start another climb
+    renderWall(from);
+    var st = wallHoldTop(from); wallSetClimber(st.x, st.y);
+    setTimeout(function(){
+      wallScrollTo(target, true);
+      setTimeout(function(){
+        wallHopping = false;
+        wallHop(from, target, function(){
+          state.wallSeen = target; saveState();
+          renderWall(null, target);
+          var f = document.getElementById("wallFlame"); f.classList.remove("pop"); void f.offsetWidth; f.classList.add("pop");
+          setTimeout(function(){ wallReveal(target, extra); }, prefersReducedMotion ? 0 : 250);
+        });
+      }, prefersReducedMotion ? 0 : 380);
+    }, delay||0);
+  }
+  function wallLogRest(day){
+    var before = wallInfo().holds;
+    state.restDays = (state.restDays||[]).filter(function(d){ return d!==day; }).concat([day]);
+    saveState();
+    var after = wallInfo().holds;
+    if(after>before) wallClimbTo(after, null, 0); else renderWall();
+  }
+  document.getElementById("wallCard").addEventListener("click", openWall);
+  document.getElementById("wallHomeBtn").addEventListener("click", function(){ switchView("home"); });
+  document.getElementById("wallBagBtn").addEventListener("click", wallCollection);
+  document.getElementById("wallClimbBtn").addEventListener("click", function(){ if(getActiveSession()) switchView("session"); else startSession(); });
+  document.getElementById("wallWorkoutBtn").addEventListener("click", openWorkouts);
+  document.getElementById("wallRestBtn").addEventListener("click", function(){
+    if(wallHopping) return;
+    var w = wallInfo();
+    if(w.map[w.today]==="rest"){ // tap again to take a rest day back
+      state.restDays = (state.restDays||[]).filter(function(d){ return d!==w.today; });
+      if(state.wallSeen!=null) state.wallSeen = Math.min(state.wallSeen, wallInfo().holds);
+      saveState(); renderWall(); showToast("Rest day removed"); return;
+    }
+    if(w.map[w.today]) return;
+    wallLogRest(w.today);
+  });
+  document.getElementById("wallBackfillBtn").addEventListener("click", function(){ if(!wallHopping) wallLogRest(wallToday()-1); });
+  wallItems.addEventListener("click", function(e){
+    var b = e.target.closest(".wl-hold"); if(!b) return;
+    var i = +b.dataset.i, w = wallInfo(), r = WALL_REWARDS[i];
+    if(i<=w.holds){ var d = w.days[i-1], t = w.map[d];
+      showToast("Hold "+i+" · "+wallDate(d)+" · "+(t==="climb" ? "climbed" : t==="workout" ? "workout ★" : "rest day")+" · unlocked "+r.name); }
+    else showToast("Hold "+i+" unlocks "+(i<=w.holds+1 ? r.name : "a surprise")+" · "+(i-w.holds)+" more day"+(i-w.holds===1 ? "" : "s"));
+  });
+  var wallResizeT; window.addEventListener("resize", function(){ clearTimeout(wallResizeT); wallResizeT = setTimeout(function(){ if(!document.getElementById("view-wall").hidden && !wallHopping) renderWall(); }, 120); });
+  /* ==== END THE WALL ==== */
+
   /* ---------------- view switching ---------------- */
   function switchView(name){
     editingAttemptId = null; // leaving a view always closes any open attempt editor in it
     document.getElementById("view-home").hidden = name!=="home";
     document.getElementById("view-session").hidden = name!=="session";
     document.getElementById("view-detail").hidden = name!=="detail";
+    document.getElementById("view-wall").hidden = name!=="wall"; // THE WALL hook
     if(name==="home"){ renderHome(); playPendingLevelUpJump(); playPendingMascotMoods(); }
     if(name==="session"){ render(); renderTimer(); }
     if(name==="detail" && currentDetailId) renderDetail(currentDetailId);
     window.scrollTo(0,0);
+    if(name==="wall") onWallShown(); // THE WALL hook
   }
 
   /* ---------------- wiring ---------------- */

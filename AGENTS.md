@@ -89,6 +89,32 @@ only), and a runner that steps through a workout inside a normal session. The co
   `result: {rpe, note}`.
 - **No hangboard protocols** among the built-in examples.
 
+## The Wall (beta, removable)
+
+The Wall is a streak ladder, added 2026-10-04. Each day you log something, your climber moves
+up one hold:
+- **What counts:** a session with climbs, a finished workout step, or a rest day.
+- **Unlocks:** every hold unlocks something, and every 7th hold is a ledge with a bigger prize.
+- **Where it lives:** a card on Home, and its own view (`view-wall`).
+
+**How it works:**
+- **Holds aren't stored.** `wallDayMap()` works them out from sessions plus `state.restDays`.
+- **Saved data** is only `state.restDays` (local day numbers from `planDayNum`) and
+  `state.wallSeen` (how far the climber animation has played).
+- **Unlocks are display-only for now.** They don't give Garage items yet, and the copy says so.
+- **The art** is in `assets/wall/`, made by `dev/build-wall-prototype.ps1 -AppAssets`. It's
+  uploaded, with blob ids in `IMG.wall`. The prototype page is `dev/wall-prototype.html`.
+
+**The owner may remove it if the art doesn't come together. To remove it:**
+1. Delete every block between `THE WALL` and `END THE WALL` markers in `crux.html` (CSS, Home
+   card markup, the view markup, `IMG.wall`, and the JS block).
+2. Delete the three `// THE WALL hook` lines (in `switchView` and `renderHome`).
+3. Delete the Wall tests in `dev/tests.html` and the `assets/wall/` folder.
+4. `restDays` and `wallSeen` can stay in saves: they're harmless. Or remove them from
+   `defaultState`/`normalizeState`.
+
+To switch it off without deleting anything, set `WALL_ENABLED = false`.
+
 ## Real coaches (planned, not built)
 
 The design for linking athletes to real coaches is in `docs/coaching/DESIGN.md`, with a draft

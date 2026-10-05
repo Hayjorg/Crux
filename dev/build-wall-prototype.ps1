@@ -1,6 +1,9 @@
 # Builds dev/wall-prototype.html from dev/wall-prototype.src.html by embedding trimmed, shrunk
 # copies of Crux's own art as data: URIs (an Artifact page can't load images from anywhere else).
 # Run from anywhere:  powershell -NoProfile -File dev\build-wall-prototype.ps1
+# With -AppAssets it instead writes the same trimmed images to assets/wall/<key>.png for the real
+# app's Wall (climber frames excluded: the app already has them).
+param([switch]$AppAssets)
 Add-Type -AssemblyName System.Drawing
 Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @"
 using System; using System.Drawing; using System.Drawing.Imaging; using System.Runtime.InteropServices;
@@ -77,6 +80,18 @@ $art = [ordered]@{
   c_jump3     = @("mascot\climber\default\jump\jump-03.png", 132, 198, $false)
   c_land1     = @("mascot\climber\default\land\land-01.png", 132, 198, $false)
   c_land2     = @("mascot\climber\default\land\land-02.png", 132, 198, $false)
+}
+if ($AppAssets) {
+  $dir = Join-Path $a "wall"
+  New-Item -ItemType Directory -Force $dir | Out-Null
+  foreach ($k in $art.Keys) {
+    if ($k -like "c_*") { continue }
+    $v = $art[$k]
+    $bytes = [Convert]::FromBase64String([WallArt]::Prep((Join-Path $a $v[0]), $v[1], $v[2], $v[3]))
+    [IO.File]::WriteAllBytes((Join-Path $dir ($k + ".png")), $bytes)
+  }
+  "{0} files in {1}" -f (Get-ChildItem $dir).Count, $dir
+  return
 }
 $parts = @()
 foreach ($k in $art.Keys) {
