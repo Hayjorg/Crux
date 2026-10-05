@@ -833,8 +833,9 @@
   .wl-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
   .wl-stats{text-align:right;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
   .wl-stats b{color:var(--text);}
-  .wl-bag{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:99px;padding:5px 10px;font-size:11.5px;font-weight:700;}
-  .wl-bag svg{width:14px;height:14px;color:var(--wl-gold);}
+  .wl-bag{display:inline-flex;align-items:center;gap:5px;border:1px solid color-mix(in srgb, var(--wl-gold) 70%, #000 0%);background:linear-gradient(180deg, var(--wl-gold-hi), color-mix(in srgb, var(--wl-gold) 55%, var(--wl-gold-hi)));color:#4A2E0A;border-radius:99px;padding:5px 11px 5px 9px;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;box-shadow:0 2px 0 color-mix(in srgb, var(--wl-gold) 75%, #000), 0 4px 8px -4px rgba(0,0,0,0.3);}
+  .wl-bag svg{width:15px;height:15px;color:#9A5B12;}
+  .wl-bag:active{transform:translateY(2px);box-shadow:0 0 0 color-mix(in srgb, var(--wl-gold) 75%, #000);}
   .wl-days{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;}
   .wl-day{aspect-ratio:1;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:#fff;}
   .wl-day svg{width:62%;height:62%;}
@@ -850,13 +851,17 @@
   .wl-thumb img{max-width:80%;max-height:80%;}
   .wl-bar{flex:1;height:7px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;min-width:40px;}
   .wl-bar i{display:block;height:100%;background:linear-gradient(90deg, var(--wl-gold), var(--flash));border-radius:99px;transition:width .6s ease;}
-  .wl-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px;}
-  .wl-act{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12.5px;font-weight:700;}
-  .wl-act svg{width:21px;height:21px;}
-  .wl-act.climb svg{color:var(--accent);} .wl-act.workout svg{color:var(--flash);} .wl-act.rest svg{color:var(--wl-purple);}
-  .wl-act.done{background:var(--wl-purple);color:#fff;border-color:transparent;} .wl-act.done svg{color:#fff;}
-  .wl-act:active{transform:scale(0.94);}
-  .wl-backfill{background:none;border:none;padding:0;margin:-4px 0 10px;color:var(--accent);font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:2px;}
+  .wl-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:4px 0 14px;}
+  .wl-act{--c:var(--accent);--ink:var(--accent-contrast);position:relative;border:0;border-radius:16px;padding:11px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:13px;font-weight:800;letter-spacing:0.01em;color:var(--ink);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--c) 82%, #fff), var(--c));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 0 color-mix(in srgb, var(--c) 62%, #000), 0 9px 14px -8px rgba(0,0,0,0.45);transition:transform .08s ease, box-shadow .08s ease;}
+  .wl-act svg{width:23px;height:23px;filter:drop-shadow(0 1px 0 rgba(0,0,0,0.15));}
+  .wl-act.workout{--c:var(--flash);--ink:#2A1A00;} .wl-act.rest{--c:var(--wl-purple);--ink:#fff;}
+  .wl-act:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 0 color-mix(in srgb, var(--c) 62%, #000), 0 3px 6px -4px rgba(0,0,0,0.4);}
+  .wl-act:disabled{filter:saturate(0.25) brightness(1.05);opacity:0.55;transform:none;}
+  .wl-act.done::after{content:"";position:absolute;top:7px;right:8px;width:16px;height:16px;border-radius:50%;background:#fff center/11px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7' fill='none' stroke='%238A6FD1' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+  .wl-backfill{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:-4px 0 12px;padding:9px 12px;border-radius:13px;border:1.5px dashed color-mix(in srgb, var(--wl-purple) 55%, var(--border));background:color-mix(in srgb, var(--wl-purple) 9%, var(--surface));color:var(--text);font-size:12.5px;font-weight:700;}
+  .wl-backfill svg{width:15px;height:15px;color:var(--wl-purple);flex-shrink:0;}
   .wl-wall{position:relative;border-radius:22px;overflow:hidden;isolation:isolate;background-color:#C99A5B;background-size:180px 180px;box-shadow:0 0 0 1px rgba(0,0,0,0.12), 0 14px 30px -12px var(--shadow);}
   .wl-wall::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
     background:repeating-linear-gradient(180deg, transparent 0 539px, rgba(40,22,6,0.35) 539px 541px, rgba(255,240,210,0.16) 541px 542px, transparent 542px 540px),
@@ -872,7 +877,7 @@
   svg.wl-rope{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible;}
   .wl-hold{position:absolute;z-index:3;width:var(--s,56px);height:var(--s,56px);transform:translate(-50%,-50%);border:none;background:none;padding:0;display:grid;place-items:center;}
   .wl-hold img{max-width:100%;max-height:100%;transform:rotate(var(--rot,0deg));filter:drop-shadow(0 4px 3px rgba(0,0,0,0.45));}
-  .wl-hold.off img{filter:grayscale(0.95) brightness(0.62) contrast(0.9) drop-shadow(0 2px 2px rgba(0,0,0,0.3));opacity:0.82;}
+  .wl-hold.off img{filter:grayscale(1) brightness(1.08) contrast(0.7) drop-shadow(0 2px 2px rgba(60,30,0,0.25));opacity:0.5;}
   .wl-hold.on::after{content:"";position:absolute;inset:18% 22%;border-radius:50%;background:radial-gradient(closest-side, rgba(255,255,255,0.55), transparent);mix-blend-mode:screen;pointer-events:none;}
   .wl-hold.fresh img{animation:wlLock .8s cubic-bezier(.34,1.56,.64,1);}
   @keyframes wlLock{0%{transform:rotate(var(--rot)) scale(0.6);filter:grayscale(1) brightness(1.6);}60%{transform:rotate(var(--rot)) scale(1.25);}100%{transform:rotate(var(--rot)) scale(1);}}
@@ -882,13 +887,15 @@
   .wl-tag svg{width:11px;height:11px;}
   .wl-tag.climb{background:var(--accent);color:var(--accent-contrast);} .wl-tag.workout{background:var(--flash);color:#2A1A00;} .wl-tag.rest{background:var(--wl-purple);}
   .wl-star{position:absolute;left:-9px;top:-9px;width:19px;height:19px;color:var(--wl-gold);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
-  .wl-hnum{position:absolute;left:50%;top:100%;transform:translate(-50%,2px);font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;color:rgba(255,248,235,0.9);text-shadow:0 1px 2px rgba(0,0,0,0.7);}
-  .wl-bubble{position:absolute;z-index:4;transform:translate(-50%,-100%);display:flex;align-items:center;gap:6px;padding:5px 9px 5px 5px;border-radius:12px;background:rgba(255,250,240,0.96);color:#3A2A14;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,0.35);animation:wlBob 2.4s ease-in-out infinite;pointer-events:none;}
-  .wl-bubble::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-bottom:0;border-top-color:rgba(255,250,240,0.96);}
-  .wl-bubble .bi{width:28px;height:28px;border-radius:8px;background:#EFE4CC;display:grid;place-items:center;overflow:hidden;}
-  .wl-bubble .bi img{max-width:84%;max-height:84%;}
-  .wl-bubble small{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;color:#8A6A3A;letter-spacing:0.05em;}
-  @keyframes wlBob{50%{transform:translate(-50%,calc(-100% - 5px));}}
+  .wl-nexttag{position:absolute;z-index:4;left:0;top:0;display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;border-radius:13px;background:#FFF9EE;color:#3A2A14;font-size:12px;font-weight:800;line-height:1.15;white-space:nowrap;box-shadow:0 0 0 1.5px rgba(224,168,58,0.55), 0 7px 16px -4px rgba(40,18,0,0.45);pointer-events:none;animation:wlTag 2.8s ease-in-out infinite;}
+  .wl-nexttag::after{content:"";position:absolute;z-index:-1;width:11px;height:11px;background:#FFF9EE;transform:rotate(45deg);box-shadow:0 0 0 1.5px rgba(224,168,58,0.55);clip-path:polygon(0 0, 100% 0, 0 100%);}
+  .wl-nexttag.r::after{left:-5px;top:calc(50% - 5.5px);clip-path:polygon(0 0, 0 100%, 100% 100%);}
+  .wl-nexttag.l::after{right:-5px;top:calc(50% - 5.5px);clip-path:polygon(0 0, 100% 0, 100% 100%);}
+  .wl-nexttag.up::after{left:calc(var(--ax,50%) - 5.5px);bottom:-5px;clip-path:polygon(100% 0, 100% 100%, 0 100%);}
+  .wl-nexttag .bi{width:30px;height:30px;border-radius:9px;background:linear-gradient(180deg,#FBF1DC,#EBDDBE);display:grid;place-items:center;overflow:hidden;flex-shrink:0;}
+  .wl-nexttag .bi img{max-width:86%;max-height:86%;}
+  .wl-nexttag small{display:block;font-family:"IBM Plex Mono",monospace;font-size:8.5px;font-weight:600;color:#9A6A2A;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:1px;}
+  @keyframes wlTag{50%{transform:translateY(-3px);}}
   .wl-qd{position:absolute;z-index:2;width:12px;height:30px;transform:translate(-50%,0);pointer-events:none;}
   .wl-ledge{position:absolute;left:12px;right:12px;z-index:3;aspect-ratio:560/127;transform:translateY(-50%);background-repeat:no-repeat;background-size:100% 100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,0.45));}
   .wl-ledge .prize{position:absolute;left:50%;bottom:74%;transform:translateX(-50%);height:58px;display:flex;align-items:flex-end;}
@@ -904,7 +911,15 @@
   .wl-climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 7px 5px rgba(0,0,0,0.4));}
   .wl-puff{position:absolute;z-index:4;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);pointer-events:none;animation:wlPuff .9s ease-out forwards;}
   @keyframes wlPuff{to{transform:translate(var(--dx),var(--dy)) scale(3.2);opacity:0;}}
-  .wl-note{font-size:12px;color:var(--text-dim);line-height:1.5;margin:14px 4px 0;}
+  .wl-how{margin:16px 0 4px;padding:14px 14px 6px;border-radius:18px;background:var(--surface);border:1px solid var(--border);box-shadow:0 6px 18px -10px var(--shadow);}
+  .wl-how h3{margin:0 0 10px;font-family:"Bebas Neue",sans-serif;font-size:21px;letter-spacing:0.03em;font-weight:400;line-height:1;}
+  .wl-how ul{list-style:none;margin:0;padding:0;display:grid;gap:0;}
+  .wl-how li{display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid var(--border);font-size:12.5px;line-height:1.45;color:var(--text-dim);}
+  .wl-how li:first-child{border-top:0;padding-top:2px;}
+  .wl-how li b{color:var(--text);}
+  .wl-how .i{width:30px;height:30px;flex-shrink:0;border-radius:10px;display:grid;place-items:center;--c:var(--accent);background:color-mix(in srgb, var(--c) 16%, var(--surface));color:var(--c);}
+  .wl-how .i svg{width:17px;height:17px;}
+  .wl-how .i.gift{--c:var(--wl-gold);} .wl-how .i.flame{--c:#FF6A3D;} .wl-how .i.tap{--c:var(--wl-purple);}
   .wl-sheet{position:fixed;inset:0;z-index:120;display:grid;place-items:end center;background:rgba(15,10,5,0.6);}
   .wl-sheet-card{position:relative;overflow:hidden;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;background:var(--surface);border-radius:26px 26px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom,0px));text-align:center;box-shadow:0 -20px 50px rgba(0,0,0,0.4);animation:wlUp .45s cubic-bezier(.22,1.2,.36,1);}
   @keyframes wlUp{from{transform:translateY(100%);}}
@@ -923,7 +938,9 @@
   .wl-sheet-card h2{position:relative;font-family:"Bebas Neue",sans-serif;font-size:36px;letter-spacing:0.03em;margin:0;line-height:1;}
   .wl-kind{position:relative;display:inline-block;margin:8px 0 6px;padding:4px 11px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text-dim);}
   .wl-sheet-card p{position:relative;margin:4px auto 18px;color:var(--text-dim);font-size:13.5px;line-height:1.45;max-width:34ch;}
-  .wl-btn{position:relative;width:100%;border:none;border-radius:14px;background:var(--accent);color:var(--accent-contrast);padding:13px;font-size:15px;font-weight:700;}
+  .wl-btn{position:relative;width:100%;border:none;border-radius:15px;background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 84%, #fff), var(--accent));color:var(--accent-contrast);padding:14px;font-size:15.5px;font-weight:800;letter-spacing:0.01em;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 0 color-mix(in srgb, var(--accent) 62%, #000), 0 10px 18px -10px rgba(0,0,0,0.5);transition:transform .08s ease, box-shadow .08s ease;}
+  .wl-btn:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 0 color-mix(in srgb, var(--accent) 62%, #000);}
   .wl-confetti{position:absolute;inset:0;pointer-events:none;}
   .wl-confetti i{position:absolute;top:120px;left:50%;width:7px;height:12px;border-radius:2px;animation:wlBurst 1.2s ease-out forwards;}
   @keyframes wlBurst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0;}}
@@ -944,7 +961,14 @@
   .wl-sheet-head span{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);}
   /* generated art, pass A */
   .wl-wall{background-size:150px 150px;}
-  .wl-summit{position:absolute;left:14px;width:calc(100% - 28px);transform:translateY(-100%);z-index:2;pointer-events:none;filter:drop-shadow(0 10px 12px rgba(0,0,0,0.4));}
+  .wl-summit{position:absolute;left:14px;width:calc(100% - 28px);z-index:2;pointer-events:none;filter:drop-shadow(0 10px 12px rgba(0,0,0,0.4));
+    -webkit-mask-image:linear-gradient(180deg, #000 72%, transparent 98%);mask-image:linear-gradient(180deg, #000 72%, transparent 98%);}
+  /* above the top-out: a warm, dim gym ceiling with rafters, lit by the bulb */
+  .wl-sky{position:absolute;left:0;right:0;top:0;z-index:1;pointer-events:none;
+    background:radial-gradient(60% 150px at 50% 30px, rgba(255,200,120,0.4), transparent 75%),
+      repeating-linear-gradient(90deg, transparent 0 62px, rgba(0,0,0,0.28) 62px 70px, rgba(255,220,170,0.05) 70px 71px),
+      linear-gradient(180deg, #1B130E 0%, #2B1E15 60%, #3A281A 100%);}
+  .wl-ledge.top{filter:none;}
   .wl-plate{display:grid;place-items:center;width:84px;aspect-ratio:520/146;background-repeat:no-repeat;background-size:100% 100%;}
   .wl-plate span{font-family:"Bebas Neue",sans-serif;font-size:11px;letter-spacing:0.04em;color:#3A2410;line-height:1;padding:0 12%;text-align:center;text-shadow:0 1px 0 rgba(255,240,200,0.6);}
   .wl-plate.big{width:260px;animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
@@ -1267,7 +1291,7 @@
       <button type="button" class="wl-act workout" id="wallWorkoutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg><span>Workout</span></button>
       <button type="button" class="wl-act rest" id="wallRestBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="wallRestLabel">Rest day</span></button>
     </div>
-    <button type="button" class="wl-backfill" id="wallBackfillBtn" hidden>Forgot yesterday? Log it as a rest day</button>
+    <button type="button" class="wl-backfill" id="wallBackfillBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Forgot yesterday? Log it as a rest day</button>
     <section class="wl-wall" id="wallWall" aria-label="The wall: one hold per day you log">
       <div class="wl-stud l"></div><div class="wl-stud r"></div>
       <div class="wl-glow" aria-hidden="true"></div>
@@ -1277,7 +1301,15 @@
       <div class="wl-climber" id="wallClimber"><img id="wallClimberImg" alt="Your climber"><button type="button" class="wl-tap" id="wallClimberTap" aria-label="Your climber: tap for a move"></button></div>
       <div class="wl-ground"><span>Start</span></div>
     </section>
-    <p class="wl-note">Every day you log a climbing session, a workout or a rest day, your climber moves up one hold, and every hold unlocks something. Every 7th hold is a ledge with a bigger prize. Workouts earn a star. Missing a day ends your streak, but you never lose holds. Tap a hold to see its day, or your climber to see their moves.</p>
+    <section class="wl-how" aria-label="How the Wall works">
+      <h3>How the Wall works</h3>
+      <ul>
+        <li><span class="i climb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg></span><span><b>Log a day, climb a hold.</b> A session, a workout or a rest day all count. Workouts earn a star.</span></li>
+        <li><span class="i gift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7C10 3 6.5 4 7.5 6.5 8 7.5 12 7 12 7zm0 0c2-4 5.5-3 4.5-.5C16 7.5 12 7 12 7z"/></svg></span><span><b>Every hold unlocks something.</b> Every 7th is a ledge with a bigger prize.</span></li>
+        <li><span class="i flame"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 22c4 0 6-2.5 6-6 0-3-2-4.5-2.5-7C15 7 14 5 12 3c0 3-2 4-2 7-1.5-.5-2-2-2-3.5C6.5 8 6 10 6 12c0 4 2 6 6 6z"/></svg></span><span><b>Miss a day and your streak resets,</b> but you never lose holds.</span></li>
+        <li><span class="i tap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-.5V8.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L4 15.5a1.6 1.6 0 0 1 2.4-2.1L9 16"/></svg></span><span><b>Tap a hold</b> to see its day, or <b>your climber</b> to see their moves.</span></li>
+      </ul>
+    </section>
   </div>
   <!-- ==== END THE WALL ==== -->
 
@@ -4207,28 +4239,24 @@
       h_jug: asset("wall/h_jug.png", "165c9cd2b8a685cd2ce23bc1a45f3ea9"),
       h_slot: asset("wall/h_slot.png", "c5c3f768ba7d8360e585e92629a484bb"),
       h_foot: asset("wall/h_foot.png", "3d41cbce2db5676adc0c1714f1d7d189"),
-      h_red: asset("wall/h_red.png", "6ed6d7abfd6f482fc83c3cfd2bd45ce9"),
-      h_purple: asset("wall/h_purple.png", "5b6da6362745eb647f18b9cd82b20c48"),
-      h_gray: asset("wall/h_gray.png", "2b3ea462b15c9a10d69cf09538998c8d"),
       h_yellow: asset("wall/h_yellow.png", "f5a9a9937fec64307eec1af80e8be9ae"),
-      h_volume: asset("wall/h_volume.png", "223ba348bc06c8c2ff19d5938ce17ffa"),
-      h_green: asset("wall/h_green.png", "825759a112ae3979581192dac1428b27"),
-      h_yellow2: asset("wall/h_yellow2.png", "dd12f9ec2482604450b031d9abd8ce33"),
       r_chalkbag: asset("wall/r_chalkbag.png", "0f1a4728774a4d267ff7a6371b70f0ba"),
-      r_shoes: asset("wall/r_shoes.png", "eb9f5a8a77f22659b72392475ccaabaf"),
       r_pad: asset("wall/r_pad.png", "e6a2df8cab3c4cdebdba3ff9b727788a"),
       r_notes: asset("wall/r_notes.png", "6622b3df779c736a081128c196a03a08"),
       r_hangboard: asset("wall/r_hangboard.png", "1f9100ba2314f706fa53c013c68dd3b9"),
       r_lamp: asset("wall/r_lamp.png", "d455c4ba9d06fc53757ff5dc175a18ad"),
       r_gearbag: asset("wall/r_gearbag.png", "70ed7ba375edca7580dd0d9e5f7b6c33"),
       r_rolled: asset("wall/r_rolled.png", "89364c8e26987922a5d4ec4576ae2409"),
-      r_shelf: asset("wall/r_shelf.png", "c4918662992636e9280fce21639d4d95"),
       r_print: asset("wall/r_print.png", "048b833caa2dfe6436fd34e729cc4892"),
-      r_lights: asset("wall/r_lights.png", "770c8a642248deee7f8ed4c63f8a6753"),
       r_plant: asset("wall/r_plant.png", "1edf7b1cd5ad6ab2bdf5faef8282e69f"),
       r_hay: asset("wall/r_hay.png", "79c2d4e1511a4adc983534aa518f1e8f"),
       r_basket: asset("wall/r_basket.png", "f8fafb0aff963bbf57604c296d71d02f"),
       r_fridge: asset("wall/r_fridge.png", "e977b8def8f4837b7c377290743be5f6"),
+      // stopgaps for older pieces that were cut off at their edges (docs/art/WALL-ART-BRIEF-2.md asks
+      // ChatGPT for clean redraws): orange-recoloured shoes, lights faded at the ends, shelf cropped
+      r_shoes2: asset("wall/r_shoes2.png", "5054cc675ae4fcf28492cdb29eaa5636"),
+      r_lights2: asset("wall/r_lights2.png", "3bf6dbc4e00dd442d3e52bda317651db"),
+      r_shelf2: asset("wall/r_shelf2.png", "35df05790f10f4b3a4295709552c59a6"),
       // pass A of the generated Wall art (art-source/wall/incoming, exported by dev/build-wall-art.ps1)
       wall2: asset("wall/wall2.png", "e8546f23e4507313d4296f2940146849"),
       stud2: asset("wall/stud2.png", "655cea90e9e131b743bbbc35db23927c"),
@@ -5053,7 +5081,7 @@
      history, never stored; only rest days (state.restDays) and how far you've watched your climber
      go (state.wallSeen) are saved. Set WALL_ENABLED = false to switch the whole thing off. */
   var WALL_ENABLED = true;
-  var WALL_N = 42, WALL_LEDGE = 7, WALL_GAP = 98, WALL_BOTTOM = 92, WALL_TOPPAD = 300;
+  var WALL_N = 42, WALL_LEDGE = 7, WALL_GAP = 98, WALL_BOTTOM = 92, WALL_TOPPAD = 300, WALL_LEDGE_ROOM = 46; // extra space above each ledge for its prize
   var WI = {
     climb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>',
     workout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
@@ -5065,17 +5093,17 @@
   };
   var WALL_REWARDS = [null,
     { name:"Chalk bag", kind:"decor", img:"r_chalkbag" }, { name:"Mint chalk", kind:"chalk", c:"#7FE3C8", img:"c_mint" }, { name:"Gumby", kind:"title" },
-    { name:"Climbing shoes", kind:"decor", img:"r_shoes" }, { name:"Blue sloper", kind:"hold", img:"h_volume" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62", img:"c_sunset" },
+    { name:"Climbing shoes", kind:"decor", img:"r_shoes2" }, { name:"Teal crimp", kind:"hold", img:"h2_crimp" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62", img:"c_sunset" },
     { name:"Crash pad", kind:"decor", img:"r_pad" }, { name:"Route notes", kind:"decor", img:"r_notes" }, { name:"Crimper", kind:"title" },
-    { name:"Purple pinch", kind:"hold", img:"h_purple" }, { name:"Chalk clap", kind:"move", mv:"chalk_clap" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
+    { name:"Purple sloper", kind:"hold", img:"h2_sloper" }, { name:"Chalk clap", kind:"move", mv:"chalk_clap" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
     { name:"Lilac chalk", kind:"chalk", c:"#C3A8F5", img:"c_lilac" }, { name:"Clamp lamp", kind:"decor", img:"r_lamp" }, { name:"Jug", kind:"hold", img:"h_jug" },
     { name:"Flash Kid", kind:"title" }, { name:"Gear bag", kind:"decor", img:"r_gearbag" }, { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF", img:"c_glacier" },
     { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move", mv:"fist_pump" }, { name:"The Home Wall", kind:"gym", img:"home_wall" },
-    { name:"Yellow pyramid", kind:"hold", img:"h_yellow" }, { name:"Dyno Machine", kind:"title" }, { name:"Wall shelf", kind:"decor", img:"r_shelf" },
+    { name:"Yellow pyramid", kind:"hold", img:"h_yellow" }, { name:"Dyno Machine", kind:"title" }, { name:"Wall shelf", kind:"decor", img:"r_shelf2" },
     { name:"Neon chalk", kind:"chalk", c:"#C6FF4A", img:"c_neon" }, { name:"Mountain print", kind:"decor", img:"r_print" }, { name:"Victory wave", kind:"move", mv:"wave" },
-    { name:"String lights", kind:"decor", img:"r_lights" }, { name:"Slotted edge", kind:"hold", img:"h_slot" }, { name:"Sloper Whisperer", kind:"title" },
+    { name:"String lights", kind:"decor", img:"r_lights2" }, { name:"Slotted edge", kind:"hold", img:"h_slot" }, { name:"Sloper Whisperer", kind:"title" },
     { name:"Potted plant", kind:"decor", img:"r_plant" }, { name:"Gold chalk", kind:"chalk", c:"#F3C766", img:"c_gold" }, { name:"Foothold", kind:"hold", img:"h_foot" },
-    { name:"Happy dance", kind:"move", mv:"dance" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Grey pocket", kind:"hold", img:"h_gray" },
+    { name:"Happy dance", kind:"move", mv:"dance" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Speckled macro", kind:"hold", img:"h2_macro" },
     { name:"Send Train", kind:"title" }, { name:"Laundry basket", kind:"decor", img:"r_basket" }, { name:"Midnight chalk", kind:"chalk", c:"#3C3F7A", img:"c_midnight" },
     { name:"Hay bale", kind:"decor", img:"r_hay" }, { name:"Wall Legend", kind:"title" }, { name:"Golden shoes", kind:"outfit", img:"golden_shoes" }
   ];
@@ -5089,7 +5117,9 @@
     dance:      [[0,170],[1,170],[2,170],[3,170],[0,170],[1,170],[2,170],[3,170],[0,220]]
   };
   var WALL_MOVE_LOOP = { chalk_clap:[0,0,1,1,2,2,0,0], fist_pump:[0,0,1,1,1,1,2,2,2], wave:[0,1,2,3,2,1], dance:[0,1,2,3] };
-  var WALL_HOLD_ART = ["h_jug","h2_crimp","h_red","h2_sloper","h_slot","h2_tufa","h_yellow","h2_dual","h_purple","h2_jug","h_foot","h2_macro","h_gray","h2_pinch","h_green","h2_chip","h_volume","h_yellow2"];
+  // only holds whose art is whole (some older cutouts were clipped at their edges)
+  var WALL_HOLD_ART = ["h_jug","h2_crimp","h_yellow","h2_sloper","h_slot","h2_tufa","h2_dual","h_foot","h2_jug","h2_macro","h2_pinch","h2_chip"];
+  var WALL_HOLD_SIZE = { h2_chip:44, h2_tufa:58, h2_sloper:50 };
 
   // ---- the day model: everything below is read from what you've logged ----
   function wallToday(){ return planDayNum(Date.now()); }
@@ -5136,18 +5166,25 @@
 
   // ---- the wall view ----
   var wallEl = document.getElementById("wallWall"), wallItems = document.getElementById("wallItems");
-  var WALL_H = WALL_BOTTOM + WALL_N*WALL_GAP + WALL_TOPPAD;
+  var WALL_H = WALL_BOTTOM + WALL_N*WALL_GAP + Math.floor((WALL_N-1)/WALL_LEDGE)*WALL_LEDGE_ROOM + WALL_TOPPAD;
   wallEl.style.height = WALL_H+"px";
   wallEl.style.backgroundImage = "url("+IMG.wall.wall2+")";
   document.getElementById("wallBulb").src = IMG.wall.bulb;
   document.querySelectorAll("#view-wall .wl-stud").forEach(function(s){ s.style.backgroundImage = "url("+IMG.wall.stud2+")"; });
   document.querySelector("#view-wall .wl-ground").style.backgroundImage = "url("+IMG.wall.ground2+")";
-  (function(){ // the top-out: the summit sits just above the last hold
-    var sm = document.createElement("img"); sm.className = "wl-summit"; sm.alt = ""; sm.src = IMG.wall.summit;
-    sm.style.top = (WALL_TOPPAD - 36)+"px"; wallEl.appendChild(sm);
-  })();
+  // The top-out: the summit's lip is the last ledge (hold 42), so its prize and your climber sit on
+  // it like any other ledge, and above the lip is the gym ceiling rather than more wall.
+  var wallSky = document.createElement("div"); wallSky.className = "wl-sky";
+  wallEl.insertBefore(wallSky, wallEl.querySelector(".wl-glow"));
+  var wallSummit = document.createElement("img"); wallSummit.className = "wl-summit"; wallSummit.alt = ""; wallSummit.src = IMG.wall.summit;
+  wallEl.appendChild(wallSummit);
+  function wallPlaceSummit(){
+    // summit art is 560x343: its lip's top is 41% down and the lip's front is centred 49% down
+    var sh = (wallEl.clientWidth-28)*343/560, top = wallPos(WALL_N).y - 52 - sh*0.49;
+    wallSummit.style.top = top+"px"; wallSky.style.height = Math.max(0, top + sh*0.42)+"px";
+  }
   (function(){ for(var k=0;k<6;k++){ var e = document.createElement("span"); e.className = "wl-mote"; e.style.left = (30+k*8)+"%"; e.style.top = (70+(k%3)*40)+"px"; e.style.animationDelay = (k*1.4)+"s"; wallEl.appendChild(e); } })();
-  function wallPos(i){ return i<=0 ? { x:50, y:WALL_H-50 } : { x:50 + 25*Math.sin(i*0.92) + 9*Math.sin(i*2.3+1), y:WALL_H - WALL_BOTTOM - i*WALL_GAP }; }
+  function wallPos(i){ return i<=0 ? { x:50, y:WALL_H-50 } : { x:50 + 25*Math.sin(i*0.92) + 9*Math.sin(i*2.3+1), y:WALL_H - WALL_BOTTOM - i*WALL_GAP - Math.floor((i-1)/WALL_LEDGE)*WALL_LEDGE_ROOM }; }
   function wallPx(p){ return { x:p.x/100*wallEl.clientWidth, y:p.y }; }
   function wallRot(i){ return Math.round(Math.sin(i*12.9898)*43758.5453 % 1 * 50); }
   function wallArtFor(i){ return WALL_HOLD_ART[(i*7) % WALL_HOLD_ART.length]; }
@@ -5166,21 +5203,23 @@
   var wallHopping = false;
   function renderWall(shownHolds, fresh){
     var w = wallInfo(), h = shownHolds==null ? w.holds : shownHolds, html = "";
+    wallPlaceSummit();
     for(var i=1;i<=WALL_N;i++){
       var p = wallPos(i), on = i<=h, d = w.days[i-1], type = on ? w.map[d] : null;
       if(i % WALL_LEDGE===0){
         var r = WALL_REWARDS[i], got = h>=i;
-        html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+'" style="top:'+(p.y-52)+'px;background-image:url('+IMG.wall.ledge2+')"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
+        html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+(i===WALL_N ? " top" : "")+'" style="top:'+(p.y-52)+'px'+(i===WALL_N ? "" : ';background-image:url('+IMG.wall.ledge2+')')+'"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
           '<span class="lname">'+escapeHtml(r.name)+'</span><span class="label">'+(got ? WI.check : WI.lock)+'LEDGE '+(i/WALL_LEDGE)+'</span></div>';
       }
-      html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+(wallArtFor(i)==="h_volume" ? 62 : 54)+'px;--rot:'+wallRot(i)+'deg" aria-label="Hold '+i+'">'+
+      html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+(WALL_HOLD_SIZE[wallArtFor(i)]||54)+'px;--rot:'+wallRot(i)+'deg" aria-label="Hold '+i+'">'+
         '<img src="'+IMG.wall[wallArtFor(i)]+'" alt="">'+(on && type ? '<span class="wl-tag '+type+'">'+WI[type]+'</span>' : '')+
-        (on && type==="workout" ? '<span class="wl-star">'+WI.star+'</span>' : '')+'<span class="wl-hnum">'+i+'</span></button>';
+        (on && type==="workout" ? '<span class="wl-star">'+WI.star+'</span>' : '')+'</button>';
       if(on && i%3===0) html += '<svg class="wl-qd" viewBox="0 0 12 30" style="left:calc('+p.x+'% + 22px);top:'+(p.y-6)+'px"><rect x="4" y="9" width="4" height="12" rx="2" fill="#2E2E33"/><path d="M6 2a3.5 3.5 0 0 0-3.5 3.5V10M6 2a3.5 3.5 0 0 1 3.5 3.5V10" stroke="#C9CDD4" stroke-width="1.6" fill="none"/><path d="M6 28a3.5 3.5 0 0 1-3.5-3.5V20M6 28a3.5 3.5 0 0 0 3.5-3.5V20" stroke="#C9CDD4" stroke-width="1.6" fill="none"/></svg>';
     }
     if(h<WALL_N){ var np = wallPos(h+1), nr = WALL_REWARDS[h+1];
-      html += '<div class="wl-bubble" style="left:'+np.x+'%;top:'+(np.y-38)+'px"><span class="bi">'+wallSmallPic(nr)+'</span><span><small>NEXT UNLOCK</small>'+escapeHtml(nr.name)+'</span></div>'; }
+      html += '<div class="wl-nexttag"><span class="bi">'+wallSmallPic(nr)+'</span><span class="tx"><small>Hold '+(h+1)+' unlocks</small>'+escapeHtml(nr.name)+'</span></div>'; }
     wallItems.innerHTML = html;
+    wallPlaceTag(h);
     var pts = []; for(var k=0;k<=WALL_N;k++) pts.push(wallPx(wallPos(k)));
     function path(a, b){ var dd = "M"+pts[a].x+" "+pts[a].y; for(var j=a+1;j<=b;j++){ var m = (pts[j-1].y+pts[j].y)/2; dd += " C"+pts[j-1].x+" "+m+" "+pts[j].x+" "+m+" "+pts[j].x+" "+pts[j].y; } return dd; }
     var done = h>0 ? path(0, h) : "";
@@ -5194,8 +5233,8 @@
     document.getElementById("wallHolds").textContent = w.holds;
     document.getElementById("wallBagCount").textContent = w.holds+"/"+WALL_N;
     var todayType = w.map[w.today];
-    document.getElementById("wallMsg").innerHTML = todayType ? "<b>Logged today.</b> See you tomorrow."
-      : w.streak>0 ? "Log today to make it <b>"+(w.streak+1)+" days</b>." : w.holds>0 ? "Streak ended. <b>Start a new one today.</b>" : "Log today to start your streak.";
+    document.getElementById("wallMsg").innerHTML = todayType ? "<b>Logged today.</b> Back tomorrow."
+      : w.streak>0 ? "Log today for <b>day "+(w.streak+1)+"</b>." : w.holds>0 ? "Streak ended. <b>Start again today.</b>" : "Log a day to start.";
     var nr2 = w.holds<WALL_N ? WALL_REWARDS[w.holds+1] : null, nextLedge = Math.ceil((w.holds+1)/WALL_LEDGE)*WALL_LEDGE;
     document.getElementById("wallNext").innerHTML = nr2 ? '<span class="wl-thumb">'+wallSmallPic(nr2)+'</span><span>Next: <b>'+escapeHtml(nr2.name)+'</b></span><div class="wl-bar"><i style="width:'+((w.holds % WALL_LEDGE)/WALL_LEDGE*100)+'%"></i></div><span>'+(nextLedge-w.holds)+' to ledge</span>'
       : '<span><b>Top of the wall!</b> Every unlock collected.</span>';
@@ -5215,14 +5254,34 @@
   var WCW = 106, WCH = 159, wallIdleT = null, wallIdleI = 0, wallBlinkAt = 0, wallAt = 0;
   function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px)"; }
   function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
-  // on a ledge hold your climber sits on the shelf instead of standing on the hold
+  // On a ledge hold your climber sits on the shelf, off to one side so the prize stays in view
+  // (the ledge label on that side hides; see renderWall).
   function wallSits(i){ return i>0 && i % WALL_LEDGE===0; }
+  function wallSpot(i){
+    if(!wallSits(i)) return wallHoldTop(i);
+    var W = wallEl.clientWidth, ledgeH = (W-24)*127/560; // the shelf's top is about a fifth of the way down the ledge art
+    return { x: wallPos(i).x<50 ? W*0.25 : W*0.75, y: wallPos(i).y - 52 - ledgeH*0.22, sit:true };
+  }
   function wallPlace(i){
-    var t = wallHoldTop(i);
-    if(!wallSits(i)){ wallSetClimber(t.x, t.y); return; }
-    // the seat is 1110/1536 down the frame; the shelf's top is about a quarter of the way down the ledge art
-    var ledgeH = (wallEl.clientWidth-24)*127/560, seat = wallPos(i).y - 52 - ledgeH*0.22;
-    wallClimber.style.transform = "translate("+(t.x-WCW/2)+"px,"+(seat - WCH*1110/1536)+"px)";
+    var t = wallSpot(i);
+    if(!t.sit){ wallSetClimber(t.x, t.y); return; }
+    // the seat is 1110/1536 down the frame
+    wallClimber.style.transform = "translate("+(t.x-WCW/2)+"px,"+(t.y - WCH*1110/1536)+"px)";
+  }
+  // The next-unlock tag sits beside the next hold, on the side away from your climber, so it never
+  // covers them; it goes above the hold only when neither side has room.
+  function wallPlaceTag(h){
+    var tag = wallItems.querySelector(".wl-nexttag"); if(!tag) return;
+    var W = wallEl.clientWidth, np = wallPx(wallPos(h+1)), c = wallSpot(h), tw = tag.offsetWidth, th = tag.offsetHeight, gap = 36, edge = 20;
+    var body = c.sit ? { l:c.x-36, r:c.x+36, t:c.y-84, b:c.y+30 } : { l:c.x-36, r:c.x+36, t:c.y-126, b:c.y };
+    var away = np.x >= c.x ? "r" : "l", sides = [away, away==="r" ? "l" : "r"], pick = "up", box = null;
+    for(var k=0;k<2;k++){
+      var b = { l: sides[k]==="r" ? np.x+gap : np.x-gap-tw, t: np.y-th/2 }; b.r = b.l+tw; b.b = b.t+th;
+      var fits = b.l>=edge && b.r<=W-edge, hits = !(b.r<body.l || b.l>body.r || b.b<body.t || b.t>body.b);
+      if(fits && !hits){ pick = sides[k]; box = b; break; }
+    }
+    if(!box){ var l = Math.max(edge, Math.min(W-edge-tw, np.x-tw/2)); box = { l:l, t:np.y-gap-th }; tag.style.setProperty("--ax", (np.x-l)+"px"); }
+    tag.className = "wl-nexttag "+pick; tag.style.left = box.l+"px"; tag.style.top = box.t+"px";
   }
   var WALL_IDLE = [[0,900],[1,300],[2,400],[3,300],[2,300],[1,350]];
   function wallIdleTick(){
@@ -5257,7 +5316,7 @@
   }
   // one hold up: reach toward the next hold, pull up to it, the other hand catches it, then idle
   function wallHop(from, to, done){
-    var a = wallHoldTop(from), b = wallHoldTop(to), right = b.x >= a.x;
+    var a = wallSpot(from), b = wallSpot(to), right = b.x >= a.x;
     if(prefersReducedMotion){ wallAt = to; wallPlace(to); done(); return; }
     wallHopping = true; wallStopIdle();
     wallSetClimber(a.x, a.y);
@@ -5287,7 +5346,7 @@
     var seq = WALL_MOVES[mv], frames = IMG.wall.moves[mv];
     if(!seq || wallHopping || prefersReducedMotion){ if(done) done(); return; }
     wallHopping = true; wallStopIdle();
-    var t = wallHoldTop(wallAt); wallSetClimber(t.x, t.y); // moves are done standing, even on a ledge
+    var t = wallSpot(wallAt); wallSetClimber(t.x, t.y); // moves are done standing, even on a ledge
     var k = 0;
     (function step(){
       if(k>=seq.length){ wallHopping = false; wallPlace(wallAt); wallStartIdle(); if(done) done(); return; }

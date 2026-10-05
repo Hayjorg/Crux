@@ -115,6 +115,23 @@ up one hold:
   (`HeadFit.cs`) and removes the soft glow ChatGPT left around some frames. A new pose goes
   through that script, never straight from the generator. The snow summit and autumn ledge
   sources are unused, kept for seasons.
+- **Some older cutouts were clipped at their edges** (shoes, string lights, shelf, and the purple,
+  grey, blue and red holds). They're out of the hold rotation. `r_shoes2`, `r_lights2` and
+  `r_shelf2` are stopgaps made by `dev/build-wall-art.ps1` (recolour, fade, crop).
+  `docs/art/WALL-ART-BRIEF-2.md` asks ChatGPT for clean redraws.
+- **The summit's lip is the last ledge** (hold 42), with a CSS ceiling above it. The next-unlock
+  tag is placed beside or above the next hold, away from your climber (`wallPlaceTag()`).
+
+## Art briefs for ChatGPT
+
+- **`docs/art/WALL-ART-BRIEF.md`** is round 1: done and in the app.
+- **`docs/art/WALL-ART-BRIEF-2.md`** asks for redraws of the clipped pieces, more holds, a ceiling,
+  button icons, and extra climber poses.
+- **`docs/art/ROOMS-BRIEF.md`** covers four new rooms (Home Wall, The Local, The Mountain Club,
+  The Dream Gym), each with a background, a thumbnail and five decorations, all matching the
+  Garage.
+
+ChatGPT makes the images into `../art-source/.../incoming*/`. Claude wires them in.
 
 **The owner may remove it if the art doesn't come together. To remove it:**
 1. Delete every block between `THE WALL` and `END THE WALL` markers in `crux.html` (CSS, Home
