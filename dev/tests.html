@@ -659,6 +659,12 @@ and the project rules. It runs on its own private copy of the data, never your r
   }
   async function openWallView(){ await goHome(); await click("wallCard", 3400); }
   function closeSheet(){ var b = q(".wl-sheet [data-close]"); if(b) b.click(); }
+  // the app may load an image from assets/ or from its uploaded copy (/_blob/<id>); match either
+  function artIs(src, re){
+    if(re.test(src)) return true;
+    return (SRC.match(/asset\("[^"]+",\s*"[0-9a-f]{32}"\)/g) || []).some(function(c){ var m = c.match(/asset\("([^"]+)",\s*"([0-9a-f]{32})"\)/); return re.test(m[1]) && src.indexOf(m[2])>=0; });
+  }
+  function climberArt(){ var s = $("wallClimberImg").src; return s.split("/").pop(); }
 
   test("The Wall: holds come from logged days, with a streak card on Home", async function(){
     await boot(wallSave([{ daysAgo:3 }, { daysAgo:2, workout:true }, { daysAgo:1 }])); await goHome();
@@ -701,7 +707,27 @@ and the project rules. It runs on its own private copy of the data, never your r
     var sheet = q(".wl-sheet");
     expect(sheet && /Ledge reached/.test(sheet.textContent) && /Crash pad/.test(sheet.textContent), "ledge reveal: "+(sheet && sheet.textContent.slice(0, 90)));
     expect(sheet.querySelectorAll(".wl-confetti i").length>0, "no confetti on a ledge");
-    closeSheet();
+    closeSheet(); await wait(300);
+    expect(artIs($("wallClimberImg").src, /ledge-sit/), "your climber isn't sitting on the ledge: "+climberArt());
+  });
+
+  test("The Wall: a rest day shows the tea pose; moves you unlock play when tapped", async function(){
+    var days = []; for(var d=10; d>=1; d--) days.push({ daysAgo:d });
+    await boot(wallSave(days, { wallSeen:10 })); await openWallView(); await wait(150);
+    q("#wallClimberTap").click(); await wait(100);
+    expect(/first move, Chalk clap, at hold 11/.test(D.body.textContent), "no hint about the first move before it's unlocked");
+    await click("wallRestBtn", 2800);
+    var sheet = q(".wl-sheet");
+    expect(sheet && /Chalk clap/.test(sheet.textContent) && sheet.querySelector("img.wl-move"), "move reveal has no move picture: "+(sheet && sheet.textContent.slice(0, 90)));
+    expect(sheet && sheet.querySelector(".wl-restbuddy") && /Rest day logged/.test(sheet.textContent), "rest-day reveal has no tea pose");
+    expect(/Tap them any time/.test(sheet.textContent), "move reveal copy: "+sheet.querySelector("p").textContent);
+    closeSheet(); await wait(250);
+    expect(artIs($("wallClimberImg").src, /move-chalk-clap/), "your climber didn't celebrate with the new move: "+climberArt());
+    await wait(1800);
+    expect(artIs($("wallClimberImg").src, /idle|blink/), "your climber didn't go back to idle: "+climberArt());
+    q("#wallClimberTap").click(); await wait(250);
+    expect(artIs($("wallClimberImg").src, /move-chalk-clap/), "tapping your climber didn't play the move: "+climberArt());
+    await wait(1800);
   });
 
   test("The app is called Crux (never Crimpet)", async function(){

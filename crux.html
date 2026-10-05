@@ -896,6 +896,7 @@
   .wl-ledge.locked .prize img{filter:brightness(0) opacity(0.4);}
   .wl-ledge .label{position:absolute;right:12%;top:46%;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:0.06em;color:#FFF3DC;text-shadow:0 1px 2px rgba(0,0,0,0.7);display:flex;align-items:center;gap:4px;}
   .wl-ledge .label svg{width:11px;height:11px;}
+  .wl-ledge.sit-l .lname, .wl-ledge.sit-r .label{opacity:0;} /* your climber is sitting there */
   .wl-ledge .lname{position:absolute;left:12%;top:46%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#FFF3DC;text-shadow:0 1px 2px rgba(0,0,0,0.7);}
   .wl-ground{position:absolute;left:0;right:0;bottom:0;height:56px;z-index:2;background-repeat:repeat-x;background-position:center bottom;background-size:auto 56px;}
   .wl-ground span{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,248,235,0.95);text-shadow:0 1px 3px rgba(0,0,0,0.6);}
@@ -952,6 +953,15 @@
   .wl-ledge.locked .prize .wl-plate{filter:brightness(0) opacity(0.4);}
   .wl-item.mystery .nm{color:var(--text-dim);}
   .wl-item.mystery .wl-pic img{max-height:40px;}
+  /* the climber's poses and moves (pass B) */
+  .wl-climber .wl-tap{position:absolute;left:28%;right:28%;top:24%;bottom:12%;pointer-events:auto;border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  /* a move picture: the climber canvas cropped to the character (21% to 89% of its height) */
+  .wl-mvbox{display:block;overflow:hidden;aspect-ratio:1/1.02;filter:drop-shadow(0 8px 8px rgba(0,0,0,0.3));}
+  .wl-mvbox img, .wl-prize .wl-mvbox img, .wl-pic .wl-mvbox img{display:block;width:100%;height:auto;max-width:none;max-height:none;margin-top:-31.5%;filter:none;animation:none;}
+  .wl-prize .wl-mvbox{width:150px;animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .wl-pic .wl-mvbox{width:45px;filter:none;}
+  .wl-restbuddy{position:absolute;left:4px;bottom:-6px;width:84px;pointer-events:none;animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .35s;}
+  .wl-restbuddy .wl-mvbox{width:100%;animation:none;}
   @media (prefers-reduced-motion: reduce){ #view-wall *, .wl-sheet *, .wl-card *{animation:none !important;transition:none !important;} }
   /* ==== END THE WALL ==== */
 </style>
@@ -1264,10 +1274,10 @@
       <img class="wl-bulb" id="wallBulb" alt="">
       <svg class="wl-rope" id="wallRope" aria-hidden="true"></svg>
       <div id="wallItems"></div>
-      <div class="wl-climber" id="wallClimber"><img id="wallClimberImg" alt="Your climber"></div>
+      <div class="wl-climber" id="wallClimber"><img id="wallClimberImg" alt="Your climber"><button type="button" class="wl-tap" id="wallClimberTap" aria-label="Your climber: tap for a move"></button></div>
       <div class="wl-ground"><span>Start</span></div>
     </section>
-    <p class="wl-note">Every day you log a climbing session, a workout or a rest day, your climber moves up one hold, and every hold unlocks something. Every 7th hold is a ledge with a bigger prize. Workouts earn a star. Missing a day ends your streak, but you never lose holds. Tap a hold to see its day.</p>
+    <p class="wl-note">Every day you log a climbing session, a workout or a rest day, your climber moves up one hold, and every hold unlocks something. Every 7th hold is a ledge with a bigger prize. Workouts earn a star. Missing a day ends your streak, but you never lose holds. Tap a hold to see its day, or your climber to see their moves.</p>
   </div>
   <!-- ==== END THE WALL ==== -->
 
@@ -4248,7 +4258,38 @@
       sparkle: asset("wall/sparkle.png", "79270d172839733c7670d0f07eb30d73"),
       flame_s: asset("wall/flame_s.png", "4c5e2dfdc93e769e928a0c81b53662c6"),
       flame_l: asset("wall/flame_l.png", "dccccb6c074eb5a8266358ef3dada062"),
-      flame_b: asset("wall/flame_b.png", "1f4d7bad983b979cc027d084cfae7ca5")
+      flame_b: asset("wall/flame_b.png", "1f4d7bad983b979cc027d084cfae7ca5"),
+      // the climber's Wall poses: generated, then head-locked to idle-01 by
+      // ../art-source/tools/normalize-wall-climber.ps1 (same canvas and feet line as idle)
+      cl_reach_l: asset("mascot/climber/default/climb/climb-reach-left.png", "1317d4d3c04cc534c0106995b51028de"),
+      cl_reach_r: asset("mascot/climber/default/climb/climb-reach-right.png", "dba66904d7474ea73a560b0307c6aec9"),
+      cl_pull: asset("mascot/climber/default/climb/climb-pull.png", "8cf6a6bce3cd7b8f76a0fb24f0162daa"),
+      cl_sit: asset("mascot/climber/default/sit/ledge-sit.png", "ab65361d3238c9a345d70129a621bb02"),
+      cl_rest: asset("mascot/climber/default/rest/rest-day.png", "b2094ad56215a3bc50ea204099d40a4f"),
+      moves: {
+        chalk_clap: [
+          asset("mascot/climber/default/move/move-chalk-clap-1.png", "6684da0433f15d306e32308ad63d9613"),
+          asset("mascot/climber/default/move/move-chalk-clap-2.png", "24c7e7926279ed4d083b4641d7822dc4"),
+          asset("mascot/climber/default/move/move-chalk-clap-3.png", "bb62458c79d2ee684bc045cc76595c84")
+        ],
+        fist_pump: [
+          asset("mascot/climber/default/move/move-fist-pump-1.png", "f1031723313dc3a78a0b4ffc24c7188b"),
+          asset("mascot/climber/default/move/move-fist-pump-2.png", "d11fe8e545f06d69b89aa06ff098f88d"),
+          asset("mascot/climber/default/move/move-fist-pump-3.png", "bc30e44faa2aaeb0a3947923fbf4c0a0")
+        ],
+        wave: [
+          asset("mascot/climber/default/move/move-wave-1.png", "713883e7137a207ac350f29ff891cdb8"),
+          asset("mascot/climber/default/move/move-wave-2.png", "0579bf1770cadbc37815480b6011c514"),
+          asset("mascot/climber/default/move/move-wave-3.png", "8d2c5d51d654bf4cba87a376b600e55c"),
+          asset("mascot/climber/default/move/move-wave-4.png", "acfb36d49522a8013f69472a857f7a23")
+        ],
+        dance: [
+          asset("mascot/climber/default/move/move-dance-1.png", "3eeaad7ce11e2b3e4994185477f2ce79"),
+          asset("mascot/climber/default/move/move-dance-2.png", "d2e904e4f6d5c5dba88627c55e7a3376"),
+          asset("mascot/climber/default/move/move-dance-3.png", "128dc41097a0ac68ef9429f51b936f4b"),
+          asset("mascot/climber/default/move/move-dance-4.png", "5176547485b8485081c0af06bc219ce8")
+        ]
+      }
     }
     // ==== END THE WALL ====
   };
@@ -5026,19 +5067,28 @@
     { name:"Chalk bag", kind:"decor", img:"r_chalkbag" }, { name:"Mint chalk", kind:"chalk", c:"#7FE3C8", img:"c_mint" }, { name:"Gumby", kind:"title" },
     { name:"Climbing shoes", kind:"decor", img:"r_shoes" }, { name:"Blue sloper", kind:"hold", img:"h_volume" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62", img:"c_sunset" },
     { name:"Crash pad", kind:"decor", img:"r_pad" }, { name:"Route notes", kind:"decor", img:"r_notes" }, { name:"Crimper", kind:"title" },
-    { name:"Purple pinch", kind:"hold", img:"h_purple" }, { name:"Chalk clap", kind:"move" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
+    { name:"Purple pinch", kind:"hold", img:"h_purple" }, { name:"Chalk clap", kind:"move", mv:"chalk_clap" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
     { name:"Lilac chalk", kind:"chalk", c:"#C3A8F5", img:"c_lilac" }, { name:"Clamp lamp", kind:"decor", img:"r_lamp" }, { name:"Jug", kind:"hold", img:"h_jug" },
     { name:"Flash Kid", kind:"title" }, { name:"Gear bag", kind:"decor", img:"r_gearbag" }, { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF", img:"c_glacier" },
-    { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move" }, { name:"The Home Wall", kind:"gym", img:"home_wall" },
+    { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move", mv:"fist_pump" }, { name:"The Home Wall", kind:"gym", img:"home_wall" },
     { name:"Yellow pyramid", kind:"hold", img:"h_yellow" }, { name:"Dyno Machine", kind:"title" }, { name:"Wall shelf", kind:"decor", img:"r_shelf" },
-    { name:"Neon chalk", kind:"chalk", c:"#C6FF4A", img:"c_neon" }, { name:"Mountain print", kind:"decor", img:"r_print" }, { name:"Victory wave", kind:"move" },
+    { name:"Neon chalk", kind:"chalk", c:"#C6FF4A", img:"c_neon" }, { name:"Mountain print", kind:"decor", img:"r_print" }, { name:"Victory wave", kind:"move", mv:"wave" },
     { name:"String lights", kind:"decor", img:"r_lights" }, { name:"Slotted edge", kind:"hold", img:"h_slot" }, { name:"Sloper Whisperer", kind:"title" },
     { name:"Potted plant", kind:"decor", img:"r_plant" }, { name:"Gold chalk", kind:"chalk", c:"#F3C766", img:"c_gold" }, { name:"Foothold", kind:"hold", img:"h_foot" },
-    { name:"Happy dance", kind:"move" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Grey pocket", kind:"hold", img:"h_gray" },
+    { name:"Happy dance", kind:"move", mv:"dance" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Grey pocket", kind:"hold", img:"h_gray" },
     { name:"Send Train", kind:"title" }, { name:"Laundry basket", kind:"decor", img:"r_basket" }, { name:"Midnight chalk", kind:"chalk", c:"#3C3F7A", img:"c_midnight" },
     { name:"Hay bale", kind:"decor", img:"r_hay" }, { name:"Wall Legend", kind:"title" }, { name:"Golden shoes", kind:"outfit", img:"golden_shoes" }
   ];
   var WALL_KIND = { decor:"Garage decoration", hold:"Hold for your Garage wall", chalk:"Chalk colour", title:"Climber title", move:"Climber move", gym:"New gym", outfit:"Climber outfit" };
+  // The four moves your climber can learn. A move plays as [frame, ms] steps on the Wall (after an
+  // unlock, or when you tap your climber); pictures of it loop through WALL_MOVE_LOOP.
+  var WALL_MOVES = {
+    chalk_clap: [[0,200],[1,300],[2,240],[0,180],[1,300],[2,320]],
+    fist_pump:  [[0,200],[1,480],[0,160],[1,480],[2,420]],
+    wave:       [[0,140],[1,150],[2,150],[3,150],[2,150],[1,150],[2,150],[3,150],[0,220]],
+    dance:      [[0,170],[1,170],[2,170],[3,170],[0,170],[1,170],[2,170],[3,170],[0,220]]
+  };
+  var WALL_MOVE_LOOP = { chalk_clap:[0,0,1,1,2,2,0,0], fist_pump:[0,0,1,1,1,1,2,2,2], wave:[0,1,2,3,2,1], dance:[0,1,2,3] };
   var WALL_HOLD_ART = ["h_jug","h2_crimp","h_red","h2_sloper","h_slot","h2_tufa","h_yellow","h2_dual","h_purple","h2_jug","h_foot","h2_macro","h_gray","h2_pinch","h_green","h2_chip","h_volume","h_yellow2"];
 
   // ---- the day model: everything below is read from what you've logged ----
@@ -5105,7 +5155,7 @@
   function wallPlate(name, big){ return '<span class="wl-plate'+(big ? " big" : "")+'" style="background-image:url('+IMG.wall.title_plate+')"><span>'+escapeHtml(name)+'</span></span>'; }
   function wallPic(r, big){
     if(r.kind==="title") return wallPlate(r.name, big);
-    if(r.kind==="move") return '<span class="mv">'+WI.move+'</span>';
+    if(r.kind==="move") return r.mv ? '<span class="wl-mvbox"><img class="wl-move" data-mv="'+r.mv+'" src="'+IMG.wall.moves[r.mv][0]+'" alt=""></span>' : '<span class="mv">'+WI.move+'</span>';
     if(r.img) return '<img src="'+IMG.wall[r.img]+'" alt="">';
     return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
   }
@@ -5120,7 +5170,7 @@
       var p = wallPos(i), on = i<=h, d = w.days[i-1], type = on ? w.map[d] : null;
       if(i % WALL_LEDGE===0){
         var r = WALL_REWARDS[i], got = h>=i;
-        html += '<div class="wl-ledge '+(got ? "got" : "locked")+'" style="top:'+(p.y-52)+'px;background-image:url('+IMG.wall.ledge2+')"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
+        html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+'" style="top:'+(p.y-52)+'px;background-image:url('+IMG.wall.ledge2+')"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
           '<span class="lname">'+escapeHtml(r.name)+'</span><span class="label">'+(got ? WI.check : WI.lock)+'LEDGE '+(i/WALL_LEDGE)+'</span></div>';
       }
       html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+(wallArtFor(i)==="h_volume" ? 62 : 54)+'px;--rot:'+wallRot(i)+'deg" aria-label="Hold '+i+'">'+
@@ -5136,7 +5186,7 @@
     var done = h>0 ? path(0, h) : "";
     document.getElementById("wallRope").innerHTML = '<path d="'+path(h, WALL_N)+'" fill="none" stroke="rgba(255,248,235,0.4)" stroke-width="2.5" stroke-dasharray="5 8"/>'+
       (done ? '<path d="'+done+'" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="6" stroke-linecap="round" transform="translate(1.5,2.5)"/><path d="'+done+'" fill="none" stroke="var(--wl-rope)" stroke-width="4.5" stroke-linecap="round"/><path d="'+done+'" fill="none" stroke="var(--wl-rope-hi)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="3 5"/>' : '');
-    if(!wallHopping){ var t = wallHoldTop(h); wallSetClimber(t.x, t.y); }
+    if(!wallHopping){ wallAt = h; wallPlace(h); if(wallIdleT!==null) wallStartIdle(); }
     // HUD
     wallFlameClass(document.getElementById("wallFlame"), w.streak);
     document.getElementById("wallStreak").textContent = w.streak;
@@ -5160,14 +5210,24 @@
     document.getElementById("wallBackfillBtn").hidden = !!w.map[w.today-1] || w.days.length===0;
   }
 
-  // ---- the climber: the real idle, blink, jump and land frames ----
+  // ---- the climber: idle and blink frames, plus the Wall poses (reach, pull, ledge sit) and moves ----
   var wallClimber = document.getElementById("wallClimber"), wallCImg = document.getElementById("wallClimberImg");
-  var WCW = 106, WCH = 159, wallFacing = 1, wallIdleT = null, wallIdleI = 0, wallBlinkAt = 0;
-  function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px) scaleX("+wallFacing+")"; }
+  var WCW = 106, WCH = 159, wallIdleT = null, wallIdleI = 0, wallBlinkAt = 0, wallAt = 0;
+  function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px)"; }
   function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
+  // on a ledge hold your climber sits on the shelf instead of standing on the hold
+  function wallSits(i){ return i>0 && i % WALL_LEDGE===0; }
+  function wallPlace(i){
+    var t = wallHoldTop(i);
+    if(!wallSits(i)){ wallSetClimber(t.x, t.y); return; }
+    // the seat is 1110/1536 down the frame; the shelf's top is about a quarter of the way down the ledge art
+    var ledgeH = (wallEl.clientWidth-24)*127/560, seat = wallPos(i).y - 52 - ledgeH*0.22;
+    wallClimber.style.transform = "translate("+(t.x-WCW/2)+"px,"+(seat - WCH*1110/1536)+"px)";
+  }
   var WALL_IDLE = [[0,900],[1,300],[2,400],[3,300],[2,300],[1,350]];
   function wallIdleTick(){
     if(wallHopping || prefersReducedMotion || document.getElementById("view-wall").hidden || document.visibilityState!=="visible"){ wallIdleT = setTimeout(wallIdleTick, 600); return; }
+    if(wallSits(wallAt)){ wallCImg.src = IMG.wall.cl_sit; wallIdleT = setTimeout(wallIdleTick, 800); return; }
     var f = WALL_IDLE[wallIdleI % WALL_IDLE.length];
     if(f[0]===0 && Date.now()>wallBlinkAt){
       wallBlinkAt = Date.now() + 3000 + Math.random()*4000;
@@ -5178,8 +5238,15 @@
     wallCImg.src = IMG.mascot.idle[f[0]]; wallIdleI++;
     wallIdleT = setTimeout(wallIdleTick, f[1]);
   }
-  function wallStartIdle(){ clearTimeout(wallIdleT); wallIdleI = 0; wallCImg.src = IMG.mascot.idle[0]; wallIdleT = setTimeout(wallIdleTick, 400); }
+  function wallStartIdle(){ clearTimeout(wallIdleT); wallIdleI = 0; wallCImg.src = wallSits(wallAt) ? IMG.wall.cl_sit : IMG.mascot.idle[0]; wallIdleT = setTimeout(wallIdleTick, 400); }
   function wallStopIdle(){ clearTimeout(wallIdleT); wallIdleT = null; }
+  var wallPreloaded = false;
+  function wallPreload(){
+    if(wallPreloaded) return; wallPreloaded = true;
+    var srcs = [IMG.wall.cl_reach_l, IMG.wall.cl_reach_r, IMG.wall.cl_pull, IMG.wall.cl_sit, IMG.wall.cl_rest];
+    Object.keys(IMG.wall.moves).forEach(function(k){ srcs = srcs.concat(IMG.wall.moves[k]); });
+    srcs.forEach(function(s){ new Image().src = s; });
+  }
   function wallPuff(x, y){
     if(prefersReducedMotion) return;
     for(var k=0;k<7;k++){
@@ -5188,26 +5255,55 @@
       wallEl.appendChild(p); setTimeout(function(el){ return function(){ el.remove(); }; }(p), 1000);
     }
   }
+  // one hold up: reach toward the next hold, pull up to it, the other hand catches it, then idle
   function wallHop(from, to, done){
-    var a = wallHoldTop(from), b = wallHoldTop(to);
-    if(prefersReducedMotion){ wallSetClimber(b.x, b.y); done(); return; }
+    var a = wallHoldTop(from), b = wallHoldTop(to), right = b.x >= a.x;
+    if(prefersReducedMotion){ wallAt = to; wallPlace(to); done(); return; }
     wallHopping = true; wallStopIdle();
-    wallFacing = b.x < a.x - 4 ? -1 : 1;
-    function seq(src, ms, next){ wallCImg.src = src; setTimeout(next, ms); }
     wallSetClimber(a.x, a.y);
-    seq(IMG.mascot.jump[0], 150, function(){ seq(IMG.mascot.jump[1], 90, function(){
-      wallCImg.src = IMG.mascot.jump[2];
-      var t0 = performance.now(), dur = 620, peak = Math.min(a.y, b.y) - 70, landed = false;
-      // animation frames pause in the background, so a timer makes sure the jump always lands
-      function land(){ if(landed) return; landed = true; wallSetClimber(b.x, b.y); wallPuff(b.x, b.y);
-        seq(IMG.mascot.land[0], 110, function(){ seq(IMG.mascot.land[1], 160, function(){ wallHopping = false; wallStartIdle(); done(); }); }); }
+    wallCImg.src = right ? IMG.wall.cl_reach_r : IMG.wall.cl_reach_l;
+    setTimeout(function(){
+      wallCImg.src = IMG.wall.cl_pull;
+      var t0 = performance.now(), dur = 560, landed = false;
+      // animation frames pause in the background, so a timer makes sure the move always finishes
+      function land(){ if(landed) return; landed = true; wallAt = to; wallSetClimber(b.x, b.y); wallPuff(b.x, b.y);
+        wallCImg.src = right ? IMG.wall.cl_reach_l : IMG.wall.cl_reach_r;
+        setTimeout(function(){ wallHopping = false; wallPlace(to); wallStartIdle(); done(); }, 280); }
       setTimeout(land, dur + 250);
-      (function fly(now){ if(landed) return;
+      (function pull(now){ if(landed) return;
         var t = Math.min(1, (now-t0)/dur), e = t<0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
-        wallSetClimber(a.x + (b.x-a.x)*e, (1-e)*(1-e)*a.y + 2*(1-e)*e*peak + e*e*b.y);
-        if(t<1) requestAnimationFrame(fly); else land();
+        wallSetClimber(a.x + (b.x-a.x)*e, a.y + (b.y-a.y)*e);
+        if(t<1) requestAnimationFrame(pull); else land();
       })(t0);
-    }); });
+    }, 300);
+  }
+  // moves you've unlocked, in the order you got them
+  function wallMovesUnlocked(){
+    var h = wallInfo().holds, out = [];
+    for(var i=1;i<=h;i++){ var r = WALL_REWARDS[i]; if(r.kind==="move" && r.mv) out.push(r.mv); }
+    return out;
+  }
+  function wallPlayMove(mv, done){
+    var seq = WALL_MOVES[mv], frames = IMG.wall.moves[mv];
+    if(!seq || wallHopping || prefersReducedMotion){ if(done) done(); return; }
+    wallHopping = true; wallStopIdle();
+    var t = wallHoldTop(wallAt); wallSetClimber(t.x, t.y); // moves are done standing, even on a ledge
+    var k = 0;
+    (function step(){
+      if(k>=seq.length){ wallHopping = false; wallPlace(wallAt); wallStartIdle(); if(done) done(); return; }
+      wallCImg.src = frames[seq[k][0]]; var ms = seq[k][1]; k++; setTimeout(step, ms);
+    })();
+  }
+  // move pictures (unlock card, unlocks list) loop while any are on screen
+  var wallPicT = null, wallPicN = 0;
+  function wallAnimPics(){
+    if(wallPicT || prefersReducedMotion) return;
+    wallPicT = setInterval(function(){
+      var imgs = document.querySelectorAll("img.wl-move");
+      if(!imgs.length){ clearInterval(wallPicT); wallPicT = null; return; }
+      wallPicN++;
+      imgs.forEach(function(im){ var loop = WALL_MOVE_LOOP[im.dataset.mv]; im.src = IMG.wall.moves[im.dataset.mv][loop[wallPicN % loop.length]]; });
+    }, 170);
   }
   function wallScrollTo(i, smooth){
     var p = wallPos(i), r = wallEl.getBoundingClientRect();
@@ -5215,27 +5311,29 @@
   }
 
   // ---- unlock reveal and collection ----
-  function wallSheet(inner){
+  function wallSheet(inner, onClose){
     var box = document.createElement("div"); box.className = "wl-sheet";
     box.innerHTML = '<div class="wl-sheet-card" role="dialog" aria-modal="true">'+inner+'</div>';
-    function close(){ box.remove(); document.removeEventListener("keydown", esc); }
+    function close(){ box.remove(); document.removeEventListener("keydown", esc); if(onClose){ var f = onClose; onClose = null; f(); } }
     function esc(e){ if(e.key==="Escape") close(); }
     box.addEventListener("click", function(e){ if(e.target===box || e.target.closest("[data-close]")) close(); });
     document.addEventListener("keydown", esc);
     document.body.appendChild(box);
     var b = box.querySelector("[data-close]"); if(b) b.focus();
+    wallAnimPics();
   }
-  function wallReveal(i, extra){
-    var r = WALL_REWARDS[i], big = i % WALL_LEDGE===0, conf = "";
+  function wallReveal(i, extra, onClose){
+    var r = WALL_REWARDS[i], big = i % WALL_LEDGE===0, conf = "", w = wallInfo(), rest = w.map[w.days[i-1]]==="rest";
     if(big && !prefersReducedMotion){ var cols = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--wl-gold)","var(--wl-purple)"];
       for(var k=0;k<26;k++) conf += '<i style="background:'+cols[k%cols.length]+';--dx:'+Math.round(Math.random()*340-170)+'px;--dy:'+Math.round(Math.random()*260-60)+'px;--r:'+Math.round(Math.random()*700-350)+'deg;animation-delay:'+(Math.random()*0.2).toFixed(2)+'s"></i>'; }
     wallSheet('<img class="wl-rays" src="'+IMG.wall.rays+'" alt=""><img class="wl-sparkle" src="'+IMG.wall.sparkle+'" alt=""><div class="wl-confetti">'+conf+'</div>'+
       '<div class="wl-kicker">'+(big ? "Ledge "+(i/WALL_LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
-      '<div class="wl-prize">'+wallPic(r, true)+'</div>'+
+      '<div class="wl-prize">'+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+IMG.wall.cl_rest+'" alt=""></span></span>' : "")+'</div>'+
       '<h2>'+(big ? "Ledge reached!" : escapeHtml(r.name))+'</h2>'+
       '<span class="wl-kind">'+(big ? escapeHtml(r.name)+" · " : "")+WALL_KIND[r.kind]+'</span>'+
-      '<p>'+(extra ? escapeHtml(extra)+" " : "")+(big ? "Seven days of showing up. " : "")+"It's in your unlocks. Using it in the app comes in a later update.</p>"+
-      '<button type="button" class="wl-btn" data-close>Keep climbing</button>');
+      '<p>'+(extra ? escapeHtml(extra)+" " : "")+(rest ? "Rest day logged: recovery counts too. " : "")+(big ? "Seven days of showing up. " : "")+
+      (r.kind==="move" ? "Your climber does it on the Wall now. Tap them any time." : "It's in your unlocks. Using it in the app comes in a later update.")+"</p>"+
+      '<button type="button" class="wl-btn" data-close>Keep climbing</button>', onClose);
   }
   function wallCollection(){
     var h = wallInfo().holds, cells = "";
@@ -5254,7 +5352,7 @@
     if(state.wallSeen==null){ state.wallSeen = Math.max(0, w.holds-1); saveState(); }
     var seen = Math.min(state.wallSeen, w.holds), gained = w.holds - seen;
     renderWall(gained>0 ? seen : null);
-    wallStartIdle();
+    wallStartIdle(); wallPreload();
     setTimeout(function(){ wallScrollTo(gained>0 ? seen : w.holds, false); }, 30);
     if(gained>0) wallClimbTo(w.holds, gained>1 ? "You climbed "+gained+" holds since you last looked." : null, 700);
   }
@@ -5263,7 +5361,7 @@
     if(wallHopping) return;
     wallHopping = true; // claim it before the delay so a second tap can't start another climb
     renderWall(from);
-    var st = wallHoldTop(from); wallSetClimber(st.x, st.y);
+    wallAt = from; wallPlace(from);
     setTimeout(function(){
       wallScrollTo(target, true);
       setTimeout(function(){
@@ -5272,7 +5370,8 @@
           state.wallSeen = target; saveState();
           renderWall(null, target);
           var f = document.getElementById("wallFlame"); f.classList.remove("pop"); void f.offsetWidth; f.classList.add("pop");
-          setTimeout(function(){ wallReveal(target, extra); }, prefersReducedMotion ? 0 : 250);
+          // closing the unlock card, your climber celebrates with their newest move
+          setTimeout(function(){ wallReveal(target, extra, function(){ var mv = wallMovesUnlocked().pop(); if(mv) wallPlayMove(mv); }); }, prefersReducedMotion ? 0 : 250);
         });
       }, prefersReducedMotion ? 0 : 380);
     }, delay||0);
@@ -5287,6 +5386,15 @@
   document.getElementById("wallCard").addEventListener("click", openWall);
   document.getElementById("wallHomeBtn").addEventListener("click", function(){ switchView("home"); });
   document.getElementById("wallBagBtn").addEventListener("click", wallCollection);
+  var wallMoveI = 0;
+  document.getElementById("wallClimberTap").addEventListener("click", function(){
+    if(wallHopping) return;
+    var mvs = wallMovesUnlocked();
+    if(!mvs.length){ var at = 0; for(var i=1;i<=WALL_N && !at;i++) if(WALL_REWARDS[i].kind==="move") at = i;
+      showToast("Your climber learns their first move, "+WALL_REWARDS[at].name+", at hold "+at); return; }
+    if(prefersReducedMotion){ showToast("Moves are paused while your device asks for reduced motion"); return; }
+    wallPlayMove(mvs[wallMoveI++ % mvs.length]);
+  });
   document.getElementById("wallClimbBtn").addEventListener("click", function(){ if(getActiveSession()) switchView("session"); else startSession(); });
   document.getElementById("wallWorkoutBtn").addEventListener("click", openWorkouts);
   document.getElementById("wallRestBtn").addEventListener("click", function(){

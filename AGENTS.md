@@ -101,15 +101,27 @@ up one hold:
 - **Holds aren't stored.** `wallDayMap()` works them out from sessions plus `state.restDays`.
 - **Saved data** is only `state.restDays` (local day numbers from `planDayNum`) and
   `state.wallSeen` (how far the climber animation has played).
-- **Unlocks are display-only for now.** They don't give Garage items yet, and the copy says so.
-- **The art** is in `assets/wall/`, made by `dev/build-wall-prototype.ps1 -AppAssets`. It's
-  uploaded, with blob ids in `IMG.wall`. The prototype page is `dev/wall-prototype.html`.
+- **Unlocks are display-only for now,** except the four climber moves. Other unlocks don't give
+  Garage items yet, and the copy says so. Moves are real: your climber does the newest one after
+  each unlock card closes, and tapping your climber cycles through the ones you have
+  (`WALL_MOVES`, `wallPlayMove()`).
+- **The climber on the Wall** reaches, pulls up and catches the next hold (`wallHop()`), sits on
+  a ledge when they're at one (`wallPlace()`), and a rest day's unlock card shows the tea pose.
+- **The art** is in `assets/wall/`, made by `dev/build-wall-art.ps1` from ChatGPT's sources
+  (the originals are in `../art-source/wall/incoming/`). It's uploaded, with blob ids in
+  `IMG.wall`. The prototype page is `dev/wall-prototype.html`.
+- **The climber poses** are in `assets/mascot/climber/default/{climb,sit,rest,move}/`. They're
+  made by `../art-source/tools/normalize-wall-climber.ps1`, which locks each head to idle-01
+  (`HeadFit.cs`) and removes the soft glow ChatGPT left around some frames. A new pose goes
+  through that script, never straight from the generator. The snow summit and autumn ledge
+  sources are unused, kept for seasons.
 
 **The owner may remove it if the art doesn't come together. To remove it:**
 1. Delete every block between `THE WALL` and `END THE WALL` markers in `crux.html` (CSS, Home
    card markup, the view markup, `IMG.wall`, and the JS block).
 2. Delete the three `// THE WALL hook` lines (in `switchView` and `renderHome`).
-3. Delete the Wall tests in `dev/tests.html` and the `assets/wall/` folder.
+3. Delete the Wall tests in `dev/tests.html`, the `assets/wall/` folder, and the climber's
+   `climb`, `sit`, `rest` and `move` folders.
 4. `restDays` and `wallSeen` can stay in saves: they're harmless. Or remove them from
    `defaultState`/`normalizeState`.
 
