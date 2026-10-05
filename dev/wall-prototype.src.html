@@ -2,185 +2,250 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-  /* Layout: one phone-width column. A sticky streak card on top, the plywood wall in the middle
-     (climbed bottom to top), a fixed "log today" bar at the bottom. Crux's own palette and type. */
+  /* Layout: one phone-width column. The brand scrolls away; a compact streak HUD sticks to the top;
+     the plywood wall (climbed bottom to top, lit by a bare bulb) fills the middle; a fixed "log today"
+     bar sits at the bottom. Crux's own palette, type and illustrated art. */
   :root{
     --bg:#F3EEE2; --surface:#FFFFFF; --surface-2:#F7F2E7; --border:#E3DAC5;
     --text:#221E19; --dim:#8A8073; --accent:#0FB8A6; --accent-ink:#FFFFFF;
-    --flash:#FFAB1F; --send:#29C56F; --fall:#FF5C5C; --purple:#8A6FD1; --gold:#E0A83A;
-    --wood:#D6B47F; --wood-2:#C49A63; --wood-grain:rgba(120,80,30,0.10); --tnut:rgba(60,40,15,0.30);
-    --hold-off:rgba(60,40,15,0.18); --rope:#B5532E; --shadow:rgba(34,30,25,0.18);
+    --flash:#FFAB1F; --send:#29C56F; --fall:#FF5C5C; --purple:#8A6FD1; --gold:#E0A83A; --gold-hi:#FBE7B0;
+    --rope:#C2562F; --rope-hi:#F08A5D; --shadow:rgba(34,30,25,0.2);
+    --wall-dim:rgba(20,12,4,0); --wall-edge:rgba(20,12,4,0.45);
     --display:"Bebas Neue",Impact,"Arial Narrow",sans-serif;
     --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-    --mono:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   }
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
     --bg:#181511; --surface:#221E18; --surface-2:#2B261F; --border:#3A342A;
     --text:#F5F0E4; --dim:#A79E8C; --accent:#2FE7D6; --accent-ink:#08211F;
-    --flash:#FFC24D; --send:#4FE28F; --fall:#FF7A6E; --purple:#A994F0; --gold:#F3C766;
-    --wood:#6F5434; --wood-2:#5A432A; --wood-grain:rgba(0,0,0,0.18); --tnut:rgba(0,0,0,0.45);
-    --hold-off:rgba(255,240,210,0.14); --rope:#D9774F; --shadow:rgba(0,0,0,0.5); color-scheme:dark; } }
+    --flash:#FFC24D; --send:#4FE28F; --fall:#FF7A6E; --purple:#A994F0; --gold:#F3C766; --gold-hi:#FFF1C9;
+    --rope:#D9774F; --rope-hi:#FFA67E; --shadow:rgba(0,0,0,0.55);
+    --wall-dim:rgba(10,6,2,0.38); --wall-edge:rgba(5,3,1,0.7); color-scheme:dark; } }
   :root[data-theme="dark"]{
     --bg:#181511; --surface:#221E18; --surface-2:#2B261F; --border:#3A342A;
     --text:#F5F0E4; --dim:#A79E8C; --accent:#2FE7D6; --accent-ink:#08211F;
-    --flash:#FFC24D; --send:#4FE28F; --fall:#FF7A6E; --purple:#A994F0; --gold:#F3C766;
-    --wood:#6F5434; --wood-2:#5A432A; --wood-grain:rgba(0,0,0,0.18); --tnut:rgba(0,0,0,0.45);
-    --hold-off:rgba(255,240,210,0.14); --rope:#D9774F; --shadow:rgba(0,0,0,0.5); color-scheme:dark; }
+    --flash:#FFC24D; --send:#4FE28F; --fall:#FF7A6E; --purple:#A994F0; --gold:#F3C766; --gold-hi:#FFF1C9;
+    --rope:#D9774F; --rope-hi:#FFA67E; --shadow:rgba(0,0,0,0.55);
+    --wall-dim:rgba(10,6,2,0.38); --wall-edge:rgba(5,3,1,0.7); color-scheme:dark; }
 
   *{box-sizing:border-box;}
   body{background:var(--bg);color:var(--text);font-family:var(--body);margin:0;-webkit-font-smoothing:antialiased;}
-  .page{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:14px 180px;}
-  h1,h2{text-wrap:balance;}
+  .page{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:14px 190px;}
   button{font-family:inherit;cursor:pointer;}
   button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  h1,h2{text-wrap:balance;}
 
-  /* ---- streak card ---- */
-  .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding-block:0 10px;background:linear-gradient(var(--bg) 85%, transparent);}
   .brand{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 8px;}
   .brand h1{font-family:var(--display);font-size:30px;letter-spacing:0.04em;margin:0;line-height:1;}
   .brand span{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:0.06em;text-transform:uppercase;}
-  .streak{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:11px 14px;box-shadow:0 4px 16px -6px var(--shadow);display:grid;gap:8px;}
-  .streak-row{display:flex;align-items:center;gap:14px;}
-  .flame{width:44px;height:44px;flex-shrink:0;border-radius:16px;display:grid;place-items:center;
-    background:color-mix(in srgb, var(--flash) 16%, var(--surface-2));color:var(--flash);}
-  .flame svg{width:30px;height:30px;}
-  .flame.cold{background:var(--surface-2);color:var(--dim);}
-  .flame.pop{animation:flamePop .6s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes flamePop{40%{transform:scale(1.25) rotate(-6deg);}100%{transform:none;}}
+
+  /* ---- streak HUD ---- */
+  .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;padding-block:0 10px;background:linear-gradient(var(--bg) 82%, transparent);}
+  .hud{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:11px 14px;box-shadow:0 6px 18px -8px var(--shadow);display:grid;gap:9px;}
+  .hud-row{display:flex;align-items:center;gap:12px;}
+  .flame{position:relative;width:46px;height:46px;flex-shrink:0;border-radius:15px;display:grid;place-items:center;background:color-mix(in srgb, var(--fl) 16%, var(--surface-2));--fl:var(--flash);}
+  .flame svg{width:30px;height:30px;color:var(--fl);transform-origin:50% 90%;animation:flicker 1.6s ease-in-out infinite;}
+  .flame.t2{--fl:#FF6A3D;} .flame.t3{--fl:#5B8CFF;}
+  .flame.cold{--fl:var(--dim);} .flame.cold svg{animation:none;opacity:0.55;}
+  .flame.pop{animation:flamePop .7s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes flicker{0%,100%{transform:scale(1) rotate(0);}30%{transform:scale(1.06,0.96) rotate(-3deg);}60%{transform:scale(0.97,1.05) rotate(2deg);}}
+  @keyframes flamePop{40%{transform:scale(1.3) rotate(-8deg);}100%{transform:none;}}
   .streak-num{font-family:var(--display);font-size:34px;line-height:0.9;letter-spacing:0.02em;}
-  .streak-num small{font-size:18px;color:var(--dim);margin-left:4px;}
+  .streak-num small{font-size:17px;color:var(--dim);margin-left:4px;}
   .streak-msg{font-size:12.5px;color:var(--dim);margin-top:2px;}
   .streak-msg b{color:var(--text);}
-  .stats{margin-left:auto;text-align:right;font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.6;font-variant-numeric:tabular-nums;}
-  .stats b{color:var(--text);font-weight:600;}
+  .hud-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+  .stats{text-align:right;font-family:var(--mono);font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;}
+  .stats b{color:var(--text);}
+  .bag-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:99px;padding:5px 10px;font-size:11.5px;font-weight:700;}
+  .bag-btn svg{width:14px;height:14px;color:var(--gold);}
   .days{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;}
-  .day{aspect-ratio:1;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--accent-ink);}
+  .day{aspect-ratio:1;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:#fff;}
   .day svg{width:62%;height:62%;}
-  .day.climb{background:var(--accent);border-color:transparent;}
-  .day.workout{background:var(--flash);border-color:transparent;}
+  .day.climb{background:var(--accent);border-color:transparent;color:var(--accent-ink);}
+  .day.workout{background:var(--flash);border-color:transparent;color:#2A1A00;}
   .day.rest{background:var(--purple);border-color:transparent;}
   .day.today{outline:2px solid var(--text);outline-offset:1px;}
-  .ledge-progress{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim);}
-  .bar{flex:1;height:7px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;}
-  .bar i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .6s ease;}
+  .day.today.empty{animation:todayPulse 1.8s ease-in-out infinite;}
+  .day.fresh{animation:dayPop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes todayPulse{50%{outline-color:var(--accent);}}
+  @keyframes dayPop{0%{transform:scale(0.4);}100%{transform:none;}}
+  .next-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim);}
+  .next-thumb{width:30px;height:30px;flex-shrink:0;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;}
+  .next-thumb img{max-width:80%;max-height:80%;}
+  .next-row b{color:var(--text);}
+  .bar{flex:1;height:7px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;min-width:50px;}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg, var(--gold), var(--flash));border-radius:99px;transition:width .6s ease;}
 
   /* ---- the wall ---- */
-  .wall{position:relative;margin-top:6px;border-radius:20px;overflow:hidden;border:1px solid var(--border);
+  .wall{position:relative;margin-top:4px;border-radius:22px;overflow:hidden;isolation:isolate;
+    background-color:#C99A5B;background-size:180px 180px;
+    box-shadow:0 0 0 1px rgba(0,0,0,0.12), 0 14px 30px -12px var(--shadow);}
+  .wall::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
     background:
-      radial-gradient(circle, var(--tnut) 1.6px, transparent 2.2px) 0 0 / 34px 34px,
-      repeating-linear-gradient(92deg, transparent 0 22px, var(--wood-grain) 22px 23px, transparent 23px 47px),
-      linear-gradient(180deg, var(--wood) 0%, var(--wood-2) 100%);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px -10px var(--shadow);}
-  .wall-ground{position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(180deg, transparent, rgba(30,20,10,0.35));}
-  .wall-ground span{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,248,235,0.8);}
-  svg.rope{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
-  .hold{position:absolute;width:44px;height:44px;transform:translate(-50%,-50%);display:grid;place-items:center;}
-  .hold svg.shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 3px 2px rgba(0,0,0,0.3));}
-  .hold.off svg.shape{filter:none;opacity:0.9;}
-  .hold .tag{position:absolute;right:-8px;bottom:-6px;width:20px;height:20px;border-radius:50%;background:var(--surface);color:var(--text);display:grid;place-items:center;box-shadow:0 1px 4px var(--shadow);}
-  .hold .tag svg{width:12px;height:12px;}
-  .hold .star{position:absolute;left:-7px;top:-7px;width:18px;height:18px;color:var(--gold);filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35));}
-  .hold .num{position:relative;font-family:var(--mono);font-size:10px;font-weight:600;color:rgba(255,255,255,0.92);text-shadow:0 1px 2px rgba(0,0,0,0.5);}
-  .hold.off .num{color:rgba(255,248,235,0.55);text-shadow:none;}
-  .hold.next::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px dashed rgba(255,248,235,0.9);animation:spin 9s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .ledge{position:absolute;left:10px;right:10px;height:30px;transform:translateY(-50%);border-radius:8px;display:flex;align-items:center;gap:8px;padding:0 10px;
-    background:linear-gradient(180deg, rgba(255,250,240,0.92), rgba(240,228,205,0.92));color:#3A2A14;font-size:12px;font-weight:700;box-shadow:0 4px 0 rgba(60,40,15,0.35), 0 8px 14px -6px rgba(0,0,0,0.4);}
-  .ledge svg{width:16px;height:16px;flex-shrink:0;}
-  .ledge .lv{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.06em;color:#8A6A3A;margin-left:auto;white-space:nowrap;}
-  .ledge.locked{background:rgba(30,20,10,0.42);color:rgba(255,248,235,0.85);box-shadow:none;}
-  .ledge.locked .lv{color:rgba(255,248,235,0.65);}
-  .ledge.got{background:linear-gradient(180deg, #FBE7B0, #F3C766);}
-  .climber{position:absolute;width:62px;height:93px;transform:translateX(-50%);pointer-events:none;z-index:3;
-    transition:left .7s cubic-bezier(.3,1.35,.5,1), top .7s cubic-bezier(.3,1.35,.5,1);}
-  .climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 6px 5px rgba(0,0,0,0.35));}
+      repeating-linear-gradient(180deg, transparent 0 539px, rgba(40,22,6,0.35) 539px 541px, rgba(255,240,210,0.16) 541px 542px, transparent 542px 540px),
+      radial-gradient(120% 420px at 50% 0, rgba(255,214,140,0.45), transparent 70%),
+      linear-gradient(90deg, var(--wall-edge), transparent 14%, transparent 86%, var(--wall-edge)),
+      linear-gradient(var(--wall-dim), var(--wall-dim));}
+  .stud{position:absolute;top:0;bottom:0;width:16px;z-index:1;pointer-events:none;
+    background:repeating-linear-gradient(180deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 23px), linear-gradient(90deg,#8C5E2C,#B7814A 45%,#7A4F22);
+    box-shadow:0 0 12px rgba(0,0,0,0.35);}
+  .stud.l{left:0;} .stud.r{right:0;}
+  .bulb{position:absolute;top:-6px;left:50%;width:46px;transform:translateX(-50%);z-index:2;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,0.35));}
+  .glow{position:absolute;top:40px;left:50%;width:300px;height:220px;transform:translateX(-50%);z-index:1;pointer-events:none;
+    background:radial-gradient(closest-side, rgba(255,214,140,0.55), rgba(255,190,100,0.12) 60%, transparent);animation:bulbFlicker 5s ease-in-out infinite;}
+  @keyframes bulbFlicker{0%,100%{opacity:1;}47%{opacity:0.85;}50%{opacity:1;}72%{opacity:0.92;}}
+  .mote{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,236,200,0.85);z-index:2;pointer-events:none;animation:mote 9s ease-in-out infinite;}
+  @keyframes mote{0%{transform:translate(0,0);opacity:0;}15%{opacity:0.9;}50%{transform:translate(8px,-28px);opacity:0.5;}100%{transform:translate(-6px,-56px);opacity:0;}}
+  svg.rope{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible;}
+  .hold{position:absolute;z-index:3;width:var(--s,56px);height:var(--s,56px);transform:translate(-50%,-50%);border:none;background:none;padding:0;display:grid;place-items:center;}
+  .hold img{max-width:100%;max-height:100%;transform:rotate(var(--rot,0deg));filter:drop-shadow(0 4px 3px rgba(0,0,0,0.45));transition:filter .6s ease;}
+  .hold.off img{filter:grayscale(0.95) brightness(0.62) contrast(0.9) drop-shadow(0 2px 2px rgba(0,0,0,0.3));opacity:0.82;}
+  .hold.on::after{content:"";position:absolute;inset:18% 22%;border-radius:50%;background:radial-gradient(closest-side, rgba(255,255,255,0.55), transparent);mix-blend-mode:screen;pointer-events:none;} /* chalk */
+  .hold.fresh img{animation:lockIn .8s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes lockIn{0%{transform:rotate(var(--rot)) scale(0.6);filter:grayscale(1) brightness(1.6);}60%{transform:rotate(var(--rot)) scale(1.25);}100%{transform:rotate(var(--rot)) scale(1);}}
+  .hold.next::before{content:"";position:absolute;inset:-9px;border-radius:50%;box-shadow:0 0 0 3px rgba(255,236,190,0.9), 0 0 22px 6px rgba(255,214,140,0.65);animation:nextPulse 1.8s ease-in-out infinite;}
+  @keyframes nextPulse{50%{transform:scale(1.12);opacity:0.55;}}
+  .hold .tag{position:absolute;right:-9px;bottom:-7px;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:2px solid rgba(255,250,240,0.95);}
+  .hold .tag svg{width:11px;height:11px;}
+  .tag.climb{background:var(--accent);color:var(--accent-ink);} .tag.workout{background:var(--flash);color:#2A1A00;} .tag.rest{background:var(--purple);}
+  .hold .star{position:absolute;left:-9px;top:-9px;width:19px;height:19px;color:var(--gold);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
+  .hold .num{position:absolute;left:50%;top:100%;transform:translate(-50%,2px);font-family:var(--mono);font-size:9.5px;font-weight:600;color:rgba(255,248,235,0.9);text-shadow:0 1px 2px rgba(0,0,0,0.7);}
+  .bubble{position:absolute;z-index:4;transform:translate(-50%,-100%);display:flex;align-items:center;gap:6px;padding:5px 9px 5px 5px;border-radius:12px;background:rgba(255,250,240,0.96);color:#3A2A14;font-size:11px;font-weight:700;white-space:nowrap;
+    box-shadow:0 6px 16px rgba(0,0,0,0.35);animation:bob 2.4s ease-in-out infinite;pointer-events:none;}
+  .bubble::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-bottom:0;border-top-color:rgba(255,250,240,0.96);}
+  .bubble .bi{width:28px;height:28px;border-radius:8px;background:#EFE4CC;display:grid;place-items:center;overflow:hidden;}
+  .bubble .bi img{max-width:84%;max-height:84%;}
+  .bubble small{display:block;font-family:var(--mono);font-size:9px;font-weight:600;color:#8A6A3A;letter-spacing:0.05em;}
+  @keyframes bob{50%{transform:translate(-50%,calc(-100% - 5px));}}
+  .qd{position:absolute;z-index:2;width:12px;height:30px;transform:translate(-50%,0);pointer-events:none;}
+  .ledge{position:absolute;left:18px;right:18px;z-index:3;height:22px;transform:translateY(-50%);border-radius:4px;
+    background:linear-gradient(180deg,#E9C48C,#C99350 55%,#9C6A33);box-shadow:0 6px 0 #6E4720, 0 12px 18px -6px rgba(0,0,0,0.55);}
+  .ledge .prize{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);height:58px;display:flex;align-items:flex-end;}
+  .ledge .prize img{max-height:58px;max-width:110px;filter:drop-shadow(0 4px 3px rgba(0,0,0,0.45));}
+  .ledge.locked .prize img{filter:brightness(0) opacity(0.4);}
+  .ledge.got .prize img{animation:prizeShine 3s ease-in-out infinite;}
+  @keyframes prizeShine{50%{filter:drop-shadow(0 0 10px rgba(255,220,140,0.95)) drop-shadow(0 4px 3px rgba(0,0,0,0.4));}}
+  .ledge .label{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.06em;color:#3A2410;display:flex;align-items:center;gap:4px;}
+  .ledge .label svg{width:11px;height:11px;}
+  .ledge .lname{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#3A2410;}
+  .ground{position:absolute;left:0;right:0;bottom:0;height:54px;z-index:2;background:linear-gradient(180deg, transparent, rgba(30,18,6,0.55));}
+  .ground span{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,248,235,0.85);}
+  .climber{position:absolute;z-index:5;width:106px;height:159px;left:0;top:0;pointer-events:none;will-change:transform;}
+  .climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 7px 5px rgba(0,0,0,0.4));}
+  .puff{position:absolute;z-index:4;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);pointer-events:none;animation:puff .9s ease-out forwards;}
+  @keyframes puff{to{transform:translate(var(--dx),var(--dy)) scale(3.2);opacity:0;}}
 
   /* ---- log bar ---- */
   .logbar{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));
-    background:color-mix(in srgb, var(--surface) 94%, transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--border);}
+    background:color-mix(in srgb, var(--surface) 93%, transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--border);}
   .logbar-in{max-width:480px;margin:0 auto;display:grid;gap:8px;}
   .log-q{font-size:12.5px;color:var(--dim);display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
   .log-q b{color:var(--text);font-size:13.5px;}
   .log-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .log-btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12.5px;font-weight:700;
-    transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+  .log-btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12.5px;font-weight:700;transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
   .log-btn svg{width:22px;height:22px;}
-  .log-btn:active{transform:scale(0.93);}
+  .log-btn:active{transform:scale(0.92);}
   .log-btn.climb svg{color:var(--accent);} .log-btn.workout svg{color:var(--flash);} .log-btn.rest svg{color:var(--purple);}
-  .log-btn[aria-pressed="true"]{border-color:transparent;color:var(--accent-ink);}
-  .log-btn.climb[aria-pressed="true"]{background:var(--accent);} .log-btn.workout[aria-pressed="true"]{background:var(--flash);} .log-btn.rest[aria-pressed="true"]{background:var(--purple);}
+  .log-btn[aria-pressed="true"]{border-color:transparent;}
+  .log-btn.climb[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);} .log-btn.workout[aria-pressed="true"]{background:var(--flash);color:#2A1A00;} .log-btn.rest[aria-pressed="true"]{background:var(--purple);color:#fff;}
   .log-btn[aria-pressed="true"] svg{color:inherit;}
-  .log-btn:disabled{opacity:0.45;cursor:default;}
+  .log-btn:disabled{opacity:0.5;}
   .link{background:none;border:none;padding:0;color:var(--accent);font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:2px;}
   .demo{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:8px;border-top:1px dashed var(--border);}
   .demo-label{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-right:2px;}
   .chip{border:1px solid var(--border);background:transparent;color:var(--dim);border-radius:99px;padding:6px 11px;font-size:11.5px;font-weight:700;}
   .chip:active{transform:scale(0.94);}
 
-  /* ---- reward + toast ---- */
-  .toast{position:fixed;left:50%;bottom:calc(180px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;background:var(--text);color:var(--bg);
-    padding:9px 16px;border-radius:99px;font-size:13px;font-weight:700;box-shadow:0 6px 18px var(--shadow);white-space:nowrap;animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes toastIn{from{opacity:0;transform:translate(-50%,8px) scale(0.9);}}
-  .reward{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:rgba(20,15,10,0.55);}
-  .reward-card{position:relative;overflow:hidden;width:100%;max-width:340px;background:var(--surface);border-radius:22px;padding:26px 22px 20px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:pop .45s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes pop{from{transform:scale(0.85);opacity:0;}}
-  .reward-card h2{font-family:var(--display);font-size:34px;letter-spacing:0.03em;margin:6px 0 2px;}
-  .reward-card p{margin:0 0 16px;color:var(--dim);font-size:13.5px;line-height:1.45;}
-  .reward-card .prize{display:inline-flex;align-items:center;gap:8px;background:color-mix(in srgb, var(--gold) 22%, var(--surface-2));border:1px solid color-mix(in srgb, var(--gold) 50%, var(--border));
-    border-radius:99px;padding:8px 14px;font-weight:700;margin-bottom:18px;}
-  .reward-card .prize svg{width:18px;height:18px;color:var(--gold);}
-  .btn{width:100%;border:none;border-radius:14px;background:var(--accent);color:var(--accent-ink);padding:12px;font-size:15px;font-weight:700;}
+  /* ---- toast, unlock reveal, collection ---- */
+  .toast{position:fixed;left:50%;bottom:calc(178px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;max-width:calc(100% - 32px);background:var(--text);color:var(--bg);
+    padding:9px 16px;border-radius:14px;font-size:13px;font-weight:600;box-shadow:0 6px 18px var(--shadow);animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,8px) scale(0.92);}}
+  .sheet{position:fixed;inset:0;z-index:30;display:grid;place-items:end center;background:rgba(15,10,5,0.6);animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;}}
+  .sheet-card{position:relative;overflow:hidden;width:100%;max-width:480px;background:var(--surface);border-radius:26px 26px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom,0px));text-align:center;
+    box-shadow:0 -20px 50px rgba(0,0,0,0.4);animation:slideUp .45s cubic-bezier(.22,1.2,.36,1);}
+  @keyframes slideUp{from{transform:translateY(100%);}}
+  .rays{position:absolute;left:50%;top:118px;width:420px;height:420px;margin:-210px 0 0 -210px;pointer-events:none;opacity:0.5;
+    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--gold) 55%, transparent) 0 10deg, transparent 10deg 20deg);
+    -webkit-mask:radial-gradient(closest-side, #000 30%, transparent);mask:radial-gradient(closest-side, #000 30%, transparent);animation:spin 14s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .reveal-kicker{position:relative;font-family:var(--mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);}
+  .reveal-prize{position:relative;height:150px;display:grid;place-items:center;margin:4px 0 6px;}
+  .reveal-prize img{max-height:130px;max-width:190px;filter:drop-shadow(0 10px 12px rgba(0,0,0,0.35));animation:prizeIn .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .reveal-prize .swatch{width:96px;height:96px;border-radius:50%;box-shadow:inset 0 -10px 18px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.3);animation:prizeIn .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .reveal-prize .title-plate{font-family:var(--display);font-size:38px;letter-spacing:0.04em;padding:10px 22px;border-radius:14px;background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:#3A2410;box-shadow:0 10px 20px rgba(0,0,0,0.3);animation:prizeIn .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  @keyframes prizeIn{0%{transform:scale(0.2) rotate(-25deg);opacity:0;}60%{transform:scale(1.15) rotate(6deg);opacity:1;}100%{transform:none;}}
+  .sheet-card h2{position:relative;font-family:var(--display);font-size:36px;letter-spacing:0.03em;margin:0;line-height:1;}
+  .kind{position:relative;display:inline-block;margin:8px 0 6px;padding:4px 11px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--dim);}
+  .sheet-card p{position:relative;margin:4px auto 18px;color:var(--dim);font-size:13.5px;line-height:1.45;max-width:34ch;}
+  .btn{position:relative;width:100%;border:none;border-radius:14px;background:var(--accent);color:var(--accent-ink);padding:13px;font-size:15px;font-weight:700;}
   .confetti{position:absolute;inset:0;pointer-events:none;}
-  .confetti i{position:absolute;top:30%;left:50%;width:7px;height:12px;border-radius:2px;animation:burst 1s ease-out forwards;}
+  .confetti i{position:absolute;top:120px;left:50%;width:7px;height:12px;border-radius:2px;animation:burst 1.2s ease-out forwards;}
   @keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0;}}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;max-height:58vh;overflow-y:auto;padding:2px;text-align:center;}
+  .item{border:1px solid var(--border);border-radius:14px;background:var(--surface-2);padding:8px 6px 7px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;}
+  .item .pic{height:46px;display:grid;place-items:center;}
+  .item .pic img{max-height:46px;max-width:70px;}
+  .item .pic .swatch{width:34px;height:34px;border-radius:50%;}
+  .item .pic .tp{font-family:var(--display);font-size:15px;letter-spacing:0.03em;padding:3px 8px;border-radius:7px;background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:#3A2410;}
+  .item .pic .mv{width:40px;height:40px;border-radius:50%;background:color-mix(in srgb, var(--accent) 20%, var(--surface));display:grid;place-items:center;color:var(--accent);}
+  .item .pic .mv svg{width:22px;height:22px;}
+  .item .nm{font-size:11px;font-weight:700;line-height:1.2;}
+  .item .hd{font-family:var(--mono);font-size:9.5px;color:var(--dim);}
+  .item.locked .pic{filter:grayscale(1) brightness(0.35) opacity(0.5);}
+  .item.locked .nm{color:var(--dim);}
+  .item.ledge-item{border-color:color-mix(in srgb, var(--gold) 60%, var(--border));}
+  .sheet-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;text-align:left;}
+  .sheet-head h2{font-size:28px;}
+  .sheet-head span{font-family:var(--mono);font-size:12px;color:var(--dim);}
   .note{font-size:12px;color:var(--dim);line-height:1.5;margin:14px 4px 0;}
   .note b{color:var(--text);}
 
-  @media (prefers-reduced-motion: reduce){
-    *{animation:none !important;transition:none !important;}
-  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important;} }
 </style>
 
 <div class="page">
-  <div class="brand"><h1>THE WALL</h1><span>Crux · prototype</span></div>
+  <div class="brand"><h1>THE WALL</h1><span>Crux · prototype v2</span></div>
   <div class="top">
-    <section class="streak" aria-label="Your streak">
-      <div class="streak-row">
-        <div class="flame" id="flame" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.1-1.9-5-3-7.3-.5 1.6-1.4 2.6-2.4 3C13.8 7.5 12 4.6 9.5 2c.3 3.4-1.5 5.3-3 7.4C5.4 10.9 5 12.6 5 14.6 5 19 7.8 22 12 22z"/></svg>
-        </div>
-        <div>
+    <section class="hud" aria-label="Your streak">
+      <div class="hud-row">
+        <div class="flame" id="flame" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.1-1.9-5-3-7.3-.5 1.6-1.4 2.6-2.4 3C13.8 7.5 12 4.6 9.5 2c.3 3.4-1.5 5.3-3 7.4C5.4 10.9 5 12.6 5 14.6 5 19 7.8 22 12 22z"/></svg></div>
+        <div style="min-width:0;">
           <div class="streak-num"><span id="streakNum">0</span><small>day streak</small></div>
           <div class="streak-msg" id="streakMsg"></div>
         </div>
-        <div class="stats">best <b id="bestNum">0</b><br>holds <b id="holdsNum">0</b></div>
+        <div class="hud-side">
+          <div class="stats">best <b id="bestNum">0</b> · holds <b id="holdsNum">0</b></div>
+          <button type="button" class="bag-btn" id="bagBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7C10 3 6.5 4 7.5 6.5 8 7.5 12 7 12 7zm0 0c2-4 5.5-3 4.5-.5C16 7.5 12 7 12 7z"/></svg><span id="bagCount">0/42</span></button>
+        </div>
       </div>
       <div class="days" id="days" aria-label="Last 14 days"></div>
-      <div class="ledge-progress"><span id="ledgeText"></span><div class="bar"><i id="ledgeBar"></i></div></div>
+      <div class="next-row" id="nextRow"></div>
     </section>
   </div>
 
   <section class="wall" id="wall" aria-label="The wall: one hold per day you log">
+    <div class="stud l"></div><div class="stud r"></div>
+    <div class="glow" aria-hidden="true"></div>
+    <img class="bulb" id="bulb" alt="">
     <svg class="rope" id="rope" aria-hidden="true"></svg>
     <div id="wallItems"></div>
-    <div class="climber" id="climber"><img id="climberImg" src="__IDLE__" alt="Your climber"></div>
-    <div class="wall-ground"><span>Start</span></div>
+    <div class="climber" id="climber"><img id="climberImg" alt="Your climber"></div>
+    <div class="ground"><span>Start</span></div>
   </section>
 
-  <p class="note"><b>How it works:</b> log a climbing session, a workout or a rest day and your climber moves up one hold. One hold a day, however much you log. Workouts earn a star. Missing a day ends the streak, but you never lose holds you've climbed. Every 7th hold is a ledge with a reward.</p>
-  <p class="note">This is a prototype with example history. The buttons under "Prototype" let you jump days ahead to try streaks, misses and ledges. Nothing here touches the real Crux app.</p>
+  <p class="note"><b>How it works:</b> log a climbing session, a workout or a rest day and your climber moves up one hold. One hold a day. Every hold unlocks something, and every 7th is a ledge with a bigger prize. Workouts earn a star. Missing a day ends your streak, but you never lose holds. Tap any hold to see what's there.</p>
+  <p class="note">Prototype with example history. Use the Prototype buttons to jump ahead a day, miss one, or start over. It never touches the real Crux app.</p>
 </div>
 
 <div class="logbar">
   <div class="logbar-in">
-    <div class="log-q"><b id="logTitle">What did you do today?</b><button type="button" class="link" id="backfillBtn" hidden>Forgot yesterday? Log a rest day</button></div>
+    <div class="log-q"><b id="logTitle">What did you do today?</b><button type="button" class="link" id="backfillBtn" hidden>Forgot yesterday? Rest day</button></div>
     <div class="log-btns">
-      <button type="button" class="log-btn climb" data-type="climb" aria-pressed="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>Climbed</button>
-      <button type="button" class="log-btn workout" data-type="workout" aria-pressed="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Workout</button>
-      <button type="button" class="log-btn rest" data-type="rest" aria-pressed="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Rest day</button>
+      <button type="button" class="log-btn climb" data-type="climb" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>Climbed</button>
+      <button type="button" class="log-btn workout" data-type="workout" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Workout</button>
+      <button type="button" class="log-btn rest" data-type="rest" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Rest day</button>
     </div>
     <div class="demo">
       <span class="demo-label">Prototype</span>
@@ -192,182 +257,318 @@
 </div>
 
 <script>
+/*__ART__*/
 (function(){
   "use strict";
-  var IDLE = "__IDLE__", JUMP = "__JUMP__";
-  var KEY = "crux-wall-prototype-v1";
-  var LEDGE_EVERY = 7, WALL_HOLDS = 42, GAP = 86, BOTTOM = 70;
-  var REWARDS = [
-    { name:"Chalk bucket",   kind:"Garage decoration" },
-    { name:"Victory wave",   kind:"Climber animation" },
-    { name:"Neon chalk",     kind:"Chalk colour" },
-    { name:"Home Wall",      kind:"New gym" },
-    { name:"Summit flag",    kind:"Garage decoration" },
-    { name:"Golden shoes",   kind:"Climber outfit" }
-  ];
-  var COLORS = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--purple)","var(--gold)"];
-  var SHAPES = [
-    "M6 23c0-9 7-15 15-15s15 5 15 12-6 14-16 14S6 31 6 23z",
-    "M3 21c3-5 10-8 18-8s15 3 16 7-4 9-17 9S1 26 3 21z",
-    "M5 27c0-10 7-19 16-19s15 7 15 17c0 4-3 6-16 6S5 31 5 27z",
-    "M13 5c6-2 11 3 12 10s2 15-4 18-13 0-13-8-1-18 5-20z"
-  ];
-  var ICONS = {
-    climb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>',
-    workout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
-    rest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+  var KEY = "crux-wall-prototype-v2", DAY = 86400000;
+  var N = 42, GAP = 98, BOTTOM = 92, TOPPAD = 150, LEDGE = 7;
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var I = {
+    climb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>',
+    workout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
+    rest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
     star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
-    gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7C10 3 6.5 4 7.5 6.5 8 7.5 12 7 12 7zm0 0c2-4 5.5-3 4.5-.5C16 7.5 12 7 12 7z"/></svg>',
-    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
-    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>'
+    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>',
+    move:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M5.6 5.6l2.8 2.8M3 12h4M18.4 5.6l-2.8 2.8M21 12h-4"/><circle cx="12" cy="15" r="4"/></svg>'
   };
 
-  // Days are whole numbers; "today" moves forward with the prototype buttons.
+  // One unlock per hold. kind: decor | hold | chalk | title | move | gym | outfit. Ledges (every 7th) are the big ones.
+  var R = [null,
+    { name:"Chalk bag", kind:"decor", img:"r_chalkbag" },
+    { name:"Mint chalk", kind:"chalk", c:"#7FE3C8" },
+    { name:"Gumby", kind:"title" },
+    { name:"Climbing shoes", kind:"decor", img:"r_shoes" },
+    { name:"Blue sloper", kind:"hold", img:"h_volume" },
+    { name:"Sunset chalk", kind:"chalk", c:"#FF9A62" },
+    { name:"Crash pad", kind:"decor", img:"r_pad" },
+    { name:"Route notes", kind:"decor", img:"r_notes" },
+    { name:"Crimper", kind:"title" },
+    { name:"Purple pinch", kind:"hold", img:"h_purple" },
+    { name:"Chalk clap", kind:"move" },
+    { name:"Hangboard", kind:"decor", img:"r_hangboard" },
+    { name:"Lilac chalk", kind:"chalk", c:"#C3A8F5" },
+    { name:"Clamp lamp", kind:"decor", img:"r_lamp" },
+    { name:"Jug", kind:"hold", img:"h_jug" },
+    { name:"Flash Kid", kind:"title" },
+    { name:"Gear bag", kind:"decor", img:"r_gearbag" },
+    { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF" },
+    { name:"Rolled pad", kind:"decor", img:"r_rolled" },
+    { name:"Fist pump", kind:"move" },
+    { name:"The Home Wall", kind:"gym", img:"tile" },
+    { name:"Yellow pyramid", kind:"hold", img:"h_yellow" },
+    { name:"Dyno Machine", kind:"title" },
+    { name:"Wall shelf", kind:"decor", img:"r_shelf" },
+    { name:"Neon chalk", kind:"chalk", c:"#C6FF4A" },
+    { name:"Mountain print", kind:"decor", img:"r_print" },
+    { name:"Victory wave", kind:"move" },
+    { name:"String lights", kind:"decor", img:"r_lights" },
+    { name:"Slotted edge", kind:"hold", img:"h_slot" },
+    { name:"Sloper Whisperer", kind:"title" },
+    { name:"Potted plant", kind:"decor", img:"r_plant" },
+    { name:"Gold chalk", kind:"chalk", c:"#F3C766" },
+    { name:"Foothold", kind:"hold", img:"h_foot" },
+    { name:"Happy dance", kind:"move" },
+    { name:"Mini fridge", kind:"decor", img:"r_fridge" },
+    { name:"Grey pocket", kind:"hold", img:"h_gray" },
+    { name:"Send Train", kind:"title" },
+    { name:"Laundry basket", kind:"decor", img:"r_basket" },
+    { name:"Midnight chalk", kind:"chalk", c:"#3C3F7A" },
+    { name:"Hay bale", kind:"decor", img:"r_hay" },
+    { name:"Wall Legend", kind:"title" },
+    { name:"Golden shoes", kind:"outfit", img:"r_shoes", gold:true }
+  ];
+  var KIND = { decor:"Garage decoration", hold:"Hold for your Garage wall", chalk:"Chalk colour", title:"Climber title", move:"Climber move", gym:"New gym", outfit:"Climber outfit" };
+  var HOLDS = ["h_jug","h_red","h_slot","h_yellow","h_purple","h_foot","h_gray","h_green","h_volume","h_yellow2"];
+
+  // ---- state: days are whole numbers; day 0 is the day you first opened this ----
   function seed(){
-    var pattern = ["climb","rest","climb","workout",null,null,"climb","workout","rest","climb","climb","rest","workout","climb"];
-    var log = {};
-    pattern.forEach(function(t, i){ if(t) log[i - pattern.length] = t; });   // days -14 .. -1
-    return { today:0, log:log };
+    var pattern = ["climb","rest","climb","workout",null,null,"climb","workout","rest","climb","climb","rest","workout","climb"], log = {};
+    pattern.forEach(function(t, i){ if(t) log[i - pattern.length] = t; });
+    var d = new Date(); d.setHours(0,0,0,0);
+    return { today:0, base:d.getTime(), log:log, seen:12 };
   }
-  var state;
-  try{ state = JSON.parse(localStorage.getItem(KEY)) || seed(); }catch(e){ state = seed(); }
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  var S;
+  try{ S = JSON.parse(localStorage.getItem(KEY)) || seed(); }catch(e){ S = seed(); }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+  function days(){ return Object.keys(S.log).map(Number).filter(function(d){ return d<=S.today; }).sort(function(a,b){ return a-b; }); }
+  function holds(){ return Math.min(N, days().length); }
+  function streak(){ var d = S.log[S.today] ? S.today : S.today-1, n = 0; while(S.log[d]){ n++; d--; } return n; }
+  function best(){ var b = 0, run = 0, prev = null; days().forEach(function(d){ run = (prev!==null && d===prev+1) ? run+1 : 1; b = Math.max(b, run); prev = d; }); return b; }
+  function dateOf(d){ return new Date(S.base + d*DAY).toLocaleDateString(undefined,{ weekday:"short", month:"short", day:"numeric" }); }
 
-  function loggedDays(){ return Object.keys(state.log).map(Number).filter(function(d){ return d<=state.today; }).sort(function(a,b){ return a-b; }); }
-  function holdsClimbed(){ return loggedDays().length; }
-  function streak(){
-    var d = state.log[state.today] ? state.today : state.today-1, n = 0;
-    while(state.log[d]){ n++; d--; }
-    return n;
-  }
-  function bestStreak(){
-    var days = loggedDays(), best = 0, run = 0, prev = null;
-    days.forEach(function(d){ run = (prev!==null && d===prev+1) ? run+1 : 1; best = Math.max(best, run); prev = d; });
-    return best;
-  }
-
-  // ---- layout of the wall: hold i (1-based) sits i*GAP above the start ----
+  // ---- wall geometry ----
   var wall = document.getElementById("wall"), items = document.getElementById("wallItems");
-  var height = BOTTOM + WALL_HOLDS*GAP + 70;
-  wall.style.height = height+"px";
-  function holdPos(i){
-    if(i<=0) return { x:50, y:height-34 };
-    return { x:50 + 27*Math.sin(i*0.95) + 6*Math.sin(i*2.3), y:height - BOTTOM - i*GAP };
+  var H = BOTTOM + N*GAP + TOPPAD;
+  wall.style.height = H+"px";
+  wall.style.backgroundImage = "url("+ART.tile+")";
+  document.getElementById("bulb").src = ART.bulb;
+  function pos(i){ // hold i in % of width and px from the top; 0 = the ground
+    if(i<=0) return { x:50, y:H-50 };
+    return { x:50 + 25*Math.sin(i*0.92) + 9*Math.sin(i*2.3+1), y:H - BOTTOM - i*GAP };
+  }
+  function px(p){ return { x:p.x/100*wall.clientWidth, y:p.y }; }
+  function rot(i){ return Math.round(Math.sin(i*12.9898)*43758.5453 % 1 * 50); }
+  function holdArt(i){ return HOLDS[(i*7) % HOLDS.length]; }
+  function rewardPic(r, cls){
+    if(r.kind==="chalk") return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
+    if(r.kind==="title") return '<span class="'+(cls||"tp")+'">'+r.name+'</span>';
+    if(r.kind==="move") return '<span class="mv">'+I.move+'</span>';
+    return '<img src="'+ART[r.img]+'" alt=""'+(r.gold ? ' style="filter:sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1) drop-shadow(0 4px 3px rgba(0,0,0,.4))"' : '')+'>';
   }
 
-  function render(animateTo){
-    var climbed = holdsClimbed(), days = loggedDays();
-    var html = "";
-    for(var i=1;i<=WALL_HOLDS;i++){
-      var p = holdPos(i), on = i<=climbed, day = days[i-1], type = on ? state.log[day] : null;
-      if(i % LEDGE_EVERY === 0){
-        var r = REWARDS[i/LEDGE_EVERY - 1], got = climbed>=i;
-        html += '<div class="ledge '+(got ? "got" : "locked")+'" style="top:'+(p.y-40)+'px">'+(got ? ICONS.check : ICONS.lock)+
-          '<span>'+r.name+'</span><span class="lv">LEDGE '+(i/LEDGE_EVERY)+' · '+r.kind.toUpperCase()+'</span></div>';
+  // motes in the bulb's light
+  for(var m=0;m<6;m++){ var e = document.createElement("span"); e.className = "mote"; e.style.left = (30+m*8)+"%"; e.style.top = (70+(m%3)*40)+"px"; e.style.animationDelay = (m*1.4)+"s"; wall.appendChild(e); }
+
+  // ---- render ----
+  function render(fresh){
+    var h = holds(), ds = days(), html = "";
+    for(var i=1;i<=N;i++){
+      var p = pos(i), on = i<=h, d = ds[i-1], type = on ? S.log[d] : null;
+      if(i % LEDGE === 0){
+        var r = R[i], got = h>=i;
+        html += '<div class="ledge '+(got ? "got" : "locked")+'" style="top:'+(p.y-48)+'px"><div class="prize">'+(r.img ? '<img src="'+ART[r.img]+'" alt=""'+(r.gold && got ? ' style="filter:sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1)"' : '')+'>' : '')+'</div>'+
+          '<span class="lname">'+r.name+'</span><span class="label">'+(got ? I.check : I.lock)+'LEDGE '+(i/LEDGE)+'</span></div>';
       }
-      var color = on ? COLORS[(i*5) % COLORS.length] : "var(--hold-off)";
-      html += '<div class="hold'+(on ? "" : " off")+(i===climbed+1 ? " next" : "")+'" style="left:'+p.x+'%;top:'+p.y+'px">'+
-        '<svg class="shape" viewBox="0 0 40 40"><path d="'+SHAPES[i%SHAPES.length]+'" fill="'+color+'"/><circle cx="20" cy="21" r="2.6" fill="rgba(0,0,0,0.35)"/></svg>'+
-        '<span class="num">'+i+'</span>'+
-        (on ? '<span class="tag" title="'+type+'">'+ICONS[type]+'</span>' : '')+
-        (on && type==="workout" ? '<span class="star">'+ICONS.star+'</span>' : '')+
-      '</div>';
+      var size = holdArt(i)==="h_volume" ? 62 : 54;
+      html += '<button type="button" class="hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+size+'px;--rot:'+rot(i)+'deg" aria-label="Hold '+i+'">'+
+        '<img src="'+ART[holdArt(i)]+'" alt="">'+
+        (on ? '<span class="tag '+type+'">'+I[type]+'</span>' : '')+
+        (on && type==="workout" ? '<span class="star">'+I.star+'</span>' : '')+
+        '<span class="num">'+i+'</span></button>';
+      if(on && i%3===0){ html += '<svg class="qd" viewBox="0 0 12 30" style="left:calc('+p.x+'% + 22px);top:'+(p.y-6)+'px"><rect x="4" y="9" width="4" height="12" rx="2" fill="#2E2E33"/><path d="M6 2a3.5 3.5 0 0 0-3.5 3.5V10M6 2a3.5 3.5 0 0 1 3.5 3.5V10" stroke="#C9CDD4" stroke-width="1.6" fill="none"/><path d="M6 28a3.5 3.5 0 0 1-3.5-3.5V20M6 28a3.5 3.5 0 0 0 3.5-3.5V20" stroke="#C9CDD4" stroke-width="1.6" fill="none"/></svg>'; }
+    }
+    if(h<N){
+      var np = pos(h+1), nr = R[h+1];
+      html += '<div class="bubble" style="left:'+np.x+'%;top:'+(np.y-38)+'px"><span class="bi">'+(nr.img ? '<img src="'+ART[nr.img]+'" alt="">' : nr.kind==="chalk" ? '<span style="width:18px;height:18px;border-radius:50%;background:'+nr.c+'"></span>' : nr.kind==="move" ? I.move : I.star)+'</span>'+
+        '<span><small>NEXT UNLOCK</small>'+nr.name+'</span></div>';
     }
     items.innerHTML = html;
-
-    // rope: solid up to the climber, then faint
-    var pts = [], k;
-    for(k=0;k<=WALL_HOLDS;k++){ var q = holdPos(k); pts.push([q.x/100*wall.clientWidth, q.y]); }
-    function path(a, b){ var d = "M"+pts[a][0]+" "+pts[a][1]; for(var j=a+1;j<=b;j++){ var m = (pts[j-1][1]+pts[j][1])/2; d += " C"+pts[j-1][0]+" "+m+" "+pts[j][0]+" "+m+" "+pts[j][0]+" "+pts[j][1]; } return d; }
+    drawRope(h);
+    placeClimber(h);
+    renderHud(fresh);
+  }
+  function drawRope(h){
+    var pts = []; for(var k=0;k<=N;k++) pts.push(px(pos(k)));
+    function path(a, b){ var d = "M"+pts[a].x+" "+pts[a].y; for(var j=a+1;j<=b;j++){ var m = (pts[j-1].y+pts[j].y)/2; d += " C"+pts[j-1].x+" "+m+" "+pts[j].x+" "+m+" "+pts[j].x+" "+pts[j].y; } return d; }
+    var up = path(Math.max(h,0), N), done = h>0 ? path(0, h) : "";
     document.getElementById("rope").innerHTML =
-      '<path d="'+path(Math.max(climbed,0), WALL_HOLDS)+'" fill="none" stroke="rgba(255,248,235,0.35)" stroke-width="2.5" stroke-dasharray="6 7"/>'+
-      (climbed>0 ? '<path d="'+path(0, climbed)+'" fill="none" stroke="var(--rope)" stroke-width="3.5" stroke-linecap="round"/>' : '');
-
-    // the climber stands on the newest hold
-    var c = document.getElementById("climber"), img = document.getElementById("climberImg"), cp = holdPos(climbed);
-    if(animateTo){ img.src = JUMP; setTimeout(function(){ img.src = IDLE; }, 650); }
-    c.style.left = cp.x+"%"; c.style.top = (cp.y - 93*0.875 + 8)+"px";
-
-    // streak card
-    var s = streak(), loggedToday = !!state.log[state.today];
+      '<path d="'+up+'" fill="none" stroke="rgba(255,248,235,0.4)" stroke-width="2.5" stroke-dasharray="5 8"/>'+
+      (done ? '<path d="'+done+'" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="6" stroke-linecap="round" transform="translate(1.5,2.5)"/>'+
+              '<path d="'+done+'" fill="none" stroke="var(--rope)" stroke-width="4.5" stroke-linecap="round"/>'+
+              '<path d="'+done+'" fill="none" stroke="var(--rope-hi)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="3 5"/>' : '');
+  }
+  function renderHud(fresh){
+    var h = holds(), s = streak(), today = !!S.log[S.today];
     document.getElementById("streakNum").textContent = s;
-    document.getElementById("bestNum").textContent = Math.max(bestStreak(), s);
-    document.getElementById("holdsNum").textContent = climbed;
-    var flame = document.getElementById("flame"); flame.classList.toggle("cold", s===0);
-    document.getElementById("streakMsg").innerHTML = loggedToday ? "<b>Logged today.</b> See you tomorrow."
+    document.getElementById("bestNum").textContent = Math.max(best(), s);
+    document.getElementById("holdsNum").textContent = h;
+    document.getElementById("bagCount").textContent = h+"/"+N;
+    var f = document.getElementById("flame");
+    f.classList.toggle("cold", s===0); f.classList.toggle("t2", s>=7 && s<14); f.classList.toggle("t3", s>=14);
+    document.getElementById("streakMsg").innerHTML = today ? "<b>Logged today.</b> See you tomorrow."
       : s>0 ? "Log today to make it <b>"+(s+1)+" days</b>."
-      : state.log[state.today-1]===undefined && climbed>0 ? "Streak ended. <b>Start a new one today.</b>" : "Log today to start a streak.";
-    var nextLedge = Math.ceil((climbed+1)/LEDGE_EVERY)*LEDGE_EVERY, left = nextLedge - climbed;
-    var reward = REWARDS[nextLedge/LEDGE_EVERY - 1];
-    document.getElementById("ledgeText").textContent = reward ? left+" hold"+(left===1?"":"s")+" to "+reward.name : "Top of the prototype wall";
-    document.getElementById("ledgeBar").style.width = ((LEDGE_EVERY - left)/LEDGE_EVERY*100)+"%";
-
+      : h>0 ? "Streak ended. <b>Start a new one today.</b>" : "Log today to start your streak.";
+    var nr = R[h+1], next = h<N ? h+1 : null, nextLedge = Math.ceil((h+1)/LEDGE)*LEDGE;
+    document.getElementById("nextRow").innerHTML = next
+      ? '<span class="next-thumb">'+(nr.img ? '<img src="'+ART[nr.img]+'" alt="">' : nr.kind==="chalk" ? '<span style="width:16px;height:16px;border-radius:50%;background:'+nr.c+'"></span>' : nr.kind==="move" ? '<span style="color:var(--accent);width:18px;height:18px;display:grid">'+I.move+'</span>' : '<span style="color:var(--gold);width:18px;height:18px;display:grid">'+I.star+'</span>')+'</span>'+
+        '<span>Next: <b>'+nr.name+'</b></span><div class="bar"><i style="width:'+(((h % LEDGE)/LEDGE)*100)+'%"></i></div><span>'+(nextLedge-h)+' to ledge</span>'
+      : '<span><b>Top of the wall!</b> Every unlock collected.</span>';
     var dh = "";
-    for(var d=state.today-13; d<=state.today; d++){
-      var t = state.log[d];
-      dh += '<span class="day'+(t ? " "+t : "")+(d===state.today ? " today" : "")+'" title="'+(d===state.today ? "Today" : (state.today-d)+" days ago")+(t ? ": "+t : "")+'">'+(t ? ICONS[t] : "")+'</span>';
+    for(var d=S.today-13; d<=S.today; d++){
+      var t = S.log[d];
+      dh += '<span class="day'+(t ? " "+t : " empty")+(d===S.today ? " today" : "")+(fresh && d===S.today && t ? " fresh" : "")+'" title="'+dateOf(d)+(t ? ": "+t : "")+'">'+(t ? I[t] : "")+'</span>';
     }
     document.getElementById("days").innerHTML = dh;
-
-    document.querySelectorAll(".log-btn").forEach(function(b){
-      b.setAttribute("aria-pressed", state.log[state.today]===b.dataset.type ? "true" : "false");
-    });
-    document.getElementById("logTitle").textContent = loggedToday ? "Today: logged. Tap another to change it." : "What did you do today?";
-    document.getElementById("backfillBtn").hidden = !!state.log[state.today-1] || !!state.log[state.today] || climbed===0;
+    document.querySelectorAll(".log-btn").forEach(function(b){ b.setAttribute("aria-pressed", S.log[S.today]===b.dataset.type ? "true" : "false"); });
+    document.getElementById("logTitle").textContent = today ? "Logged today. Tap another to change it." : "What did you do today?";
+    document.getElementById("backfillBtn").hidden = !!S.log[S.today-1] || today || h===0;
   }
 
-  function toast(msg){
+  // ---- the climber: real Crux frames, breathing while idle, a proper jump between holds ----
+  var climber = document.getElementById("climber"), cimg = document.getElementById("climberImg");
+  var CW = 106, CH = 159, FEET = 0.875, facing = 1, hopping = false, cur = { x:0, y:0 };
+  function setClimber(x, y){ cur = { x:x, y:y }; climber.style.transform = "translate("+(x-CW/2)+"px,"+(y-CH*FEET)+"px) scaleX("+facing+")"; }
+  function holdTop(i){ var p = px(pos(i)); return { x:p.x, y:p.y - (i>0 ? 20 : 0) }; }
+  function placeClimber(h){ if(hopping) return; var t = holdTop(h); setClimber(t.x, t.y); }
+  var IDLE = [["c_idle1",900],["c_idle2",300],["c_idle3",400],["c_idle4",300],["c_idle3",300],["c_idle2",350]], idleI = 0, idleT = null, blinkAt = Date.now()+3000;
+  function idleTick(){
+    if(hopping || reduce){ idleT = null; return; }
+    var f = IDLE[idleI % IDLE.length];
+    if(f[0]==="c_idle1" && Date.now()>blinkAt){
+      blinkAt = Date.now() + 3000 + Math.random()*4000;
+      var seq = [["c_blink1",60],["c_blink2",90],["c_blink1",60],["c_idle1",600]], k = 0;
+      (function b(){ if(hopping) return; cimg.src = ART[seq[k][0]]; var w = seq[k][1]; k++; idleT = setTimeout(k<seq.length ? b : function(){ idleI++; idleTick(); }, w); })();
+      return;
+    }
+    cimg.src = ART[f[0]]; idleI++;
+    idleT = setTimeout(idleTick, f[1]);
+  }
+  function startIdle(){ clearTimeout(idleT); idleI = 0; cimg.src = ART.c_idle1; if(!reduce) idleT = setTimeout(idleTick, 400); }
+  function puff(x, y){
+    if(reduce) return;
+    for(var k=0;k<7;k++){
+      var p = document.createElement("span"); p.className = "puff";
+      p.style.left = (x-5)+"px"; p.style.top = (y-5)+"px";
+      p.style.setProperty("--dx", Math.round((Math.random()-0.5)*60)+"px"); p.style.setProperty("--dy", Math.round(-Math.random()*26)+"px");
+      p.style.animationDelay = (k*0.02)+"s";
+      wall.appendChild(p); setTimeout(function(el){ return function(){ el.remove(); }; }(p), 1000);
+    }
+  }
+  function hop(from, to, done){
+    var a = holdTop(from), b = holdTop(to);
+    if(reduce){ setClimber(b.x, b.y); done(); return; }
+    hopping = true; clearTimeout(idleT);
+    facing = b.x < a.x - 4 ? -1 : 1;
+    var seq = function(src, ms, next){ cimg.src = ART[src]; setTimeout(next, ms); };
+    setClimber(a.x, a.y);
+    seq("c_jump1", 150, function(){ seq("c_jump2", 90, function(){
+      cimg.src = ART.c_jump3;
+      var t0 = performance.now(), dur = 620, peak = Math.min(a.y, b.y) - 70, landed = false;
+      // Animation frames pause while the page is in the background, so a timer makes sure the
+      // jump always lands (and the page never gets stuck waiting for it).
+      function land(){
+        if(landed) return; landed = true;
+        setClimber(b.x, b.y); puff(b.x, b.y);
+        seq("c_land1", 110, function(){ seq("c_land2", 160, function(){ hopping = false; startIdle(); done(); }); });
+      }
+      setTimeout(land, dur + 250);
+      (function fly(now){
+        if(landed) return;
+        var t = Math.min(1, (now - t0)/dur), e = t<0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+        var x = a.x + (b.x-a.x)*e;
+        var y = (1-e)*(1-e)*a.y + 2*(1-e)*e*peak + e*e*b.y;
+        setClimber(x, y);
+        if(t<1) requestAnimationFrame(fly); else land();
+      })(t0);
+    }); });
+  }
+
+  // ---- feedback ----
+  function toast(html, ms){
     var old = document.querySelector(".toast"); if(old) old.remove();
-    var t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t);
-    setTimeout(function(){ t.remove(); }, 2200);
+    var t = document.createElement("div"); t.className = "toast"; t.innerHTML = html; document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, ms || 2400);
   }
-  function scrollToClimber(){
-    var c = document.getElementById("climber");
-    var r = c.getBoundingClientRect(), target = window.scrollY + r.top - window.innerHeight*0.45;
-    window.scrollTo({ top:Math.max(0, target), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  function scrollToHold(i, smooth){
+    var p = pos(i), r = wall.getBoundingClientRect();
+    var y = window.scrollY + r.top + p.y - window.innerHeight*0.5;
+    window.scrollTo({ top:Math.max(0, y), behavior: smooth && !reduce ? "smooth" : "auto" });
   }
-  function celebrate(ledgeIndex){
-    var r = REWARDS[ledgeIndex-1]; if(!r) return;
-    var box = document.createElement("div"); box.className = "reward";
-    box.innerHTML = '<div class="reward-card" role="dialog" aria-modal="true" aria-labelledby="rwT"><div class="confetti"></div>'+
-      '<div class="demo-label">Ledge '+ledgeIndex+' · '+(ledgeIndex*LEDGE_EVERY)+' holds</div><h2 id="rwT">Ledge reached!</h2>'+
-      '<p>Seven more days of showing up. Here\'s what you unlocked:</p>'+
-      '<div class="prize">'+ICONS.gift+r.name+' <span style="font-weight:500;color:var(--dim)">· '+r.kind+'</span></div>'+
-      '<button type="button" class="btn">Keep climbing</button></div>';
-    var conf = box.querySelector(".confetti"), cols = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--gold)"];
-    for(var i=0;i<22;i++){ var p = document.createElement("i"); p.style.background = cols[i%cols.length];
-      p.style.setProperty("--dx", Math.round(Math.random()*300-150)+"px"); p.style.setProperty("--dy", Math.round(Math.random()*240-40)+"px");
-      p.style.setProperty("--r", Math.round(Math.random()*600-300)+"deg"); p.style.animationDelay = (Math.random()*0.15)+"s"; conf.appendChild(p); }
-    box.querySelector(".btn").addEventListener("click", function(){ box.remove(); });
-    box.addEventListener("click", function(e){ if(e.target===box) box.remove(); });
+  function sheet(inner){
+    var box = document.createElement("div"); box.className = "sheet";
+    box.innerHTML = '<div class="sheet-card" role="dialog" aria-modal="true">'+inner+'</div>';
+    function close(){ box.remove(); }
+    box.addEventListener("click", function(e){ if(e.target===box || e.target.closest("[data-close]")) close(); });
+    document.addEventListener("keydown", function esc(e){ if(e.key==="Escape"){ close(); document.removeEventListener("keydown", esc); } });
     document.body.appendChild(box);
-    box.querySelector(".btn").focus();
+    var b = box.querySelector("[data-close]"); if(b) b.focus();
+    return box;
+  }
+  function reveal(i){
+    var r = R[i], big = i % LEDGE === 0;
+    var conf = "";
+    if(big && !reduce){ var cols = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--gold)","var(--purple)"];
+      for(var k=0;k<26;k++) conf += '<i style="background:'+cols[k%cols.length]+';--dx:'+Math.round(Math.random()*340-170)+'px;--dy:'+Math.round(Math.random()*260-60)+'px;--r:'+Math.round(Math.random()*700-350)+'deg;animation-delay:'+(Math.random()*0.2).toFixed(2)+'s"></i>'; }
+    sheet('<div class="rays"></div><div class="confetti">'+conf+'</div>'+
+      '<div class="reveal-kicker">'+(big ? "Ledge "+(i/LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
+      '<div class="reveal-prize">'+rewardPic(r, "title-plate")+'</div>'+
+      '<h2>'+(big ? "Ledge reached!" : r.name)+'</h2>'+
+      '<span class="kind">'+(big ? r.name+" · " : "")+KIND[r.kind]+'</span>'+
+      '<p>'+(big ? "Seven days of showing up. This one's a big one." : r.kind==="title" ? "Wear it on your profile." : r.kind==="chalk" ? "Your chalk puffs and chalked holds turn this colour." : r.kind==="move" ? "Your climber can do this now when you tap them." : r.kind==="hold" ? "Bolt it onto your Garage wall." : "Find it in Customize in your Garage.")+'</p>'+
+      '<button type="button" class="btn" data-close>Keep climbing</button>');
+  }
+  function collection(){
+    var h = holds(), cells = "";
+    for(var i=1;i<=N;i++){
+      var r = R[i], got = i<=h;
+      cells += '<div class="item'+(got ? "" : " locked")+(i%LEDGE===0 ? " ledge-item" : "")+'"><span class="pic">'+rewardPic(r)+'</span><span class="nm">'+(got || i<=h+1 ? r.name : "???")+'</span><span class="hd">'+(i%LEDGE===0 ? "LEDGE · " : "")+"HOLD "+i+'</span></div>';
+    }
+    sheet('<div class="sheet-head"><h2>Unlocks</h2><span>'+h+' of '+N+'</span></div><div class="grid">'+cells+'</div><button type="button" class="btn" style="margin-top:14px" data-close>Close</button>');
   }
 
+  // ---- logging ----
+  var busy = false;
   function logDay(day, type){
-    var before = holdsClimbed(), wasLogged = !!state.log[day];
-    state.log[day] = type;
-    save();
-    var after = holdsClimbed();
-    render(after>before);
+    if(busy) return;
+    var before = holds(), had = S.log[day];
+    S.log[day] = type; save();
+    var after = holds();
     if(after>before){
+      busy = true;
+      renderHud(true);
       var f = document.getElementById("flame"); f.classList.remove("pop"); void f.offsetWidth; f.classList.add("pop");
-      setTimeout(scrollToClimber, 80);
-      if(after % LEDGE_EVERY === 0) setTimeout(function(){ celebrate(after/LEDGE_EVERY); }, 750);
-      else toast(type==="rest" ? "Rest day logged. Up a hold." : type==="workout" ? "Workout logged. Up a hold, plus a star." : "Climb logged. Up a hold.");
-    } else if(wasLogged){ toast("Changed to "+(type==="climb" ? "a climbing day" : type==="workout" ? "a workout day" : "a rest day")); }
+      scrollToHold(after, true);
+      setTimeout(function(){
+        hop(before, after, function(){
+          render(after); S.seen = after; save(); busy = false;
+          setTimeout(function(){ reveal(after); }, reduce ? 0 : 250);
+        });
+      }, reduce ? 0 : 380);
+    } else {
+      render();
+      if(had && had!==type) toast("Changed today to "+(type==="climb" ? "a climbing day" : type==="workout" ? "a workout day" : "a rest day"));
+    }
   }
+  document.querySelectorAll(".log-btn").forEach(function(b){ b.addEventListener("click", function(){ logDay(S.today, b.dataset.type); }); });
+  document.getElementById("backfillBtn").addEventListener("click", function(){ logDay(S.today-1, "rest"); });
+  document.getElementById("nextDayBtn").addEventListener("click", function(){ if(busy) return; S.today++; save(); render(); toast("A new day. "+(streak()>0 ? "Keep the streak going." : "")); });
+  document.getElementById("skipDayBtn").addEventListener("click", function(){ if(busy) return; S.today += 2; save(); render(); toast("You missed a day. Your holds are safe."); });
+  document.getElementById("resetBtn").addEventListener("click", function(){ if(busy) return; S = seed(); save(); render(); scrollToHold(holds(), true); toast("Example history restored"); });
+  document.getElementById("bagBtn").addEventListener("click", collection);
+  items.addEventListener("click", function(e){
+    var b = e.target.closest(".hold"); if(!b) return;
+    var i = +b.dataset.i, h = holds(), r = R[i], ds = days();
+    if(i<=h){ var d = ds[i-1], t = S.log[d];
+      toast("<b>Hold "+i+"</b> · "+dateOf(d)+" · "+(t==="climb" ? "climbed" : t==="workout" ? "workout ⭐" : "rest day")+"<br>Unlocked: "+r.name+" ("+KIND[r.kind].toLowerCase()+")", 3200); }
+    else toast("<b>Hold "+i+"</b> unlocks "+(i<=h+1 ? r.name : "a surprise")+".<br>"+(i-h)+" more day"+(i-h===1 ? "" : "s")+" of logging.", 3000);
+  });
+  var rt; window.addEventListener("resize", function(){ clearTimeout(rt); rt = setTimeout(function(){ render(); }, 120); });
 
-  document.querySelectorAll(".log-btn").forEach(function(b){ b.addEventListener("click", function(){ logDay(state.today, b.dataset.type); }); });
-  document.getElementById("backfillBtn").addEventListener("click", function(){ logDay(state.today-1, "rest"); });
-  document.getElementById("nextDayBtn").addEventListener("click", function(){ state.today++; save(); render(false); toast("A new day"); });
-  document.getElementById("skipDayBtn").addEventListener("click", function(){ state.today += 2; save(); render(false); toast("You missed a day"); });
-  document.getElementById("resetBtn").addEventListener("click", function(){ state = seed(); save(); render(false); scrollToClimber(); toast("Example history restored"); });
-  window.addEventListener("resize", function(){ render(false); });
-
-  render(false);
-  // land on your climber, not the top of the wall
-  setTimeout(scrollToClimber, 60);
-  window.addEventListener("load", function(){ setTimeout(scrollToClimber, 120); });
+  render();
+  startIdle();
+  setTimeout(function(){ scrollToHold(holds(), false); }, 60);
+  window.addEventListener("load", function(){ setTimeout(function(){ scrollToHold(holds(), false); }, 120); });
 })();
 </script>
