@@ -245,7 +245,7 @@
   .scene-effects{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
   .lamp-glow{
     position:absolute;width:52%;height:42%;transform:translate(-50%,-22%);
-    background:radial-gradient(circle, rgba(255,196,110,0.5) 0%, rgba(255,176,90,0.16) 45%, transparent 72%);
+    background:radial-gradient(circle, rgba(var(--gc,255,196,110),0.5) 0%, rgba(var(--gc2,255,176,90),0.16) 45%, transparent 72%);
     filter:blur(1px);
   }
   .lamp-glow.flicker{animation:lampFlicker 4.5s ease-in-out infinite;}
@@ -360,6 +360,8 @@
   .picker-thumb{width:100%;aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;background:var(--surface);display:flex;align-items:center;justify-content:center;}
   .picker-thumb img{width:100%;height:100%;display:block;}
   .picker-thumb.fit-contain img{object-fit:contain;padding:4px;}
+  .picker-thumb.cover img{object-fit:cover;}
+  .picker-group{grid-column:1/-1;margin:8px 0 -2px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);}
   .picker-thumb.auto-thumb{font-family:"Bebas Neue",sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--text-dim);}
   .picker-name{font-size:11px;font-weight:700;line-height:1.2;}
   .picker-lock{font-size:9.5px;color:var(--text-dim);}
@@ -834,7 +836,7 @@
   .wl-stats{text-align:right;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
   .wl-stats b{color:var(--text);}
   .wl-bag{display:inline-flex;align-items:center;gap:5px;border:1px solid color-mix(in srgb, var(--wl-gold) 70%, #000 0%);background:linear-gradient(180deg, var(--wl-gold-hi), color-mix(in srgb, var(--wl-gold) 55%, var(--wl-gold-hi)));color:#4A2E0A;border-radius:99px;padding:5px 11px 5px 9px;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;box-shadow:0 2px 0 color-mix(in srgb, var(--wl-gold) 75%, #000), 0 4px 8px -4px rgba(0,0,0,0.3);}
-  .wl-bag svg{width:15px;height:15px;color:#9A5B12;}
+  .wl-bag .ic{width:26px;height:26px;object-fit:contain;margin:-6px -2px -6px -5px;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.25));}
   .wl-bag:active{transform:translateY(2px);box-shadow:0 0 0 color-mix(in srgb, var(--wl-gold) 75%, #000);}
   .wl-days{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;}
   .wl-day{aspect-ratio:1;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:#fff;}
@@ -855,7 +857,8 @@
   .wl-act{--c:var(--accent);--ink:var(--accent-contrast);position:relative;border:0;border-radius:16px;padding:11px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:13px;font-weight:800;letter-spacing:0.01em;color:var(--ink);
     background:linear-gradient(180deg, color-mix(in srgb, var(--c) 82%, #fff), var(--c));
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 0 color-mix(in srgb, var(--c) 62%, #000), 0 9px 14px -8px rgba(0,0,0,0.45);transition:transform .08s ease, box-shadow .08s ease;}
-  .wl-act svg{width:23px;height:23px;filter:drop-shadow(0 1px 0 rgba(0,0,0,0.15));}
+  .wl-act .ic{width:44px;height:44px;object-fit:contain;margin:-6px 0 -3px;filter:drop-shadow(0 3px 2px rgba(0,0,0,0.28));}
+  .wl-act:active .ic{transform:scale(0.94);}
   .wl-act.workout{--c:var(--flash);--ink:#2A1A00;} .wl-act.rest{--c:var(--wl-purple);--ink:#fff;}
   .wl-act:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 0 color-mix(in srgb, var(--c) 62%, #000), 0 3px 6px -4px rgba(0,0,0,0.4);}
   .wl-act:disabled{filter:saturate(0.25) brightness(1.05);opacity:0.55;transform:none;}
@@ -928,8 +931,15 @@
   @keyframes wlSparkle{50%{transform:scale(1.08) rotate(10deg);opacity:0.7;}}
   @keyframes wlSpin{to{transform:rotate(360deg);}}
   .wl-kicker{position:relative;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);}
-  .wl-prize{position:relative;height:150px;display:grid;place-items:center;margin:4px 0 6px;}
-  .wl-prize img{max-height:130px;max-width:190px;filter:drop-shadow(0 10px 12px rgba(0,0,0,0.35));animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .wl-prize{position:relative;height:214px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:96px;margin:2px 0 4px;}
+  .wl-prize > *{position:relative;z-index:1;}
+  .wl-prize .wl-plinth{position:absolute;z-index:0;left:50%;bottom:0;width:216px;max-width:none;max-height:none;transform:translateX(-50%);filter:drop-shadow(0 8px 8px rgba(0,0,0,0.3));animation:none;}
+  .wl-prize.gym{padding-bottom:56px;height:190px;}
+  img.photo{border-radius:10px;border:4px solid #FFF9EE;box-shadow:0 8px 16px rgba(30,14,0,0.4);transform:rotate(-3deg);background:#FFF9EE;}
+  .wl-prize.gym img.photo{max-height:132px;max-width:200px;border-width:5px;}
+  .wl-ledge .prize img.photo{max-height:50px;border-width:2.5px;border-radius:6px;box-shadow:0 3px 6px rgba(0,0,0,0.4);}
+  .wl-pic img.photo{max-height:40px;border-width:2px;border-radius:5px;box-shadow:0 2px 4px rgba(0,0,0,0.3);}
+  .wl-prize img{max-height:112px;max-width:180px;filter:drop-shadow(0 8px 8px rgba(0,0,0,0.35));animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
   .wl-prize .swatch{width:96px;height:96px;border-radius:50%;box-shadow:inset 0 -10px 18px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.3);animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
   .wl-prize .plate{font-family:"Bebas Neue",sans-serif;font-size:38px;letter-spacing:0.04em;padding:10px 22px;border-radius:14px;background:linear-gradient(180deg,var(--wl-gold-hi),var(--wl-gold));color:#3A2410;box-shadow:0 10px 20px rgba(0,0,0,0.3);animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
   .wl-prize .mv, .wl-pic .mv{display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb, var(--accent) 20%, var(--surface));color:var(--accent);}
@@ -964,10 +974,12 @@
   .wl-summit{position:absolute;left:14px;width:calc(100% - 28px);z-index:2;pointer-events:none;filter:drop-shadow(0 10px 12px rgba(0,0,0,0.4));
     -webkit-mask-image:linear-gradient(180deg, #000 72%, transparent 98%);mask-image:linear-gradient(180deg, #000 72%, transparent 98%);}
   /* above the top-out: a warm, dim gym ceiling with rafters, lit by the bulb */
-  .wl-sky{position:absolute;left:0;right:0;top:0;z-index:1;pointer-events:none;
-    background:radial-gradient(60% 150px at 50% 30px, rgba(255,200,120,0.4), transparent 75%),
-      repeating-linear-gradient(90deg, transparent 0 62px, rgba(0,0,0,0.28) 62px 70px, rgba(255,220,170,0.05) 70px 71px),
-      linear-gradient(180deg, #1B130E 0%, #2B1E15 60%, #3A281A 100%);}
+  .wl-sky{position:absolute;left:0;right:0;top:0;z-index:1;pointer-events:none;background-color:#2A1C12;
+    background-image:radial-gradient(70% 200px at 50% 40px, rgba(255,196,110,0.5), transparent 75%),
+      linear-gradient(90deg, rgba(10,6,2,0.55), transparent 22%, transparent 78%, rgba(10,6,2,0.55)),
+      linear-gradient(180deg, rgba(10,6,2,0.55), rgba(10,6,2,0.1) 60%, rgba(10,6,2,0) 100%),
+      var(--ceil);
+    background-size:auto, auto, auto, 230px 230px;background-repeat:no-repeat, no-repeat, no-repeat, repeat;}
   .wl-ledge.top{filter:none;}
   .wl-plate{display:grid;place-items:center;width:84px;aspect-ratio:520/146;background-repeat:no-repeat;background-size:100% 100%;}
   .wl-plate span{font-family:"Bebas Neue",sans-serif;font-size:11px;letter-spacing:0.04em;color:#3A2410;line-height:1;padding:0 12%;text-align:center;text-shadow:0 1px 0 rgba(255,240,200,0.6);}
@@ -1279,7 +1291,7 @@
           </div>
           <div class="wl-side">
             <div class="wl-stats">best <b id="wallBest">0</b> · holds <b id="wallHolds">0</b></div>
-            <button type="button" class="wl-bag" id="wallBagBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7C10 3 6.5 4 7.5 6.5 8 7.5 12 7 12 7zm0 0c2-4 5.5-3 4.5-.5C16 7.5 12 7 12 7z"/></svg><span id="wallBagCount">0/42</span></button>
+            <button type="button" class="wl-bag" id="wallBagBtn"><img class="ic" data-ic="r2_icon_unlocks" alt=""><span id="wallBagCount">0/42</span></button>
           </div>
         </div>
         <div class="wl-days" id="wallDays" aria-label="Last 14 days"></div>
@@ -1287,9 +1299,9 @@
       </section>
     </div>
     <div class="wl-actions">
-      <button type="button" class="wl-act climb" id="wallClimbBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg><span>Climb</span></button>
-      <button type="button" class="wl-act workout" id="wallWorkoutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg><span>Workout</span></button>
-      <button type="button" class="wl-act rest" id="wallRestBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="wallRestLabel">Rest day</span></button>
+      <button type="button" class="wl-act climb" id="wallClimbBtn"><img class="ic" data-ic="r2_icon_climb" alt=""><span>Climb</span></button>
+      <button type="button" class="wl-act workout" id="wallWorkoutBtn"><img class="ic" data-ic="r2_icon_workout" alt=""><span>Workout</span></button>
+      <button type="button" class="wl-act rest" id="wallRestBtn"><img class="ic" data-ic="r2_icon_rest" alt=""><span id="wallRestLabel">Rest day</span></button>
     </div>
     <button type="button" class="wl-backfill" id="wallBackfillBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Forgot yesterday? Log it as a rest day</button>
     <section class="wl-wall" id="wallWall" aria-label="The wall: one hold per day you log">
@@ -1453,6 +1465,10 @@
     <div class="settings-section" id="developerSection" hidden>
       <p class="settings-section-title">Developer</p>
       <div class="switch-row">
+        <div><div class="switch-label">Preview every gym</div><div class="switch-desc">See all four new rooms and their decorations now, before you reach their levels</div></div>
+        <button type="button" class="switch" data-setting="devPreviewGyms" aria-pressed="false"><span class="switch-thumb"></span></button>
+      </div>
+      <div class="switch-row">
         <div><div class="switch-label">Room Lab</div><div class="switch-desc">Placement-testing squares in Customize and the Garage</div></div>
         <button type="button" class="switch" data-setting="devRoomLab" aria-pressed="false"><span class="switch-thumb"></span></button>
       </div>
@@ -1561,7 +1577,7 @@
     </div>
     <div class="settings-section">
       <p class="settings-section-title">Decorate</p>
-      <p class="settings-section-hint">Tap any number of these on or off — they place themselves in the room, no unlocking needed.</p>
+      <p class="settings-section-hint">Tap any number of these on or off — they place themselves in the room. Each gym you unlock adds five of its own.</p>
       <div class="picker-grid" id="decoratePickerGrid"></div>
     </div>
     <div class="settings-section" id="roomLabSection" hidden>
@@ -1743,7 +1759,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false },
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false },
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -2006,8 +2022,8 @@
       var cls = 'picker-item'+(unlocked?'':' locked')+(selectedId===item.id?' selected':'');
       // An item with a real thumbnail (img) shows it; gyms are a drawn room, so a small
       // wall/floor swatch stands in for a thumbnail until real modular art exists.
-      var thumbInner = item.img
-        ? '<img src="'+item.img+'" alt="">'
+      var thumbInner = (item.thumb||item.img)
+        ? '<img src="'+(item.thumb||item.img)+'" alt="">'
         : '<div style="position:absolute;inset:0 0 35% 0;background:'+item.wallColor+'"></div>'
           + '<div style="position:absolute;inset:65% 0 0 0;background:'+item.floorColor+'"></div>';
       html += '<button type="button" class="'+cls+'" '+(unlocked?('data-'+dataAttr+'="'+item.id+'"'):'disabled')+'>'
@@ -2021,10 +2037,11 @@
   // Decorations toggle independently (any number on at once), so they get their own
   // renderer rather than being force-fit into pickerItemsHTML's single-select/locked shape.
   function decorateItemsHTML(){
-    var on = state.character.decorations||[];
-    return ACCESSORIES.map(function(a){
-      var isOn = on.indexOf(a.id)>-1;
-      return '<button type="button" class="picker-item'+(isOn?' selected':'')+'" data-decor="'+a.id+'">'
+    var on = state.character.decorations||[], lastFrom = null;
+    return ACCESSORIES.filter(accessoryAvailable).map(function(a){
+      var isOn = on.indexOf(a.id)>-1, head = "";
+      if((a.from||"")!==lastFrom){ lastFrom = a.from||""; if(a.from) head = '<p class="picker-group">From '+escapeHtml(ROOM_NAMES[a.from]||a.from)+'</p>'; }
+      return head + '<button type="button" class="picker-item'+(isOn?' selected':'')+'" data-decor="'+a.id+'">'
         + '<div class="picker-thumb fit-contain"><img src="'+a.img+'" alt=""></div>'
         + '<span class="picker-name">'+escapeHtml(a.name)+'</span>'
         + '</button>';
@@ -2033,7 +2050,7 @@
   function renderCustomizeModal(){
     document.getElementById("environmentPickerGrid").innerHTML = pickerItemsHTML(
       ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
-      state.character.selectedEnvironmentId, "pick-env", ""
+      state.character.selectedEnvironmentId, "pick-env", "cover"
     );
     document.getElementById("gymPickerSection").hidden = ENVIRONMENTS.length<=1;
     document.getElementById("decoratePickerGrid").innerHTML = decorateItemsHTML();
@@ -4231,6 +4248,47 @@
         asset("mascot/climber/default/land/land-02.png", "1370cb3987dc3213a293b8642c946b69")
       ]
     },
+    // The rooms (ChatGPT art, exported by dev/build-room-art.ps1): a painted background, a picker
+    // thumbnail, and five decorations that belong to each room.
+    rooms: {
+      garage: { thumb: asset("rooms/garage/thumb.jpg", "47bd2017fab48fc21d0984df157eed3b") },
+      homewall: {
+        bg: asset("rooms/homewall/background.jpg", "d80baeca4573e88c626a8e75b32febb0"),
+        thumb: asset("rooms/homewall/thumb.jpg", "9513f2b5eeefa13defa629787397c155"),
+        stepStool: asset("rooms/homewall/step-stool.png", "ae1dcb30e0593c79945401ad131e7e7c"),
+        deskFan: asset("rooms/homewall/desk-fan.png", "a4686eaa0ab3482cf94ae7c83b9f2a14"),
+        toolbox: asset("rooms/homewall/toolbox.png", "80c479062ebf8e46608600251a4aa2fe"),
+        campusRungs: asset("rooms/homewall/campus-rungs.png", "0d2fd72b4496500d856a46eb1892508f"),
+        beanbag: asset("rooms/homewall/beanbag.png", "76a7970f4af2feb89e6687c78012b7b3")
+      },
+      local: {
+        bg: asset("rooms/local/background.jpg", "14286887bad209346019113a047ef6b2"),
+        thumb: asset("rooms/local/thumb.jpg", "693a88907b898dab6598c897db17aaae"),
+        chalkBucket: asset("rooms/local/chalk-bucket.png", "015e6cc22c9a3627aaffcabca5680b40"),
+        brushStick: asset("rooms/local/brush-stick.png", "2836f1a2b1827a07ff42f652f32d41a2"),
+        bench: asset("rooms/local/bench.png", "f8074151b22a49681527d4806e55038f"),
+        tapeRoll: asset("rooms/local/tape-roll.png", "33f39d21798ede64eb8f397770a9db01"),
+        volumeStack: asset("rooms/local/volume-stack.png", "13b8c7d0e33ced9901f9c3a6c1025661")
+      },
+      club: {
+        bg: asset("rooms/club/background.jpg", "32ef4edc4c1070db489fe294b33eba19"),
+        thumb: asset("rooms/club/thumb.jpg", "60f0e612c6b204ea9750920f483eedc6"),
+        iceAxes: asset("rooms/club/ice-axes.png", "7ae66c05d0e663cf60ae25eb1f4815e6"),
+        rucksack: asset("rooms/club/rucksack.png", "9b7f5bcfc9a898b1b8f278abd31ac48b"),
+        boots: asset("rooms/club/boots.png", "895770f08e9c2f83fdb97724e0d490d1"),
+        lantern: asset("rooms/club/lantern.png", "ce83039ccb36decce52a1fb60478d5d2"),
+        map: asset("rooms/club/map.png", "fcb81d7244e5deaf53df62ac7b4a6ab3")
+      },
+      dream: {
+        bg: asset("rooms/dream/background.jpg", "8844ff66767d7a6318b766335a05ec9f"),
+        thumb: asset("rooms/dream/thumb.jpg", "4079d9f235e6138fd3b62d4a422c0360"),
+        monstera: asset("rooms/dream/monstera.png", "49481c5842fb35e96f7261679060e996"),
+        rings: asset("rooms/dream/rings.png", "94c260bd8fd770503cd3b4fd516a44ac"),
+        trophy: asset("rooms/dream/trophy.png", "bb443af226cfc86830888cef43edcba6"),
+        foamRoller: asset("rooms/dream/foam-roller.png", "31b22dcfa9349a289729648c19412c75"),
+        smoothie: asset("rooms/dream/smoothie.png", "7886d3135d4c6d1574517c104a64cbb7")
+      }
+    },
     // ==== THE WALL (removable feature; see AGENTS.md "The Wall") ==== small trimmed copies made
     // by dev/build-wall-prototype.ps1 -AppAssets
     wall: {
@@ -4245,18 +4303,12 @@
       r_notes: asset("wall/r_notes.png", "6622b3df779c736a081128c196a03a08"),
       r_hangboard: asset("wall/r_hangboard.png", "1f9100ba2314f706fa53c013c68dd3b9"),
       r_lamp: asset("wall/r_lamp.png", "d455c4ba9d06fc53757ff5dc175a18ad"),
-      r_gearbag: asset("wall/r_gearbag.png", "70ed7ba375edca7580dd0d9e5f7b6c33"),
       r_rolled: asset("wall/r_rolled.png", "89364c8e26987922a5d4ec4576ae2409"),
       r_print: asset("wall/r_print.png", "048b833caa2dfe6436fd34e729cc4892"),
       r_plant: asset("wall/r_plant.png", "1edf7b1cd5ad6ab2bdf5faef8282e69f"),
       r_hay: asset("wall/r_hay.png", "79c2d4e1511a4adc983534aa518f1e8f"),
       r_basket: asset("wall/r_basket.png", "f8fafb0aff963bbf57604c296d71d02f"),
       r_fridge: asset("wall/r_fridge.png", "e977b8def8f4837b7c377290743be5f6"),
-      // stopgaps for older pieces that were cut off at their edges (docs/art/WALL-ART-BRIEF-2.md asks
-      // ChatGPT for clean redraws): orange-recoloured shoes, lights faded at the ends, shelf cropped
-      r_shoes2: asset("wall/r_shoes2.png", "5054cc675ae4fcf28492cdb29eaa5636"),
-      r_lights2: asset("wall/r_lights2.png", "3bf6dbc4e00dd442d3e52bda317651db"),
-      r_shelf2: asset("wall/r_shelf2.png", "35df05790f10f4b3a4295709552c59a6"),
       // pass A of the generated Wall art (art-source/wall/incoming, exported by dev/build-wall-art.ps1)
       wall2: asset("wall/wall2.png", "e8546f23e4507313d4296f2940146849"),
       stud2: asset("wall/stud2.png", "655cea90e9e131b743bbbc35db23927c"),
@@ -4281,12 +4333,33 @@
       title_plate: asset("wall/title_plate.png", "9e9fb04d75412dbcc263124371068204"),
       golden_shoes: asset("wall/golden_shoes.png", "095290b9b853c0fd9bff248353e245a9"),
       mystery: asset("wall/mystery.png", "68c77ffd10f69929b5145b54ca08654c"),
-      home_wall: asset("wall/home_wall.png", "0e36d7277c774ec7e34224e823bd1386"),
+      home_wall: asset("rooms/homewall/thumb.jpg", "9513f2b5eeefa13defa629787397c155"),
       rays: asset("wall/rays.png", "703cf1a5b6b86872464898bcaf618b2b"),
       sparkle: asset("wall/sparkle.png", "79270d172839733c7670d0f07eb30d73"),
       flame_s: asset("wall/flame_s.png", "4c5e2dfdc93e769e928a0c81b53662c6"),
       flame_l: asset("wall/flame_l.png", "dccccb6c074eb5a8266358ef3dada062"),
       flame_b: asset("wall/flame_b.png", "1f4d7bad983b979cc027d084cfae7ca5"),
+      // round 2 of the generated Wall art (art-source/wall/incoming-2, exported by dev/build-wall-art.ps1):
+      // clean redraws of pieces round 1 clipped, nine more holds, painted button icons, a prize plinth
+      r2_shoes: asset("wall/r2_shoes.png", "ca089b08e36fb2a6981c3bd5b473476a"),
+      r2_gearbag: asset("wall/r2_gearbag.png", "fd4634be42e909db9f64899b36a029d7"),
+      r2_shelf: asset("wall/r2_shelf.png", "3cc7fd197fcc8d8e7ffae48c1004a2fb"),
+      r2_lights: asset("wall/r2_lights.png", "e6c8d59c3a355086192c99b7023c05ba"),
+      r2_hold_purple: asset("wall/r2_hold_purple.png", "bb77f5bd6d7339eaedd93d1a00eb1abf"),
+      r2_hold_grey: asset("wall/r2_hold_grey.png", "55bbbe079fea118840f5dbaa29cf54b1"),
+      r2_hold_blue: asset("wall/r2_hold_blue.png", "c2e06f2546af8797627898e655b6a0d5"),
+      r2_hold_mint: asset("wall/r2_hold_mint.png", "abc83bbfe631edc93c8229dee347d250"),
+      r2_hold_navy: asset("wall/r2_hold_navy.png", "85ec7975bdad66b5e0c5f63317c43b88"),
+      r2_hold_red: asset("wall/r2_hold_red.png", "febf5b5113066074dbaf3906775e54c4"),
+      r2_hold_sand: asset("wall/r2_hold_sand.png", "c629df24a151a39ad1f5abcf2bcab648"),
+      r2_hold_wood: asset("wall/r2_hold_wood.png", "24c4e09e1b5ac89b46c8698bdc7e2b34"),
+      r2_hold_yellow: asset("wall/r2_hold_yellow.png", "8941ad15d71efd46e1ffc68a19f0e5a7"),
+      r2_icon_climb: asset("wall/r2_icon_climb.png", "9773e136eaeea2af3189b884b29bb1a4"),
+      r2_icon_workout: asset("wall/r2_icon_workout.png", "8f854300f40c25155600ea08a7cae6f7"),
+      r2_icon_rest: asset("wall/r2_icon_rest.png", "0742f180d9c30e14c47f19ee77d8298e"),
+      r2_icon_unlocks: asset("wall/r2_icon_unlocks.png", "6617931d66ec15764140508838350988"),
+      r2_plinth: asset("wall/r2_plinth.png", "c79cc091017d191ce5ed09411352ecad"),
+      r2_ceiling: asset("wall/r2_ceiling.jpg", "2b11a0ef7553adfc2ce70af65e526b90"),
       // the climber's Wall poses: generated, then head-locked to idle-01 by
       // ../art-source/tools/normalize-wall-climber.ps1 (same canvas and feet line as idle)
       cl_reach_l: asset("mascot/climber/default/climb/climb-reach-left.png", "1317d4d3c04cc534c0106995b51028de"),
@@ -4423,9 +4496,20 @@
   var GEAR_PAD_IMG = IMG.gear.crashPadUnfolded;    // real unfolded crash pad
   var GEAR_LIGHTS_IMG = IMG.gear.stringLights;     // real string lights
   function garageSceneSVG(charStage){
+    return '<image href="'+GARAGE_BG_IMG+'" x="0" y="'+GARAGE_BG_Y+'" width="'+GARAGE_BG_W+'" height="'+GARAGE_BG_H+'" preserveAspectRatio="none"/>' + gearSVG(charStage);
+  }
+  // A room with its own painted background (env.bg = { img, floor }): the 1024x1536 painting is
+  // scaled to the scene's width and shifted so its floor line (floor = y in the painting where the
+  // back wall meets the floor) lands on ROOM_FLOOR_Y, the same line the Garage uses. That keeps
+  // the climber, gear and decorations standing on the floor in every room.
+  function paintedRoomSVG(env, charStage){
+    var k = ROOM_VB_W/1024, h = 1536*k, y = Math.min(0, Math.max(ROOM_VB_H-h, ROOM_FLOOR_Y - env.bg.floor*k));
+    return '<image href="'+env.bg.img+'" x="0" y="'+y.toFixed(2)+'" width="'+ROOM_VB_W+'" height="'+h.toFixed(2)+'" preserveAspectRatio="none"/>' + gearSVG(charStage);
+  }
+  // The climber's own earned gear, drawn the same way in every painted room.
+  function gearSVG(charStage){
     var has = function(g){ return charStage.props.indexOf(g)>-1; };
     var p = [];
-    p.push('<image href="'+GARAGE_BG_IMG+'" x="0" y="'+GARAGE_BG_Y+'" width="'+GARAGE_BG_W+'" height="'+GARAGE_BG_H+'" preserveAspectRatio="none"/>');
     // the climber's own earned gear — unchanged unlock logic, repositioned to sit on the photo's
     // actual wall/floor instead of the old procedural one.
     if(has("lights")){ // real string-light art, replacing the earlier flat glow dots
@@ -4448,6 +4532,7 @@
   }
   function roomSVG(env, charStage){
     if(env.id==="garage") return garageSceneSVG(charStage);
+    if(env.bg) return paintedRoomSVG(env, charStage);
     var has = function(g){ return charStage.props.indexOf(g)>-1; };
     var p = [];
     var defs = [];
@@ -4492,21 +4577,37 @@
   // looks (matching the original spacing), just not absurdly slower.
   var ENVIRONMENTS = [
     // artReady: this room has finished production art, so Auto may select it (see selectedEnvironment).
-    // Home Wall, The Local, The Mountain Club and The Dream Gym are planned, but they come
-    // back only once each has finished art - an unlock that reveals a flat-colour placeholder
-    // feels like a broken promise. Their old placeholder colours: #A8763F/#6B5744,
-    // #B8AFA0/#3E3A35, #8CA0B3/#C4BCA8, #3F4A45/#A8896B (minLevel 8/15/24/40).
+    // bg = the painted background (1024x1536) and floor = the y in that painting where the back wall
+    // meets the floor, so every room lines up on the Garage's floor line (see paintedRoomSVG).
+    // fx = ambient lights: glows at x/y percent of the scene, and drifting motes.
+    // wallHold = a Wall hold (The Wall feature) that also unlocks the room.
     { id:"garage",   name:"The Garage",      minLevel:1,  artReady:true, wallColor:"#C9A876", floorColor:"#8B8378",
-      wallImg:IMG.garage.wallTile, floorImg:IMG.garage.floorTile, props:[] },
-    // Real modular pieces (wall modules, pads, plants, gear, signs, furniture — the reference
-    // sheet with dozens of them) go in a given room's `props` array as { img, x, y, w }
-    // (percent-of-scene) once they exist with genuine alpha transparency; see the note where
-    // that sheet was checked — it currently isn't. wallImg/floorImg take a tileable texture
-    // the same way, replacing the flat wallColor/floorColor fill for that room only.
+      wallImg:IMG.garage.wallTile, floorImg:IMG.garage.floorTile, props:[], thumb:IMG.rooms.garage.thumb,
+      fx:{ glows:[{ x:76, y:3 }], motes:[12,30,54,72,90] } },
+    { id:"homewall", name:"Home Wall",       minLevel:8,  artReady:true, wallColor:"#A8763F", floorColor:"#6B5744", wallHold:21,
+      bg:{ img:IMG.rooms.homewall.bg, floor:1095 }, thumb:IMG.rooms.homewall.thumb, props:[],
+      fx:{ glows:[{ x:72, y:11, w:44, h:36, c:"255,200,120" }], motes:[14,38,60,82], moteColor:"255,225,170" } },
+    { id:"local",    name:"The Local",       minLevel:15, artReady:true, wallColor:"#B8AFA0", floorColor:"#3E3A35",
+      bg:{ img:IMG.rooms.local.bg, floor:1105 }, thumb:IMG.rooms.local.thumb, props:[],
+      fx:{ glows:[{ x:72, y:5, w:48, h:38, c:"255,205,125" }, { x:82, y:34, w:64, h:46, c:"255,236,184" }], motes:[20,46,66,88], moteColor:"255,240,210" } },
+    { id:"club",     name:"The Mountain Club", minLevel:24, artReady:true, wallColor:"#8CA0B3", floorColor:"#C4BCA8",
+      bg:{ img:IMG.rooms.club.bg, floor:1055 }, thumb:IMG.rooms.club.thumb, props:[],
+      fx:{ glows:[{ x:94, y:70, w:56, h:34, c:"255,150,60", c2:"255,120,40" }], motes:[62,76,86,94], moteColor:"255,170,90" } },
+    { id:"dream",    name:"The Dream Gym",   minLevel:40, artReady:true, wallColor:"#3F4A45", floorColor:"#A8896B",
+      bg:{ img:IMG.rooms.dream.bg, floor:1150 }, thumb:IMG.rooms.dream.thumb, props:[],
+      fx:{ glows:[{ x:84, y:8, w:72, h:50, c:"255,246,210", c2:"255,240,200" }], motes:[16,36,58,80], moteColor:"255,250,225" } }
   ];
+  // A room is unlocked by reaching its level, or by the Wall hold that also unlocks it (the Wall is
+  // removable, so that part only counts while it exists). The Developer switch "Preview every
+  // gym" shows them all, to look at rooms before you get there.
   function unlockedEnvironments(){
-    return ENVIRONMENTS.filter(function(e){ return state.level>=e.minLevel; });
+    if(state.settings.devPreviewGyms) return ENVIRONMENTS.slice();
+    return ENVIRONMENTS.filter(function(e){
+      return state.level>=e.minLevel
+        || (e.wallHold && typeof wallInfo==="function" && WALL_ENABLED && wallInfo().holds>=e.wallHold); // THE WALL hook
+    });
   }
+  function roomUnlocked(id){ return unlockedEnvironments().some(function(e){ return e.id===id; }); }
   // Auto follows the newest unlocked gym that has finished production art (artReady). The
   // flat-color placeholder rooms can still be picked by hand in Customize, but Auto never
   // moves someone out of a finished room into one of them just because they leveled up.
@@ -4548,10 +4649,37 @@
     { id:"wallshelf",   name:"Wall Shelf",    img:IMG.decor.wallShelf,     x:8,    y:47.25, w:20 },
     { id:"climbshoes",  name:"Climbing Shoes",img:IMG.decor.climbingShoes, x:60.5, y:83.24, w:9  },
     { id:"gearbag",     name:"Gear Bag",      img:IMG.decor.gearBag,       x:60,   y:62.28, w:16 }
-  ];
+  ].concat([
+    // Each room brings five decorations of its own, available once that room is unlocked and usable
+    // in any gym. ar = height/width of the trimmed picture; foot = where its bottom edge starts
+    // (percent down the scene) so floor pieces stand on the floor line. Arrange moves any of them.
+    { from:"homewall", id:"stepstool",  name:"Step Stool",    img:IMG.rooms.homewall.stepStool,   ar:0.903, w:15, x:6,  foot:96 },
+    { from:"homewall", id:"toolbox",    name:"Toolbox",       img:IMG.rooms.homewall.toolbox,     ar:0.913, w:16, x:23, foot:98 },
+    { from:"homewall", id:"deskfan",    name:"Desk Fan",      img:IMG.rooms.homewall.deskFan,     ar:1.285, w:14, x:4,  foot:84 },
+    { from:"homewall", id:"campusrungs",name:"Campus Rungs",  img:IMG.rooms.homewall.campusRungs, ar:1.203, w:12, x:56, y:24 },
+    { from:"homewall", id:"beanbag",    name:"Beanbag",       img:IMG.rooms.homewall.beanbag,     ar:0.866, w:20, x:40, foot:99 },
+    { from:"local", id:"chalkbucket",   name:"Chalk Bucket",  img:IMG.rooms.local.chalkBucket,    ar:0.869, w:16, x:8,  foot:97 },
+    { from:"local", id:"brushstick",    name:"Brush Stick",   img:IMG.rooms.local.brushStick,     ar:1.039, w:20, x:56, foot:90 },
+    { from:"local", id:"bench",         name:"Bench",         img:IMG.rooms.local.bench,          ar:0.769, w:22, x:28, foot:98 },
+    { from:"local", id:"taperoll",      name:"Tape Roll",     img:IMG.rooms.local.tapeRoll,       ar:0.878, w:11, x:46, foot:96 },
+    { from:"local", id:"volumestack",   name:"Volume Stack",  img:IMG.rooms.local.volumeStack,    ar:1.039, w:16, x:4,  foot:86 },
+    { from:"club", id:"iceaxes",        name:"Ice Axes",      img:IMG.rooms.club.iceAxes,         ar:0.978, w:18, x:44, y:14 },
+    { from:"club", id:"rucksack",       name:"Rucksack",      img:IMG.rooms.club.rucksack,        ar:1.029, w:15, x:8,  foot:97 },
+    { from:"club", id:"boots",          name:"Mountain Boots",img:IMG.rooms.club.boots,           ar:0.759, w:15, x:26, foot:98 },
+    { from:"club", id:"lantern",        name:"Lantern",       img:IMG.rooms.club.lantern,         ar:1.608, w:9,  x:64, foot:84 },
+    { from:"club", id:"clubmap",        name:"Old Map",       img:IMG.rooms.club.map,             ar:0.869, w:14, x:66, y:14 },
+    { from:"dream", id:"monstera",      name:"Monstera",      img:IMG.rooms.dream.monstera,       ar:0.994, w:17, x:6,  foot:84 },
+    { from:"dream", id:"rings",         name:"Gym Rings",     img:IMG.rooms.dream.rings,          ar:1.255, w:11, x:56, y:12 },
+    { from:"dream", id:"trophy",        name:"Trophy",        img:IMG.rooms.dream.trophy,         ar:1.409, w:9,  x:30, foot:98 },
+    { from:"dream", id:"foamroller",    name:"Foam Roller",   img:IMG.rooms.dream.foamRoller,     ar:0.581, w:18, x:8,  foot:97 },
+    { from:"dream", id:"smoothie",      name:"Smoothie",      img:IMG.rooms.dream.smoothie,       ar:1.711, w:7,  x:44, foot:99 }
+  ]);
+  var ROOM_NAMES = { homewall:"Home Wall", local:"The Local", club:"The Mountain Club", dream:"The Dream Gym" };
+  // an accessory that belongs to a room only shows once that room is unlocked
+  function accessoryAvailable(a){ return !a.from || roomUnlocked(a.from); }
   function activeDecorations(){
     var on = state.character.decorations||[];
-    return ACCESSORIES.filter(function(a){ return on.indexOf(a.id)>-1; });
+    return ACCESSORIES.filter(function(a){ return on.indexOf(a.id)>-1 && accessoryAvailable(a); });
   }
   // A position dragged in this gym overrides the accessory's preset x/y; nothing dragged here
   // yet just falls back to the preset. Layouts saved before dragging was constrained could
@@ -4560,7 +4688,7 @@
   function decorPosition(a, envId){
     var byEnv = state.character.decorPositionsByEnv || {};
     var o = byEnv[envId] && byEnv[envId][a.id];
-    var x = o ? o.x : a.x, y = o ? o.y : a.y;
+    var x = o ? o.x : a.x, y = o ? o.y : (a.foot!=null ? a.foot - a.w*a.ar/1.25 : a.y); // scene is 4:5, so a height of h% of the width is h/1.25 % of the scene
     return { x:Math.max(0, Math.min(100-a.w, x)), y:Math.max(0, Math.min(96, y)) };
   }
   // ---- Room Lab: a simple room-placement system, tested with throwaway colored squares ----
@@ -4682,12 +4810,16 @@
   // here — extending this to another gym later is just adding another branch, same pattern
   // as roomSVG's own env.id switch.
   function sceneEffectsHTML(env){
-    if(env.id!=="garage") return "";
+    var fx = env.fx;
+    if(!fx) return "";
     var glowClass = prefersReducedMotion ? "lamp-glow" : "lamp-glow flicker";
-    var glow = '<div class="'+glowClass+'" style="left:76%;top:3%;"></div>';
+    var glow = (fx.glows||[]).map(function(g){
+      return '<div class="'+glowClass+'" style="left:'+g.x+'%;top:'+g.y+'%;'+(g.w ? 'width:'+g.w+'%;height:'+g.h+'%;' : "")+(g.c ? '--gc:'+g.c+';--gc2:'+(g.c2||g.c)+';' : "")+'"></div>';
+    }).join("");
     if(prefersReducedMotion) return glow;
-    var motes = [12,30,54,72,90].map(function(x,i){
-      return '<div class="dust-mote" style="left:'+x+'%;top:'+(28+(i%3)*20)+'%;animation-delay:'+(i*1.3)+'s"></div>';
+    var mc = fx.moteColor ? 'background:rgba('+fx.moteColor+',0.75);' : "";
+    var motes = (fx.motes||[]).map(function(x,i){
+      return '<div class="dust-mote" style="left:'+x+'%;top:'+(28+(i%3)*20)+'%;animation-delay:'+(i*1.3)+'s;'+mc+'"></div>';
     }).join("");
     return glow + motes;
   }
@@ -5093,17 +5225,17 @@
   };
   var WALL_REWARDS = [null,
     { name:"Chalk bag", kind:"decor", img:"r_chalkbag" }, { name:"Mint chalk", kind:"chalk", c:"#7FE3C8", img:"c_mint" }, { name:"Gumby", kind:"title" },
-    { name:"Climbing shoes", kind:"decor", img:"r_shoes2" }, { name:"Teal crimp", kind:"hold", img:"h2_crimp" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62", img:"c_sunset" },
+    { name:"Climbing shoes", kind:"decor", img:"r2_shoes" }, { name:"Blue volume", kind:"hold", img:"r2_hold_blue" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62", img:"c_sunset" },
     { name:"Crash pad", kind:"decor", img:"r_pad" }, { name:"Route notes", kind:"decor", img:"r_notes" }, { name:"Crimper", kind:"title" },
-    { name:"Purple sloper", kind:"hold", img:"h2_sloper" }, { name:"Chalk clap", kind:"move", mv:"chalk_clap" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
+    { name:"Purple pinch", kind:"hold", img:"r2_hold_purple" }, { name:"Chalk clap", kind:"move", mv:"chalk_clap" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
     { name:"Lilac chalk", kind:"chalk", c:"#C3A8F5", img:"c_lilac" }, { name:"Clamp lamp", kind:"decor", img:"r_lamp" }, { name:"Jug", kind:"hold", img:"h_jug" },
-    { name:"Flash Kid", kind:"title" }, { name:"Gear bag", kind:"decor", img:"r_gearbag" }, { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF", img:"c_glacier" },
-    { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move", mv:"fist_pump" }, { name:"The Home Wall", kind:"gym", img:"home_wall" },
-    { name:"Yellow pyramid", kind:"hold", img:"h_yellow" }, { name:"Dyno Machine", kind:"title" }, { name:"Wall shelf", kind:"decor", img:"r_shelf2" },
+    { name:"Flash Kid", kind:"title" }, { name:"Gear bag", kind:"decor", img:"r2_gearbag" }, { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF", img:"c_glacier" },
+    { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move", mv:"fist_pump" }, { name:"The Home Wall", kind:"gym", img:"home_wall", room:"homewall" },
+    { name:"Yellow pyramid", kind:"hold", img:"h_yellow" }, { name:"Dyno Machine", kind:"title" }, { name:"Wall shelf", kind:"decor", img:"r2_shelf" },
     { name:"Neon chalk", kind:"chalk", c:"#C6FF4A", img:"c_neon" }, { name:"Mountain print", kind:"decor", img:"r_print" }, { name:"Victory wave", kind:"move", mv:"wave" },
-    { name:"String lights", kind:"decor", img:"r_lights2" }, { name:"Slotted edge", kind:"hold", img:"h_slot" }, { name:"Sloper Whisperer", kind:"title" },
+    { name:"String lights", kind:"decor", img:"r2_lights" }, { name:"Slotted edge", kind:"hold", img:"h_slot" }, { name:"Sloper Whisperer", kind:"title" },
     { name:"Potted plant", kind:"decor", img:"r_plant" }, { name:"Gold chalk", kind:"chalk", c:"#F3C766", img:"c_gold" }, { name:"Foothold", kind:"hold", img:"h_foot" },
-    { name:"Happy dance", kind:"move", mv:"dance" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Speckled macro", kind:"hold", img:"h2_macro" },
+    { name:"Happy dance", kind:"move", mv:"dance" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Grey pocket", kind:"hold", img:"r2_hold_grey" },
     { name:"Send Train", kind:"title" }, { name:"Laundry basket", kind:"decor", img:"r_basket" }, { name:"Midnight chalk", kind:"chalk", c:"#3C3F7A", img:"c_midnight" },
     { name:"Hay bale", kind:"decor", img:"r_hay" }, { name:"Wall Legend", kind:"title" }, { name:"Golden shoes", kind:"outfit", img:"golden_shoes" }
   ];
@@ -5118,8 +5250,9 @@
   };
   var WALL_MOVE_LOOP = { chalk_clap:[0,0,1,1,2,2,0,0], fist_pump:[0,0,1,1,1,1,2,2,2], wave:[0,1,2,3,2,1], dance:[0,1,2,3] };
   // only holds whose art is whole (some older cutouts were clipped at their edges)
-  var WALL_HOLD_ART = ["h_jug","h2_crimp","h_yellow","h2_sloper","h_slot","h2_tufa","h2_dual","h_foot","h2_jug","h2_macro","h2_pinch","h2_chip"];
-  var WALL_HOLD_SIZE = { h2_chip:44, h2_tufa:58, h2_sloper:50 };
+  var WALL_HOLD_ART = ["h_jug","r2_hold_red","h2_crimp","r2_hold_sand","h_yellow","h2_sloper","r2_hold_navy","h_slot","h2_tufa","r2_hold_yellow","h2_dual","r2_hold_mint",
+    "h_foot","h2_jug","r2_hold_grey","h2_macro","r2_hold_purple","h2_pinch","r2_hold_blue","h2_chip","r2_hold_wood"];
+  var WALL_HOLD_SIZE = { h2_chip:44, h2_tufa:58, h2_sloper:50, r2_hold_mint:74, r2_hold_wood:66, r2_hold_blue:60, r2_hold_grey:58, r2_hold_red:58, r2_hold_purple:60, r2_hold_navy:58 };
 
   // ---- the day model: everything below is read from what you've logged ----
   function wallToday(){ return planDayNum(Date.now()); }
@@ -5170,11 +5303,12 @@
   wallEl.style.height = WALL_H+"px";
   wallEl.style.backgroundImage = "url("+IMG.wall.wall2+")";
   document.getElementById("wallBulb").src = IMG.wall.bulb;
+  document.querySelectorAll("#view-wall img.ic[data-ic]").forEach(function(im){ im.src = IMG.wall[im.dataset.ic]; });
   document.querySelectorAll("#view-wall .wl-stud").forEach(function(s){ s.style.backgroundImage = "url("+IMG.wall.stud2+")"; });
   document.querySelector("#view-wall .wl-ground").style.backgroundImage = "url("+IMG.wall.ground2+")";
   // The top-out: the summit's lip is the last ledge (hold 42), so its prize and your climber sit on
   // it like any other ledge, and above the lip is the gym ceiling rather than more wall.
-  var wallSky = document.createElement("div"); wallSky.className = "wl-sky";
+  var wallSky = document.createElement("div"); wallSky.className = "wl-sky"; wallSky.style.setProperty("--ceil", "url("+IMG.wall.r2_ceiling+")");
   wallEl.insertBefore(wallSky, wallEl.querySelector(".wl-glow"));
   var wallSummit = document.createElement("img"); wallSummit.className = "wl-summit"; wallSummit.alt = ""; wallSummit.src = IMG.wall.summit;
   wallEl.appendChild(wallSummit);
@@ -5187,13 +5321,13 @@
   function wallPos(i){ return i<=0 ? { x:50, y:WALL_H-50 } : { x:50 + 25*Math.sin(i*0.92) + 9*Math.sin(i*2.3+1), y:WALL_H - WALL_BOTTOM - i*WALL_GAP - Math.floor((i-1)/WALL_LEDGE)*WALL_LEDGE_ROOM }; }
   function wallPx(p){ return { x:p.x/100*wallEl.clientWidth, y:p.y }; }
   function wallRot(i){ return Math.round(Math.sin(i*12.9898)*43758.5453 % 1 * 50); }
-  function wallArtFor(i){ return WALL_HOLD_ART[(i*7) % WALL_HOLD_ART.length]; }
+  function wallArtFor(i){ return WALL_HOLD_ART[(i*5) % WALL_HOLD_ART.length]; } // 21 pieces, stride 5: every one shows up, never two alike in a row
   // Titles are written onto the brass nameplate art; everything else with art shows its picture.
   function wallPlate(name, big){ return '<span class="wl-plate'+(big ? " big" : "")+'" style="background-image:url('+IMG.wall.title_plate+')"><span>'+escapeHtml(name)+'</span></span>'; }
   function wallPic(r, big){
     if(r.kind==="title") return wallPlate(r.name, big);
     if(r.kind==="move") return r.mv ? '<span class="wl-mvbox"><img class="wl-move" data-mv="'+r.mv+'" src="'+IMG.wall.moves[r.mv][0]+'" alt=""></span>' : '<span class="mv">'+WI.move+'</span>';
-    if(r.img) return '<img src="'+IMG.wall[r.img]+'" alt="">';
+    if(r.img) return '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.kind==="gym" ? ' class="photo"' : "")+'>';
     return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
   }
   function wallSmallPic(r){
@@ -5208,7 +5342,7 @@
       var p = wallPos(i), on = i<=h, d = w.days[i-1], type = on ? w.map[d] : null;
       if(i % WALL_LEDGE===0){
         var r = WALL_REWARDS[i], got = h>=i;
-        html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+(i===WALL_N ? " top" : "")+'" style="top:'+(p.y-52)+'px'+(i===WALL_N ? "" : ';background-image:url('+IMG.wall.ledge2+')')+'"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
+        html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+(i===WALL_N ? " top" : "")+'" style="top:'+(p.y-52)+'px'+(i===WALL_N ? "" : ';background-image:url('+IMG.wall.ledge2+')')+'"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.kind==="gym" ? ' class="photo"' : "")+'>' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
           '<span class="lname">'+escapeHtml(r.name)+'</span><span class="label">'+(got ? WI.check : WI.lock)+'LEDGE '+(i/WALL_LEDGE)+'</span></div>';
       }
       html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+(WALL_HOLD_SIZE[wallArtFor(i)]||54)+'px;--rot:'+wallRot(i)+'deg" aria-label="Hold '+i+'">'+
@@ -5387,11 +5521,11 @@
       for(var k=0;k<26;k++) conf += '<i style="background:'+cols[k%cols.length]+';--dx:'+Math.round(Math.random()*340-170)+'px;--dy:'+Math.round(Math.random()*260-60)+'px;--r:'+Math.round(Math.random()*700-350)+'deg;animation-delay:'+(Math.random()*0.2).toFixed(2)+'s"></i>'; }
     wallSheet('<img class="wl-rays" src="'+IMG.wall.rays+'" alt=""><img class="wl-sparkle" src="'+IMG.wall.sparkle+'" alt=""><div class="wl-confetti">'+conf+'</div>'+
       '<div class="wl-kicker">'+(big ? "Ledge "+(i/WALL_LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
-      '<div class="wl-prize">'+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+IMG.wall.cl_rest+'" alt=""></span></span>' : "")+'</div>'+
+      '<div class="wl-prize'+(r.kind==="gym" ? " gym" : "")+'">'+(r.kind==="gym" ? "" : '<img class="wl-plinth" src="'+IMG.wall.r2_plinth+'" alt="">')+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+IMG.wall.cl_rest+'" alt=""></span></span>' : "")+'</div>'+
       '<h2>'+(big ? "Ledge reached!" : escapeHtml(r.name))+'</h2>'+
       '<span class="wl-kind">'+(big ? escapeHtml(r.name)+" · " : "")+WALL_KIND[r.kind]+'</span>'+
       '<p>'+(extra ? escapeHtml(extra)+" " : "")+(rest ? "Rest day logged: recovery counts too. " : "")+(big ? "Seven days of showing up. " : "")+
-      (r.kind==="move" ? "Your climber does it on the Wall now. Tap them any time." : "It's in your unlocks. Using it in the app comes in a later update.")+"</p>"+
+      (r.kind==="move" ? "Your climber does it on the Wall now. Tap them any time." : r.kind==="gym" ? "It's unlocked: pick it in Customize on Home." : "It's in your unlocks. Using it in the app comes in a later update.")+"</p>"+
       '<button type="button" class="wl-btn" data-close>Keep climbing</button>', onClose);
   }
   function wallCollection(){
@@ -5658,6 +5792,7 @@
       saveState();
       renderSettingsModal();
       if(key==="devRoomLab") renderRoomLab();
+      if(key==="devPreviewGyms"){ lastUnlockedEnvCount = null; renderCharacterCard(); } // a preview isn't an unlock: no toast
     });
   });
 

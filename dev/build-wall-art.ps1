@@ -95,10 +95,12 @@ public static class WallExport {
 $app = Split-Path -Parent $PSScriptRoot
 $src = Join-Path (Split-Path -Parent $app) "art-source\wall\incoming"
 $assets = Join-Path $app "assets"
+$src2 = Join-Path (Split-Path -Parent $app) "art-source\wall\incoming-2"
 $dst = Join-Path $app "assets\wall"
 New-Item -ItemType Directory -Force $dst | Out-Null
 # out-name = source, boxW, boxH, crop L,T,R,B, trim, hard alpha, padding[, feather L,T,R,B (fraction of the edge), hue shift]
-# A source starting with "app:" is read from this app's assets/ folder instead of the incoming art.
+# A source starting with "app:" is read from this app's assets/ folder, and "r2:" from art-source/wall/incoming-2.
+# (The Wall's ceiling texture is exported by dev/build-room-art.ps1, because it is a JPEG.)
 $jobs = [ordered]@{
   "wall2.png"        = @("wall-tile.png", 300, 300, 6,6,6,6, $false, $false, 0)
   "stud2.png"        = @("wall-stud.png", 40, 2000, 0,6,0,6, $true, $true, 0)
@@ -129,14 +131,29 @@ $jobs = [ordered]@{
   "flame_s.png"      = @("streak-flame-small.png", 110, 110, 0,0,0,0, $true, $false, 2)
   "flame_l.png"      = @("streak-flame-large.png", 110, 110, 0,0,0,0, $true, $false, 2)
   "flame_b.png"      = @("streak-flame-blue.png", 110, 110, 0,0,0,0, $true, $false, 2)
-  # stopgaps for older pieces the generator cut off at the canvas edge (see docs/art/WALL-ART-BRIEF-2.md)
-  "r_shoes2.png"     = @("golden-shoes.png", 130, 120, 0,0,0,0, $true, $true, 2, 0,0,0,0, -16)
-  "r_lights2.png"    = @("app:gear\string-lights.png", 150, 90, 0,16,40,0, $true, $false, 0, 0.1,0,0.14,0, 0)
-  "r_shelf2.png"     = @("app:decor\wall-shelf.png", 140, 120, 24,0,0,0, $true, $true, 0)
+  # round 2 (art-source/wall/incoming-2): clean redraws of pieces round 1 clipped, more holds, icons, plinth
+  "r2_shoes.png"       = @("r2:climbing-shoes.png", 130, 120, 0,0,0,0, $true, $true, 2)
+  "r2_gearbag.png"     = @("r2:gear-bag.png", 150, 120, 0,0,0,0, $true, $true, 2)
+  "r2_shelf.png"       = @("r2:wall-shelf.png", 150, 140, 0,0,0,0, $true, $true, 2)
+  "r2_lights.png"      = @("r2:string-lights.png", 160, 100, 0,0,0,0, $true, $false, 2)
+  "r2_hold_purple.png" = @("r2:hold-purple-pinch.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_grey.png"   = @("r2:hold-grey-pocket.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_blue.png"   = @("r2:hold-blue-volume.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_mint.png"   = @("r2:hold-mint-edge.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_navy.png"   = @("r2:hold-navy-pinch.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_red.png"    = @("r2:hold-red-jug.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_sand.png"   = @("r2:hold-sand-sloper.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_wood.png"   = @("r2:hold-wood-edge.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_hold_yellow.png" = @("r2:hold-yellow-pocket.png", 130, 130, 0,0,0,0, $true, $true, 4)
+  "r2_icon_climb.png"  = @("r2:icon-climb.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "r2_icon_workout.png"= @("r2:icon-workout.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "r2_icon_rest.png"   = @("r2:icon-rest.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "r2_icon_unlocks.png"= @("r2:icon-unlocks.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "r2_plinth.png"      = @("r2:reveal-plinth.png", 400, 300, 0,0,0,0, $true, $true, 2)
 }
 foreach ($k in $jobs.Keys) {
   $j = $jobs[$k]
-  $from = if ($j[0] -like "app:*") { Join-Path $assets $j[0].Substring(4) } else { Join-Path $src $j[0] }
+  $from = if ($j[0] -like "app:*") { Join-Path $assets $j[0].Substring(4) } elseif ($j[0] -like "r2:*") { Join-Path $src2 $j[0].Substring(3) } else { Join-Path $src $j[0] }
   $fe = if ($j.Count -ge 15) { $j[10..14] } else { @(0,0,0,0,0) }
   [WallExport]::Export($from, (Join-Path $dst $k), $j[1], $j[2], $j[3], $j[4], $j[5], $j[6], $j[7], $j[8], $j[9], $fe[0], $fe[1], $fe[2], $fe[3], $fe[4])
 }

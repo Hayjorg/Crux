@@ -730,6 +730,70 @@ and the project rules. It runs on its own private copy of the data, never your r
     await wait(1800);
   });
 
+  // ---- the rooms ----
+  function roomHref(){ var im = q("#sceneEnv image"); return im ? im.getAttribute("href") : ""; }
+  function pickItems(){ return qa("#environmentPickerGrid .picker-item"); }
+  async function openCustomize(){ await goHome(); await click("openCustomizeBtn", 300); }
+
+  test("Rooms: all five gyms show a picture and each one paints its own background on the floor line", async function(){
+    var s = clone(TEMPLATE); s.settings.devPreviewGyms = true;
+    await boot(s); await openCustomize();
+    var items = pickItems();
+    expect(items.length===6, "expected Auto plus five gyms, got "+items.length);
+    expect(!items.some(function(i){ return i.classList.contains("locked"); }), "a gym is locked with Preview every gym on");
+    ["garage","homewall","local","club","dream"].forEach(function(id){
+      var btn = q('#environmentPickerGrid [data-pick-env="'+id+'"]');
+      expect(btn && btn.querySelector("img"), id+" has no thumbnail picture");
+      expect(artIs(btn.querySelector("img").getAttribute("src"), new RegExp("rooms/"+id+"/thumb")), id+" thumbnail is "+btn.querySelector("img").getAttribute("src"));
+    });
+    for(var id of ["homewall","local","club","dream"]){
+      await click(q('#environmentPickerGrid [data-pick-env="'+id+'"]'), 200);
+      expect(artIs(roomHref(), new RegExp("rooms/"+id+"/background")), id+" background not drawn: "+roomHref());
+      var y = parseFloat(q("#sceneEnv image").getAttribute("y")), h = parseFloat(q("#sceneEnv image").getAttribute("height"));
+      expect(y<=0 && y+h>=240, id+" painting doesn't cover the whole scene (y "+y+", height "+h+")");
+    }
+    await click(q('#environmentPickerGrid [data-pick-env="garage"]'), 200);
+    expect(/garage\/background/.test(roomHref()) || artIs(roomHref(), /garage\/background/), "the Garage didn't come back: "+roomHref());
+  });
+
+  test("Rooms: each gym's decorations are grouped under it, toggle on, and stand in the scene", async function(){
+    var s = clone(TEMPLATE); s.settings.devPreviewGyms = true;
+    await boot(s); await openCustomize();
+    var heads = qa("#decoratePickerGrid .picker-group").map(function(h){ return h.textContent.trim(); });
+    expect(heads.length===4 && /Home Wall/.test(heads[0]) && /The Dream Gym/.test(heads[3]), "room headings: "+heads.join(" | "));
+    expect(qa("#decoratePickerGrid [data-decor]").length===19+20, "expected 39 decorations, got "+qa("#decoratePickerGrid [data-decor]").length);
+    await click(q('#decoratePickerGrid [data-decor="beanbag"]'), 200);
+    expect(saved().character.decorations.indexOf("beanbag")>-1, "beanbag didn't save as on");
+    var piece = q('#sceneLayers [data-decor-id="beanbag"]');
+    expect(piece, "beanbag isn't in the scene");
+    expect(parseFloat(piece.style.top)>60 && parseFloat(piece.style.top)<96, "floor piece isn't standing on the floor: top "+piece.style.top);
+    await click(q('#decoratePickerGrid [data-decor="beanbag"]'), 200);
+    expect(!q('#sceneLayers [data-decor-id="beanbag"]'), "beanbag stayed after being switched off");
+  });
+
+  test("Rooms: without the preview, gyms unlock by level and their decorations stay hidden", async function(){
+    var s = clone(TEMPLATE); delete s.settings.devPreviewGyms; s.character.decorations = ["beanbag","holdred"];
+    await boot(s); await openCustomize();
+    var locked = pickItems().filter(function(i){ return i.classList.contains("locked"); }).map(function(i){ return i.textContent.trim(); });
+    expect(locked.length===4 && /Level 8/.test(locked[0]) && /Level 40/.test(locked[3]), "locked gyms: "+locked.join(" | "));
+    expect(qa("#decoratePickerGrid .picker-group").length===0, "room decorations are listed before their gym is unlocked");
+    expect(!q('#sceneLayers [data-decor-id="beanbag"]') && q('#sceneLayers [data-decor-id="holdred"]'), "a locked room's decoration showed up in the scene");
+    expect(saved().character.decorations.indexOf("beanbag")>-1, "a locked room's decoration was dropped from the save");
+    expect(saved().settings.devPreviewGyms===false, "an old save didn't get the preview switch defaulted off");
+  });
+
+  test("The Wall: hold 21 unlocks the Home Wall gym", async function(){
+    var days = []; for(var d=20; d>=1; d--) days.push({ daysAgo:d, workout:true }); // workouts earn no XP, so level stays 1
+    await boot(wallSave(days, { wallSeen:20 })); await openCustomize();
+    var home = q('#environmentPickerGrid [data-pick-env="homewall"]');
+    expect(!home, "Home Wall is unlocked after only 20 holds");
+    days = []; for(d=21; d>=1; d--) days.push({ daysAgo:d, workout:true });
+    await boot(wallSave(days, { wallSeen:21 })); await openCustomize();
+    home = q('#environmentPickerGrid [data-pick-env="homewall"]');
+    expect(home && !home.disabled, "Home Wall is still locked after 21 holds");
+    expect(artIs(roomHref(), /rooms\/homewall\/background/), "Auto didn't move into the Home Wall: "+roomHref());
+  });
+
   test("The app is called Crux (never Crimpet)", async function(){
     await boot(TEMPLATE);
     expect(D.title==="Crux", "page title is '"+D.title+"'");

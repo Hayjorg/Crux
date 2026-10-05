@@ -6,7 +6,7 @@ More than one assistant works on this project, so leave things the way you'd wan
 ## What this is
 
 Crux is a climbing training timer and send log. It has XP, levels and badges, a climber mascot,
-and a decoratable gym scene ("the Garage").
+and decoratable gym rooms (the Garage, plus Home Wall, The Local, The Mountain Club and The Dream Gym).
 
 - **The whole app is one file:** `crux.html`, which is vanilla JS with no build step and no dependencies.
 - **`assets/`** holds the runtime images.
@@ -101,42 +101,65 @@ up one hold:
 - **Holds aren't stored.** `wallDayMap()` works them out from sessions plus `state.restDays`.
 - **Saved data** is only `state.restDays` (local day numbers from `planDayNum`) and
   `state.wallSeen` (how far the climber animation has played).
-- **Unlocks are display-only for now,** except the four climber moves. Other unlocks don't give
-  Garage items yet, and the copy says so. Moves are real: your climber does the newest one after
+- **Unlocks are display-only for now,** except the four climber moves and the Home Wall gym
+  (hold 21). Other unlocks don't give Garage items yet, and the copy says so. Moves are real: your climber does the newest one after
   each unlock card closes, and tapping your climber cycles through the ones you have
   (`WALL_MOVES`, `wallPlayMove()`).
 - **The climber on the Wall** reaches, pulls up and catches the next hold (`wallHop()`), sits on
   a ledge when they're at one (`wallPlace()`), and a rest day's unlock card shows the tea pose.
 - **The art** is in `assets/wall/`, made by `dev/build-wall-art.ps1` from ChatGPT's sources
-  (the originals are in `../art-source/wall/incoming/`). It's uploaded, with blob ids in
-  `IMG.wall`. The prototype page is `dev/wall-prototype.html`.
+  (the originals are in `../art-source/wall/incoming/` for round 1 and `incoming-2/` for round 2,
+  which uses the `r2_` names). The ceiling texture comes from `dev/build-room-art.ps1`. It's
+  uploaded, with blob ids in `IMG.wall`. The prototype page is `dev/wall-prototype.html`.
 - **The climber poses** are in `assets/mascot/climber/default/{climb,sit,rest,move}/`. They're
   made by `../art-source/tools/normalize-wall-climber.ps1`, which locks each head to idle-01
   (`HeadFit.cs`) and removes the soft glow ChatGPT left around some frames. A new pose goes
   through that script, never straight from the generator. The snow summit and autumn ledge
   sources are unused, kept for seasons.
-- **Some older cutouts were clipped at their edges** (shoes, string lights, shelf, and the purple,
-  grey, blue and red holds). They're out of the hold rotation. `r_shoes2`, `r_lights2` and
-  `r_shelf2` are stopgaps made by `dev/build-wall-art.ps1` (recolour, fade, crop).
-  `docs/art/WALL-ART-BRIEF-2.md` asks ChatGPT for clean redraws.
+- **Some round-1 cutouts were clipped at their edges** (shoes, string lights, shelf, gear bag and the
+  purple, grey, blue and red holds). Round 2 redrew them cleanly, and the old versions are out of
+  use. The hold rotation is `WALL_HOLD_ART`: 21 whole pieces, picked with a stride of 5.
+- **Painted icons** (`r2_icon_*`) are on the Climb / Workout / Rest day buttons and the unlocks
+  pill. Prizes stand on `r2_plinth` in the unlock card (a gym shows as a tilted photo instead).
+  Above the top-out is a CSS ceiling using `r2_ceiling.jpg`.
 - **The summit's lip is the last ledge** (hold 42), with a CSS ceiling above it. The next-unlock
   tag is placed beside or above the next hold, away from your climber (`wallPlaceTag()`).
 
+## Rooms (the gyms)
+
+Five painted rooms: The Garage, Home Wall (level 8), The Local (15), The Mountain Club (24) and
+The Dream Gym (40). Home Wall also unlocks at Wall hold 21.
+- **Each room** is an entry in `ENVIRONMENTS` in `crux.html`: `bg` (the painting and its `floor`
+  line), `thumb`, and `fx` (lamp glows and drifting motes). `paintedRoomSVG()` scales every painting
+  so its floor line lands on `ROOM_FLOOR_Y`, the same line the Garage uses, so the climber, gear and
+  decorations stand on the floor in every room. To add a room, add an entry, its images in
+  `IMG.rooms`, and its five decorations in `ACCESSORIES` (with `from`).
+- **Decorations** work in any room; the ones that belong to a room (`from`) appear in Customize once
+  that room is unlocked. They're placed with `foot` (the bottom edge) or `y`, and `ar` (height over
+  width of the trimmed picture). Arrange mode lets people move any of them.
+- **The art** is made by `dev/build-room-art.ps1` from ChatGPT's sources in
+  `../art-source/rooms/incoming/` (backgrounds and thumbnails are JPEGs, decorations are trimmed
+  PNGs). Backgrounds load only when their room is on screen.
+- **Developer switch** "Preview every gym" (Settings, Developer) shows all rooms before their levels.
+- **A room's painting rules** (floor line, empty middle, calm bottom-right corner) are in
+  `docs/art/ROOMS-BRIEF.md`.
+
 ## Art briefs for ChatGPT
 
-- **`docs/art/WALL-ART-BRIEF.md`** is round 1: done and in the app.
-- **`docs/art/WALL-ART-BRIEF-2.md`** asks for redraws of the clipped pieces, more holds, a ceiling,
-  button icons, and extra climber poses.
-- **`docs/art/ROOMS-BRIEF.md`** covers four new rooms (Home Wall, The Local, The Mountain Club,
-  The Dream Gym), each with a background, a thumbnail and five decorations, all matching the
-  Garage.
+- **`docs/art/WALL-ART-BRIEF.md`** is round 1 and **`WALL-ART-BRIEF-2.md`** is round 2: both done and
+  in the app (round 2 skipped the optional extra climber poses).
+- **`docs/art/ROOMS-BRIEF.md`**: done and in the app (four rooms, 28 images).
 
-ChatGPT makes the images into `../art-source/.../incoming*/`. Claude wires them in.
+ChatGPT makes the images in its own folder; Claude copies them to `../art-source/.../incoming*/`,
+exports them, uploads them and wires them in.
+
+**Rooms use the Wall in one place:** a gym can have `wallHold`, and `unlockedEnvironments()` then also
+unlocks it at that Wall hold. That is the fourth `// THE WALL hook` line.
 
 **The owner may remove it if the art doesn't come together. To remove it:**
 1. Delete every block between `THE WALL` and `END THE WALL` markers in `crux.html` (CSS, Home
    card markup, the view markup, `IMG.wall`, and the JS block).
-2. Delete the three `// THE WALL hook` lines (in `switchView` and `renderHome`).
+2. Delete the four `// THE WALL hook` lines (in `switchView`, `renderHome` and `unlockedEnvironments`).
 3. Delete the Wall tests in `dev/tests.html`, the `assets/wall/` folder, and the climber's
    `climb`, `sit`, `rest` and `move` folders.
 4. `restDays` and `wallSeen` can stay in saves: they're harmless. Or remove them from
