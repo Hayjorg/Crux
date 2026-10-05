@@ -816,7 +816,8 @@
   .wl-new{flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:4px 9px;border-radius:99px;background:var(--wl-gold);color:#3A2410;animation:wlNew 1.6s ease-in-out infinite;}
   @keyframes wlNew{50%{transform:scale(1.08);}}
   .wl-flame{position:relative;width:46px;height:46px;flex-shrink:0;border-radius:15px;display:grid;place-items:center;background:color-mix(in srgb, var(--wl-fl) 16%, var(--surface-2));--wl-fl:var(--flash);}
-  .wl-flame svg{width:28px;height:28px;color:var(--wl-fl);transform-origin:50% 90%;animation:wlFlicker 1.6s ease-in-out infinite;}
+  .wl-flame img{width:36px;height:36px;object-fit:contain;transform-origin:50% 90%;animation:wlFlicker 1.6s ease-in-out infinite;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.25));}
+  .wl-flame.cold img{filter:grayscale(1);opacity:0.45;animation:none;}
   .wl-flame.t2{--wl-fl:#FF6A3D;} .wl-flame.t3{--wl-fl:#5B8CFF;}
   .wl-flame.cold{--wl-fl:var(--text-dim);} .wl-flame.cold svg{animation:none;opacity:0.55;}
   .wl-flame.pop{animation:wlPop .7s cubic-bezier(.34,1.56,.64,1);}
@@ -861,7 +862,7 @@
     background:repeating-linear-gradient(180deg, transparent 0 539px, rgba(40,22,6,0.35) 539px 541px, rgba(255,240,210,0.16) 541px 542px, transparent 542px 540px),
       radial-gradient(120% 420px at 50% 0, rgba(255,214,140,0.45), transparent 70%),
       linear-gradient(90deg, rgba(20,12,4,0.45), transparent 14%, transparent 86%, rgba(20,12,4,0.45));}
-  .wl-stud{position:absolute;top:0;bottom:0;width:16px;z-index:1;pointer-events:none;background:repeating-linear-gradient(180deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 23px), linear-gradient(90deg,#8C5E2C,#B7814A 45%,#7A4F22);box-shadow:0 0 12px rgba(0,0,0,0.35);}
+  .wl-stud{position:absolute;top:0;bottom:0;width:18px;z-index:1;pointer-events:none;background-color:#9A6A36;background-repeat:repeat-y;background-size:18px auto;box-shadow:0 0 12px rgba(0,0,0,0.35);}
   .wl-stud.l{left:0;} .wl-stud.r{right:0;}
   .wl-bulb{position:absolute;top:-6px;left:50%;width:46px;transform:translateX(-50%);z-index:2;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,0.35));}
   .wl-glow{position:absolute;top:40px;left:50%;width:300px;height:220px;transform:translateX(-50%);z-index:1;pointer-events:none;background:radial-gradient(closest-side, rgba(255,214,140,0.55), rgba(255,190,100,0.12) 60%, transparent);animation:wlBulb 5s ease-in-out infinite;}
@@ -889,15 +890,15 @@
   .wl-bubble small{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;color:#8A6A3A;letter-spacing:0.05em;}
   @keyframes wlBob{50%{transform:translate(-50%,calc(-100% - 5px));}}
   .wl-qd{position:absolute;z-index:2;width:12px;height:30px;transform:translate(-50%,0);pointer-events:none;}
-  .wl-ledge{position:absolute;left:18px;right:18px;z-index:3;height:22px;transform:translateY(-50%);border-radius:4px;background:linear-gradient(180deg,#E9C48C,#C99350 55%,#9C6A33);box-shadow:0 6px 0 #6E4720, 0 12px 18px -6px rgba(0,0,0,0.55);}
-  .wl-ledge .prize{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);height:58px;display:flex;align-items:flex-end;}
+  .wl-ledge{position:absolute;left:12px;right:12px;z-index:3;aspect-ratio:560/127;transform:translateY(-50%);background-repeat:no-repeat;background-size:100% 100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,0.45));}
+  .wl-ledge .prize{position:absolute;left:50%;bottom:74%;transform:translateX(-50%);height:58px;display:flex;align-items:flex-end;}
   .wl-ledge .prize img{max-height:58px;max-width:110px;filter:drop-shadow(0 4px 3px rgba(0,0,0,0.45));}
   .wl-ledge.locked .prize img{filter:brightness(0) opacity(0.4);}
-  .wl-ledge .label{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:0.06em;color:#3A2410;display:flex;align-items:center;gap:4px;}
+  .wl-ledge .label{position:absolute;right:12%;top:46%;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:0.06em;color:#FFF3DC;text-shadow:0 1px 2px rgba(0,0,0,0.7);display:flex;align-items:center;gap:4px;}
   .wl-ledge .label svg{width:11px;height:11px;}
-  .wl-ledge .lname{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#3A2410;}
-  .wl-ground{position:absolute;left:0;right:0;bottom:0;height:54px;z-index:2;background:linear-gradient(180deg, transparent, rgba(30,18,6,0.55));}
-  .wl-ground span{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,248,235,0.85);}
+  .wl-ledge .lname{position:absolute;left:12%;top:46%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#FFF3DC;text-shadow:0 1px 2px rgba(0,0,0,0.7);}
+  .wl-ground{position:absolute;left:0;right:0;bottom:0;height:56px;z-index:2;background-repeat:repeat-x;background-position:center bottom;background-size:auto 56px;}
+  .wl-ground span{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,248,235,0.95);text-shadow:0 1px 3px rgba(0,0,0,0.6);}
   .wl-climber{position:absolute;z-index:5;width:106px;height:159px;left:0;top:0;pointer-events:none;will-change:transform;}
   .wl-climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 7px 5px rgba(0,0,0,0.4));}
   .wl-puff{position:absolute;z-index:4;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);pointer-events:none;animation:wlPuff .9s ease-out forwards;}
@@ -906,7 +907,9 @@
   .wl-sheet{position:fixed;inset:0;z-index:120;display:grid;place-items:end center;background:rgba(15,10,5,0.6);}
   .wl-sheet-card{position:relative;overflow:hidden;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;background:var(--surface);border-radius:26px 26px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom,0px));text-align:center;box-shadow:0 -20px 50px rgba(0,0,0,0.4);animation:wlUp .45s cubic-bezier(.22,1.2,.36,1);}
   @keyframes wlUp{from{transform:translateY(100%);}}
-  .wl-rays{position:absolute;left:50%;top:118px;width:420px;height:420px;margin:-210px 0 0 -210px;pointer-events:none;opacity:0.5;background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--wl-gold) 55%, transparent) 0 10deg, transparent 10deg 20deg);-webkit-mask:radial-gradient(closest-side, #000 30%, transparent);mask:radial-gradient(closest-side, #000 30%, transparent);animation:wlSpin 14s linear infinite;}
+  .wl-rays{position:absolute;left:50%;top:118px;width:360px;height:360px;margin:-180px 0 0 -180px;pointer-events:none;opacity:0.7;animation:wlSpin 16s linear infinite;}
+  .wl-sparkle{position:absolute;left:50%;top:118px;width:240px;height:240px;margin:-120px 0 0 -120px;pointer-events:none;animation:wlSparkle 2.6s ease-in-out infinite;}
+  @keyframes wlSparkle{50%{transform:scale(1.08) rotate(10deg);opacity:0.7;}}
   @keyframes wlSpin{to{transform:rotate(360deg);}}
   .wl-kicker{position:relative;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);}
   .wl-prize{position:relative;height:150px;display:grid;place-items:center;margin:4px 0 6px;}
@@ -938,6 +941,17 @@
   .wl-sheet-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;text-align:left;}
   .wl-sheet-head h2{font-size:28px;}
   .wl-sheet-head span{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);}
+  /* generated art, pass A */
+  .wl-wall{background-size:150px 150px;}
+  .wl-summit{position:absolute;left:14px;width:calc(100% - 28px);transform:translateY(-100%);z-index:2;pointer-events:none;filter:drop-shadow(0 10px 12px rgba(0,0,0,0.4));}
+  .wl-plate{display:grid;place-items:center;width:84px;aspect-ratio:520/146;background-repeat:no-repeat;background-size:100% 100%;}
+  .wl-plate span{font-family:"Bebas Neue",sans-serif;font-size:11px;letter-spacing:0.04em;color:#3A2410;line-height:1;padding:0 12%;text-align:center;text-shadow:0 1px 0 rgba(255,240,200,0.6);}
+  .wl-plate.big{width:260px;animation:wlPrize .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .wl-plate.big span{font-size:30px;}
+  .wl-ledge .prize .wl-plate{width:110px;} .wl-ledge .prize .wl-plate span{font-size:14px;}
+  .wl-ledge.locked .prize .wl-plate{filter:brightness(0) opacity(0.4);}
+  .wl-item.mystery .nm{color:var(--text-dim);}
+  .wl-item.mystery .wl-pic img{max-height:40px;}
   @media (prefers-reduced-motion: reduce){ #view-wall *, .wl-sheet *, .wl-card *{animation:none !important;transition:none !important;} }
   /* ==== END THE WALL ==== */
 </style>
@@ -1038,7 +1052,7 @@
     </div>
     <!-- ==== THE WALL (removable feature) ==== -->
     <button type="button" class="wl-card" id="wallCard" hidden>
-      <span class="wl-flame" id="wallCardFlame" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.1-1.9-5-3-7.3-.5 1.6-1.4 2.6-2.4 3C13.8 7.5 12 4.6 9.5 2c.3 3.4-1.5 5.3-3 7.4C5.4 10.9 5 12.6 5 14.6 5 19 7.8 22 12 22z"/></svg></span>
+      <span class="wl-flame" id="wallCardFlame" aria-hidden="true"><img alt=""></span>
       <span class="wl-card-main"><span class="wl-card-title" id="wallCardTitle">The Wall</span><span class="wl-card-sub" id="wallCardSub"></span></span>
       <span class="wl-new" id="wallCardNew" hidden>New hold!</span>
     </button>
@@ -1224,7 +1238,7 @@
     <div class="wl-top">
       <section class="wl-hud" aria-label="Your streak">
         <div class="wl-hud-row">
-          <span class="wl-flame" id="wallFlame" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.1-1.9-5-3-7.3-.5 1.6-1.4 2.6-2.4 3C13.8 7.5 12 4.6 9.5 2c.3 3.4-1.5 5.3-3 7.4C5.4 10.9 5 12.6 5 14.6 5 19 7.8 22 12 22z"/></svg></span>
+          <span class="wl-flame" id="wallFlame" aria-hidden="true"><img alt=""></span>
           <div style="min-width:0;">
             <div class="wl-num"><span id="wallStreak">0</span><small>day streak</small></div>
             <div class="wl-msg" id="wallMsg"></div>
@@ -4204,7 +4218,37 @@
       r_plant: asset("wall/r_plant.png", "1edf7b1cd5ad6ab2bdf5faef8282e69f"),
       r_hay: asset("wall/r_hay.png", "79c2d4e1511a4adc983534aa518f1e8f"),
       r_basket: asset("wall/r_basket.png", "f8fafb0aff963bbf57604c296d71d02f"),
-      r_fridge: asset("wall/r_fridge.png", "e977b8def8f4837b7c377290743be5f6")
+      r_fridge: asset("wall/r_fridge.png", "e977b8def8f4837b7c377290743be5f6"),
+      // pass A of the generated Wall art (art-source/wall/incoming, exported by dev/build-wall-art.ps1)
+      wall2: asset("wall/wall2.png", "e8546f23e4507313d4296f2940146849"),
+      stud2: asset("wall/stud2.png", "655cea90e9e131b743bbbc35db23927c"),
+      ground2: asset("wall/ground2.png", "94be3c90bfa4f5cdc51713b278134a41"),
+      ledge2: asset("wall/ledge2.png", "8edfcddff43d68bdd152bd4d04e8b3eb"),
+      summit: asset("wall/summit.png", "943fca06d38e6e035ede637e87ca3df8"),
+      h2_crimp: asset("wall/h2_crimp.png", "38258812daf93845afcac48532632d16"),
+      h2_pinch: asset("wall/h2_pinch.png", "5bf82c2dfe014327519fd6c59333c86b"),
+      h2_jug: asset("wall/h2_jug.png", "c931623a66eff6b68d70ecdca8110fba"),
+      h2_sloper: asset("wall/h2_sloper.png", "41d3a41767d541d08d53887869fea9d5"),
+      h2_tufa: asset("wall/h2_tufa.png", "10fd1401afc380e098ef2c08ee021946"),
+      h2_dual: asset("wall/h2_dual.png", "4163f63d3f6ed118e622d13ad60e1ae0"),
+      h2_macro: asset("wall/h2_macro.png", "f7cd1bdc63a6123ca0547adb26bf77dc"),
+      h2_chip: asset("wall/h2_chip.png", "1a59e22ad76afe65e7bbb724580c0fca"),
+      c_mint: asset("wall/c_mint.png", "3f58982b4e75327227bc03c73bf77282"),
+      c_sunset: asset("wall/c_sunset.png", "b02d062d0e3cf4da63d0fe3adcbb3cbd"),
+      c_lilac: asset("wall/c_lilac.png", "8568edcb6dfdaec07e6a1f6d36ac5ac7"),
+      c_glacier: asset("wall/c_glacier.png", "302882f43454fa6cd33c5526d1965e78"),
+      c_neon: asset("wall/c_neon.png", "aa83c919a6b4f1349d2c85449e61c3b2"),
+      c_gold: asset("wall/c_gold.png", "ed2adec14a29c89f4b99fe8cd7ee1a18"),
+      c_midnight: asset("wall/c_midnight.png", "854a9b42453205cebb60f9eda376b2ff"),
+      title_plate: asset("wall/title_plate.png", "9e9fb04d75412dbcc263124371068204"),
+      golden_shoes: asset("wall/golden_shoes.png", "095290b9b853c0fd9bff248353e245a9"),
+      mystery: asset("wall/mystery.png", "68c77ffd10f69929b5145b54ca08654c"),
+      home_wall: asset("wall/home_wall.png", "0e36d7277c774ec7e34224e823bd1386"),
+      rays: asset("wall/rays.png", "703cf1a5b6b86872464898bcaf618b2b"),
+      sparkle: asset("wall/sparkle.png", "79270d172839733c7670d0f07eb30d73"),
+      flame_s: asset("wall/flame_s.png", "4c5e2dfdc93e769e928a0c81b53662c6"),
+      flame_l: asset("wall/flame_l.png", "dccccb6c074eb5a8266358ef3dada062"),
+      flame_b: asset("wall/flame_b.png", "1f4d7bad983b979cc027d084cfae7ca5")
     }
     // ==== END THE WALL ====
   };
@@ -4968,7 +5012,7 @@
      history, never stored; only rest days (state.restDays) and how far you've watched your climber
      go (state.wallSeen) are saved. Set WALL_ENABLED = false to switch the whole thing off. */
   var WALL_ENABLED = true;
-  var WALL_N = 42, WALL_LEDGE = 7, WALL_GAP = 98, WALL_BOTTOM = 92, WALL_TOPPAD = 150;
+  var WALL_N = 42, WALL_LEDGE = 7, WALL_GAP = 98, WALL_BOTTOM = 92, WALL_TOPPAD = 300;
   var WI = {
     climb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M2 20 9 7l4 7 2-3 7 9z"/></svg>',
     workout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
@@ -4979,24 +5023,23 @@
     move:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M5.6 5.6l2.8 2.8M3 12h4M18.4 5.6l-2.8 2.8M21 12h-4"/><circle cx="12" cy="15" r="4"/></svg>'
   };
   var WALL_REWARDS = [null,
-    { name:"Chalk bag", kind:"decor", img:"r_chalkbag" }, { name:"Mint chalk", kind:"chalk", c:"#7FE3C8" }, { name:"Gumby", kind:"title" },
-    { name:"Climbing shoes", kind:"decor", img:"r_shoes" }, { name:"Blue sloper", kind:"hold", img:"h_volume" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62" },
+    { name:"Chalk bag", kind:"decor", img:"r_chalkbag" }, { name:"Mint chalk", kind:"chalk", c:"#7FE3C8", img:"c_mint" }, { name:"Gumby", kind:"title" },
+    { name:"Climbing shoes", kind:"decor", img:"r_shoes" }, { name:"Blue sloper", kind:"hold", img:"h_volume" }, { name:"Sunset chalk", kind:"chalk", c:"#FF9A62", img:"c_sunset" },
     { name:"Crash pad", kind:"decor", img:"r_pad" }, { name:"Route notes", kind:"decor", img:"r_notes" }, { name:"Crimper", kind:"title" },
     { name:"Purple pinch", kind:"hold", img:"h_purple" }, { name:"Chalk clap", kind:"move" }, { name:"Hangboard", kind:"decor", img:"r_hangboard" },
-    { name:"Lilac chalk", kind:"chalk", c:"#C3A8F5" }, { name:"Clamp lamp", kind:"decor", img:"r_lamp" }, { name:"Jug", kind:"hold", img:"h_jug" },
-    { name:"Flash Kid", kind:"title" }, { name:"Gear bag", kind:"decor", img:"r_gearbag" }, { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF" },
-    { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move" }, { name:"The Home Wall", kind:"gym", img:"tile" },
+    { name:"Lilac chalk", kind:"chalk", c:"#C3A8F5", img:"c_lilac" }, { name:"Clamp lamp", kind:"decor", img:"r_lamp" }, { name:"Jug", kind:"hold", img:"h_jug" },
+    { name:"Flash Kid", kind:"title" }, { name:"Gear bag", kind:"decor", img:"r_gearbag" }, { name:"Glacier chalk", kind:"chalk", c:"#8FD3FF", img:"c_glacier" },
+    { name:"Rolled pad", kind:"decor", img:"r_rolled" }, { name:"Fist pump", kind:"move" }, { name:"The Home Wall", kind:"gym", img:"home_wall" },
     { name:"Yellow pyramid", kind:"hold", img:"h_yellow" }, { name:"Dyno Machine", kind:"title" }, { name:"Wall shelf", kind:"decor", img:"r_shelf" },
-    { name:"Neon chalk", kind:"chalk", c:"#C6FF4A" }, { name:"Mountain print", kind:"decor", img:"r_print" }, { name:"Victory wave", kind:"move" },
+    { name:"Neon chalk", kind:"chalk", c:"#C6FF4A", img:"c_neon" }, { name:"Mountain print", kind:"decor", img:"r_print" }, { name:"Victory wave", kind:"move" },
     { name:"String lights", kind:"decor", img:"r_lights" }, { name:"Slotted edge", kind:"hold", img:"h_slot" }, { name:"Sloper Whisperer", kind:"title" },
-    { name:"Potted plant", kind:"decor", img:"r_plant" }, { name:"Gold chalk", kind:"chalk", c:"#F3C766" }, { name:"Foothold", kind:"hold", img:"h_foot" },
+    { name:"Potted plant", kind:"decor", img:"r_plant" }, { name:"Gold chalk", kind:"chalk", c:"#F3C766", img:"c_gold" }, { name:"Foothold", kind:"hold", img:"h_foot" },
     { name:"Happy dance", kind:"move" }, { name:"Mini fridge", kind:"decor", img:"r_fridge" }, { name:"Grey pocket", kind:"hold", img:"h_gray" },
-    { name:"Send Train", kind:"title" }, { name:"Laundry basket", kind:"decor", img:"r_basket" }, { name:"Midnight chalk", kind:"chalk", c:"#3C3F7A" },
-    { name:"Hay bale", kind:"decor", img:"r_hay" }, { name:"Wall Legend", kind:"title" }, { name:"Golden shoes", kind:"outfit", img:"r_shoes", gold:true }
+    { name:"Send Train", kind:"title" }, { name:"Laundry basket", kind:"decor", img:"r_basket" }, { name:"Midnight chalk", kind:"chalk", c:"#3C3F7A", img:"c_midnight" },
+    { name:"Hay bale", kind:"decor", img:"r_hay" }, { name:"Wall Legend", kind:"title" }, { name:"Golden shoes", kind:"outfit", img:"golden_shoes" }
   ];
   var WALL_KIND = { decor:"Garage decoration", hold:"Hold for your Garage wall", chalk:"Chalk colour", title:"Climber title", move:"Climber move", gym:"New gym", outfit:"Climber outfit" };
-  var WALL_HOLD_ART = ["h_jug","h_red","h_slot","h_yellow","h_purple","h_foot","h_gray","h_green","h_volume","h_yellow2"];
-  var GOLD_FILTER = "sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1)";
+  var WALL_HOLD_ART = ["h_jug","h2_crimp","h_red","h2_sloper","h_slot","h2_tufa","h_yellow","h2_dual","h_purple","h2_jug","h_foot","h2_macro","h_gray","h2_pinch","h_green","h2_chip","h_volume","h_yellow2"];
 
   // ---- the day model: everything below is read from what you've logged ----
   function wallToday(){ return planDayNum(Date.now()); }
@@ -5034,27 +5077,40 @@
       (next ? "next: <b>"+escapeHtml(next.name)+"</b>" : "<b>top of the wall!</b>");
     document.getElementById("wallCardNew").hidden = !(state.wallSeen!=null && w.holds>state.wallSeen);
   }
-  function wallFlameClass(el, s){ el.classList.toggle("cold", s===0); el.classList.toggle("t2", s>=7 && s<14); el.classList.toggle("t3", s>=14); }
+  // the flame art grows with the streak: small, then big red-orange at 7 days, blue at 14
+  function wallFlameClass(el, s){
+    el.classList.toggle("cold", s===0); el.classList.toggle("t2", s>=7 && s<14); el.classList.toggle("t3", s>=14);
+    var img = el.querySelector("img"), src = s>=14 ? IMG.wall.flame_b : s>=7 ? IMG.wall.flame_l : IMG.wall.flame_s;
+    if(img && img.getAttribute("src")!==src) img.src = src;
+  }
 
   // ---- the wall view ----
   var wallEl = document.getElementById("wallWall"), wallItems = document.getElementById("wallItems");
   var WALL_H = WALL_BOTTOM + WALL_N*WALL_GAP + WALL_TOPPAD;
   wallEl.style.height = WALL_H+"px";
-  wallEl.style.backgroundImage = "url("+IMG.wall.tile+")";
+  wallEl.style.backgroundImage = "url("+IMG.wall.wall2+")";
   document.getElementById("wallBulb").src = IMG.wall.bulb;
+  document.querySelectorAll("#view-wall .wl-stud").forEach(function(s){ s.style.backgroundImage = "url("+IMG.wall.stud2+")"; });
+  document.querySelector("#view-wall .wl-ground").style.backgroundImage = "url("+IMG.wall.ground2+")";
+  (function(){ // the top-out: the summit sits just above the last hold
+    var sm = document.createElement("img"); sm.className = "wl-summit"; sm.alt = ""; sm.src = IMG.wall.summit;
+    sm.style.top = (WALL_TOPPAD - 36)+"px"; wallEl.appendChild(sm);
+  })();
   (function(){ for(var k=0;k<6;k++){ var e = document.createElement("span"); e.className = "wl-mote"; e.style.left = (30+k*8)+"%"; e.style.top = (70+(k%3)*40)+"px"; e.style.animationDelay = (k*1.4)+"s"; wallEl.appendChild(e); } })();
   function wallPos(i){ return i<=0 ? { x:50, y:WALL_H-50 } : { x:50 + 25*Math.sin(i*0.92) + 9*Math.sin(i*2.3+1), y:WALL_H - WALL_BOTTOM - i*WALL_GAP }; }
   function wallPx(p){ return { x:p.x/100*wallEl.clientWidth, y:p.y }; }
   function wallRot(i){ return Math.round(Math.sin(i*12.9898)*43758.5453 % 1 * 50); }
   function wallArtFor(i){ return WALL_HOLD_ART[(i*7) % WALL_HOLD_ART.length]; }
-  function wallPic(r, plateCls){
-    if(r.kind==="chalk") return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
-    if(r.kind==="title") return '<span class="'+(plateCls||"plate")+'">'+escapeHtml(r.name)+'</span>';
+  // Titles are written onto the brass nameplate art; everything else with art shows its picture.
+  function wallPlate(name, big){ return '<span class="wl-plate'+(big ? " big" : "")+'" style="background-image:url('+IMG.wall.title_plate+')"><span>'+escapeHtml(name)+'</span></span>'; }
+  function wallPic(r, big){
+    if(r.kind==="title") return wallPlate(r.name, big);
     if(r.kind==="move") return '<span class="mv">'+WI.move+'</span>';
-    return '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.gold ? ' style="filter:'+GOLD_FILTER+'"' : '')+'>';
+    if(r.img) return '<img src="'+IMG.wall[r.img]+'" alt="">';
+    return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
   }
   function wallSmallPic(r){
-    return r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="chalk" ? '<span style="width:16px;height:16px;border-radius:50%;background:'+r.c+'"></span>'
+    return r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="title" ? '<img src="'+IMG.wall.title_plate+'" alt="">'
       : r.kind==="move" ? '<span style="color:var(--accent);width:18px;height:18px;display:grid">'+WI.move+'</span>' : '<span style="color:var(--wl-gold);width:18px;height:18px;display:grid">'+WI.star+'</span>';
   }
   var wallHopping = false;
@@ -5064,7 +5120,7 @@
       var p = wallPos(i), on = i<=h, d = w.days[i-1], type = on ? w.map[d] : null;
       if(i % WALL_LEDGE===0){
         var r = WALL_REWARDS[i], got = h>=i;
-        html += '<div class="wl-ledge '+(got ? "got" : "locked")+'" style="top:'+(p.y-48)+'px"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.gold && got ? ' style="filter:'+GOLD_FILTER+'"' : '')+'>' : '')+'</div>'+
+        html += '<div class="wl-ledge '+(got ? "got" : "locked")+'" style="top:'+(p.y-52)+'px;background-image:url('+IMG.wall.ledge2+')"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt="">' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
           '<span class="lname">'+escapeHtml(r.name)+'</span><span class="label">'+(got ? WI.check : WI.lock)+'LEDGE '+(i/WALL_LEDGE)+'</span></div>';
       }
       html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+(wallArtFor(i)==="h_volume" ? 62 : 54)+'px;--rot:'+wallRot(i)+'deg" aria-label="Hold '+i+'">'+
@@ -5173,9 +5229,9 @@
     var r = WALL_REWARDS[i], big = i % WALL_LEDGE===0, conf = "";
     if(big && !prefersReducedMotion){ var cols = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--wl-gold)","var(--wl-purple)"];
       for(var k=0;k<26;k++) conf += '<i style="background:'+cols[k%cols.length]+';--dx:'+Math.round(Math.random()*340-170)+'px;--dy:'+Math.round(Math.random()*260-60)+'px;--r:'+Math.round(Math.random()*700-350)+'deg;animation-delay:'+(Math.random()*0.2).toFixed(2)+'s"></i>'; }
-    wallSheet('<div class="wl-rays"></div><div class="wl-confetti">'+conf+'</div>'+
+    wallSheet('<img class="wl-rays" src="'+IMG.wall.rays+'" alt=""><img class="wl-sparkle" src="'+IMG.wall.sparkle+'" alt=""><div class="wl-confetti">'+conf+'</div>'+
       '<div class="wl-kicker">'+(big ? "Ledge "+(i/WALL_LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
-      '<div class="wl-prize">'+wallPic(r, "plate")+'</div>'+
+      '<div class="wl-prize">'+wallPic(r, true)+'</div>'+
       '<h2>'+(big ? "Ledge reached!" : escapeHtml(r.name))+'</h2>'+
       '<span class="wl-kind">'+(big ? escapeHtml(r.name)+" · " : "")+WALL_KIND[r.kind]+'</span>'+
       '<p>'+(extra ? escapeHtml(extra)+" " : "")+(big ? "Seven days of showing up. " : "")+"It's in your unlocks. Using it in the app comes in a later update.</p>"+
@@ -5184,7 +5240,7 @@
   function wallCollection(){
     var h = wallInfo().holds, cells = "";
     for(var i=1;i<=WALL_N;i++){ var r = WALL_REWARDS[i], got = i<=h;
-      cells += '<div class="wl-item'+(got ? "" : " locked")+(i%WALL_LEDGE===0 ? " ledge-item" : "")+'"><span class="wl-pic">'+wallPic(r)+'</span><span class="nm">'+(i<=h+1 ? escapeHtml(r.name) : "???")+'</span><span class="hd">'+(i%WALL_LEDGE===0 ? "LEDGE · " : "")+"HOLD "+i+'</span></div>'; }
+      cells += '<div class="wl-item'+(got ? "" : i<=h+1 ? " locked" : " mystery")+(i%WALL_LEDGE===0 ? " ledge-item" : "")+'"><span class="wl-pic">'+(i<=h+1 ? wallPic(r) : '<img src="'+IMG.wall.mystery+'" alt="">')+'</span><span class="nm">'+(i<=h+1 ? escapeHtml(r.name) : "???")+'</span><span class="hd">'+(i%WALL_LEDGE===0 ? "LEDGE · " : "")+"HOLD "+i+'</span></div>'; }
     wallSheet('<div class="wl-sheet-head"><h2>Unlocks</h2><span>'+h+' of '+WALL_N+'</span></div><div class="wl-grid">'+cells+'</div><button type="button" class="wl-btn" style="margin-top:14px" data-close>Close</button>');
   }
 
