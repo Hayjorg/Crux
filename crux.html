@@ -361,6 +361,7 @@
   .picker-thumb img{width:100%;height:100%;display:block;}
   .picker-thumb.fit-contain img{object-fit:contain;padding:4px;}
   .picker-thumb.cover img{object-fit:cover;}
+  #developerSection .theme-row .chip{padding:8px 12px;font-size:13px;flex:0 1 auto;}
   .picker-group{grid-column:1/-1;margin:8px 0 -2px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);}
   .picker-thumb.auto-thumb{font-family:"Bebas Neue",sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--text-dim);}
   .picker-name{font-size:11px;font-weight:700;line-height:1.2;}
@@ -1379,7 +1380,7 @@
 <div class="modal-overlay" id="settingsOverlay" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-label="Settings">
     <div class="modal-head">
-      <h2>Settings</h2>
+      <h2 id="settingsTitle">Settings</h2>
       <button type="button" class="icon-btn" id="closeSettingsBtn" aria-label="Close settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
@@ -1464,6 +1465,24 @@
 
     <div class="settings-section" id="developerSection" hidden>
       <p class="settings-section-title">Developer</p>
+      <p class="settings-section-hint">Testing tools, just for the owner. Nothing here changes your real climbs or XP. <button type="button" class="link-btn" id="devModeOff">Hide developer tools</button></p>
+      <div class="switch-row" style="display:block;">
+        <div class="switch-label">Pretend level</div>
+        <div class="switch-desc" id="devLevelDesc">Test how rooms, gear and unlocks look. Your real XP is never changed.</div>
+        <div class="theme-row" id="devLevelRow" style="margin-top:8px;flex-wrap:wrap;">
+          <button type="button" class="chip" data-dev-level="0">Off</button>
+          <button type="button" class="chip" data-dev-level="4">4</button>
+          <button type="button" class="chip" data-dev-level="8">8</button>
+          <button type="button" class="chip" data-dev-level="15">15</button>
+          <button type="button" class="chip" data-dev-level="25">25</button>
+          <button type="button" class="chip" data-dev-level="40">40</button>
+        </div>
+        <div class="theme-row" style="margin-top:8px;">
+          <button type="button" class="chip" id="devLevelDown">− 1 level</button>
+          <button type="button" class="chip" id="devLevelUp">+ 1 level</button>
+          <button type="button" class="chip" id="devLevelPlay">Play level-up</button>
+        </div>
+      </div>
       <div class="switch-row">
         <div><div class="switch-label">Preview every gym</div><div class="switch-desc">See all four new rooms and their decorations now, before you reach their levels</div></div>
         <button type="button" class="switch" data-setting="devPreviewGyms" aria-pressed="false"><span class="switch-thumb"></span></button>
@@ -1759,7 +1778,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false },
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false },
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -1989,6 +2008,13 @@
       var on = !!state.settings[btn.dataset.setting];
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    document.getElementById("developerSection").hidden = !state.settings.devMode;
+    document.querySelectorAll("#devLevelRow .chip").forEach(function(btn){
+      btn.classList.toggle("selected", +btn.dataset.devLevel===(state.settings.devLevel||0));
+    });
+    document.getElementById("devLevelDesc").textContent = state.settings.devLevel>0
+      ? "Pretending to be level "+state.level+" (your real level is "+realLevel()+"). Your real XP is never changed."
+      : "Test how rooms, gear and unlocks look. Your real XP is never changed.";
     var advanced = state.settings.mode==="advanced";
     document.getElementById("loggingFieldsSwitches").hidden = !advanced;
     document.getElementById("loggingFieldsHint").textContent = advanced
@@ -2772,6 +2798,9 @@
       previous = a;
     });
 
+    // Developer "Pretend level": raises the level that gates rooms, gear and badges for testing. It
+    // never touches XP or history, and clearing it brings the real level straight back.
+    if(state.settings && state.settings.devLevel>level) level = state.settings.devLevel;
     state.xp=xp; state.level=level; state.streak=streak; state.longestStreak=longestStreak;
     state.counts=counts; state.totalAttempts=all.length; state.badges=badges;
 
@@ -2781,6 +2810,11 @@
     };
   }
 
+  function realLevel(){
+    var xp = 0, level = 1;
+    state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ xp += a.xp; while(xp>=xpForLevel(level)){ xp -= xpForLevel(level); level++; } }); });
+    return level; // order doesn't matter for a plain XP total
+  }
   function announceOutcome(outcome){
     if(!outcome) return;
     if(outcome.leveledUpTo) showToast("Level up — now level "+outcome.leveledUpTo);
@@ -4915,7 +4949,7 @@
     if(avatarImg.getAttribute("src")!==stage.img) avatarImg.src = stage.img;
     document.getElementById("heroLevelNum").textContent = state.level;
     document.getElementById("characterStageName").textContent = "Your climber";
-    document.getElementById("characterSub").textContent = "Level "+state.level+" · "+mood.caption;
+    document.getElementById("characterSub").textContent = "Level "+state.level+(state.settings.devLevel>0 && state.level===state.settings.devLevel ? " (test)" : "")+" · "+mood.caption;
     var nextStage = CHARACTER_STAGES[unlockedChar.length];
     document.getElementById("characterHint").textContent = nextStage
       ? "Level "+nextStage.minLevel+" unlocks "+nextStage.gear+" for the Garage"
@@ -5784,6 +5818,32 @@
   document.getElementById("historyExpandBtn").addEventListener("click", function(){
     historyExpanded = true;
     renderHome();
+  });
+  // Developer tools stay hidden until you tap the Settings title five times (or add ?dev=1 to the address).
+  (function(){
+    var taps = 0, timer = null;
+    document.getElementById("settingsTitle").addEventListener("click", function(){
+      taps++; clearTimeout(timer); timer = setTimeout(function(){ taps = 0; }, 2500);
+      if(taps>=5){ taps = 0; state.settings.devMode = !state.settings.devMode; saveState(); renderSettingsModal(); showToast(state.settings.devMode ? "Developer tools on" : "Developer tools off"); }
+    });
+    document.getElementById("devModeOff").addEventListener("click", function(){ state.settings.devMode = false; saveState(); renderSettingsModal(); });
+    if(/[?&]dev=1\b/.test(location.search) && !state.settings.devMode){ state.settings.devMode = true; saveState(); }
+  })();
+  // Developer: pretend level (see recomputeProfile)
+  function setDevLevel(n){
+    state.settings.devLevel = Math.max(0, Math.min(60, n|0));
+    recomputeProfile();
+    saveState(); lastUnlockedEnvCount = null; lastUnlockedCharCount = null; // a pretend level isn't a real unlock: no toasts
+    renderHome(); renderSettingsModal();
+  }
+  document.getElementById("devLevelRow").addEventListener("click", function(e){
+    var b = e.target.closest("[data-dev-level]"); if(b) setDevLevel(+b.dataset.devLevel);
+  });
+  document.getElementById("devLevelUp").addEventListener("click", function(){ setDevLevel(state.level+1); });
+  document.getElementById("devLevelDown").addEventListener("click", function(){ setDevLevel(state.level-1); });
+  document.getElementById("devLevelPlay").addEventListener("click", function(){
+    announceOutcome({ leveledUpTo:state.level, newlyUnlocked:[] });
+    celebrateLevelUp();
   });
   document.querySelectorAll(".switch[data-setting]").forEach(function(btn){
     btn.addEventListener("click", function(){

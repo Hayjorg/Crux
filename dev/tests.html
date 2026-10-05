@@ -782,6 +782,27 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().settings.devPreviewGyms===false, "an old save didn't get the preview switch defaulted off");
   });
 
+  test("Developer: five taps on Settings reveal Pretend level, which unlocks rooms without touching real XP", async function(){
+    var s = clone(TEMPLATE); s.settings.devLevel = 0; s.settings.devMode = false;
+    await boot(s); await goHome(); await click("openSettingsBtn", 300);
+    expect($("developerSection").hidden, "Developer tools are showing before the secret tap");
+    for(var i=0;i<4;i++) await click("settingsTitle", 20);
+    expect($("developerSection").hidden, "Developer tools opened after only four taps");
+    await click("settingsTitle", 300);
+    expect(!$("developerSection").hidden && saved().settings.devMode===true, "five taps didn't open Developer tools");
+    var xpBefore = saved().xp;
+    await click(q('#devLevelRow [data-dev-level="8"]'), 300);
+    expect(saved().level===8 && $("heroLevelNum").textContent==="8", "level didn't become 8: "+saved().level);
+    expect(/Level 8 \(test\)/.test($("characterSub").textContent), "Home doesn't say it's a test level: "+$("characterSub").textContent);
+    expect(artIs(roomHref(), /rooms\/homewall\/background/), "level 8 didn't move Auto into the Home Wall: "+roomHref());
+    expect(saved().xp===xpBefore && saved().totalAttempts===0, "pretending changed real XP or history");
+    await click("devLevelUp", 200); await click("devLevelUp", 200);
+    expect(saved().level===10, "+1 level twice should reach 10, got "+saved().level);
+    await click(q('#devLevelRow [data-dev-level="0"]'), 300);
+    expect(saved().level===1 && saved().settings.devLevel===0, "Off didn't bring the real level back: "+saved().level);
+    await click("devModeOff", 200);
+    expect($("developerSection").hidden, "Hide developer tools didn't hide them");
+  });
   test("The Wall: hold 21 unlocks the Home Wall gym", async function(){
     var days = []; for(var d=20; d>=1; d--) days.push({ daysAgo:d, workout:true }); // workouts earn no XP, so level stays 1
     await boot(wallSave(days, { wallSeen:20 })); await openCustomize();

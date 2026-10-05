@@ -140,7 +140,9 @@ The Dream Gym (40). Home Wall also unlocks at Wall hold 21.
 - **The art** is made by `dev/build-room-art.ps1` from ChatGPT's sources in
   `../art-source/rooms/incoming/` (backgrounds and thumbnails are JPEGs, decorations are trimmed
   PNGs). Backgrounds load only when their room is on screen.
-- **Developer switch** "Preview every gym" (Settings, Developer) shows all rooms before their levels.
+- **Developer tools** are hidden until you tap the Settings title five times (or open the page with `?dev=1`).
+  They hold "Pretend level" (raises the level that gates rooms, gear and badges; it never changes XP or
+  history, see `recomputeProfile()`) and "Preview every gym".
 - **A room's painting rules** (floor line, empty middle, calm bottom-right corner) are in
   `docs/art/ROOMS-BRIEF.md`.
 
