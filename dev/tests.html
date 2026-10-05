@@ -659,6 +659,7 @@ and the project rules. It runs on its own private copy of the data, never your r
   }
   async function openWallView(){ await goHome(); await click("wallCard", 3400); }
   function closeSheet(){ var b = q(".wl-sheet [data-close]"); if(b) b.click(); }
+  async function goHomeFromWall(){ if(visible("view-wall")) await click("wallHomeBtn", 300); }
   // the app may load an image from assets/ or from its uploaded copy (/_blob/<id>); match either
   function artIs(src, re){
     if(re.test(src)) return true;
@@ -761,7 +762,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     await boot(s); await openCustomize();
     var heads = qa("#decoratePickerGrid .picker-group").map(function(h){ return h.textContent.trim(); });
     expect(heads.length===4 && /Home Wall/.test(heads[0]) && /The Dream Gym/.test(heads[3]), "room headings: "+heads.join(" | "));
-    expect(qa("#decoratePickerGrid [data-decor]").length===19+20, "expected 39 decorations, got "+qa("#decoratePickerGrid [data-decor]").length);
+    expect(qa("#decoratePickerGrid [data-decor]").length===21+20, "expected 41 decorations, got "+qa("#decoratePickerGrid [data-decor]").length);
     await click(q('#decoratePickerGrid [data-decor="beanbag"]'), 200);
     expect(saved().character.decorations.indexOf("beanbag")>-1, "beanbag didn't save as on");
     var piece = q('#sceneLayers [data-decor-id="beanbag"]');
@@ -802,6 +803,45 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().level===1 && saved().settings.devLevel===0, "Off didn't bring the real level back: "+saved().level);
     await click("devModeOff", 200);
     expect($("developerSection").hidden, "Hide developer tools didn't hide them");
+  });
+  test("Celebration card: reaching a gym's level shows its card and Take a look moves you in", async function(){
+    var s = clone(TEMPLATE); s.settings.devLevel = 0; s.settings.devMode = true;
+    await boot(s); await goHome(); await click("openSettingsBtn", 300);
+    await click(q('#devLevelRow [data-dev-level="8"]'), 400);
+    var seen = [];
+    for(var i=0;i<4 && q(".cel-sheet");i++){
+      seen.push(q(".cel-card h2").textContent);
+      if(/Home Wall/.test(q(".cel-card h2").textContent)){
+        expect(q(".cel-card img.cel-photo"), "the gym card has no picture");
+        expect(/Take a look/.test(q(".cel-btn").textContent), "no Take a look button");
+        await click(q(".cel-btn"), 300);
+        expect(saved().character.selectedEnvironmentId==="homewall", "Take a look didn't pick the Home Wall");
+        expect(!q(".cel-sheet"), "the card stayed open");
+        return;
+      }
+      await click(q(".cel-btn"), 300);
+    }
+    throw new Error("no Home Wall card; saw: "+seen.join(", "));
+  });
+
+  test("Developer: Pretend Wall streak fakes holds and the flame, never touches real days", async function(){
+    var s = clone(TEMPLATE); s.settings.devMode = true; s.settings.devWallDays = 0;
+    await boot(s); await goHome(); await click("openSettingsBtn", 300);
+    expect(visible("devWallRow"), "Pretend Wall streak controls aren't showing");
+    await click(q('#devWallRow [data-dev-wall="13"]'), 300);
+    expect(saved().settings.devWallDays===13, "devWallDays is "+saved().settings.devWallDays);
+    expect(/13 day streak/.test($("wallCardTitle").textContent), "Home card: "+$("wallCardTitle").textContent);
+    expect(saved().sessions.length===0 && saved().restDays.length===0, "pretending wrote real days");
+    await click("devWallUp", 200);
+    expect(/14 day streak/.test($("wallCardTitle").textContent), "+1 day didn't reach 14: "+$("wallCardTitle").textContent);
+    await click("devWallOpen", 3500);
+    expect(visible("view-wall") && $("wallHolds").textContent==="14", "Open the Wall: holds "+$("wallHolds").textContent);
+    expect(q(".wl-sheet") && /Hold 14|Ledge 2/.test(q(".wl-sheet").textContent), "the new hold's unlock card didn't play");
+    closeSheet();
+    await goHomeFromWall();
+    await click("openSettingsBtn", 300);
+    await click(q('#devWallRow [data-dev-wall="0"]'), 300);
+    expect(!/day streak/.test($("wallCardTitle").textContent) && saved().wallSeen===0, "Off didn't clear it: "+$("wallCardTitle").textContent+", wallSeen "+saved().wallSeen);
   });
   test("The Wall: hold 21 unlocks the Home Wall gym", async function(){
     var days = []; for(var d=20; d>=1; d--) days.push({ daysAgo:d, workout:true }); // workouts earn no XP, so level stays 1

@@ -142,7 +142,10 @@ The Dream Gym (40). Home Wall also unlocks at Wall hold 21.
   PNGs). Backgrounds load only when their room is on screen.
 - **Developer tools** are hidden until you tap the Settings title five times (or open the page with `?dev=1`).
   They hold "Pretend level" (raises the level that gates rooms, gear and badges; it never changes XP or
-  history, see `recomputeProfile()`) and "Preview every gym".
+  history, see `recomputeProfile()`), "Pretend Wall streak" (fake days for the Wall, never saved as
+  history, see `wallDayMap()`) and "Preview every gym".
+- **The celebration card** (`celebrate()`) shows when a new gym or new gear unlocks, one at a time.
+  A pretend level shows it too, which is how to test it.
 - **A room's painting rules** (floor line, empty middle, calm bottom-right corner) are in
   `docs/art/ROOMS-BRIEF.md`.
 
@@ -151,6 +154,8 @@ The Dream Gym (40). Home Wall also unlocks at Wall hold 21.
 - **`docs/art/WALL-ART-BRIEF.md`** is round 1 and **`WALL-ART-BRIEF-2.md`** is round 2: both done and
   in the app (round 2 skipped the optional extra climber poses).
 - **`docs/art/ROOMS-BRIEF.md`**: done and in the app (four rooms, 28 images).
+- **`docs/art/ART-BRIEF-3.md`**: not made yet. Home screen icons, two Garage redraws (hangboard, mountain
+  print), an app icon, a level badge, and more climber poses.
 
 ChatGPT makes the images in its own folder; Claude copies them to `../art-source/.../incoming*/`,
 exports them, uploads them and wires them in.
@@ -161,7 +166,11 @@ unlocks it at that Wall hold. That is the fourth `// THE WALL hook` line.
 **The owner may remove it if the art doesn't come together. To remove it:**
 1. Delete every block between `THE WALL` and `END THE WALL` markers in `crux.html` (CSS, Home
    card markup, the view markup, `IMG.wall`, and the JS block).
-2. Delete the four `// THE WALL hook` lines (in `switchView`, `renderHome` and `unlockedEnvironments`).
+2. Delete the five `// THE WALL hook` lines (in `switchView`, `renderHome`, `unlockedEnvironments` and
+   `renderSettingsModal`), the "THE WALL dev tools" block in the Developer settings, and the
+   `devWallDays` setting.
+   Keep `assets/wall/` files `rays`, `sparkle`, `r2_plinth`, `r2_lights`, `r2_hold_*`, `r2_shelf`,
+   `r2_shoes` and `r2_gearbag`: the celebration card and Garage decorations also use them.
 3. Delete the Wall tests in `dev/tests.html`, the `assets/wall/` folder, and the climber's
    `climb`, `sit`, `rest` and `move` folders.
 4. `restDays` and `wallSeen` can stay in saves: they're harmless. Or remove them from

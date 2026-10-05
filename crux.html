@@ -803,6 +803,27 @@
   @keyframes toastin{from{transform:translateY(10px) scale(0.9);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
   @keyframes toastout{to{opacity:0;transform:translateY(-6px);}}
 
+  /* ---- celebration card: a new gym or new gear (also reuses assets/wall rays, sparkle and plinth) ---- */
+  .cel-sheet{position:fixed;inset:0;z-index:400;display:grid;place-items:end center;background:rgba(15,10,5,0.6);}
+  .cel-card{position:relative;overflow:hidden;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;background:var(--surface);border-radius:26px 26px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom,0px));text-align:center;box-shadow:0 -20px 50px rgba(0,0,0,0.4);animation:celUp .45s cubic-bezier(.22,1.2,.36,1);}
+  @keyframes celUp{from{transform:translateY(100%);}}
+  .cel-rays{position:absolute;left:50%;top:150px;width:380px;height:380px;margin:-190px 0 0 -190px;pointer-events:none;opacity:0.7;animation:celSpin 16s linear infinite;}
+  .cel-sparkle{position:absolute;left:50%;top:150px;width:250px;height:250px;margin:-125px 0 0 -125px;pointer-events:none;animation:celSparkle 2.6s ease-in-out infinite;}
+  @keyframes celSpin{to{transform:rotate(360deg);}}
+  @keyframes celSparkle{50%{transform:scale(1.08) rotate(10deg);opacity:0.7;}}
+  .cel-kicker{position:relative;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);}
+  .cel-pic{position:relative;height:190px;display:flex;align-items:center;justify-content:center;margin:6px 0 4px;}
+  .cel-pic .cel-photo{max-height:150px;max-width:230px;border-radius:12px;border:5px solid #FFF9EE;background:#FFF9EE;box-shadow:0 10px 20px rgba(30,14,0,0.4);transform:rotate(-3deg);animation:celPop .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .cel-pic.stand{align-items:flex-end;padding-bottom:84px;}
+  .cel-pic.stand .cel-plinth{position:absolute;left:50%;bottom:0;width:210px;transform:translateX(-50%);filter:drop-shadow(0 8px 8px rgba(0,0,0,0.3));}
+  .cel-pic.stand .cel-item{position:relative;max-height:104px;max-width:170px;filter:drop-shadow(0 8px 8px rgba(0,0,0,0.35));animation:celPop .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  @keyframes celPop{0%{transform:scale(0.2) rotate(-25deg);opacity:0;}60%{transform:scale(1.15) rotate(6deg);opacity:1;}100%{transform:none;}}
+  .cel-card h2{position:relative;font-family:"Bebas Neue",sans-serif;font-size:36px;letter-spacing:0.03em;margin:0;line-height:1;font-weight:400;}
+  .cel-tag{position:relative;display:inline-block;margin:8px 0 6px;padding:4px 11px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text-dim);}
+  .cel-card p{position:relative;margin:4px auto 18px;color:var(--text-dim);font-size:13.5px;line-height:1.45;max-width:34ch;}
+  .cel-btn{position:relative;width:100%;border:none;border-radius:15px;background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 84%, #fff), var(--accent));color:var(--accent-contrast);padding:14px;font-size:15.5px;font-weight:800;letter-spacing:0.01em;box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 0 color-mix(in srgb, var(--accent) 62%, #000), 0 10px 18px -10px rgba(0,0,0,0.5);transition:transform .08s ease, box-shadow .08s ease;}
+  .cel-btn:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 0 color-mix(in srgb, var(--accent) 62%, #000);}
+  .cel-link{position:relative;display:block;margin:12px auto 0;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:700;padding:6px 12px;}
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;}
   }
@@ -1483,6 +1504,25 @@
           <button type="button" class="chip" id="devLevelPlay">Play level-up</button>
         </div>
       </div>
+      <!-- THE WALL dev tools (removable with the Wall) -->
+      <div class="switch-row" style="display:block;">
+        <div class="switch-label">Pretend Wall streak (days)</div>
+        <div class="switch-desc" id="devWallDesc">Fake a streak to test the flame, ledges, summit and unlock cards. Real days are never changed.</div>
+        <div class="theme-row" id="devWallRow" style="margin-top:8px;flex-wrap:wrap;">
+          <button type="button" class="chip" data-dev-wall="0">Off</button>
+          <button type="button" class="chip" data-dev-wall="6">6</button>
+          <button type="button" class="chip" data-dev-wall="13">13</button>
+          <button type="button" class="chip" data-dev-wall="20">20</button>
+          <button type="button" class="chip" data-dev-wall="27">27</button>
+          <button type="button" class="chip" data-dev-wall="41">41</button>
+        </div>
+        <div class="theme-row" style="margin-top:8px;">
+          <button type="button" class="chip" id="devWallDown">− 1 day</button>
+          <button type="button" class="chip" id="devWallUp">+ 1 day</button>
+          <button type="button" class="chip" id="devWallOpen">Open the Wall</button>
+        </div>
+      </div>
+      <!-- END THE WALL dev tools -->
       <div class="switch-row">
         <div><div class="switch-label">Preview every gym</div><div class="switch-desc">See all four new rooms and their decorations now, before you reach their levels</div></div>
         <button type="button" class="switch" data-setting="devPreviewGyms" aria-pressed="false"><span class="switch-thumb"></span></button>
@@ -1778,7 +1818,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false },
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0 }, // devWallDays: THE WALL (removable), fake streak for testing
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -2009,6 +2049,7 @@
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
     document.getElementById("developerSection").hidden = !state.settings.devMode;
+    if(typeof renderDevWall==="function" && WALL_ENABLED) renderDevWall(); // THE WALL hook
     document.querySelectorAll("#devLevelRow .chip").forEach(function(btn){
       btn.classList.toggle("selected", +btn.dataset.devLevel===(state.settings.devLevel||0));
     });
@@ -2814,6 +2855,42 @@
     var xp = 0, level = 1;
     state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ xp += a.xp; while(xp>=xpForLevel(level)){ xp -= xpForLevel(level); level++; } }); });
     return level; // order doesn't matter for a plain XP total
+  }
+  // ---- celebration card: one at a time, queued behind whatever is already open ----
+  var celebrations = [], celebrationOpen = false;
+  function celebrate(c){ celebrations.push(c); if(!celebrationOpen) showNextCelebration(); }
+  function showNextCelebration(){
+    var c = celebrations.shift();
+    if(!c){ celebrationOpen = false; return; }
+    celebrationOpen = true;
+    var box = document.createElement("div"); box.className = "cel-sheet";
+    box.innerHTML = '<div class="cel-card" role="dialog" aria-modal="true" aria-label="'+escapeHtml(c.title)+'">'
+      + '<img class="cel-rays" src="'+IMG.wall.rays+'" alt=""><img class="cel-sparkle" src="'+IMG.wall.sparkle+'" alt="">'
+      + '<div class="cel-kicker">'+escapeHtml(c.kicker)+'</div>'
+      + '<div class="cel-pic'+(c.stand ? " stand" : "")+'">'+(c.stand ? '<img class="cel-plinth" src="'+IMG.wall.r2_plinth+'" alt="">' : "")+c.pic+'</div>'
+      + '<h2>'+escapeHtml(c.title)+'</h2><span class="cel-tag">'+escapeHtml(c.tag)+'</span><p>'+escapeHtml(c.text)+'</p>'
+      + '<button type="button" class="cel-btn" data-go>'+escapeHtml(c.primary)+'</button>'
+      + (c.secondary ? '<button type="button" class="cel-link" data-close>'+escapeHtml(c.secondary)+'</button>' : "")
+      + '</div>';
+    function close(go){ box.remove(); document.removeEventListener("keydown", esc); if(go && c.onPrimary) c.onPrimary(); showNextCelebration(); }
+    function esc(e){ if(e.key==="Escape") close(false); }
+    box.addEventListener("click", function(e){ if(e.target.closest("[data-go]")) close(true); else if(e.target===box || e.target.closest("[data-close]")) close(false); });
+    document.addEventListener("keydown", esc);
+    document.body.appendChild(box);
+    box.querySelector("[data-go]").focus();
+  }
+  function celebrateRoom(env){
+    celebrate({ kicker:"New gym unlocked", title:env.name, tag:state.level>=env.minLevel ? "Gym · Level "+env.minLevel : "Gym · Wall reward", stand:false,
+      pic:'<img class="cel-photo" src="'+env.thumb+'" alt="">',
+      text:"Your climber can train here now, and it brings five decorations of its own.", primary:"Take a look", secondary:"Not now",
+      onPrimary:function(){ state.character.selectedEnvironmentId = env.id; saveState(); renderCharacterCard(); } });
+  }
+  function celebrateGear(stage){
+    var last = stage.props[stage.props.length-1];
+    var pics = { pad:IMG.gear.crashPadUnfolded, holds:IMG.wall.r2_hold_yellow, plant:IMG.gear.pottedPlant, lights:IMG.wall.r2_lights };
+    celebrate({ kicker:"Level "+stage.minLevel+" reached", title:stage.gear.charAt(0).toUpperCase()+stage.gear.slice(1), tag:"New gear", stand:true,
+      pic:'<img class="cel-item" src="'+(pics[last]||pics.pad)+'" alt="">',
+      text:"It's set up in your room now.", primary:"Nice" });
   }
   function announceOutcome(outcome){
     if(!outcome) return;
@@ -4524,8 +4601,8 @@
   // here, once as an optional Decorate accessory) is normal for a real climbing space, not a
   // duplicate-looking glitch — except the unfolded pad below, which is a different pose from
   // the standing "Crash Pad" decoration specifically so the two never look like an exact copy.
-  var GEAR_HOLD_A_IMG = IMG.gear.holdGreen;        // small green hold
-  var GEAR_HOLD_B_IMG = IMG.gear.holdYellow;       // small yellow hold
+  var GEAR_HOLD_A_IMG = IMG.wall.r2_hold_yellow;    // small yellow hold (the Wall's round-2 art: the older ones were clipped)
+  var GEAR_HOLD_B_IMG = IMG.wall.r2_hold_navy;      // small navy pinch
   var GEAR_PLANT_IMG = IMG.gear.pottedPlant;
   var GEAR_PAD_IMG = IMG.gear.crashPadUnfolded;    // real unfolded crash pad
   var GEAR_LIGHTS_IMG = IMG.gear.stringLights;     // real string lights
@@ -4671,18 +4748,20 @@
     { id:"foothold",    name:"Foothold",     img:IMG.decor.foothold,    x:78, y:52, w:15 },
     // Illustrated Garage set — holds sized small and sampled against the real photo so they
     // read as bolted to the woody rather than floating; wall/floor pieces placed the same way.
-    { id:"holdred",     name:"Red Hold",      img:IMG.decor.holdRed,       x:31.5, y:21.5,  w:7  },
-    { id:"holdblue",    name:"Blue Hold",     img:IMG.decor.holdBlue,      x:19,   y:29.8,  w:7  },
-    { id:"holdyellowtri",name:"Yellow Hold",  img:IMG.decor.holdYellowTri, x:27,   y:51.2,  w:6  },
-    { id:"holdgreentri",name:"Green Hold",    img:IMG.decor.holdGreenTri,  x:9.5,  y:42.8,  w:6  },
-    { id:"holdpurple",  name:"Purple Hold",   img:IMG.decor.holdPurple,    x:22,   y:67.8,  w:6  },
-    { id:"holdgray",    name:"Gray Hold",     img:IMG.decor.holdGray,      x:12,   y:74.1,  w:6  },
-    { id:"holdvolume",  name:"Wall Volume",   img:IMG.decor.wallVolume,    x:27.5, y:13.75, w:10 },
+    { id:"holdred",     name:"Red Hold",      img:IMG.wall.r2_hold_red,    x:31.5, y:21.5,  w:7  },
+    { id:"holdblue",    name:"Blue Hold",     img:IMG.wall.r2_hold_navy,   x:19,   y:29.8,  w:5  },
+    { id:"holdyellowtri",name:"Yellow Hold",  img:IMG.wall.r2_hold_yellow, x:27,   y:51.2,  w:6  },
+    { id:"holdgreentri",name:"Mint Edge",     img:IMG.wall.r2_hold_mint,   x:9.5,  y:42.8,  w:8  },
+    { id:"holdpurple",  name:"Purple Hold",   img:IMG.wall.r2_hold_purple,  x:22,   y:67.8,  w:4.5 },
+    { id:"holdgray",    name:"Gray Hold",     img:IMG.wall.r2_hold_grey,    x:12,   y:74.1,  w:6  },
+    { id:"holdvolume",  name:"Wall Volume",   img:IMG.wall.r2_hold_blue,    x:27.5, y:13.75, w:9  },
     { id:"hangboard",   name:"Hangboard",     img:IMG.decor.hangboard,     x:48,   y:19,    w:28 },
     { id:"artprint",    name:"Mountain Print",img:IMG.decor.mountainPrint, x:61.5, y:36.65, w:13 },
-    { id:"wallshelf",   name:"Wall Shelf",    img:IMG.decor.wallShelf,     x:8,    y:47.25, w:20 },
-    { id:"climbshoes",  name:"Climbing Shoes",img:IMG.decor.climbingShoes, x:60.5, y:83.24, w:9  },
-    { id:"gearbag",     name:"Gear Bag",      img:IMG.decor.gearBag,       x:60,   y:62.28, w:16 }
+    { id:"wallshelf",   name:"Wall Shelf",    img:IMG.wall.r2_shelf,        x:8,    y:47.25, w:20 },
+    { id:"climbshoes",  name:"Climbing Shoes",img:IMG.wall.r2_shoes,        x:60.5, y:83.24, w:10 },
+    { id:"gearbag",     name:"Gear Bag",      img:IMG.wall.r2_gearbag,      x:60,   y:62.28, w:16 },
+    { id:"holdsand",    name:"Sand Sloper",   img:IMG.wall.r2_hold_sand,    x:36,   y:36,    w:6  },
+    { id:"holdwood",    name:"Wood Edge",     img:IMG.wall.r2_hold_wood,    x:16,   y:56,    w:8  }
   ].concat([
     // Each room brings five decorations of its own, available once that room is unlocked and usable
     // in any gym. ar = height/width of the trimmed picture; foot = where its bottom edge starts
@@ -4955,13 +5034,13 @@
       ? "Level "+nextStage.minLevel+" unlocks "+nextStage.gear+" for the Garage"
       : "Every piece of gear unlocked.";
     if(lastUnlockedCharCount!==null && unlockedChar.length>lastUnlockedCharCount){
-      showToast("New gear for the Garage: "+unlockedChar[unlockedChar.length-1].gear+"!");
+      celebrateGear(unlockedChar[unlockedChar.length-1]);
     }
     lastUnlockedCharCount = unlockedChar.length;
 
     var unlockedEnvs = unlockedEnvironments();
     if(lastUnlockedEnvCount!==null && unlockedEnvs.length>lastUnlockedEnvCount){
-      showToast("New gym unlocked: "+unlockedEnvs[unlockedEnvs.length-1].name+"!");
+      unlockedEnvs.slice(lastUnlockedEnvCount).forEach(celebrateRoom);
     }
     lastUnlockedEnvCount = unlockedEnvs.length;
   }
@@ -5292,6 +5371,10 @@
   function wallToday(){ return planDayNum(Date.now()); }
   function wallDayMap(){
     var m = {};
+    // Developer "Pretend Wall streak": that many consecutive days ending today (a mix of the three kinds).
+    // Real days below override these, and nothing here is saved as history.
+    var fake = state.settings.devWallDays|0, t0 = wallToday();
+    for(var i=0;i<fake;i++) m[t0-i] = i%6===0 ? "workout" : i%3===0 ? "climb" : "rest";
     (state.restDays||[]).forEach(function(d){ m[d] = "rest"; });
     state.sessions.forEach(function(s){
       var steps = s.workout && s.workout.steps || {};
@@ -5610,6 +5693,25 @@
     var after = wallInfo().holds;
     if(after>before) wallClimbTo(after, null, 0); else renderWall();
   }
+  // Developer: pretend Wall streak (the controls live in Settings -> Developer)
+  function renderDevWall(){
+    document.querySelectorAll("#devWallRow .chip").forEach(function(b){ b.classList.toggle("selected", +b.dataset.devWall===(state.settings.devWallDays|0)); });
+    var n = state.settings.devWallDays|0;
+    document.getElementById("devWallDesc").textContent = n>0 ? "Pretending you have a "+n+"-day streak ("+wallInfo().holds+" of "+WALL_N+" holds). Open the Wall to watch the climb."
+      : "Fake a streak to test the flame, ledges, summit and unlock cards. Real days are never changed.";
+  }
+  function setDevWall(n){
+    var before = state.settings.devWallDays|0;
+    state.settings.devWallDays = Math.max(0, Math.min(60, n|0));
+    var holds = wallInfo().holds;
+    // going up leaves the last hold to play, so opening the Wall shows the climb and its unlock card
+    state.wallSeen = state.settings.devWallDays>before && holds>0 ? holds-1 : Math.min(state.wallSeen==null ? holds : state.wallSeen, holds);
+    saveState(); renderWallCard(); renderDevWall();
+  }
+  document.getElementById("devWallRow").addEventListener("click", function(e){ var b = e.target.closest("[data-dev-wall]"); if(b) setDevWall(+b.dataset.devWall); });
+  document.getElementById("devWallUp").addEventListener("click", function(){ setDevWall((state.settings.devWallDays|0)+1); });
+  document.getElementById("devWallDown").addEventListener("click", function(){ setDevWall((state.settings.devWallDays|0)-1); });
+  document.getElementById("devWallOpen").addEventListener("click", function(){ closeSettings(); openWall(); });
   document.getElementById("wallCard").addEventListener("click", openWall);
   document.getElementById("wallHomeBtn").addEventListener("click", function(){ switchView("home"); });
   document.getElementById("wallBagBtn").addEventListener("click", wallCollection);
@@ -5833,7 +5935,7 @@
   function setDevLevel(n){
     state.settings.devLevel = Math.max(0, Math.min(60, n|0));
     recomputeProfile();
-    saveState(); lastUnlockedEnvCount = null; lastUnlockedCharCount = null; // a pretend level isn't a real unlock: no toasts
+    saveState(); // unlock cards do show for a pretend level: that is what it is for
     renderHome(); renderSettingsModal();
   }
   document.getElementById("devLevelRow").addEventListener("click", function(e){
