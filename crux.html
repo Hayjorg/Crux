@@ -103,10 +103,12 @@
     font-size:14.5px;font-weight:600;
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease, border-color .15s ease, filter .15s ease;
   }
+  .btn{box-shadow:0 2px 0 color-mix(in srgb, var(--border) 80%, var(--text-dim));}
   .btn:hover{border-color:var(--text-dim);}
-  .btn:active{transform:scale(0.95);}
+  .btn:active{transform:translateY(2px);box-shadow:0 0 0 transparent;}
   .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  .btn-primary{background:var(--accent);color:var(--accent-contrast);border-color:transparent;}
+  .btn-primary{background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 84%, #fff), var(--accent));color:var(--accent-contrast);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.35), 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000);}
+  .btn-primary:active{box-shadow:inset 0 1px 0 rgba(255,255,255,0.35), 0 0 0 transparent;}
   .btn-primary:hover{filter:brightness(1.08);}
   .btn-ghost{background:transparent;}
   .btn:disabled, .chip:disabled{opacity:0.45;cursor:not-allowed;}
@@ -239,6 +241,8 @@
      "pasted flat" against the painted background — every decoration/prop gets one. */
   .scene-layers img{position:absolute;display:block;width:auto;height:auto;max-width:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,0.35));}
   .scene-env{position:absolute;inset:0;width:100%;height:100%;}
+  .scene-env.room-in, .scene-layers.room-in{animation:roomIn .7s ease both;}
+  @keyframes roomIn{from{opacity:0;filter:brightness(1.4);}to{opacity:1;filter:none;}}
   /* Ambient-only: a lamp glow and a few drifting dust motes. Independent of the static
      architecture and never blocks input, so it can be extended (chalk puffs, gear sway)
      without touching sceneEnv or sceneLayers. */
@@ -403,7 +407,9 @@
   .start-cta.garage-cta{
     flex-direction:row;justify-content:center;gap:10px;padding:16px;
     border:2px solid #6B4A1E;background:linear-gradient(180deg, #F3C766 0%, #E0A83A 100%);color:#241B0E;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), 0 5px 0 #6B4A1E, 0 14px 22px -10px rgba(0,0,0,0.5);
   }
+  .start-cta.garage-cta:active{transform:translateY(4px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 0 #6B4A1E, 0 4px 8px -4px rgba(0,0,0,0.4);}
   .start-cta.garage-cta:hover{filter:brightness(1.06);}
   .start-cta.garage-cta svg{width:22px;height:22px;flex-shrink:0;}
   .start-cta.garage-cta .cta-text{display:flex;flex-direction:column;align-items:center;gap:3px;}
@@ -496,17 +502,20 @@
   .streak-row .cap{font-size:10.5px;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;}
 
   .log-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
-  .log-btn{border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface-2);padding:13px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
-  .log-btn:active{transform:scale(0.93);}
+  .log-btn{--c:var(--accent);border-radius:var(--radius-md);border:1px solid color-mix(in srgb, var(--c) 50%, var(--border));
+    background:linear-gradient(180deg, color-mix(in srgb, var(--c) 8%, var(--surface)), color-mix(in srgb, var(--c) 22%, var(--surface)));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 0 color-mix(in srgb, var(--c) 42%, var(--border));
+    padding:14px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .12s ease, box-shadow .12s ease;}
+  .log-btn:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.35), 0 1px 0 color-mix(in srgb, var(--c) 42%, var(--border));}
   .log-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  .log-btn .icon{width:20px;height:20px;}
+  .log-btn .icon{width:22px;height:22px;}
   .log-btn .name{font-size:12.5px;font-weight:700;}
   .log-btn .xp{font-size:10.5px;font-family:"IBM Plex Mono",monospace;color:var(--text-dim);}
-  .log-btn.flash{border-color:color-mix(in srgb, var(--flash) 45%, var(--border));}
+  .log-btn.flash{--c:var(--flash);}
   .log-btn.flash .icon,.log-btn.flash .name{color:var(--flash);}
-  .log-btn.send{border-color:color-mix(in srgb, var(--send) 45%, var(--border));}
+  .log-btn.send{--c:var(--send);}
   .log-btn.send .icon,.log-btn.send .name{color:var(--send);}
-  .log-btn.fall{border-color:color-mix(in srgb, var(--fall) 45%, var(--border));}
+  .log-btn.fall{--c:var(--fall);}
   .log-btn.fall .icon,.log-btn.fall .name{color:var(--fall);}
 
   /* ---- attempt composer ---- */
@@ -2856,13 +2865,15 @@
     state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ xp += a.xp; while(xp>=xpForLevel(level)){ xp -= xpForLevel(level); level++; } }); });
     return level; // order doesn't matter for a plain XP total
   }
+  // A short phone vibration for unlock moments only (Android; iPhones ignore it). Never for plain logging.
+  function buzz(pattern){ try{ if(navigator.vibrate && !prefersReducedMotion) navigator.vibrate(pattern); }catch(e){} }
   // ---- celebration card: one at a time, queued behind whatever is already open ----
   var celebrations = [], celebrationOpen = false;
   function celebrate(c){ celebrations.push(c); if(!celebrationOpen) showNextCelebration(); }
   function showNextCelebration(){
     var c = celebrations.shift();
     if(!c){ celebrationOpen = false; return; }
-    celebrationOpen = true;
+    celebrationOpen = true; buzz([30,50,60]);
     var box = document.createElement("div"); box.className = "cel-sheet";
     box.innerHTML = '<div class="cel-card" role="dialog" aria-modal="true" aria-label="'+escapeHtml(c.title)+'">'
       + '<img class="cel-rays" src="'+IMG.wall.rays+'" alt=""><img class="cel-sparkle" src="'+IMG.wall.sparkle+'" alt="">'
@@ -4936,10 +4947,15 @@
     }).join("");
     return glow + motes;
   }
+  var lastRoomShown = null;
   function renderSceneEnvironment(env, charStage){
     var layerHost = document.getElementById("sceneLayers");
     var svgRoom = document.getElementById("sceneEnv");
     svgRoom.innerHTML = roomSVG(env, charStage);
+    if(lastRoomShown!==null && lastRoomShown!==env.id && !prefersReducedMotion){ // switching rooms fades in instead of snapping
+      [svgRoom, layerHost].forEach(function(el){ el.classList.remove("room-in"); void el.getBoundingClientRect(); el.classList.add("room-in"); });
+    }
+    lastRoomShown = env.id;
     document.getElementById("sceneEffects").innerHTML = sceneEffectsHTML(env);
     renderRoomLab();
     // Real modular room pieces (env.props, still empty until a room has its own) plus
@@ -5636,6 +5652,7 @@
     var r = WALL_REWARDS[i], big = i % WALL_LEDGE===0, conf = "", w = wallInfo(), rest = w.map[w.days[i-1]]==="rest";
     if(big && !prefersReducedMotion){ var cols = ["var(--accent)","var(--flash)","var(--send)","var(--fall)","var(--wl-gold)","var(--wl-purple)"];
       for(var k=0;k<26;k++) conf += '<i style="background:'+cols[k%cols.length]+';--dx:'+Math.round(Math.random()*340-170)+'px;--dy:'+Math.round(Math.random()*260-60)+'px;--r:'+Math.round(Math.random()*700-350)+'deg;animation-delay:'+(Math.random()*0.2).toFixed(2)+'s"></i>'; }
+    buzz(big ? [40,60,40,60,90] : [25,40,45]);
     wallSheet('<img class="wl-rays" src="'+IMG.wall.rays+'" alt=""><img class="wl-sparkle" src="'+IMG.wall.sparkle+'" alt=""><div class="wl-confetti">'+conf+'</div>'+
       '<div class="wl-kicker">'+(big ? "Ledge "+(i/WALL_LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
       '<div class="wl-prize'+(r.kind==="gym" ? " gym" : "")+'">'+(r.kind==="gym" ? "" : '<img class="wl-plinth" src="'+IMG.wall.r2_plinth+'" alt="">')+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+IMG.wall.cl_rest+'" alt=""></span></span>' : "")+'</div>'+
