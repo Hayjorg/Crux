@@ -658,6 +658,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     return Object.assign(s, extra||{});
   }
   async function openWallView(){ await goHome(); await click("wallCard", 3400); }
+  function visibleScreen(){ try{ Object.defineProperty(D, "visibilityState", { configurable:true, get:function(){ return "visible"; } }); }catch(e){} }
   function closeSheet(){ var b = q(".wl-sheet [data-close]"); if(b) b.click(); }
   async function goHomeFromWall(){ if(visible("view-wall")) await click("wallHomeBtn", 300); }
   // the app may load an image from assets/ or from its uploaded copy (/_blob/<id>); match either
@@ -842,6 +843,37 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("openSettingsBtn", 300);
     await click(q('#devWallRow [data-dev-wall="0"]'), 300);
     expect(!/day streak/.test($("wallCardTitle").textContent) && saved().wallSeen===0, "Off didn't clear it: "+$("wallCardTitle").textContent+", wallSeen "+saved().wallSeen);
+  });
+  test("Home: the buttons wear painted icons, and Play level-up shows the badge with your level", async function(){
+    var s = clone(TEMPLATE); s.settings.devMode = true; s.settings.devLevel = 0;
+    await boot(s); await goHome();
+    var icons = qa("img[data-ui]");
+    expect(icons.length>=7, "expected 7 painted Home icons, found "+icons.length);
+    var bad = icons.filter(function(i){ return !i.getAttribute("src") || /undefined/.test(i.getAttribute("src")); });
+    expect(!bad.length, "Home icons without a picture: "+bad.map(function(i){ return i.dataset.ui; }).join(", "));
+    await click("openSettingsBtn", 300);
+    await click("devLevelUp", 200);
+    await click("devLevelPlay", 500);
+    var card = q(".cel-card");
+    expect(card && /Level up/.test(card.textContent) && q(".cel-badgewrap b").textContent===String(saved().level), "level card: "+(card && card.textContent.slice(0, 60)));
+    expect(q(".cel-card img[data-cheer]"), "no cheering climber on the level card");
+  });
+
+  test("The Wall: at the top your climber waves the flag; on a ledge they sometimes glance at the prize", async function(){
+    var days = []; for(var d=42; d>=1; d--) days.push({ daysAgo:d, workout:true });
+    await boot(wallSave(days, { wallSeen:42 })); await openWallView();
+    visibleScreen(); await wait(900);   // idle animations only run while the page is on screen
+    var img = $("wallClimberImg");
+    expect(artIs(img.src, /summit-flag/), "your climber isn't waving the flag at hold 42: "+climberArt());
+    expect(img.classList.contains("wide"), "the flag frame isn't drawn at its wider size");
+    var seen = {}; for(var i=0;i<4;i++){ seen[climberArt()] = 1; await wait(260); }
+    expect(Object.keys(seen).length>=2, "the flag never waves: "+Object.keys(seen).join(", "));
+    days = []; for(d=7; d>=1; d--) days.push({ daysAgo:d, workout:true });
+    await boot(wallSave(days, { wallSeen:7 })); await openWallView(); visibleScreen(); await wait(600);
+    var srcs = []; for(i=0;i<14;i++){ srcs.push($("wallClimberImg").src); await wait(500); }
+    var sat = srcs.some(function(s){ return artIs(s, /ledge-sit\.png/); }), glanced = srcs.some(function(s){ return artIs(s, /ledge-sit-look/); });
+    expect(sat && glanced, "on the ledge your climber should sit and glance over (sat "+sat+", glanced "+glanced+")");
+    expect(!$("wallClimberImg").classList.contains("wide"), "a normal frame is drawn at the wide size");
   });
   test("The Wall: hold 21 unlocks the Home Wall gym", async function(){
     var days = []; for(var d=20; d>=1; d--) days.push({ daysAgo:d, workout:true }); // workouts earn no XP, so level stays 1

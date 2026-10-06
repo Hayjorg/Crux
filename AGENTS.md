@@ -105,8 +105,11 @@ up one hold:
   (hold 21). Other unlocks don't give Garage items yet, and the copy says so. Moves are real: your climber does the newest one after
   each unlock card closes, and tapping your climber cycles through the ones you have
   (`WALL_MOVES`, `wallPlayMove()`).
-- **The climber on the Wall** reaches, pulls up and catches the next hold (`wallHop()`), sits on
-  a ledge when they're at one (`wallPlace()`), and a rest day's unlock card shows the tea pose.
+- **The climber on the Wall** chalks up, reaches, pulls up and catches the next hold (`wallHop()`),
+  sits on a ledge (now and then glancing at the prize), stands on the summit lip waving the flag at
+  hold 42 (`wallIdleTick()`), and a rest day's unlock card shows the tea pose. The two summit-flag
+  frames are wider than the standard canvas (`PadX` in `HeadFit.cs`), so `wallShow()` draws them at
+  141% width.
 - **The art** is in `assets/wall/`, made by `dev/build-wall-art.ps1` from ChatGPT's sources
   (the originals are in `../art-source/wall/incoming/` for round 1 and `incoming-2/` for round 2,
   which uses the `r2_` names). The ceiling texture comes from `dev/build-room-art.ps1`. It's
@@ -144,8 +147,9 @@ The Dream Gym (40). Home Wall also unlocks at Wall hold 21.
   They hold "Pretend level" (raises the level that gates rooms, gear and badges; it never changes XP or
   history, see `recomputeProfile()`), "Pretend Wall streak" (fake days for the Wall, never saved as
   history, see `wallDayMap()`) and "Preview every gym".
-- **The celebration card** (`celebrate()`) shows when a new gym or new gear unlocks, one at a time.
-  A pretend level shows it too, which is how to test it.
+- **The celebration card** (`celebrate()`) shows when a new gym or new gear unlocks, one at a time,
+  and on every 5th level that unlocks nothing else (`celebrateLevel()`, with the level badge and the
+  cheering climber). A pretend level shows them too, which is how to test them.
 - **A room's painting rules** (floor line, empty middle, calm bottom-right corner) are in
   `docs/art/ROOMS-BRIEF.md`.
 
@@ -154,8 +158,11 @@ The Dream Gym (40). Home Wall also unlocks at Wall hold 21.
 - **`docs/art/WALL-ART-BRIEF.md`** is round 1 and **`WALL-ART-BRIEF-2.md`** is round 2: both done and
   in the app (round 2 skipped the optional extra climber poses).
 - **`docs/art/ROOMS-BRIEF.md`**: done and in the app (four rooms, 28 images).
-- **`docs/art/ART-BRIEF-3.md`**: not made yet. Home screen icons, two Garage redraws (hangboard, mountain
-  print), an app icon, a level badge, and more climber poses.
+- **`docs/art/ART-BRIEF-3.md`**: made and mostly in the app (originals in `../art-source/round3/`).
+  In use: the seven painted Home icons, level badge, empty-logbook picture, the clean hangboard and
+  mountain print, and the climber poses (summit flag, cheer, chalk-up, ledge look). Not used yet: the
+  app icon (a home-screen icon needs the page installed as an app), the mono app icon (rough edges, needs
+  a redraw) and the streak banner. Home art lives in `assets/ui/` so it survives removing the Wall.
 
 ChatGPT makes the images in its own folder; Claude copies them to `../art-source/.../incoming*/`,
 exports them, uploads them and wires them in.

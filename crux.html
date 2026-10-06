@@ -198,8 +198,13 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .scene-icon-row{display:flex;gap:7px;flex-shrink:0;}
+  .scene-icon-btn img{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));}
+  .scene-chip img{width:20px;height:20px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4));}
+  .start-cta.garage-cta .cta-icon{width:44px;height:44px;object-fit:contain;flex-shrink:0;margin:-8px 0;filter:drop-shadow(0 2px 2px rgba(60,30,0,0.35));}
+  .home-workouts-row .ui-ic{width:24px;height:24px;object-fit:contain;flex-shrink:0;margin:-4px 0;}
+  .empty-state .empty-pic{display:block;width:150px;max-width:55%;margin:0 auto 8px;filter:drop-shadow(0 6px 6px rgba(60,30,0,0.25));}
   .scene-icon-btn{
-    width:32px;height:32px;border-radius:50%;flex-shrink:0;
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
     background:rgba(24,18,12,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
     border:1px solid rgba(255,255,255,0.3);color:#FBF6E8;
     display:flex;align-items:center;justify-content:center;
@@ -827,6 +832,11 @@
   .cel-pic.stand .cel-plinth{position:absolute;left:50%;bottom:0;width:210px;transform:translateX(-50%);filter:drop-shadow(0 8px 8px rgba(0,0,0,0.3));}
   .cel-pic.stand .cel-item{position:relative;max-height:104px;max-width:170px;filter:drop-shadow(0 8px 8px rgba(0,0,0,0.35));animation:celPop .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
   @keyframes celPop{0%{transform:scale(0.2) rotate(-25deg);opacity:0;}60%{transform:scale(1.15) rotate(6deg);opacity:1;}100%{transform:none;}}
+  .cel-badgewrap{position:relative;width:176px;animation:celPop .9s cubic-bezier(.34,1.56,.64,1) both .1s;}
+  .cel-badgewrap img{display:block;width:100%;filter:drop-shadow(0 10px 10px rgba(40,20,0,0.35));}
+  .cel-badgewrap b{position:absolute;left:0;right:0;top:0;bottom:0;display:grid;place-items:center;padding-bottom:7%;font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:70px;line-height:1;color:#FFF3DC;text-shadow:0 2px 0 #5A3410, 0 4px 8px rgba(0,0,0,0.45);}
+  .cel-cheerbox{position:absolute;right:-4px;bottom:-4px;width:112px;aspect-ratio:1/1.02;overflow:hidden;filter:drop-shadow(0 8px 8px rgba(0,0,0,0.3));}
+  .cel-cheerbox img{display:block;width:100%;margin-top:-31.5%;}
   .cel-card h2{position:relative;font-family:"Bebas Neue",sans-serif;font-size:36px;letter-spacing:0.03em;margin:0;line-height:1;font-weight:400;}
   .cel-tag{position:relative;display:inline-block;margin:8px 0 6px;padding:4px 11px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text-dim);}
   .cel-card p{position:relative;margin:4px auto 18px;color:var(--text-dim);font-size:13.5px;line-height:1.45;max-width:34ch;}
@@ -942,6 +952,7 @@
   .wl-ground{position:absolute;left:0;right:0;bottom:0;height:56px;z-index:2;background-repeat:repeat-x;background-position:center bottom;background-size:auto 56px;}
   .wl-ground span{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,248,235,0.95);text-shadow:0 1px 3px rgba(0,0,0,0.6);}
   .wl-climber{position:absolute;z-index:5;width:106px;height:159px;left:0;top:0;pointer-events:none;will-change:transform;}
+  .wl-climber img.wide{width:141%;max-width:none;margin-left:-20.5%;}
   .wl-climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 7px 5px rgba(0,0,0,0.4));}
   .wl-puff{position:absolute;z-index:4;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);pointer-events:none;animation:wlPuff .9s ease-out forwards;}
   @keyframes wlPuff{to{transform:translate(var(--dx),var(--dy)) scale(3.2);opacity:0;}}
@@ -1062,24 +1073,24 @@
           </div>
           <div class="scene-icon-row">
             <button type="button" class="scene-icon-btn" id="openDrillsBtn" aria-label="Training drills guide">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5c-.8 0-1.5-.7-1.5-1.5v-13z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5c.8 0 1.5-.7 1.5-1.5v-13z"/></svg>
+              <img data-ui="drills" alt="">
             </button>
             <button type="button" class="scene-icon-btn" id="openProgressBtn" aria-label="Climbing progress">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="19" y1="20" x2="19" y2="14"/></svg>
+              <img data-ui="progress" alt="">
             </button>
             <button type="button" class="scene-icon-btn" id="openSettingsBtn" aria-label="Settings">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.6" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.6" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="7" cy="18" r="2.6" fill="currentColor" stroke="none"/></svg>
+              <img data-ui="settings" alt="">
             </button>
           </div>
         </div>
 
         <div class="scene-overlay-bottom">
           <button type="button" class="scene-chip" id="arrangeToggleBtn" hidden>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+            <img data-ui="arrange" alt="">
             <span class="label">Arrange</span>
           </button>
           <button type="button" class="scene-chip" id="openCustomizeBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <img data-ui="customize" alt="">
             Customize
           </button>
         </div>
@@ -1115,7 +1126,7 @@
     </section>
 
     <button class="start-cta garage-cta" id="startSessionBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 19 9 6l4 7 2-3 7 9z"/></svg>
+      <img class="cta-icon" data-ui="start" alt="">
       <span class="cta-text">
         <span class="main">Start Session</span>
         <span class="sub" id="startCtaSub">45s work / 90s rest</span>
@@ -1123,7 +1134,7 @@
     </button>
     <div class="home-workouts-row">
       <button type="button" class="link-btn" id="openWorkoutsBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>
+        <img class="ui-ic" data-ui="workouts" alt="">
         Workouts
       </button>
     </div>
@@ -2874,6 +2885,7 @@
     var c = celebrations.shift();
     if(!c){ celebrationOpen = false; return; }
     celebrationOpen = true; buzz([30,50,60]);
+    var cleanup = null;
     var box = document.createElement("div"); box.className = "cel-sheet";
     box.innerHTML = '<div class="cel-card" role="dialog" aria-modal="true" aria-label="'+escapeHtml(c.title)+'">'
       + '<img class="cel-rays" src="'+IMG.wall.rays+'" alt=""><img class="cel-sparkle" src="'+IMG.wall.sparkle+'" alt="">'
@@ -2883,12 +2895,30 @@
       + '<button type="button" class="cel-btn" data-go>'+escapeHtml(c.primary)+'</button>'
       + (c.secondary ? '<button type="button" class="cel-link" data-close>'+escapeHtml(c.secondary)+'</button>' : "")
       + '</div>';
-    function close(go){ box.remove(); document.removeEventListener("keydown", esc); if(go && c.onPrimary) c.onPrimary(); showNextCelebration(); }
+    function close(go){ box.remove(); document.removeEventListener("keydown", esc); if(cleanup) cleanup(); if(go && c.onPrimary) c.onPrimary(); showNextCelebration(); }
     function esc(e){ if(e.key==="Escape") close(false); }
     box.addEventListener("click", function(e){ if(e.target.closest("[data-go]")) close(true); else if(e.target===box || e.target.closest("[data-close]")) close(false); });
     document.addEventListener("keydown", esc);
     document.body.appendChild(box);
     box.querySelector("[data-go]").focus();
+    if(c.onShow) cleanup = c.onShow(box);
+  }
+  // A level badge with your level on it, and the climber cheering beside it. Only milestone levels (every
+  // 5th, when nothing else unlocks) get one on their own: a card on every level would get in the way of logging.
+  function celebrateLevel(n){
+    celebrate({ kicker:"Level up", title:"Level "+n, tag:"Keep it going", stand:false,
+      pic:'<span class="cel-badgewrap"><img src="'+IMG.ui.badge+'" alt=""><b>'+n+'</b></span><span class="cel-cheerbox"><img data-cheer src="'+IMG.ui.cheer[0]+'" alt=""></span>',
+      text:"Every attempt you log adds up. Nice climbing.", primary:"Keep climbing",
+      onShow:function(box){
+        if(prefersReducedMotion) return null;
+        var im = box.querySelector("img[data-cheer]"), seq = [0,1,2,1,0,2], i = 0;
+        var t = setInterval(function(){ i++; im.src = IMG.ui.cheer[seq[i % seq.length]]; }, 260);
+        return function(){ clearInterval(t); };
+      } });
+  }
+  var pendingLevelCard = 0;
+  function levelHasOtherCard(n){
+    return CHARACTER_STAGES.some(function(s){ return s.minLevel===n; }) || ENVIRONMENTS.some(function(e){ return e.minLevel===n; });
   }
   function celebrateRoom(env){
     celebrate({ kicker:"New gym unlocked", title:env.name, tag:state.level>=env.minLevel ? "Gym · Level "+env.minLevel : "Gym · Wall reward", stand:false,
@@ -2905,7 +2935,10 @@
   }
   function announceOutcome(outcome){
     if(!outcome) return;
-    if(outcome.leveledUpTo) showToast("Level up — now level "+outcome.leveledUpTo);
+    if(outcome.leveledUpTo){
+      showToast("Level up — now level "+outcome.leveledUpTo);
+      if(outcome.leveledUpTo%5===0 && !levelHasOtherCard(outcome.leveledUpTo)) pendingLevelCard = outcome.leveledUpTo; // shown when Home is on screen
+    }
     outcome.newlyUnlocked.forEach(function(b){ showToast("Badge unlocked: "+b.name); popBadge(b.id); });
   }
 
@@ -3970,7 +4003,7 @@
     var cap = (!advanced && !historyExpanded) ? 3 : ended.length;
     var shown = ended.slice(0, cap);
     if(ended.length===0){
-      wrap.innerHTML = '<div class="empty-state">Your sessions will show up here once you finish one.</div>';
+      wrap.innerHTML = '<div class="empty-state"><img class="empty-pic" src="'+IMG.ui.empty+'" alt="">Your sessions will show up here once you finish one.</div>';
     } else {
       wrap.innerHTML = shown.map(function(s){
         var d = new Date(s.startedAt);
@@ -4337,6 +4370,8 @@
       holdGray:      asset("decor/hold-gray.png",      "244dfba43e7705f8d81c5517d295589f"),
       wallVolume:    asset("decor/wall-volume.png",    "6749f3f8422e43189dd018899f200da6"),
       hangboard:     asset("decor/hangboard.png",      "200fbf4df0909564b7bcb2e00e55ff84"),
+    hangboardClean: asset("decor/hangboard-clean.png", "438930c65acc153eb7a1158abce13359"),      // round 3 redraws: the older two were cut off at the edges
+    mountainPrintClean: asset("decor/mountain-print-clean.png", "0be77aaba5ba3cb88d1fdb67c76f6b58"),
       mountainPrint: asset("decor/mountain-print.png", "756709da6e5dab92a39fb038e737ee54"),
       wallShelf:     asset("decor/wall-shelf.png",     "c939389ec5775e35abbf5603e59e46c6"),
       climbingShoes: asset("decor/climbing-shoes.png", "86f58628d2ca798e02e666e64732519d"),
@@ -4368,6 +4403,24 @@
       land: [
         asset("mascot/climber/default/land/land-01.png", "1da2311a039586be5ad3c8615826e39b"),
         asset("mascot/climber/default/land/land-02.png", "1370cb3987dc3213a293b8642c946b69")
+      ]
+    },
+    // Home screen painted icons, the level badge and the cheering climber (ChatGPT round 3, exported by
+    // dev/build-wall-art.ps1 into assets/ui/; the cheer frames are in assets/mascot/climber/default/cheer/)
+    ui: {
+      start: asset("ui/start.png", "aecebbd5f30b4464f92cd398b0b3ddd8"),
+      workouts: asset("ui/workouts.png", "b0350928447b84f5b952a34349263fc0"),
+      progress: asset("ui/progress.png", "5a0702cffe456c63af41b2a218c27dbf"),
+      drills: asset("ui/drills.png", "72ea0837bad5d85e3417f19515b9806b"),
+      settings: asset("ui/settings.png", "20d0159fff7ad776451588244a509185"),
+      customize: asset("ui/customize.png", "649391c7abc4030d10758354647560b8"),
+      arrange: asset("ui/arrange.png", "e3b0e3a95e0e97c4be9f603b8f7ee736"),
+      badge: asset("ui/badge.png", "a0aacf5638dc006282eca7fc3aa8b37e"),
+      empty: asset("ui/empty.png", "4c8a27e1dc62267074780d231bd44a5f"),
+      cheer: [
+        asset("mascot/climber/default/cheer/cheer-1.png", "9289c323e50ae8303930111ce70da5e1"),
+        asset("mascot/climber/default/cheer/cheer-2.png", "f00f6aa0155730e1b45a396adb388a30"),
+        asset("mascot/climber/default/cheer/cheer-3.png", "bcd7114ed59845d76e8b51cd5e1c460c")
       ]
     },
     // The rooms (ChatGPT art, exported by dev/build-room-art.ps1): a painted background, a picker
@@ -4488,6 +4541,13 @@
       cl_reach_r: asset("mascot/climber/default/climb/climb-reach-right.png", "dba66904d7474ea73a560b0307c6aec9"),
       cl_pull: asset("mascot/climber/default/climb/climb-pull.png", "8cf6a6bce3cd7b8f76a0fb24f0162daa"),
       cl_sit: asset("mascot/climber/default/sit/ledge-sit.png", "ab65361d3238c9a345d70129a621bb02"),
+      // round 3 poses: the summit flag frames are wider than the standard canvas (see HeadFit PadX)
+      summitFlag: [
+        asset("mascot/climber/default/summit/summit-flag-1.png", "1e969e03390391d35fd069aed137f704"),
+        asset("mascot/climber/default/summit/summit-flag-2.png", "1e9f2544284d6abd7ba625c919f5ed14")
+      ],
+      cl_chalk: asset("mascot/climber/default/climb/climb-chalk-up.png", "812ef9e49ac1541e71982f508aaf5c1f"),
+      cl_sit_look: asset("mascot/climber/default/sit/ledge-sit-look.png", "d3d70eb4a651ac9ac3529b091ce65d46"),
       cl_rest: asset("mascot/climber/default/rest/rest-day.png", "b2094ad56215a3bc50ea204099d40a4f"),
       moves: {
         chalk_clap: [
@@ -4766,8 +4826,8 @@
     { id:"holdpurple",  name:"Purple Hold",   img:IMG.wall.r2_hold_purple,  x:22,   y:67.8,  w:4.5 },
     { id:"holdgray",    name:"Gray Hold",     img:IMG.wall.r2_hold_grey,    x:12,   y:74.1,  w:6  },
     { id:"holdvolume",  name:"Wall Volume",   img:IMG.wall.r2_hold_blue,    x:27.5, y:13.75, w:9  },
-    { id:"hangboard",   name:"Hangboard",     img:IMG.decor.hangboard,     x:48,   y:19,    w:28 },
-    { id:"artprint",    name:"Mountain Print",img:IMG.decor.mountainPrint, x:61.5, y:36.65, w:13 },
+    { id:"hangboard",   name:"Hangboard",     img:IMG.decor.hangboardClean, x:48, y:19,   w:26 },
+    { id:"artprint",    name:"Mountain Print",img:IMG.decor.mountainPrintClean, x:61.5, y:36.65, w:11 },
     { id:"wallshelf",   name:"Wall Shelf",    img:IMG.wall.r2_shelf,        x:8,    y:47.25, w:20 },
     { id:"climbshoes",  name:"Climbing Shoes",img:IMG.wall.r2_shoes,        x:60.5, y:83.24, w:10 },
     { id:"gearbag",     name:"Gear Bag",      img:IMG.wall.r2_gearbag,      x:60,   y:62.28, w:16 },
@@ -5054,6 +5114,7 @@
     }
     lastUnlockedCharCount = unlockedChar.length;
 
+    if(pendingLevelCard){ var lv = pendingLevelCard; pendingLevelCard = 0; celebrateLevel(lv); }
     var unlockedEnvs = unlockedEnvironments();
     if(lastUnlockedEnvCount!==null && unlockedEnvs.length>lastUnlockedEnvCount){
       unlockedEnvs.slice(lastUnlockedEnvCount).forEach(celebrateRoom);
@@ -5519,15 +5580,21 @@
   // ---- the climber: idle and blink frames, plus the Wall poses (reach, pull, ledge sit) and moves ----
   var wallClimber = document.getElementById("wallClimber"), wallCImg = document.getElementById("wallClimberImg");
   var WCW = 106, WCH = 159, wallIdleT = null, wallIdleI = 0, wallBlinkAt = 0, wallAt = 0;
+  // The climber's frame. The two summit-flag frames are wider than the others (extra canvas each side so the
+  // flag fits), so they are drawn 141% wide, shifted back so the head stays where it was.
+  function wallShow(src, wide){ wallCImg.classList.toggle("wide", !!wide); wallCImg.src = src; }
   function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px)"; }
   function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
   // On a ledge hold your climber sits on the shelf, off to one side so the prize stays in view
   // (the ledge label on that side hides; see renderWall).
-  function wallSits(i){ return i>0 && i % WALL_LEDGE===0; }
+  function wallIsLedge(i){ return i>0 && i % WALL_LEDGE===0; }
+  function wallSits(i){ return wallIsLedge(i) && i!==WALL_N; }
   function wallSpot(i){
-    if(!wallSits(i)) return wallHoldTop(i);
-    var W = wallEl.clientWidth, ledgeH = (W-24)*127/560; // the shelf's top is about a fifth of the way down the ledge art
-    return { x: wallPos(i).x<50 ? W*0.25 : W*0.75, y: wallPos(i).y - 52 - ledgeH*0.22, sit:true };
+    if(!wallIsLedge(i)) return wallHoldTop(i);
+    var W = wallEl.clientWidth, x = wallPos(i).x<50 ? W*0.25 : W*0.75;
+    if(i===WALL_N){ var sh = (W-28)*343/560; return { x:x, y: wallPos(i).y - 52 - sh*0.05, sit:false }; } // standing on the summit's lip
+    var ledgeH = (W-24)*127/560; // the shelf's top is about a fifth of the way down the ledge art
+    return { x:x, y: wallPos(i).y - 52 - ledgeH*0.22, sit:true };
   }
   function wallPlace(i){
     var t = wallSpot(i);
@@ -5553,23 +5620,27 @@
   var WALL_IDLE = [[0,900],[1,300],[2,400],[3,300],[2,300],[1,350]];
   function wallIdleTick(){
     if(wallHopping || prefersReducedMotion || document.getElementById("view-wall").hidden || document.visibilityState!=="visible"){ wallIdleT = setTimeout(wallIdleTick, 600); return; }
-    if(wallSits(wallAt)){ wallCImg.src = IMG.wall.cl_sit; wallIdleT = setTimeout(wallIdleTick, 800); return; }
+    if(wallAt===WALL_N){ wallShow(IMG.wall.summitFlag[wallIdleI++ % 2], true); wallIdleT = setTimeout(wallIdleTick, 480); return; } // top of the wall: waving the flag
+    if(wallSits(wallAt)){ // on a ledge: mostly sitting, now and then a glance at the prize
+      var look = (wallIdleI++ % 5)===3;
+      wallShow(look ? IMG.wall.cl_sit_look : IMG.wall.cl_sit); wallIdleT = setTimeout(wallIdleTick, look ? 1500 : 1400); return;
+    }
     var f = WALL_IDLE[wallIdleI % WALL_IDLE.length];
     if(f[0]===0 && Date.now()>wallBlinkAt){
       wallBlinkAt = Date.now() + 3000 + Math.random()*4000;
       var seq = [[IMG.mascot.blink[0],60],[IMG.mascot.blink[1],90],[IMG.mascot.blink[0],60],[IMG.mascot.idle[0],600]], k = 0;
-      (function b(){ if(wallHopping) return; wallCImg.src = seq[k][0]; var ms = seq[k][1]; k++; wallIdleT = setTimeout(k<seq.length ? b : function(){ wallIdleI++; wallIdleTick(); }, ms); })();
+      (function b(){ if(wallHopping) return; wallShow(seq[k][0]); var ms = seq[k][1]; k++; wallIdleT = setTimeout(k<seq.length ? b : function(){ wallIdleI++; wallIdleTick(); }, ms); })();
       return;
     }
-    wallCImg.src = IMG.mascot.idle[f[0]]; wallIdleI++;
+    wallShow(IMG.mascot.idle[f[0]]); wallIdleI++;
     wallIdleT = setTimeout(wallIdleTick, f[1]);
   }
-  function wallStartIdle(){ clearTimeout(wallIdleT); wallIdleI = 0; wallCImg.src = wallSits(wallAt) ? IMG.wall.cl_sit : IMG.mascot.idle[0]; wallIdleT = setTimeout(wallIdleTick, 400); }
+  function wallStartIdle(){ clearTimeout(wallIdleT); wallIdleI = 0; if(wallAt===WALL_N) wallShow(IMG.wall.summitFlag[0], true); else wallShow(wallSits(wallAt) ? IMG.wall.cl_sit : IMG.mascot.idle[0]); wallIdleT = setTimeout(wallIdleTick, 400); }
   function wallStopIdle(){ clearTimeout(wallIdleT); wallIdleT = null; }
   var wallPreloaded = false;
   function wallPreload(){
     if(wallPreloaded) return; wallPreloaded = true;
-    var srcs = [IMG.wall.cl_reach_l, IMG.wall.cl_reach_r, IMG.wall.cl_pull, IMG.wall.cl_sit, IMG.wall.cl_rest];
+    var srcs = [IMG.wall.cl_reach_l, IMG.wall.cl_reach_r, IMG.wall.cl_pull, IMG.wall.cl_sit, IMG.wall.cl_rest, IMG.wall.cl_chalk, IMG.wall.cl_sit_look].concat(IMG.wall.summitFlag);
     Object.keys(IMG.wall.moves).forEach(function(k){ srcs = srcs.concat(IMG.wall.moves[k]); });
     srcs.forEach(function(s){ new Image().src = s; });
   }
@@ -5587,13 +5658,14 @@
     if(prefersReducedMotion){ wallAt = to; wallPlace(to); done(); return; }
     wallHopping = true; wallStopIdle();
     wallSetClimber(a.x, a.y);
-    wallCImg.src = right ? IMG.wall.cl_reach_r : IMG.wall.cl_reach_l;
-    setTimeout(function(){
-      wallCImg.src = IMG.wall.cl_pull;
+    wallShow(IMG.wall.cl_chalk); // a quick dip in the chalk bag, then reach
+    setTimeout(function(){ wallShow(right ? IMG.wall.cl_reach_r : IMG.wall.cl_reach_l); setTimeout(startPull, 300); }, 520);
+    function startPull(){
+      wallShow(IMG.wall.cl_pull);
       var t0 = performance.now(), dur = 560, landed = false;
       // animation frames pause in the background, so a timer makes sure the move always finishes
       function land(){ if(landed) return; landed = true; wallAt = to; wallSetClimber(b.x, b.y); wallPuff(b.x, b.y);
-        wallCImg.src = right ? IMG.wall.cl_reach_l : IMG.wall.cl_reach_r;
+        wallShow(right ? IMG.wall.cl_reach_l : IMG.wall.cl_reach_r);
         setTimeout(function(){ wallHopping = false; wallPlace(to); wallStartIdle(); done(); }, 280); }
       setTimeout(land, dur + 250);
       (function pull(now){ if(landed) return;
@@ -5601,7 +5673,7 @@
         wallSetClimber(a.x + (b.x-a.x)*e, a.y + (b.y-a.y)*e);
         if(t<1) requestAnimationFrame(pull); else land();
       })(t0);
-    }, 300);
+    }
   }
   // moves you've unlocked, in the order you got them
   function wallMovesUnlocked(){
@@ -5617,7 +5689,7 @@
     var k = 0;
     (function step(){
       if(k>=seq.length){ wallHopping = false; wallPlace(wallAt); wallStartIdle(); if(done) done(); return; }
-      wallCImg.src = frames[seq[k][0]]; var ms = seq[k][1]; k++; setTimeout(step, ms);
+      wallShow(frames[seq[k][0]]); var ms = seq[k][1]; k++; setTimeout(step, ms);
     })();
   }
   // move pictures (unlock card, unlocks list) loop while any are on screen
@@ -5764,6 +5836,8 @@
   });
   var wallResizeT; window.addEventListener("resize", function(){ clearTimeout(wallResizeT); wallResizeT = setTimeout(function(){ if(!document.getElementById("view-wall").hidden && !wallHopping) renderWall(); }, 120); });
   /* ==== END THE WALL ==== */
+
+  document.querySelectorAll("img[data-ui]").forEach(function(im){ im.src = IMG.ui[im.dataset.ui]; });
 
   /* ---------------- view switching ---------------- */
   function switchView(name){
@@ -5961,7 +6035,7 @@
   document.getElementById("devLevelUp").addEventListener("click", function(){ setDevLevel(state.level+1); });
   document.getElementById("devLevelDown").addEventListener("click", function(){ setDevLevel(state.level-1); });
   document.getElementById("devLevelPlay").addEventListener("click", function(){
-    announceOutcome({ leveledUpTo:state.level, newlyUnlocked:[] });
+    celebrateLevel(state.level); // the milestone card, then the climber's jump behind it
     celebrateLevelUp();
   });
   document.querySelectorAll(".switch[data-setting]").forEach(function(btn){

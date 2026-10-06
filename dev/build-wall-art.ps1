@@ -96,10 +96,11 @@ $app = Split-Path -Parent $PSScriptRoot
 $src = Join-Path (Split-Path -Parent $app) "art-source\wall\incoming"
 $assets = Join-Path $app "assets"
 $src2 = Join-Path (Split-Path -Parent $app) "art-source\wall\incoming-2"
+$src3 = Join-Path (Split-Path -Parent $app) "art-source\round3"
 $dst = Join-Path $app "assets\wall"
 New-Item -ItemType Directory -Force $dst | Out-Null
 # out-name = source, boxW, boxH, crop L,T,R,B, trim, hard alpha, padding[, feather L,T,R,B (fraction of the edge), hue shift]
-# A source starting with "app:" is read from this app's assets/ folder, and "r2:" from art-source/wall/incoming-2.
+# A source starting with "app:" is read from this app's assets/ folder, and "r2:" from art-source/wall/incoming-2, "r3:" from art-source/round3.
 # (The Wall's ceiling texture is exported by dev/build-room-art.ps1, because it is a JPEG.)
 $jobs = [ordered]@{
   "wall2.png"        = @("wall-tile.png", 300, 300, 6,6,6,6, $false, $false, 0)
@@ -150,10 +151,23 @@ $jobs = [ordered]@{
   "r2_icon_rest.png"   = @("r2:icon-rest.png", 120, 120, 0,0,0,0, $true, $true, 2)
   "r2_icon_unlocks.png"= @("r2:icon-unlocks.png", 120, 120, 0,0,0,0, $true, $true, 2)
   "r2_plinth.png"      = @("r2:reveal-plinth.png", 400, 300, 0,0,0,0, $true, $true, 2)
+  # round 3 (art-source/round3): Home screen icons, level badge, empty-logbook picture (to assets/ui/) and two Garage redraws (to assets/decor/):
+  # the "../" keys put these outside assets/wall/ so they stay if the Wall is removed
+  "../ui/start.png"    = @("r3:icon-start.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "../ui/workouts.png" = @("r3:icon-workouts.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "../ui/progress.png" = @("r3:icon-progress.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "../ui/drills.png"   = @("r3:icon-drills.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "../ui/settings.png" = @("r3:icon-settings.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "../ui/customize.png"= @("r3:icon-customize.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "../ui/arrange.png"  = @("r3:icon-arrange.png", 120, 120, 0,0,0,0, $true, $true, 2)
+  "../ui/badge.png"         = @("r3:level-badge.png", 320, 320, 0,0,0,0, $true, $true, 2)
+  "../ui/empty.png"         = @("r3:empty-history.png", 380, 300, 0,0,0,0, $true, $true, 2)
+  "../decor/hangboard-clean.png"     = @("r3:hangboard.png", 340, 240, 0,0,0,0, $true, $true, 2)
+  "../decor/mountain-print-clean.png"         = @("r3:mountain-print.png", 240, 240, 0,0,0,0, $true, $true, 2)
 }
 foreach ($k in $jobs.Keys) {
   $j = $jobs[$k]
-  $from = if ($j[0] -like "app:*") { Join-Path $assets $j[0].Substring(4) } elseif ($j[0] -like "r2:*") { Join-Path $src2 $j[0].Substring(3) } else { Join-Path $src $j[0] }
+  $from = if ($j[0] -like "app:*") { Join-Path $assets $j[0].Substring(4) } elseif ($j[0] -like "r2:*") { Join-Path $src2 $j[0].Substring(3) } elseif ($j[0] -like "r3:*") { Join-Path $src3 $j[0].Substring(3) } else { Join-Path $src $j[0] }
   $fe = if ($j.Count -ge 15) { $j[10..14] } else { @(0,0,0,0,0) }
   [WallExport]::Export($from, (Join-Path $dst $k), $j[1], $j[2], $j[3], $j[4], $j[5], $j[6], $j[7], $j[8], $j[9], $fe[0], $fe[1], $fe[2], $fe[3], $fe[4])
 }
