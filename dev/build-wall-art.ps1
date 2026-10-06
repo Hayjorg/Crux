@@ -151,6 +151,11 @@ $jobs = [ordered]@{
   "r2_icon_rest.png"   = @("r2:icon-rest.png", 120, 120, 0,0,0,0, $true, $true, 2)
   "r2_icon_unlocks.png"= @("r2:icon-unlocks.png", 120, 120, 0,0,0,0, $true, $true, 2)
   "r2_plinth.png"      = @("r2:reveal-plinth.png", 400, 300, 0,0,0,0, $true, $true, 2)
+  # seasons (round 1 sources): cropped to the union of the plain and seasonal artwork so the leaves and snow
+  # overhang the plain piece by known amounts (see wall season code in crux.html; numbers measured in source px:
+  # ledge base 34,196-1948,631 vs autumn 32,109-1950,632; summit base 1,201-1445,1085 vs snow 1,173-1446,1085)
+  "ledge_autumn.png"   = @("ledge-autumn.png", 562, 200, 32,109,32,160, $false, $true, 0)
+  "summit_snow.png"    = @("summit-snow.png", 560, 440, 1,173,1,0, $false, $true, 0)
   # round 3 (art-source/round3): Home screen icons, level badge, empty-logbook picture (to assets/ui/) and two Garage redraws (to assets/decor/):
   # the "../" keys put these outside assets/wall/ so they stay if the Wall is removed
   "../ui/start.png"    = @("r3:icon-start.png", 120, 120, 0,0,0,0, $true, $true, 2)

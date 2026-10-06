@@ -888,6 +888,70 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(visible("wallJumpMe") && visible("wallJumpTop"), "the Me / Top jump buttons aren't showing on the Wall");
     await click("wallJumpTop", 200); await click("wallJumpMe", 200); // smooth scrolling doesn't run in this hidden frame; this just proves they respond without errors
   });
+  function namedSave(){
+    var s = clone(TEMPLATE), now = Date.now();
+    var mk = function(id, daysAgo, loc, names){ return { id:id, startedAt:now-daysAgo*86400000, endedAt:now-daysAgo*86400000+3600000, timerConfig:{ workSec:45, restSec:90 }, note:"", photos:[], satisfaction:null, location:loc,
+      attempts:names.map(function(n, i){ return { id:id+"a"+i, result:"send", xp:20, ts:now-daysAgo*86400000+i*1000, seq:parseInt(id.slice(1),10)*10+i, effort:null, reason:null, note:"", gradeType:"boulder", grade:null, photos:[], climbName:n }; }) }; };
+    s.sessions = [mk("s3",1,"Boulder Lab",["Blue Arete","Pinch Me","Slab Dance"]), mk("s2",4,"Boulder Lab",["Orange Roof","Pinch Me"]), mk("s1",9,"Crag North",["Mossy Wall"])];
+    s.seq = 100; s.activeSessionId = null; s.lastLocation = "Boulder Lab";
+    s.settings.mode = "advanced"; s.settings.askClimbName = true;
+    return s;
+  }
+
+  test("Log sheet: a few recent climb names appear as chips (this gym first), filter as you type, and tapping one names the climb", async function(){
+    await boot(namedSave()); await startOrResume();
+    await log("send");
+    var chips = qa("#composerNameChips .name-chip").map(function(c){ return c.textContent; });
+    expect(chips.length===3 && chips[0]==="Slab Dance", "recent chips (newest at this gym first): "+chips.join(", "));
+    expect(!chips.some(function(c){ return /Mossy/.test(c); }), "a name from another gym crowded out this gym's");
+    var input = $("composerClimbName"); input.value = "pi"; fire(input, "input"); await wait(100);
+    chips = qa("#composerNameChips .name-chip").map(function(c){ return c.textContent; });
+    expect(chips.length===1 && chips[0]==="Pinch Me", "typing 'pi' should leave Pinch Me: "+chips.join(", "));
+    await click(q("#composerNameChips .name-chip"), 600);
+    expect(input.value==="Pinch Me", "tapping the chip didn't fill the name: "+input.value);
+    expect(saved().sessions[0].attempts[0].climbName==="Pinch Me", "the attempt wasn't named: "+saved().sessions[0].attempts[0].climbName);
+    expect(!qa("#composerNameChips .name-chip").length, "chips stay up once the name is complete");
+  });
+
+  test("Home: missed yesterday after a streak? One tap logs a rest day and saves the streak", async function(){
+    await boot(wallSave([{ daysAgo:3, workout:true }, { daysAgo:2, workout:true }])); await goHome();
+    expect(visible("wallRescueBtn") && /3 day streak/.test($("wallRescueBtn").textContent), "rescue button: "+($("wallRescueBtn").hidden ? "hidden" : $("wallRescueBtn").textContent));
+    await click("wallRescueBtn", 300);
+    expect(saved().restDays.length===1 && !visible("wallRescueBtn"), "rest day not saved or button still showing");
+    expect(/3 day streak/.test($("wallCardTitle").textContent), "streak card after the rescue: "+$("wallCardTitle").textContent);
+    await boot(wallSave([{ daysAgo:5, workout:true }])); await goHome();
+    expect(!visible("wallRescueBtn"), "rescue offered for an old gap with no streak to save");
+  });
+
+  test("The Wall: autumn puts leaves on the shelves, winter puts snow on the summit, and other months stay plain", async function(){
+    var days = []; for(var d=14; d>=1; d--) days.push({ daysAgo:d, workout:true });
+    var s = wallSave(days, { wallSeen:14 }); s.settings.devSeason = "autumn";
+    await boot(s); await openWallView(); await wait(300);
+    expect(qa(".wl-ledge-art").length>=5 && artIs(q(".wl-ledge-art").src, /ledge_autumn/), "no autumn leaves on the shelves");
+    expect(artIs(q(".wl-summit").src, /wall\/summit\.png/), "the summit should be plain in autumn: "+q(".wl-summit").src);
+    s = wallSave(days, { wallSeen:14 }); s.settings.devSeason = "winter";
+    await boot(s); await openWallView(); await wait(300);
+    expect(artIs(q(".wl-summit").src, /summit_snow/) && q(".wl-summit").style.width, "no snow on the summit in winter");
+    expect(!qa(".wl-ledge-art").length, "winter shelves shouldn't have leaves");
+    s = wallSave(days, { wallSeen:14 }); s.settings.devSeason = "plain";
+    await boot(s); await openWallView(); await wait(300);
+    expect(!qa(".wl-ledge-art").length && artIs(q(".wl-summit").src, /wall\/summit\.png/), "plain season isn't plain");
+  });
+
+  test("Share a send: the end summary offers the best send as a picture, and not after an all-falls session", async function(){
+    await boot(clone(TEMPLATE)); await startOrResume();
+    await log("send"); await closeComposer(); await click("finishSessionBtn", 500);
+    expect(visible("endShareBtn"), "no Share your best send button after a send");
+    await click("endShareBtn", 200);
+    for(var i=0;i<25 && $("shareImg").hidden;i++) await wait(200);
+    expect(!$("shareImg").hidden && /^blob:/.test($("shareImg").src), "the share picture wasn't made: "+$("shareImg").src.slice(0, 30)+" | "+(W.__lastShareErr||"")+" | "+window.__appErrors.slice(-2).join(" ; "));
+    expect(visible("shareOverlay"), "the share sheet isn't showing");
+    await click("closeShareBtn", 100);
+    expect($("shareOverlay").hidden, "the share sheet didn't close");
+    await boot(clone(TEMPLATE)); await startOrResume();
+    await log("fall"); await closeComposer(); await click("finishSessionBtn", 500);
+    expect(!visible("endShareBtn"), "Share offered for a session with only falls");
+  });
   test("The Wall: hold 21 unlocks the Home Wall gym", async function(){
     var days = []; for(var d=20; d>=1; d--) days.push({ daysAgo:d, workout:true }); // workouts earn no XP, so level stays 1
     await boot(wallSave(days, { wallSeen:20 })); await openCustomize();

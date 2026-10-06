@@ -375,6 +375,14 @@
   .picker-thumb.fit-contain img{object-fit:contain;padding:4px;}
   .picker-thumb.cover img{object-fit:cover;}
   #developerSection .theme-row .chip{padding:8px 12px;font-size:13px;flex:0 1 auto;}
+  .share-card{max-width:440px;}
+  .share-stage{display:grid;place-items:center;min-height:200px;margin:4px 0 12px;}
+  .share-stage img{display:block;width:100%;max-height:60vh;object-fit:contain;border-radius:16px;box-shadow:0 12px 28px -10px rgba(0,0,0,0.5);}
+  .share-stage p{color:var(--text-dim);font-size:13px;}
+  .share-save-btn{width:100%;}
+  .name-chips{display:flex;flex-wrap:nowrap;gap:6px;margin:-3px 0 9px;}
+  .name-chips:empty{display:none;}
+  .name-chip{flex:0 1 auto;min-width:0;max-width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 11px;font-size:12.5px;}
   .picker-group{grid-column:1/-1;margin:8px 0 -2px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);}
   .picker-thumb.auto-thumb{font-family:"Bebas Neue",sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--text-dim);}
   .picker-name{font-size:11px;font-weight:700;line-height:1.2;}
@@ -946,6 +954,7 @@
   @keyframes wlTag{50%{transform:translateY(-3px);}}
   .wl-qd{position:absolute;z-index:2;width:12px;height:30px;transform:translate(-50%,0);pointer-events:none;}
   .wl-ledge{position:absolute;left:12px;right:12px;z-index:3;aspect-ratio:560/127;transform:translateY(-50%);background-repeat:no-repeat;background-size:100% 100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,0.45));}
+  .wl-ledge-art{position:absolute;left:-0.1%;top:-19.95%;width:100.2%;max-width:none;height:auto;display:block;pointer-events:none;}
   .wl-ledge .prize{position:absolute;left:50%;bottom:74%;transform:translateX(-50%);height:58px;display:flex;align-items:flex-end;}
   .wl-ledge .prize img{max-height:58px;max-width:110px;filter:drop-shadow(0 4px 3px rgba(0,0,0,0.45));}
   .wl-ledge.locked .prize img{filter:brightness(0) opacity(0.4);}
@@ -963,6 +972,9 @@
   #endSummaryWallBtn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-bottom:8px;}
   #endSummaryWallBtn[hidden]{display:none;}
   #endSummaryWallBtn .ic{width:30px;height:30px;object-fit:contain;margin:-6px 0;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25));}
+  .wl-rescue{margin:-6px 0 14px;}
+  .wl-rescue .ic{width:26px;height:26px;object-fit:contain;margin:-6px 0;flex-shrink:0;}
+  .wl-rescue[hidden]{display:none;}
   .wl-jump{position:fixed;right:max(14px, calc(50% - 226px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:grid;gap:8px;}
   .wl-jump button{width:44px;height:44px;border-radius:50%;border:1px solid var(--wl-gold);background:linear-gradient(180deg, var(--wl-gold-hi), color-mix(in srgb, var(--wl-gold) 60%, var(--wl-gold-hi)));color:#4A2E0A;display:grid;place-items:center;box-shadow:0 3px 0 color-mix(in srgb, var(--wl-gold) 75%, #000), 0 8px 14px -6px rgba(0,0,0,0.45);}
   .wl-jump button:active{transform:translateY(3px);box-shadow:0 0 0 transparent;}
@@ -1155,6 +1167,7 @@
       <span class="wl-card-main"><span class="wl-card-title" id="wallCardTitle">The Wall</span><span class="wl-card-sub" id="wallCardSub"></span></span>
       <span class="wl-new" id="wallCardNew" hidden>New hold!</span>
     </button>
+    <button type="button" class="wl-backfill wl-rescue" id="wallRescueBtn" hidden></button>
     <!-- ==== END THE WALL ==== -->
 
     <section class="history-section">
@@ -1556,6 +1569,13 @@
           <button type="button" class="chip" id="devWallUp">+ 1 day</button>
           <button type="button" class="chip" id="devWallOpen">Open the Wall</button>
         </div>
+        <div class="switch-desc" style="margin-top:10px;">Season on the Wall (follows the calendar unless you pick one)</div>
+        <div class="theme-row" id="devSeasonRow" style="margin-top:6px;flex-wrap:wrap;">
+          <button type="button" class="chip" data-dev-season="">Auto</button>
+          <button type="button" class="chip" data-dev-season="plain">Plain</button>
+          <button type="button" class="chip" data-dev-season="autumn">Autumn</button>
+          <button type="button" class="chip" data-dev-season="winter">Winter</button>
+        </div>
       </div>
       <!-- END THE WALL dev tools -->
       <div class="switch-row">
@@ -1716,6 +1736,7 @@
       <button type="button" class="link-btn coach-btn" id="endCoachBtn"></button>
       <div class="coach-text" id="endCoachText" hidden></div>
     </div>
+    <button type="button" class="btn btn-ghost end-done-btn" id="endShareBtn" hidden style="margin-bottom:8px;">Share your best send</button>
     <!-- THE WALL: a way straight onto the wall when this session earned a new hold -->
     <button type="button" class="btn btn-primary end-done-btn" id="endSummaryWallBtn" hidden><img class="ic" alt="">Climb a hold on the Wall</button>
     <!-- END THE WALL -->
@@ -1723,6 +1744,20 @@
   </div>
 </div>
 
+
+<div class="modal-overlay" id="shareOverlay" hidden>
+  <div class="modal-card share-card" role="dialog" aria-modal="true" aria-label="Share your send">
+    <div class="modal-head">
+      <h2>Share your send</h2>
+      <button type="button" class="icon-btn" id="closeShareBtn" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="share-stage"><img id="shareImg" alt="Your send, as a picture" hidden><p id="shareBusy">Making your card…</p></div>
+    <button type="button" class="btn btn-primary share-save-btn" id="shareSaveBtn" hidden>Save or share the picture</button>
+    <p class="settings-section-hint" id="shareHint" hidden>Press and hold the picture to save it.</p>
+  </div>
+</div>
 
 <div class="modal-overlay" id="legalOverlay" hidden>
   <div class="modal-card legal-card" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
@@ -1856,7 +1891,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0 }, // devWallDays: THE WALL (removable), fake streak for testing
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"" }, // devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -2638,6 +2673,21 @@
   function resetComposerTimeout(){ clearComposerTimeout(); composerTimeoutId = setTimeout(hideComposer, 8000); }
   function hideComposer(){ clearComposerTimeout(); var box=document.getElementById("attemptComposer"); if(box) box.innerHTML=""; }
 
+  // Recent distinct climb names, newest first, this session's gym before others, optionally filtered by what's typed.
+  function recentClimbNames(session, query, limit){
+    var here = projectKey(session && session.location), q = (query||"").trim().toLowerCase(), seen = {}, near = [], far = [];
+    state.sessions.forEach(function(s){
+      var local = projectKey(s.location)===here;
+      s.attempts.slice().sort(function(a,b){ return (b.seq||0)-(a.seq||0); }).forEach(function(a){
+        var name = (a.climbName||"").trim(), key = name.toLowerCase();
+        if(!name || seen[key]) return;
+        seen[key] = 1;
+        if(key===q || (q && key.indexOf(q)<0)) return;
+        (local ? near : far).push(name);
+      });
+    });
+    return near.concat(far).slice(0, limit);
+  }
   function showComposer(attempt){
     var box = document.getElementById("attemptComposer");
     if(!box) return;
@@ -2661,7 +2711,8 @@
     box.innerHTML =
       '<div class="composer">' +
         '<div class="composer-head"><span>'+cap(attempt.result)+' logged · +'+attempt.xp+' XP</span></div>' +
-        (showClimbName ? '<input type="text" id="composerClimbName" class="note-input" list="climbNameList" maxlength="60" placeholder="Name this climb (optional)" style="margin-bottom:9px;">'+
+        (showClimbName ? '<input type="text" id="composerClimbName" class="note-input" maxlength="60" placeholder="Name this climb (optional)" autocomplete="off" style="margin-bottom:9px;">'+
+          '<div class="name-chips" id="composerNameChips"></div>'+
           '<div class="composer-project-hint" id="composerProjectHint" hidden></div>' : "") +
         (showGrade ? '<div class="composer-row"><span class="c-label">Felt grade</span><div class="grade-wrap">'+
           '<div class="chip-row grade-type-row" id="gradeTypeRow">'+
@@ -2680,10 +2731,22 @@
       refreshClimbNameList();
       var climbInput = document.getElementById("composerClimbName");
       climbInput.value = attempt.climbName||"";
-      climbInput.addEventListener("input", debounce(function(e){
+      function applyClimbName(v){
         var session = getActiveSession();
-        if(session){ delete projectChoiceSettled[attempt.id]; setAttemptClimbName(session, attempt, e.target.value); saveState(); render(); updateComposerProjectHint(attempt); }
-      }, 350));
+        if(session){ delete projectChoiceSettled[attempt.id]; setAttemptClimbName(session, attempt, v); saveState(); render(); updateComposerProjectHint(attempt); }
+      }
+      // A few recent climb names as one-tap chips (this gym's first), filtered as you type: no long list to scroll.
+      function renderNameChips(){
+        var wrap = document.getElementById("composerNameChips"); if(!wrap) return;
+        var names = recentClimbNames(getActiveSession(), climbInput.value, 3);
+        wrap.innerHTML = names.map(function(n){ return '<button type="button" class="chip name-chip" data-name="'+escapeHtml(n)+'">'+escapeHtml(n)+'</button>'; }).join("");
+        wrap.querySelectorAll(".name-chip").forEach(function(b){
+          b.addEventListener("click", function(){ climbInput.value = b.dataset.name; applyClimbName(b.dataset.name); renderNameChips(); resetComposerTimeout(); });
+        });
+      }
+      renderNameChips();
+      climbInput.addEventListener("input", renderNameChips);
+      climbInput.addEventListener("input", debounce(function(e){ applyClimbName(e.target.value); }, 350));
       updateComposerProjectHint(attempt);
       climbInput.addEventListener("input", function(){ resetComposerTimeout(); });
     }
@@ -3025,6 +3088,7 @@
     var endCoachText = document.getElementById("endCoachText");
     endCoachText.hidden = true; endCoachText.textContent = "";
     document.getElementById("endSessionOverlay").hidden = false;
+    document.getElementById("endShareBtn").hidden = !bestSend(s);
     if(typeof wallEndSummary==="function") wallEndSummary(); // THE WALL hook
     wireSessionCoach(document.getElementById("endCoach"), document.getElementById("endCoachBtn"), endCoachText, s);
     if(total>0) spawnConfetti(document.getElementById("confettiLayer"));
@@ -3208,6 +3272,7 @@
         '<div class="photo-strip ae-media-strip"></div>'+
         (assetsNS ? '<button type="button" class="btn btn-ghost photo-add-btn ae-media-add">Add photo/video</button><input type="file" class="ae-media-input" accept="image/*,video/*" capture="environment" multiple hidden>' : "")+
       '</div></div>'+
+      '<button type="button" class="btn btn-ghost ae-share" style="margin-top:8px;width:100%;"'+(a.result==="fall" ? " hidden" : "")+'>Share this send</button>'+
       '<button type="button" class="link-btn danger ae-delete" style="margin-top:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Delete this attempt</button>'+
     '</div></li>';
   }
@@ -3236,6 +3301,8 @@
     if(climbInput && document.activeElement!==climbInput) climbInput.value = a.climbName||"";
     var reasonRow = container.querySelector(".ae-reason-row");
     if(reasonRow) reasonRow.hidden = a.result!=="fall";
+    var shareBtn = container.querySelector(".ae-share");
+    if(shareBtn) shareBtn.hidden = a.result==="fall";
   }
   function wireAttemptEditor(container, session, a, onStructuralChange){
     refreshClimbNameList();
@@ -3244,6 +3311,8 @@
       setAttemptClimbName(session, a, e.target.value); saveState();
       if(session.id===state.activeSessionId) renderProjectBar(session);
     }, 350));
+    var aeShare = container.querySelector(".ae-share");
+    if(aeShare) aeShare.addEventListener("click", function(){ openShare(session, a); });
     container.querySelectorAll(".ae-result").forEach(function(btn){
       btn.addEventListener("click", function(){
         var v = btn.dataset.val;
@@ -4509,6 +4578,8 @@
       stud2: asset("wall/stud2.png", "655cea90e9e131b743bbbc35db23927c"),
       ground2: asset("wall/ground2.png", "94be3c90bfa4f5cdc51713b278134a41"),
       ledge2: asset("wall/ledge2.png", "8edfcddff43d68bdd152bd4d04e8b3eb"),
+      ledge_autumn: asset("wall/ledge_autumn.png", "a19009c391b660a855d5f0d8866d710d"),   // autumn leaves on the shelves (Sep-Nov)
+      summit_snow: asset("wall/summit_snow.png", "f94276638d5a0d699ae53831cd8de476"),     // snow on the summit (Dec-Feb)
       summit: asset("wall/summit.png", "943fca06d38e6e035ede637e87ca3df8"),
       h2_crimp: asset("wall/h2_crimp.png", "38258812daf93845afcac48532632d16"),
       h2_pinch: asset("wall/h2_pinch.png", "5bf82c2dfe014327519fd6c59333c86b"),
@@ -5472,6 +5543,13 @@
 
   // ---- the day model: everything below is read from what you've logged ----
   function wallToday(){ return planDayNum(Date.now()); }
+  // The wall follows the real calendar: autumn leaves on the shelves from September to November, snow on the
+  // summit from December to February. Developer tools can force a season to look at it.
+  function wallSeason(){
+    var o = state.settings.devSeason; if(o) return o==="plain" ? "plain" : o;
+    var m = new Date().getMonth();
+    return m>=8 && m<=10 ? "autumn" : (m===11 || m<=1) ? "winter" : "plain";
+  }
   function wallDayMap(){
     var m = {};
     // Developer "Pretend Wall streak": that many consecutive days ending today (a mix of the three kinds).
@@ -5509,6 +5587,14 @@
     document.getElementById("wallCardSub").innerHTML = (w.map[w.today] ? "Logged today · " : w.streak ? "Log today to keep it going · " : "Log a day to climb a hold · ") +
       (next ? "next: <b>"+escapeHtml(next.name)+"</b>" : "<b>top of the wall!</b>");
     document.getElementById("wallCardNew").hidden = !(state.wallSeen!=null && w.holds>state.wallSeen);
+    // Missed yesterday but you were on a roll the day before? One tap logs it as a rest day and saves the streak.
+    var rescue = document.getElementById("wallRescueBtn"), canRescue = !!w.map[w.today-2] && !w.map[w.today-1];
+    rescue.hidden = !canRescue;
+    if(canRescue){
+      var run = 0, dd = w.today-2; while(w.map[dd]){ run++; dd--; }
+      var after = (w.map[w.today] ? 1 : 0) + 1 + run;
+      rescue.innerHTML = '<img class="ic" src="'+IMG.wall.r2_icon_rest+'" alt="">Missed yesterday? Log it as a rest day · '+after+' day streak';
+    }
   }
   // the flame art grows with the streak: small, then big red-orange at 7 days, blue at 14
   function wallFlameClass(el, s){
@@ -5535,7 +5621,12 @@
   function wallPlaceSummit(){
     // summit art is 560x343: its lip's top is 41% down and the lip's front is centred 49% down
     var sh = (wallEl.clientWidth-28)*343/560, top = wallPos(WALL_N).y - 52 - sh*0.49;
-    wallSummit.style.top = top+"px"; wallSky.style.height = Math.max(0, top + sh*0.42)+"px";
+    // snow: the picture is 1446 source px wide and starts 28 px higher than the plain one (icicles, snowy flag), so it is
+    // drawn a hair wider and a little higher; the plain one uses the stylesheet width
+    var snow = wallSeason()==="winter", k = (wallEl.clientWidth-28)/1445;
+    wallSummit.src = snow ? IMG.wall.summit_snow : IMG.wall.summit;
+    wallSummit.style.width = snow ? (1446*k)+"px" : "";
+    wallSummit.style.top = (snow ? top - 28*k : top)+"px"; wallSky.style.height = Math.max(0, top + sh*0.42)+"px";
   }
   (function(){ for(var k=0;k<6;k++){ var e = document.createElement("span"); e.className = "wl-mote"; e.style.left = (30+k*8)+"%"; e.style.top = (70+(k%3)*40)+"px"; e.style.animationDelay = (k*1.4)+"s"; wallEl.appendChild(e); } })();
   function wallPos(i){ return i<=0 ? { x:50, y:WALL_H-50 } : { x:50 + 25*Math.sin(i*0.92) + 9*Math.sin(i*2.3+1), y:WALL_H - WALL_BOTTOM - i*WALL_GAP - Math.floor((i-1)/WALL_LEDGE)*WALL_LEDGE_ROOM }; }
@@ -5556,13 +5647,13 @@
   }
   var wallHopping = false;
   function renderWall(shownHolds, fresh){
-    var w = wallInfo(), h = shownHolds==null ? w.holds : shownHolds, html = "";
+    var w = wallInfo(), h = shownHolds==null ? w.holds : shownHolds, html = "", season = wallSeason();
     wallPlaceSummit();
     for(var i=1;i<=WALL_N;i++){
       var p = wallPos(i), on = i<=h, d = w.days[i-1], type = on ? w.map[d] : null;
       if(i % WALL_LEDGE===0){
         var r = WALL_REWARDS[i], got = h>=i;
-        html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+(i===WALL_N ? " top" : "")+'" style="top:'+(p.y-52)+'px'+(i===WALL_N ? "" : ';background-image:url('+IMG.wall.ledge2+')')+'"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.kind==="gym" ? ' class="photo"' : "")+'>' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
+        html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+(i===WALL_N ? " top" : "")+'" style="top:'+(p.y-52)+'px'+(i===WALL_N || season==="autumn" ? "" : ';background-image:url('+IMG.wall.ledge2+')')+'">'+(i!==WALL_N && season==="autumn" ? '<img class="wl-ledge-art" src="'+IMG.wall.ledge_autumn+'" alt="">' : "")+'<div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.kind==="gym" ? ' class="photo"' : "")+'>' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
           '<span class="lname">'+escapeHtml(r.name)+'</span><span class="label">'+(got ? WI.check : WI.lock)+'LEDGE '+(i/WALL_LEDGE)+'</span></div>';
       }
       html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+wallHoldSize(wallArtFor(i))+'px;--rot:'+wallHoldRot(i, wallArtFor(i))+'deg" aria-label="Hold '+i+'">'+
@@ -5810,6 +5901,7 @@
   }
   // Developer: pretend Wall streak (the controls live in Settings -> Developer)
   function renderDevWall(){
+    document.querySelectorAll("#devSeasonRow .chip").forEach(function(b){ b.classList.toggle("selected", b.dataset.devSeason===(state.settings.devSeason||"")); });
     document.querySelectorAll("#devWallRow .chip").forEach(function(b){ b.classList.toggle("selected", +b.dataset.devWall===(state.settings.devWallDays|0)); });
     var n = state.settings.devWallDays|0;
     document.getElementById("devWallDesc").textContent = n>0 ? "Pretending you have a "+n+"-day streak ("+wallInfo().holds+" of "+WALL_N+" holds). Open the Wall to watch the climb."
@@ -5823,6 +5915,11 @@
     state.wallSeen = state.settings.devWallDays>before && holds>0 ? holds-1 : Math.min(state.wallSeen==null ? holds : state.wallSeen, holds);
     saveState(); renderWallCard(); renderDevWall();
   }
+  document.getElementById("devSeasonRow").addEventListener("click", function(e){
+    var b = e.target.closest("[data-dev-season]"); if(!b) return;
+    state.settings.devSeason = b.dataset.devSeason; saveState(); renderDevWall();
+    if(!document.getElementById("view-wall").hidden) renderWall();
+  });
   document.getElementById("devWallRow").addEventListener("click", function(e){ var b = e.target.closest("[data-dev-wall]"); if(b) setDevWall(+b.dataset.devWall); });
   document.getElementById("devWallUp").addEventListener("click", function(){ setDevWall((state.settings.devWallDays|0)+1); });
   document.getElementById("devWallDown").addEventListener("click", function(){ setDevWall((state.settings.devWallDays|0)-1); });
@@ -5834,6 +5931,11 @@
     if(!b.hidden) b.querySelector("img").src = IMG.wall.r2_icon_climb;
   }
   document.getElementById("endSummaryWallBtn").addEventListener("click", function(){ closeEndSummary(); openWall(); });
+  document.getElementById("wallRescueBtn").addEventListener("click", function(){
+    var y = wallToday()-1;
+    state.restDays = (state.restDays||[]).filter(function(d){ return d!==y; }).concat([y]);
+    saveState(); renderWallCard(); showToast("Yesterday logged as a rest day. Streak saved");
+  });
   document.getElementById("wallJumpMe").addEventListener("click", function(){ wallScrollTo(wallAt, true); });
   document.getElementById("wallJumpTop").addEventListener("click", function(){ wallScrollTo(WALL_N, true); });
   document.getElementById("wallCard").addEventListener("click", openWall);
@@ -6208,6 +6310,109 @@
     showToast("Progress reset");
     switchView("home");
   });
+
+  /* ---------------- share a send ---------------- */
+  // Draws a 1080x1350 picture of a send (the room you are in, your climber cheering, the climb, the grade,
+  // where and when) on a canvas, entirely on this device, and offers it with the Artifact's `downloads`
+  // capability (the native share sheet in the Claude iPhone app, a download elsewhere). Nothing is uploaded.
+  var shareBlob = null, shareUrl = null;
+  // The best send of a session: highest grade, a flash over a send, otherwise the latest.
+  function bestSend(s){
+    var best = null, bestScore = -1;
+    s.attempts.forEach(function(a){
+      if(a.result==="fall") return;
+      var scale = a.gradeType==="route" ? ROUTE_GRADES : BOULDER_GRADES, gi = a.grade ? scale.indexOf(a.grade) : -1;
+      var score = (gi+1)*10 + (a.result==="flash" ? 5 : 0) + (a.seq||0)/1e6;
+      if(score>bestScore){ bestScore = score; best = a; }
+    });
+    return best;
+  }
+  // resolves null when a picture can't load, so a card is still made without it
+  function loadImage(src){ return new Promise(function(res){ var im = new Image(); im.onload = function(){ res(im); }; im.onerror = function(){ res(null); }; im.src = src; }); }
+  function wrapLines(ctx, text, maxW){
+    var words = text.split(/\s+/), lines = [], cur = "";
+    words.forEach(function(w){ var t = cur ? cur+" "+w : w; if(ctx.measureText(t).width<=maxW || !cur) cur = t; else { lines.push(cur); cur = w; } });
+    if(cur) lines.push(cur);
+    return lines;
+  }
+  function roundRectPath(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath(); }
+  function attemptNumberFor(session, a){
+    var n = 0, same = function(b){ return a.projectId ? b.projectId===a.projectId : (a.climbName && b.climbName===a.climbName && b._loc===session.location); };
+    state.sessions.forEach(function(s){ s.attempts.forEach(function(b){ var c = { projectId:b.projectId, climbName:b.climbName, _loc:s.location, seq:b.seq }; if(same(c) && (b.seq||0)<=(a.seq||0)) n++; }); });
+    return n;
+  }
+  function drawShareCard(session, a){
+    var W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
+    var x = c.getContext("2d"), env = selectedEnvironment();
+    var fonts = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load('100px "Bebas Neue"'), document.fonts.load('30px "IBM Plex Mono"')]).catch(function(){}) : Promise.resolve();
+    return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0]), loadImage(IMG.ui.start), fonts ]).then(function(r){
+      var bg = r[0], me = r[1], icon = r[2];
+      if(bg){ var sc = W/bg.width, bh = bg.height*sc; x.drawImage(bg, 0, -(bh-H)/2, W, bh); }
+      else { var base = x.createLinearGradient(0, 0, 0, H); base.addColorStop(0, "#5A3A1C"); base.addColorStop(1, "#2A1A0C"); x.fillStyle = base; x.fillRect(0, 0, W, H); }
+      var g = x.createLinearGradient(0, 0, W, 0); g.addColorStop(0, "rgba(14,8,3,0.82)"); g.addColorStop(0.62, "rgba(14,8,3,0.34)"); g.addColorStop(1, "rgba(14,8,3,0.05)");
+      x.fillStyle = g; x.fillRect(0, 0, W, H);
+      g = x.createLinearGradient(0, H-420, 0, H); g.addColorStop(0, "rgba(14,8,3,0)"); g.addColorStop(1, "rgba(14,8,3,0.7)"); x.fillStyle = g; x.fillRect(0, H-420, W, 420);
+      // your climber, cheering, standing on the bottom edge
+      x.fillStyle = "rgba(0,0,0,0.32)"; x.beginPath(); x.ellipse(W-330, 1266, 170, 26, 0, 0, Math.PI*2); x.fill();
+      if(me) x.drawImage(me, W-680, 347, 700, 1050);
+      x.shadowColor = "rgba(0,0,0,0.55)"; x.shadowBlur = 14; x.shadowOffsetY = 3;
+      // brand
+      if(icon) x.drawImage(icon, 64, 44, 96, 96*icon.height/icon.width);
+      x.fillStyle = "#FFF3DC"; x.textBaseline = "alphabetic"; x.font = '96px "Bebas Neue", Impact, sans-serif'; x.fillText("CRUX", 176, 124);
+      // result pill
+      var flash = a.result==="flash", label = flash ? "FLASH" : "SEND";
+      x.font = '66px "Bebas Neue", Impact, sans-serif';
+      var pw = x.measureText(label).width + 72;
+      x.shadowColor = "transparent"; x.fillStyle = flash ? "#FFC24D" : "#4FE28F"; roundRectPath(x, 72, 300, pw, 92, 46); x.fill();
+      x.fillStyle = "#1B1208"; x.fillText(label, 72+36, 370);
+      x.shadowColor = "rgba(0,0,0,0.55)";
+      // the climb
+      var name = (a.climbName||"").trim() || (a.grade ? "A "+a.grade+" "+(a.gradeType==="route" ? "route" : "problem") : "Today's send");
+      var size = 190, lines;
+      do { x.font = size+'px "Bebas Neue", Impact, sans-serif'; lines = wrapLines(x, name.toUpperCase(), 520); size -= 10; }
+      while((lines.length>3 || lines.some(function(l){ return x.measureText(l).width>520; })) && size>70);
+      x.fillStyle = "#FFFFFF"; var y = 560;
+      lines.slice(0,3).forEach(function(l){ x.fillText(l, 72, y); y += size*0.92; });
+      if(a.grade){ x.font = '150px "Bebas Neue", Impact, sans-serif'; x.fillStyle = "#FFD36B"; y += 40; x.fillText(a.grade, 72, y); y += 30; }
+      // where and when, and how it went
+      x.font = '600 36px "IBM Plex Mono", monospace'; x.fillStyle = "rgba(255,243,220,0.95)";
+      var date = new Date(a.ts||Date.now()).toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" });
+      y += 60;
+      if(session.location){ x.fillText(session.location, 72, y); y += 52; }
+      x.fillText(date, 72, y); y += 52;
+      var n = attemptNumberFor(session, a);
+      var story = flash ? "Flashed it on the first go" : (n>1 ? "Sent on attempt "+n : "Sent");
+      x.fillStyle = flash ? "#FFC24D" : "#8CF0B5"; x.fillText(story, 72, y);
+      // footer
+      x.font = '600 32px "IBM Plex Mono", monospace'; x.fillStyle = "rgba(255,243,220,0.85)";
+      x.fillText("Level "+state.level+"  ·  "+session.attempts.filter(function(b){ return b.result!=="fall"; }).length+" sends this session", 72, H-70);
+      return new Promise(function(res, rej){ c.toBlob(function(b){ b ? res(b) : rej(new Error("no image")); }, "image/png"); });
+    });
+  }
+  function openShare(session, a){
+    if(!a || a.result==="fall") return;
+    var overlay = document.getElementById("shareOverlay"), img = document.getElementById("shareImg");
+    overlay.hidden = false; img.hidden = true; document.getElementById("shareBusy").hidden = false;
+    document.getElementById("shareSaveBtn").hidden = true; document.getElementById("shareHint").hidden = true;
+    drawShareCard(session, a).then(function(blob){
+      if(shareUrl) URL.revokeObjectURL(shareUrl);
+      shareBlob = blob; shareUrl = URL.createObjectURL(blob);
+      img.src = shareUrl; img.hidden = false; document.getElementById("shareBusy").hidden = true;
+      document.getElementById("shareSaveBtn").hidden = !downloadsNS;
+      document.getElementById("shareHint").hidden = !!downloadsNS;
+      shareName = ((a.climbName||"send").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "send");
+    }).catch(function(err){ overlay.hidden = true; showToast("Couldn't make the picture"); console.error("share card failed: "+(err && err.message)); });
+  }
+  var shareName = "send";
+  document.getElementById("closeShareBtn").addEventListener("click", function(){ document.getElementById("shareOverlay").hidden = true; });
+  document.getElementById("shareOverlay").addEventListener("click", function(e){ if(e.target.id==="shareOverlay") e.target.hidden = true; });
+  document.getElementById("shareSaveBtn").addEventListener("click", function(){
+    if(!shareBlob || !downloadsNS) return;
+    downloadsNS.save({ filename:"crux-"+shareName+".png", data:shareBlob }).then(function(res){
+      if(res && res.status==="saved") showToast("Saved");
+    }).catch(function(err){ if(!(err && (err.code==="declined" || err.code==="rate_limited"))) showToast("Couldn't save the picture"); });
+  });
+  document.getElementById("endShareBtn").addEventListener("click", function(){ if(endSummarySession){ var b = bestSend(endSummarySession); if(b) openShare(endSummarySession, b); } });
 
   /* ---------------- backup: export / import / reset all ---------------- */
   // Export hands the whole state to the viewer as a JSON file through the Artifact's

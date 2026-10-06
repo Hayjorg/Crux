@@ -122,6 +122,11 @@ up one hold:
 - **Some round-1 cutouts were clipped at their edges** (shoes, string lights, shelf, gear bag and the
   purple, grey, blue and red holds). Round 2 redrew them cleanly, and the old versions are out of
   use. The hold rotation is `WALL_HOLD_ART`: 21 whole pieces, picked with a stride of 5.
+- **Seasons:** autumn leaves on the shelves (Sep-Nov) and snow on the summit (Dec-Feb), from the real date
+  (`wallSeason()`; Developer tools can force one). The seasonal pictures are cropped to overhang the plain ones by
+  known amounts (numbers in `dev/build-wall-art.ps1`); do not re-export one without the other.
+- **Streak rescue:** if yesterday is missing but the day before was logged, Home offers "Log it as a rest day"
+  (`wallRescueBtn`, in `renderWallCard()`).
 - **Hold sizes** come from each picture's proportions (`WALL_HOLD_SHAPE`, `wallHoldSize()`), so every hold
   has about the same visual weight; thin holds stay nearly level. A new hold picture needs its proportion
   added there (short side over long side), and the Garage decoration holds in `ACCESSORIES` are sized the same way.
@@ -180,7 +185,7 @@ unlocks it at that Wall hold. That is the fourth `// THE WALL hook` line.
    card markup, the view markup, `IMG.wall`, and the JS block).
 2. Delete the six `// THE WALL hook` lines (in `switchView`, `renderHome`, `unlockedEnvironments`,
    `renderSettingsModal` and `showEndSummary`), the summary's Wall button, the "THE WALL dev tools" block in the Developer settings, and the
-   `devWallDays` setting.
+   `devWallDays` and `devSeason` settings.
    Keep `assets/wall/` files `rays`, `sparkle`, `r2_plinth`, `r2_lights`, `r2_hold_*`, `r2_shelf`,
    `r2_shoes` and `r2_gearbag`: the celebration card and Garage decorations also use them.
 3. Delete the Wall tests in `dev/tests.html`, the `assets/wall/` folder, and the climber's
@@ -205,6 +210,16 @@ database schema in `docs/coaching/schema.sql`.
   - Training blocks are real objects.
 - **The model was approved on 2026-10-04,** with all three open questions answered as proposed.
   Phase 0 is built (see Workouts above). Phases 1+ need the owner's go-ahead.
+
+## Log sheet and sharing
+
+- **Recent climb names:** the log sheet's climb-name box shows up to three recent names as chips (this gym's
+  first), filtered as you type (`recentClimbNames()`), instead of the browser's long dropdown. The attempt editor
+  still uses the old dropdown.
+- **Share a send:** the end summary ("Share your best send") and the attempt editor ("Share this send") draw a
+  1080x1350 picture on a canvas (`drawShareCard()`): the current room, your cheering climber, the climb, grade,
+  gym, date. Nothing is uploaded: it is saved with the `downloads` capability (the iPhone Claude app opens its
+  share sheet; elsewhere it downloads). If a picture fails to load, the card is still made without it.
 
 ## Coach (AI, being phased out)
 
