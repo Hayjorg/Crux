@@ -51,6 +51,22 @@ and decoratable gym rooms (the Garage, plus Home Wall, The Local, The Mountain C
    maths (everything is replayed from attempts in `recomputeProfile()`), session handling and
    mascot motion, unless the task is about them.
 
+## The installable app (built 2026-10-06)
+
+Besides the Artifact, Crux can be hosted as plain files and installed to a phone's home screen (full screen, its
+own icon, works offline). `dev/build-site.ps1` builds it into `site/` (git-ignored, regenerate it any time):
+`index.html` is `crux.html` plus install tags and `window.__CRUX_STANDALONE`, with the images the app uses
+(each loaded as `assets/...?v=<hash>`), `manifest.webmanifest`, `icons/` (from `pwa/app-icon-source.png`) and a
+generated `sw.js` (service worker: page network-first, pictures and fonts cached after first use).
+- **`crux.html` stays the one source.** Never edit `site/`. The Artifact and the installed app run the same code;
+  the standalone flag only changes where images load from and how files are saved (`saveFileLocal()` shares or
+  downloads, since the Artifact `downloads` capability isn't there).
+- **Hosting is the owner's call** (Netlify Drop, Cloudflare Pages or GitHub Pages: any static host). Don't put the app on
+  a public site without the owner saying so; hard rule 1 about publishing still covers the Artifact.
+- **Its saved data is separate** from the Artifact's (a different address), so people move data with Export /
+  Import backup. Photos and videos aren't available in the installed app yet (no `assets` capability).
+- **After changing `crux.html` or any image,** rebuild `site/` and re-host it for the installed app to update.
+
 ## Projects (climb tracking)
 
 A project is **one named climb at one gym or crag**, and attempts link to it by `projectId`.

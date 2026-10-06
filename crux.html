@@ -4421,14 +4421,22 @@
   // assets/ files instead, so the full Garage and the climber render during development.
   // ?assets=local or ?assets=blob overrides the detection. Photos people upload during sessions
   // aren't listed — those are runtime data that carry their own URLs.
+  // The installable app (dev/build-site.ps1 makes it from this file) is served as plain files, so it sets
+  // window.__CRUX_STANDALONE and a map of file hashes (window.__CRUX_V) and loads assets/ with a version, so an
+  // updated picture is fetched again but unchanged ones stay cached. The Artifact never sets either.
+  var STANDALONE = !!window.__CRUX_STANDALONE;
   var ASSET_SOURCE = (function(){
     var forced = /[?&]assets=(local|blob)\b/.exec(location.search);
     if(forced) return forced[1];
+    if(STANDALONE) return "local";
     var local = location.protocol==="file:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
     return local ? "local" : "blob";
   })();
   // An entry with no blobId exists only in assets/ (not uploaded to the Artifact yet).
-  function asset(file, blobId){ return (ASSET_SOURCE==="local" || !blobId) ? "assets/"+file : "/_blob/"+blobId; }
+  function asset(file, blobId){
+    if(ASSET_SOURCE==="local" || !blobId){ var v = window.__CRUX_V && window.__CRUX_V[file]; return "assets/"+file+(v ? "?v="+v : ""); }
+    return "/_blob/"+blobId;
+  }
   var IMG = {
     garage: {
       background: asset("garage/background.png", "065027a2c9a922d690e45df4c3877299"),
@@ -6398,8 +6406,8 @@
       if(shareUrl) URL.revokeObjectURL(shareUrl);
       shareBlob = blob; shareUrl = URL.createObjectURL(blob);
       img.src = shareUrl; img.hidden = false; document.getElementById("shareBusy").hidden = true;
-      document.getElementById("shareSaveBtn").hidden = !downloadsNS;
-      document.getElementById("shareHint").hidden = !!downloadsNS;
+      document.getElementById("shareSaveBtn").hidden = !(downloadsNS || STANDALONE);
+      document.getElementById("shareHint").hidden = !!(downloadsNS || STANDALONE);
       shareName = ((a.climbName||"send").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "send");
     }).catch(function(err){ overlay.hidden = true; showToast("Couldn't make the picture"); console.error("share card failed: "+(err && err.message)); });
   }
@@ -6407,7 +6415,11 @@
   document.getElementById("closeShareBtn").addEventListener("click", function(){ document.getElementById("shareOverlay").hidden = true; });
   document.getElementById("shareOverlay").addEventListener("click", function(e){ if(e.target.id==="shareOverlay") e.target.hidden = true; });
   document.getElementById("shareSaveBtn").addEventListener("click", function(){
-    if(!shareBlob || !downloadsNS) return;
+    if(!shareBlob) return;
+    if(!downloadsNS){
+      if(STANDALONE) saveFileLocal("crux-"+shareName+".png", shareBlob).catch(function(err){ if(!(err && err.name==="AbortError")) showToast("Couldn't save the picture"); });
+      return;
+    }
     downloadsNS.save({ filename:"crux-"+shareName+".png", data:shareBlob }).then(function(res){
       if(res && res.status==="saved") showToast("Saved");
     }).catch(function(err){ if(!(err && (err.code==="declined" || err.code==="rate_limited"))) showToast("Couldn't save the picture"); });
@@ -6419,6 +6431,15 @@
   // `downloads` capability — inside the Artifact frame a page can't start a download itself.
   // Where that capability isn't available the JSON is shown for copying instead. Import
   // validates a file and only replaces anything after an explicit confirm. No cloud sync.
+  // The installed app has no Artifact `downloads` capability: share the file with the phone's share sheet when it
+  // can take files, otherwise download it. Resolves "shared" or "saved"; a cancelled share rejects with AbortError.
+  function saveFileLocal(filename, blob){
+    var file = null; try{ file = new File([blob], filename, { type:blob.type }); }catch(e){}
+    if(file && navigator.canShare && navigator.share && navigator.canShare({ files:[file] })) return navigator.share({ files:[file], title:filename }).then(function(){ return "shared"; });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    return Promise.resolve("saved");
+  }
   var BACKUP_KIND = "crux-backup";
   var downloadsNS = null;
   if(window.claude && typeof window.claude.use==="function"){
@@ -6440,7 +6461,14 @@
     flushPendingSaves();
     var json = JSON.stringify({ kind:BACKUP_KIND, version:1, exportedAt:new Date().toISOString(), data:state }, null, 2);
     document.getElementById("exportFallback").hidden = true;
-    if(!downloadsNS){ showExportFallback(json); return; }
+    if(!downloadsNS){
+      if(STANDALONE){
+        saveFileLocal(backupFilename(), new Blob([json], { type:"application/json" })).then(function(){ showToast("Backup ready"); })
+          .catch(function(err){ if(!(err && err.name==="AbortError")) showExportFallback(json); });
+        return;
+      }
+      showExportFallback(json); return;
+    }
     downloadsNS.save({ filename:backupFilename(), data:json }).then(function(res){
       if(res && res.status==="saved") showToast("Backup saved");
     }).catch(function(err){
