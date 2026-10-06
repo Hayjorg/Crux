@@ -875,6 +875,19 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(sat && glanced, "on the ledge your climber should sit and glance over (sat "+sat+", glanced "+glanced+")");
     expect(!$("wallClimberImg").classList.contains("wide"), "a normal frame is drawn at the wide size");
   });
+  test("The Wall: after a session with climbs the summary offers Climb a hold; holds are evenly sized; Me and Top jump", async function(){
+    var s = clone(TEMPLATE); s.settings.mode = "simple";
+    await boot(s); await startOrResume();
+    await log("send"); await closeComposer(); await click("finishSessionBtn", 400);
+    expect(visible("endSummaryWallBtn"), "no Climb a hold button after a session that earned a hold");
+    await click("endSummaryWallBtn", 3600);
+    expect(visible("view-wall") && $("wallHolds").textContent==="1", "the button didn't open the Wall on hold 1");
+    closeSheet();
+    var sizes = qa(".wl-hold").map(function(h){ return parseFloat(h.style.getPropertyValue("--s")); });
+    expect(sizes.length===42 && Math.min.apply(null, sizes)>=46 && Math.max.apply(null, sizes)<=70, "hold sizes out of range: "+Math.min.apply(null, sizes)+"–"+Math.max.apply(null, sizes));
+    expect(visible("wallJumpMe") && visible("wallJumpTop"), "the Me / Top jump buttons aren't showing on the Wall");
+    await click("wallJumpTop", 200); await click("wallJumpMe", 200); // smooth scrolling doesn't run in this hidden frame; this just proves they respond without errors
+  });
   test("The Wall: hold 21 unlocks the Home Wall gym", async function(){
     var days = []; for(var d=20; d>=1; d--) days.push({ daysAgo:d, workout:true }); // workouts earn no XP, so level stays 1
     await boot(wallSave(days, { wallSeen:20 })); await openCustomize();

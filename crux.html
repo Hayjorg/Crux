@@ -174,12 +174,16 @@
   }
   .scene-overlay-top>*{pointer-events:auto;}
   .level-chip{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  .level-chip .avatar::before{content:"";position:absolute;inset:-5px;border-radius:50%;pointer-events:none;
+    background:conic-gradient(var(--flash) calc(var(--xp,0) * 1%), rgba(255,255,255,0.28) 0);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px));mask:radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px));}
   .level-chip .avatar{
-    width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;
+    position:relative;width:38px;height:38px;border-radius:50%;flex-shrink:0;
     background:rgba(24,18,12,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
     border:2px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.35);
   }
-  .level-chip .avatar img{width:100%;height:100%;object-fit:contain;padding:3px;display:block;}
+  .level-chip .avatar img{width:100%;height:100%;object-fit:contain;padding:3px;display:block;border-radius:50%;}
+  .level-chip{padding:5px 5px 0;}
   .level-chip .lv-tag{
     margin-top:-7px;background:var(--flash);color:#221E19;
     font-family:"Bebas Neue",sans-serif;font-size:11px;letter-spacing:0.03em;
@@ -956,6 +960,13 @@
   .wl-climber img{width:100%;height:100%;display:block;filter:drop-shadow(0 7px 5px rgba(0,0,0,0.4));}
   .wl-puff{position:absolute;z-index:4;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);pointer-events:none;animation:wlPuff .9s ease-out forwards;}
   @keyframes wlPuff{to{transform:translate(var(--dx),var(--dy)) scale(3.2);opacity:0;}}
+  #endSummaryWallBtn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-bottom:8px;}
+  #endSummaryWallBtn[hidden]{display:none;}
+  #endSummaryWallBtn .ic{width:30px;height:30px;object-fit:contain;margin:-6px 0;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25));}
+  .wl-jump{position:fixed;right:max(14px, calc(50% - 226px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:grid;gap:8px;}
+  .wl-jump button{width:44px;height:44px;border-radius:50%;border:1px solid var(--wl-gold);background:linear-gradient(180deg, var(--wl-gold-hi), color-mix(in srgb, var(--wl-gold) 60%, var(--wl-gold-hi)));color:#4A2E0A;display:grid;place-items:center;box-shadow:0 3px 0 color-mix(in srgb, var(--wl-gold) 75%, #000), 0 8px 14px -6px rgba(0,0,0,0.45);}
+  .wl-jump button:active{transform:translateY(3px);box-shadow:0 0 0 transparent;}
+  .wl-jump svg{width:22px;height:22px;}
   .wl-how{margin:16px 0 4px;padding:14px 14px 6px;border-radius:18px;background:var(--surface);border:1px solid var(--border);box-shadow:0 6px 18px -10px var(--shadow);}
   .wl-how h3{margin:0 0 10px;font-family:"Bebas Neue",sans-serif;font-size:21px;letter-spacing:0.03em;font-weight:400;line-height:1;}
   .wl-how ul{list-style:none;margin:0;padding:0;display:grid;gap:0;}
@@ -1364,6 +1375,10 @@
         <li><span class="i tap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-.5V8.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L4 15.5a1.6 1.6 0 0 1 2.4-2.1L9 16"/></svg></span><span><b>Tap a hold</b> to see its day, or <b>your climber</b> to see their moves.</span></li>
       </ul>
     </section>
+    <div class="wl-jump" aria-label="Move along the wall">
+      <button type="button" id="wallJumpMe" aria-label="Jump to your climber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg></button>
+      <button type="button" id="wallJumpTop" aria-label="Jump to the top of the wall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11l6-6 6 6M6 18l6-6 6 6"/></svg></button>
+    </div>
   </div>
   <!-- ==== END THE WALL ==== -->
 
@@ -1701,6 +1716,9 @@
       <button type="button" class="link-btn coach-btn" id="endCoachBtn"></button>
       <div class="coach-text" id="endCoachText" hidden></div>
     </div>
+    <!-- THE WALL: a way straight onto the wall when this session earned a new hold -->
+    <button type="button" class="btn btn-primary end-done-btn" id="endSummaryWallBtn" hidden><img class="ic" alt="">Climb a hold on the Wall</button>
+    <!-- END THE WALL -->
     <button type="button" class="btn btn-primary end-done-btn" id="endSummaryDoneBtn">Back to home</button>
   </div>
 </div>
@@ -3007,6 +3025,7 @@
     var endCoachText = document.getElementById("endCoachText");
     endCoachText.hidden = true; endCoachText.textContent = "";
     document.getElementById("endSessionOverlay").hidden = false;
+    if(typeof wallEndSummary==="function") wallEndSummary(); // THE WALL hook
     wireSessionCoach(document.getElementById("endCoach"), document.getElementById("endCoachBtn"), endCoachText, s);
     if(total>0) spawnConfetti(document.getElementById("confettiLayer"));
     // The climber reacts when you get back: stoked if anything went, sheepish if it was all falls.
@@ -3981,6 +4000,7 @@
 
     var need = xpForLevel(state.level);
     var pct = Math.min(100,(state.xp/need)*100);
+    document.querySelector(".level-chip").style.setProperty("--xp", Math.max(2, pct)); // the ring round your level badge
     document.getElementById("profileRing").style.setProperty("--pct", pct);
     document.getElementById("ringLevel").textContent = state.level;
     document.getElementById("psXpLabel").textContent = state.xp+" / "+need+" XP";
@@ -4819,20 +4839,20 @@
     { id:"foothold",    name:"Foothold",     img:IMG.decor.foothold,    x:78, y:52, w:15 },
     // Illustrated Garage set — holds sized small and sampled against the real photo so they
     // read as bolted to the woody rather than floating; wall/floor pieces placed the same way.
-    { id:"holdred",     name:"Red Hold",      img:IMG.wall.r2_hold_red,    x:31.5, y:21.5,  w:7  },
-    { id:"holdblue",    name:"Blue Hold",     img:IMG.wall.r2_hold_navy,   x:19,   y:29.8,  w:5  },
-    { id:"holdyellowtri",name:"Yellow Hold",  img:IMG.wall.r2_hold_yellow, x:27,   y:51.2,  w:6  },
-    { id:"holdgreentri",name:"Mint Edge",     img:IMG.wall.r2_hold_mint,   x:9.5,  y:42.8,  w:8  },
-    { id:"holdpurple",  name:"Purple Hold",   img:IMG.wall.r2_hold_purple,  x:22,   y:67.8,  w:4.5 },
-    { id:"holdgray",    name:"Gray Hold",     img:IMG.wall.r2_hold_grey,    x:12,   y:74.1,  w:6  },
-    { id:"holdvolume",  name:"Wall Volume",   img:IMG.wall.r2_hold_blue,    x:27.5, y:13.75, w:9  },
+    { id:"holdred",     name:"Red Hold",      img:IMG.wall.r2_hold_red,    x:31.5, y:21.5,  w:6.4 },
+    { id:"holdblue",    name:"Blue Hold",     img:IMG.wall.r2_hold_navy,   x:19,   y:29.8,  w:5.3 },
+    { id:"holdyellowtri",name:"Yellow Hold",  img:IMG.wall.r2_hold_yellow, x:27,   y:51.2,  w:6.6 },
+    { id:"holdgreentri",name:"Mint Edge",     img:IMG.wall.r2_hold_mint,   x:9.5,  y:42.8,  w:11 },
+    { id:"holdpurple",  name:"Purple Hold",   img:IMG.wall.r2_hold_purple,  x:22,   y:67.8,  w:4.6 },
+    { id:"holdgray",    name:"Gray Hold",     img:IMG.wall.r2_hold_grey,    x:12,   y:74.1,  w:6.4 },
+    { id:"holdvolume",  name:"Wall Volume",   img:IMG.wall.r2_hold_blue,    x:27.5, y:13.75, w:6.8 },
     { id:"hangboard",   name:"Hangboard",     img:IMG.decor.hangboardClean, x:48, y:19,   w:26 },
     { id:"artprint",    name:"Mountain Print",img:IMG.decor.mountainPrintClean, x:61.5, y:36.65, w:11 },
     { id:"wallshelf",   name:"Wall Shelf",    img:IMG.wall.r2_shelf,        x:8,    y:47.25, w:20 },
     { id:"climbshoes",  name:"Climbing Shoes",img:IMG.wall.r2_shoes,        x:60.5, y:83.24, w:10 },
     { id:"gearbag",     name:"Gear Bag",      img:IMG.wall.r2_gearbag,      x:60,   y:62.28, w:16 },
-    { id:"holdsand",    name:"Sand Sloper",   img:IMG.wall.r2_hold_sand,    x:36,   y:36,    w:6  },
-    { id:"holdwood",    name:"Wood Edge",     img:IMG.wall.r2_hold_wood,    x:16,   y:56,    w:8  }
+    { id:"holdsand",    name:"Sand Sloper",   img:IMG.wall.r2_hold_sand,    x:36,   y:36,    w:6.3 },
+    { id:"holdwood",    name:"Wood Edge",     img:IMG.wall.r2_hold_wood,    x:16,   y:56,    w:9.9 }
   ].concat([
     // Each room brings five decorations of its own, available once that room is unlocked and usable
     // in any gym. ar = height/width of the trimmed picture; foot = where its bottom edge starts
@@ -5442,7 +5462,13 @@
   // only holds whose art is whole (some older cutouts were clipped at their edges)
   var WALL_HOLD_ART = ["h_jug","r2_hold_red","h2_crimp","r2_hold_sand","h_yellow","h2_sloper","r2_hold_navy","h_slot","h2_tufa","r2_hold_yellow","h2_dual","r2_hold_mint",
     "h_foot","h2_jug","r2_hold_grey","h2_macro","r2_hold_purple","h2_pinch","r2_hold_blue","h2_chip","r2_hold_wood"];
-  var WALL_HOLD_SIZE = { h2_chip:44, h2_tufa:58, h2_sloper:50, r2_hold_mint:74, r2_hold_wood:66, r2_hold_blue:60, r2_hold_grey:58, r2_hold_red:58, r2_hold_purple:60, r2_hold_navy:58 };
+  // Short side over long side of each hold picture. Size is picked so every hold has about the same
+  // visual weight (a thin crimp is longer than a round jug, but not smaller-looking), see wallHoldSize().
+  var WALL_HOLD_SHAPE = { h_jug:0.72, h_slot:0.73, h_foot:0.71, h_yellow:0.93, h2_crimp:0.45, h2_pinch:0.78, h2_jug:0.98, h2_sloper:0.99, h2_tufa:0.50, h2_dual:0.90, h2_macro:0.88, h2_chip:0.86,
+    r2_hold_red:0.98, r2_hold_sand:0.96, r2_hold_navy:0.69, r2_hold_yellow:0.92, r2_hold_mint:0.29, r2_hold_grey:0.98, r2_hold_purple:0.53, r2_hold_blue:0.87, r2_hold_wood:0.37 };
+  var WALL_HOLD_TALL = { h2_tufa:1, h2_pinch:1, r2_hold_navy:1, r2_hold_purple:1 }; // taller than wide: the long side is the height
+  function wallHoldSize(k){ var r = WALL_HOLD_SHAPE[k] || 0.9; return Math.round(Math.max(46, Math.min(WALL_HOLD_TALL[k] ? 56 : 70, 47/Math.sqrt(r)))); }
+  function wallHoldRot(i, k){ var r = Math.sin(i*12.9898)*43758.5453 % 1 * 50, flat = (WALL_HOLD_SHAPE[k]||1) < 0.6; return Math.round(flat ? r*0.3 : r); } // thin holds stay nearly level
 
   // ---- the day model: everything below is read from what you've logged ----
   function wallToday(){ return planDayNum(Date.now()); }
@@ -5539,7 +5565,7 @@
         html += '<div class="wl-ledge '+(got ? "got" : "locked")+(i===h ? (p.x<50 ? " sit-l" : " sit-r") : "")+(i===WALL_N ? " top" : "")+'" style="top:'+(p.y-52)+'px'+(i===WALL_N ? "" : ';background-image:url('+IMG.wall.ledge2+')')+'"><div class="prize">'+(r.img ? '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.kind==="gym" ? ' class="photo"' : "")+'>' : r.kind==="title" ? wallPlate(r.name) : '')+'</div>'+
           '<span class="lname">'+escapeHtml(r.name)+'</span><span class="label">'+(got ? WI.check : WI.lock)+'LEDGE '+(i/WALL_LEDGE)+'</span></div>';
       }
-      html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+(WALL_HOLD_SIZE[wallArtFor(i)]||54)+'px;--rot:'+wallRot(i)+'deg" aria-label="Hold '+i+'">'+
+      html += '<button type="button" class="wl-hold '+(on ? "on" : "off")+(i===h+1 ? " next" : "")+(fresh===i ? " fresh" : "")+'" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'px;--s:'+wallHoldSize(wallArtFor(i))+'px;--rot:'+wallHoldRot(i, wallArtFor(i))+'deg" aria-label="Hold '+i+'">'+
         '<img src="'+IMG.wall[wallArtFor(i)]+'" alt="">'+(on && type ? '<span class="wl-tag '+type+'">'+WI[type]+'</span>' : '')+
         (on && type==="workout" ? '<span class="wl-star">'+WI.star+'</span>' : '')+'</button>';
       if(on && i%3===0) html += '<svg class="wl-qd" viewBox="0 0 12 30" style="left:calc('+p.x+'% + 22px);top:'+(p.y-6)+'px"><rect x="4" y="9" width="4" height="12" rx="2" fill="#2E2E33"/><path d="M6 2a3.5 3.5 0 0 0-3.5 3.5V10M6 2a3.5 3.5 0 0 1 3.5 3.5V10" stroke="#C9CDD4" stroke-width="1.6" fill="none"/><path d="M6 28a3.5 3.5 0 0 1-3.5-3.5V20M6 28a3.5 3.5 0 0 0 3.5-3.5V20" stroke="#C9CDD4" stroke-width="1.6" fill="none"/></svg>';
@@ -5801,6 +5827,15 @@
   document.getElementById("devWallUp").addEventListener("click", function(){ setDevWall((state.settings.devWallDays|0)+1); });
   document.getElementById("devWallDown").addEventListener("click", function(){ setDevWall((state.settings.devWallDays|0)-1); });
   document.getElementById("devWallOpen").addEventListener("click", function(){ closeSettings(); openWall(); });
+  // after a session: a button straight onto the wall when it earned a hold you haven't watched yet
+  function wallEndSummary(){
+    var b = document.getElementById("endSummaryWallBtn"), seen = state.wallSeen==null ? 0 : state.wallSeen;
+    b.hidden = !(WALL_ENABLED && wallInfo().holds>seen);
+    if(!b.hidden) b.querySelector("img").src = IMG.wall.r2_icon_climb;
+  }
+  document.getElementById("endSummaryWallBtn").addEventListener("click", function(){ closeEndSummary(); openWall(); });
+  document.getElementById("wallJumpMe").addEventListener("click", function(){ wallScrollTo(wallAt, true); });
+  document.getElementById("wallJumpTop").addEventListener("click", function(){ wallScrollTo(WALL_N, true); });
   document.getElementById("wallCard").addEventListener("click", openWall);
   document.getElementById("wallHomeBtn").addEventListener("click", function(){ switchView("home"); });
   document.getElementById("wallBagBtn").addEventListener("click", wallCollection);

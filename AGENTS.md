@@ -122,6 +122,11 @@ up one hold:
 - **Some round-1 cutouts were clipped at their edges** (shoes, string lights, shelf, gear bag and the
   purple, grey, blue and red holds). Round 2 redrew them cleanly, and the old versions are out of
   use. The hold rotation is `WALL_HOLD_ART`: 21 whole pieces, picked with a stride of 5.
+- **Hold sizes** come from each picture's proportions (`WALL_HOLD_SHAPE`, `wallHoldSize()`), so every hold
+  has about the same visual weight; thin holds stay nearly level. A new hold picture needs its proportion
+  added there (short side over long side), and the Garage decoration holds in `ACCESSORIES` are sized the same way.
+- **The Wall** also has Me / Top jump buttons, and the end-of-session summary offers "Climb a hold on the
+  Wall" when the session earned a hold you haven't watched (`wallEndSummary()`, the sixth `// THE WALL hook`).
 - **Painted icons** (`r2_icon_*`) are on the Climb / Workout / Rest day buttons and the unlocks
   pill. Prizes stand on `r2_plinth` in the unlock card (a gym shows as a tilted photo instead).
   Above the top-out is a CSS ceiling using `r2_ceiling.jpg`.
@@ -173,8 +178,8 @@ unlocks it at that Wall hold. That is the fourth `// THE WALL hook` line.
 **The owner may remove it if the art doesn't come together. To remove it:**
 1. Delete every block between `THE WALL` and `END THE WALL` markers in `crux.html` (CSS, Home
    card markup, the view markup, `IMG.wall`, and the JS block).
-2. Delete the five `// THE WALL hook` lines (in `switchView`, `renderHome`, `unlockedEnvironments` and
-   `renderSettingsModal`), the "THE WALL dev tools" block in the Developer settings, and the
+2. Delete the six `// THE WALL hook` lines (in `switchView`, `renderHome`, `unlockedEnvironments`,
+   `renderSettingsModal` and `showEndSummary`), the summary's Wall button, the "THE WALL dev tools" block in the Developer settings, and the
    `devWallDays` setting.
    Keep `assets/wall/` files `rays`, `sparkle`, `r2_plinth`, `r2_lights`, `r2_hold_*`, `r2_shelf`,
    `r2_shoes` and `r2_gearbag`: the celebration card and Garage decorations also use them.
