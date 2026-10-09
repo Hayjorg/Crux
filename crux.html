@@ -6594,6 +6594,27 @@
   window.addEventListener("pagehide", onPageHidden);
   window.addEventListener("pageshow", onPageVisible);
 
+  /* ---------------- quick log from the home-screen icon ---------------- */
+  // The installed app's long-press menu (manifest "shortcuts", built by dev/build-site.ps1) opens
+  // ./?log=send, ?log=flash or ?log=fall. That logs one attempt straight away, starting a session
+  // first if none is running, and goes through logAttempt() like the buttons do (XP, the Wall and
+  // Undo all behave the same). The address is cleaned afterwards so a reload never logs twice.
+  // window.__cruxLaunch is only set by dev/tests.html, which can't change its own address.
+  function quickLogFromLaunch(){
+    var hinted = typeof window.__cruxLaunch==="string";
+    var m = /[?&]log=(flash|send|fall)(?:&|$)/.exec(hinted ? window.__cruxLaunch : location.search);
+    if(!m) return;
+    if(!hinted){
+      try{
+        var rest = location.search.replace(/([?&])log=[a-z]+(&|$)/, function(_, lead, tail){ return tail ? lead : ""; });
+        history.replaceState(null, "", location.pathname + (rest==="?" ? "" : rest) + location.hash);
+      }catch(e){}
+    }
+    if(!state.settings.ackSafety) return; // first run: the safety notice comes first, nothing is logged behind it
+    if(!getActiveSession()) startSession();
+    logAttempt(m[1]);
+  }
+
   /* ---------------- init ---------------- */
   applyTheme();
   recomputeProfile();
@@ -6603,6 +6624,7 @@
   startMascotAnimation();
   restoreTimer();
   updateWakeLock();
+  quickLogFromLaunch();
   var activeSession = getActiveSession();
   if(activeSession && !activeSession.endedAt){
     switchView("session");

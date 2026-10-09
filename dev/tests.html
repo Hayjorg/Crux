@@ -62,14 +62,16 @@ and the project rules. It runs on its own private copy of the data, never your r
   function sameExceptProject(a, b){ var x = clone(a), y = clone(b); delete x.projectId; delete y.projectId; return JSON.stringify(x)===JSON.stringify(y); }
 
   // Boots a fresh copy of the app on whatever is in STORE (pass a state to replace it first).
-  async function boot(seed){
+  // `launch` stands in for the address the app was opened with (e.g. "?log=send"): the test frame can't change its own.
+  async function boot(seed, launch){
     if(seed!==undefined){ Object.keys(STORE).forEach(function(k){ delete STORE[k]; }); if(seed) STORE[KEY] = JSON.stringify(seed); }
     var frame = document.getElementById("app");
     await new Promise(function(resolve){
       frame.onload = resolve;
       var i = SRC.search(/<meta charset[^>]*>/i);
       var at = i<0 ? 0 : i + SRC.match(/<meta charset[^>]*>/i)[0].length;
-      frame.srcdoc = SRC.slice(0, at) + SHIM + SRC.slice(at);
+      var hint = launch ? '<script>window.__cruxLaunch=' + JSON.stringify(launch) + ';<\/script>' : '';
+      frame.srcdoc = SRC.slice(0, at) + SHIM + hint + SRC.slice(at);
     });
     W = frame.contentWindow; D = frame.contentDocument;
     await wait(350);
@@ -159,6 +161,31 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(s.totalAttempts===3, "totalAttempts is "+s.totalAttempts);
     var xpSum = a.attempts.reduce(function(n, x){ return n+x.xp; }, 0);
     expect(xpSum===55, "attempt XP adds up to "+xpSum+", expected 30+20+5");
+  });
+
+  test("Quick log: the home-screen shortcuts (?log=send / flash / fall) log once, start a session if needed, and a reload doesn't log again", async function(){
+    await boot(TEMPLATE, "?log=send");
+    var a = active(saved());
+    expect(a, "the shortcut didn't start a session");
+    expect(a.attempts.length===1 && a.attempts[0].result==="send", "expected one send, saw "+a.attempts.map(function(x){ return x.result; }).join());
+    expect(!D.getElementById("view-session").hidden, "the session screen isn't showing");
+    expect(saved().counts.send===1 && saved().xp>0, "XP/counts weren't updated: "+JSON.stringify(saved().counts));
+    await boot();                       // a plain reload: the cleaned address carries no ?log=
+    expect(active(saved()).attempts.length===1, "a reload logged a second attempt");
+    await boot(undefined, "?x=1&log=flash&y=2"); // joins the running session, and other address parts don't matter
+    await boot(undefined, "?log=fall");
+    expect(active(saved()).attempts.map(function(x){ return x.result; }).join()==="fall,flash,send", "attempts are "+active(saved()).attempts.map(function(x){ return x.result; }).join());
+    expect(saved().sessions.length===1, "a second session was started instead of joining the running one");
+    var undo = qa("#toastStack .toast-action").pop();
+    expect(undo, "no Undo button on the quick-log toast");
+    await click(undo, 250);
+    expect(active(saved()).attempts.length===2, "Undo didn't remove the quick-logged attempt");
+    await boot(undefined, "?log=bogus");  // anything else is ignored
+    await boot(undefined, "?logs=send");
+    expect(active(saved()).attempts.length===2, "an unknown ?log= value logged something");
+    await boot(null, "?log=send");        // brand-new install: the safety notice first, nothing logged behind it
+    expect(visible("legalOverlay"), "first-run notice didn't show");
+    expect(!saved() || !saved().sessions.length, "a first-run shortcut logged behind the safety notice");
   });
 
   test("Undo on the log toast removes that attempt and its XP", async function(){

@@ -48,8 +48,27 @@ $manifest = [ordered]@{
     [ordered]@{ src = "icons/icon-512.png"; sizes = "512x512"; type = "image/png"; purpose = "any" },
     [ordered]@{ src = "icons/icon-512.png"; sizes = "512x512"; type = "image/png"; purpose = "maskable" }
   )
+  # Long-press menu on the home-screen icon (Android shows the first three). Each opens the app and
+  # logs one attempt: see quickLogFromLaunch() in crux.html. Two icons each, so JSON keeps it a list.
+  shortcuts = @(
+    [ordered]@{ name = "Log a Send"; short_name = "Send"; description = "Log a send"; url = "./?log=send"
+      icons = @(
+        [ordered]@{ src = "icons/icon-192.png"; sizes = "192x192"; type = "image/png" },
+        [ordered]@{ src = "icons/icon-512.png"; sizes = "512x512"; type = "image/png" }
+      ) },
+    [ordered]@{ name = "Log a Flash"; short_name = "Flash"; description = "Log a flash"; url = "./?log=flash"
+      icons = @(
+        [ordered]@{ src = "icons/icon-192.png"; sizes = "192x192"; type = "image/png" },
+        [ordered]@{ src = "icons/icon-512.png"; sizes = "512x512"; type = "image/png" }
+      ) },
+    [ordered]@{ name = "Log a Fall"; short_name = "Fall"; description = "Log a fall"; url = "./?log=fall"
+      icons = @(
+        [ordered]@{ src = "icons/icon-192.png"; sizes = "192x192"; type = "image/png" },
+        [ordered]@{ src = "icons/icon-512.png"; sizes = "512x512"; type = "image/png" }
+      ) }
+  )
 }
-[IO.File]::WriteAllText((Join-Path $Out "manifest.webmanifest"), ($manifest | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding $false))
+[IO.File]::WriteAllText((Join-Path $Out "manifest.webmanifest"), ($manifest | ConvertTo-Json -Depth 8), (New-Object System.Text.UTF8Encoding $false))
 
 # index.html: crux.html plus the install tags and the standalone flag, and the service worker hook at the end
 $vjson = ($hash | ConvertTo-Json -Compress)
