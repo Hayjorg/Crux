@@ -1,0 +1,44 @@
+# Builds the installable Crux app (dev/build-site.ps1 -> site/) and publishes it to GitHub Pages.
+# Runs on every push to main, or by hand from the Actions tab.
+name: Publish installable app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Windows, because the build script uses Windows PowerShell and System.Drawing to make the icons.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build site
+        shell: powershell
+        run: powershell -NoProfile -File dev\build-site.ps1
+      - name: Add .nojekyll
+        shell: powershell
+        run: New-Item -ItemType File -Force site\.nojekyll | Out-Null
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

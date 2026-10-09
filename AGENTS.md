@@ -66,6 +66,7 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **Its saved data is separate** from the Artifact's (a different address), so people move data with Export /
   Import backup. Photos and videos aren't available in the installed app yet (no `assets` capability).
 - **After changing `crux.html` or any image,** rebuild `site/` and re-host it for the installed app to update.
+- **GitHub Pages (set up 2026-10-08, at the owner's request):** `.github/workflows/pages.yml` runs `dev/build-site.ps1` on a Windows runner and deploys `site/` to https://hayjorg.github.io/Crux/ on every push to `main`. So pushing `crux.html` or image changes to `main` updates the public installed app.
 
 ## Projects (climb tracking)
 
