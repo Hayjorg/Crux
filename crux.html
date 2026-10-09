@@ -61,7 +61,7 @@
     --shadow:rgba(0,0,0,0.55);
   }
 
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   body{
     margin:0;
     background:var(--bg);
@@ -346,7 +346,14 @@
   /* While a grounded motion clip plays, the drawn frames carry the movement: no easing. */
   .character-wander.in-motion, .character-wander.in-motion .character-body,
   .character-wander.in-motion .character-shadow{transition:none;}
-  .character-wander img{width:100%;height:auto;display:block;cursor:pointer;position:relative;filter:drop-shadow(0 6px 6px var(--shadow));}
+  /* Tapping the climber must never paint a box around the sprite: kill the browser's tap
+     highlight (the blue square on Android Chrome), the focus ring a mouse click can leave, text/image
+     selection on double-tap, the long-press image menu, and native image dragging. */
+  .character-wander, .character-wander *{-webkit-tap-highlight-color:transparent;}
+  .character-wander img{width:100%;height:auto;display:block;cursor:pointer;position:relative;filter:drop-shadow(0 6px 6px var(--shadow));
+    -webkit-tap-highlight-color:transparent;outline:none;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-user-drag:none;touch-action:manipulation;}
+  .character-wander img:focus, .character-wander img:active{outline:none;background:none;}
   /* The climber's eyes: a transparent layer holding only the edited eye pixels, stacked exactly on
      the sprite (same 2:3 canvas). Shown over the four breathing frames, whose eyes are
      pixel-identical; hidden for blinks and motion clips, which draw their own eyes. */
@@ -1080,7 +1087,7 @@
         <div class="character-wander" id="characterWander">
           <div class="character-shadow" id="characterShadow" aria-hidden="true"></div>
           <div class="character-body" id="characterBody">
-            <img id="characterStage" alt="Your climber">
+            <img id="characterStage" alt="Your climber" draggable="false">
             <img id="characterFace" class="character-face" alt="" aria-hidden="true" hidden>
           </div>
         </div>
@@ -6023,6 +6030,8 @@
   document.getElementById("settingsOverlay").addEventListener("click", function(e){ if(e.target.id==="settingsOverlay") closeSettings(); });
 
   document.getElementById("characterStage").addEventListener("click", playHop);
+  // Long-press / right-click on the climber should not open the browser's image menu or select it.
+  document.getElementById("characterStage").addEventListener("contextmenu", function(e){ e.preventDefault(); });
 
   document.getElementById("openProgressBtn").addEventListener("click", openProgress);
   document.getElementById("closeProgressBtn").addEventListener("click", closeProgress);
