@@ -35,7 +35,7 @@ and the project rules. It runs on its own private copy of the data, never your r
   window.cruxTestResults = results;
 
   var SHIM = '<base href="/"><script>(function(){var S=parent.__cruxStore;' +
-    'var ls={getItem:function(k){return Object.prototype.hasOwnProperty.call(S,k)?S[k]:null;},setItem:function(k,v){S[k]=String(v);},' +
+    'var ls={getItem:function(k){if(parent.__fault&&parent.__fault.get)throw new Error("fault: read");return Object.prototype.hasOwnProperty.call(S,k)?S[k]:null;},setItem:function(k,v){if(parent.__fault&&parent.__fault.set)throw new Error("QuotaExceededError");S[k]=String(v);},' +
     'removeItem:function(k){delete S[k];},clear:function(){Object.keys(S).forEach(function(k){delete S[k];});},' +
     'key:function(i){return Object.keys(S)[i]||null;},get length(){return Object.keys(S).length;}};' +
     'Object.defineProperty(window,"localStorage",{configurable:true,get:function(){return ls;}});' +
@@ -989,6 +989,74 @@ and the project rules. It runs on its own private copy of the data, never your r
     home = q('#environmentPickerGrid [data-pick-env="homewall"]');
     expect(home && !home.disabled, "Home Wall is still locked after 21 holds");
     expect(artIs(roomHref(), /rooms\/homewall\/background/), "Auto didn't move into the Home Wall: "+roomHref());
+  });
+
+  /* ---- saved-data protection: never silently lose or overwrite the user's data ---- */
+  function bigSession(n){
+    var now = Date.now(), atts = [];
+    for(var i=0;i<n;i++) atts.push({ id:"c"+i, result:"fall", xp:5, ts:now-(n-i)*1000, seq:n-i, effort:null, reason:null, note:i===n-1?"oldest":"", gradeType:"boulder", grade:null, photos:[], climbName:"", projectId:null });
+    return { id:"big", startedAt:now-3600000, endedAt:null, timerConfig:{ workSec:45, restSec:90 }, attempts:atts, note:"", photos:[], satisfaction:null, location:"" };
+  }
+  function banner(){ return q("#saveGuardBanner"); }
+  function bannerBtn(label){ return Array.prototype.slice.call(banner().querySelectorAll("button")).find(function(b){ return b.textContent.indexOf(label)>=0; }); }
+
+  test("Saved data: a session past 300 attempts keeps every attempt (nothing is dropped)", async function(){
+    var seed = clone(TEMPLATE); seed.sessions = [bigSession(300)]; seed.activeSessionId = "big"; seed.seq = 300; seed.totalAttempts = 300;
+    await boot(seed);
+    await goHome(); await click("startSessionBtn", 250); // resumes the running session
+    await log("send");
+    var a = active();
+    expect(a && a.id==="big", "the running session wasn't resumed");
+    expect(a.attempts.length===301, "session has "+a.attempts.length+" attempts, expected 301");
+    expect(a.attempts.some(function(x){ return x.note==="oldest"; }), "the oldest attempt was dropped");
+  });
+
+  test("Saved data: malformed JSON is kept, not replaced; saving pauses and raw data can be exported", async function(){
+    await boot(null);
+    var bad = '{"sessions":[{"id":"x","attempts":[{"id":"a1","note":"precious"'; // truncated write
+    Object.keys(STORE).forEach(function(k){ delete STORE[k]; }); STORE[KEY] = bad;
+    await boot();
+    expect(banner(), "no recovery warning shown");
+    expect(STORE[KEY]===bad, "the unreadable save was overwritten on load");
+    var backups = Object.keys(STORE).filter(function(k){ return k!==KEY; });
+    expect(backups.length===1 && STORE[backups[0]]===bad, "raw copy wasn't kept under a backup key: "+backups.join());
+    await ackSafety(); await startOrResume(); await log("send");
+    expect(STORE[KEY]===bad, "a save overwrote the unreadable data while the warning was up");
+    await click(bannerBtn("Export raw data"));
+    var ta = banner().querySelector("textarea");
+    expect(ta && ta.value===bad, "Export raw data didn't show the original text");
+  });
+
+  test("Saved data: a read failure doesn't blank the save; Start fresh is the only way to overwrite", async function(){
+    await boot(TEMPLATE); await startOrResume(); await log("send"); await closeComposer();
+    var good = STORE[KEY];
+    window.__fault = { get:true, set:false };
+    try{ await boot(); }finally{ window.__fault = null; }
+    expect(banner(), "no warning when storage couldn't be read");
+    await ackSafety(); await startOrResume(); await log("flash");
+    expect(STORE[KEY]===good, "the save changed after a failed read");
+  });
+
+  test("Saved data: a full storage (quota error) warns instead of failing silently, then recovers", async function(){
+    await boot(TEMPLATE); await startOrResume();
+    window.__fault = { get:false, set:true };
+    try{ await log("send"); await closeComposer(); expect(banner() && /storage is full/.test(banner().textContent), "no warning on a failed write"); }
+    finally{ window.__fault = null; }
+    await log("send");
+    expect(!banner(), "warning stayed after saving worked again");
+    expect(active().attempts.length>=2, "attempts weren't saved once storage worked");
+  });
+
+  test("Saved data: a change made in another tab isn't overwritten without asking", async function(){
+    await boot(TEMPLATE); await startOrResume(); await log("send"); await closeComposer();
+    var other = JSON.parse(STORE[KEY]); other.lastLocation = "Other Tab Gym"; other.sessions[0].note = "from the other tab";
+    var otherRaw = JSON.stringify(other); STORE[KEY] = otherRaw; // as if another tab/window saved
+    await log("flash"); await closeComposer();
+    expect(STORE[KEY]===otherRaw, "this tab overwrote the other tab's newer save");
+    expect(banner() && /another tab/.test(banner().textContent), "no stale-save warning");
+    await click(bannerBtn("Keep this tab"));
+    expect(!banner(), "warning stayed after choosing to keep this tab's version");
+    expect(saved().totalAttempts===2, "this tab's data wasn't saved after Keep this tab's version");
   });
 
   test("The app is called Crux (never Crimpet)", async function(){
