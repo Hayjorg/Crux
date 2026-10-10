@@ -16,7 +16,7 @@
     --surface-2:#F7F2E7;
     --border:#E3DAC5;
     --text:#221E19;
-    --text-dim:#8A8073;
+    --text-dim:#6B6256; /* AA (>=5:1) on --bg, --surface and --surface-2; was #8A8073 (3.4:1) */
     --accent:#0FB8A6;
     --accent-contrast:#FFFFFF;
     --flash:#FFAB1F;
@@ -121,6 +121,9 @@
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease, border-color .15s ease, color .15s ease;
   }
   .link-btn svg{width:13px;height:13px;flex-shrink:0;}
+  #openWorkoutsBtn, #openLegalFromHomeBtn{min-height:44px;}
+  /* Home: keep Start Session within thumb reach when the page is taller than the screen. */
+  #startSessionBtn.garage-cta{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom, 0px));z-index:20;}
   .link-btn:hover{color:var(--text);border-color:var(--text-dim);background:var(--surface);}
   .link-btn:active{transform:scale(0.94);}
   .link-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
@@ -215,6 +218,9 @@
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease;
   }
   .scene-icon-btn:hover{background:rgba(24,18,12,0.72);}
+  /* Bigger invisible tap area (44px) without changing the painted size or layout. */
+  .scene-icon-btn, .scene-chip{position:relative;}
+  .scene-icon-btn::after, .scene-chip::after{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:44px;transform:translateY(-50%);}
   .scene-icon-btn:active{transform:scale(0.9);}
   .scene-icon-btn svg{width:15px;height:15px;}
   .scene-icon-btn:focus-visible{outline:2px solid #FBF6E8;outline-offset:2px;}
@@ -1962,12 +1968,31 @@
     return base;
   }
 
+  // Non-destructive loading. If the saved data can't be read (storage throws, bad JSON, wrong
+  // shape) we must NOT fall back to a blank state and then let the next save overwrite the
+  // original. Instead the raw text is kept under BACKUP_PREFIX+timestamp, saving is paused
+  // (saveGuard.blocked) and a recovery banner offers "Export raw data". Saving also pauses when
+  // another tab/window changed the save since this page last read or wrote it.
+  var BACKUP_PREFIX = "crux-app-state-v2-unreadable-";
+  var saveGuard = { blocked:false, reason:"", raw:null, backupKey:null, lastRaw:null, quota:false };
   function loadState(){
+    var raw = null;
+    try{ raw = localStorage.getItem(STORAGE_KEY); }
+    catch(e){ saveGuard.blocked = true; saveGuard.reason = "unreadable"; saveGuard.raw = null; return defaultState(); }
+    saveGuard.lastRaw = raw;
+    if(!raw) return defaultState();
     try{
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return defaultState();
-      return normalizeState(JSON.parse(raw));
-    }catch(e){ return defaultState(); }
+      var parsed = JSON.parse(raw);
+      if(!parsed || typeof parsed!=="object" || Array.isArray(parsed)) throw new Error("not a save");
+      return normalizeState(parsed);
+    }catch(e){
+      saveGuard.blocked = true; saveGuard.reason = "corrupt"; saveGuard.raw = raw;
+      try{
+        saveGuard.backupKey = BACKUP_PREFIX + Date.now();
+        localStorage.setItem(saveGuard.backupKey, raw);
+      }catch(e2){ saveGuard.backupKey = null; }
+      return defaultState();
+    }
   }
   // Shared by loadState and backup import: brings any saved shape (pre-sessions legacy data,
   // older settings versions, or a current save) up to today's state shape.
@@ -2093,8 +2118,94 @@
   }
 
   function saveState(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ /* storage unavailable */ }
+    if(saveGuard.blocked){ showSaveGuardBanner(); return false; }
+    try{
+      // Another tab/window wrote since this page last read or wrote the save? Don't clobber it.
+      var current = localStorage.getItem(STORAGE_KEY);
+      if(current!==saveGuard.lastRaw){
+        saveGuard.blocked = true; saveGuard.reason = "stale"; saveGuard.raw = current;
+        showSaveGuardBanner();
+        return false;
+      }
+      var out = JSON.stringify(state);
+      localStorage.setItem(STORAGE_KEY, out);
+      saveGuard.lastRaw = out;
+      if(saveGuard.quota){ saveGuard.quota = false; hideSaveGuardBanner(); }
+      return true;
+    }catch(e){
+      // Storage full or unavailable: keep the in-memory state, say so, never throw into the UI.
+      saveGuard.quota = true; showSaveGuardBanner();
+      return false;
+    }
   }
+  function saveGuardRaw(){
+    if(saveGuard.raw!=null) return saveGuard.raw;
+    try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
+  }
+  function showSaveGuardBanner(){
+    var el = document.getElementById("saveGuardBanner");
+    if(!el){
+      el = document.createElement("div");
+      el.id = "saveGuardBanner"; el.setAttribute("role", "alert");
+      el.style.cssText = "position:fixed;left:8px;right:8px;top:8px;z-index:9999;background:var(--surface);color:var(--text);border:2px solid var(--fall);border-radius:var(--radius-md);padding:12px;box-shadow:0 6px 24px var(--shadow);font-size:14px;line-height:1.4;max-height:70vh;overflow:auto;";
+      document.body.appendChild(el);
+    }
+    var msg, btns = [];
+    if(saveGuard.blocked && saveGuard.reason==="stale"){
+      msg = "Crux was changed in another tab or window. Saving here is paused so that newer data isn't overwritten.";
+      btns = [["Load the newer data", "reload"], ["Export raw data", "export"], ["Keep this tab's version", "overwrite"]];
+    }else if(saveGuard.blocked && saveGuard.reason==="corrupt"){
+      msg = "Your saved data couldn't be read, so Crux started blank. Saving is paused so the original isn't overwritten."+(saveGuard.backupKey ? " A copy was kept in this browser." : "");
+      btns = [["Export raw data", "export"], ["Try again", "reload"], ["Start fresh", "overwrite"]];
+    }else if(saveGuard.blocked){
+      msg = "Crux can't read this browser's storage, so nothing will be saved. Export a backup before closing.";
+      btns = [["Try again", "reload"]];
+    }else{
+      msg = "Couldn't save: this browser's storage is full or blocked. Your latest changes are only in this open page. Export a backup now.";
+      btns = [["Export backup", "backup"], ["Dismiss", "dismiss"]];
+    }
+    el.innerHTML = "";
+    var p = document.createElement("div"); p.textContent = msg; p.style.marginBottom = "8px"; el.appendChild(p);
+    var row = document.createElement("div"); row.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;"; el.appendChild(row);
+    btns.forEach(function(b){
+      var x = document.createElement("button"); x.type = "button"; x.className = "btn btn-ghost";
+      x.style.cssText = "padding:10px 12px;min-height:44px;"; x.textContent = b[0];
+      x.addEventListener("click", function(){ saveGuardAction(b[1]); });
+      row.appendChild(x);
+    });
+  }
+  function hideSaveGuardBanner(){ var el = document.getElementById("saveGuardBanner"); if(el) el.remove(); }
+  function saveGuardAction(act){
+    if(act==="reload"){ location.reload(); }
+    else if(act==="dismiss"){ hideSaveGuardBanner(); }
+    else if(act==="backup"){ exportBackup(); }
+    else if(act==="export"){
+      var raw = saveGuardRaw();
+      var json = raw!=null ? raw : "";
+      var el = document.getElementById("saveGuardBanner");
+      if(el){
+        var ta = el.querySelector("textarea");
+        if(!ta){ ta = document.createElement("textarea"); ta.id = "saveGuardRaw"; ta.readOnly = true; ta.style.cssText = "width:100%;height:120px;margin-top:8px;font:12px monospace;"; el.appendChild(ta); }
+        ta.value = json; ta.focus(); ta.select();
+      }
+      if(raw!=null && !downloadsNS && STANDALONE){ saveFileLocal("crux-raw-data.json", new Blob([raw], { type:"application/json" })).catch(function(){}); }
+      else if(raw!=null && downloadsNS){ downloadsNS.save({ filename:"crux-raw-data.json", data:raw }).catch(function(){}); }
+    }
+    else if(act==="overwrite"){ allowSaveOverwrite(); saveState(); showToast("Saving resumed"); }
+  }
+  // The user chose to replace what's stored (Keep this tab's version, Start fresh, Reset all
+  // data, or a confirmed import). The raw original stays under saveGuard.backupKey if one was made.
+  function allowSaveOverwrite(){
+    saveGuard.blocked = false; saveGuard.reason = ""; saveGuard.raw = null;
+    try{ saveGuard.lastRaw = localStorage.getItem(STORAGE_KEY); }catch(e){}
+    hideSaveGuardBanner();
+  }
+  window.addEventListener("storage", function(e){
+    if(e.key===STORAGE_KEY && e.newValue!==saveGuard.lastRaw && !saveGuard.blocked){
+      saveGuard.blocked = true; saveGuard.reason = "stale"; saveGuard.raw = e.newValue;
+      showSaveGuardBanner();
+    }
+  });
 
   // Attempts saved before `seq` existed (or saved between then and now) won't have one.
   // Backfill from stored order — sessions are always unshifted (newest first) and so is
@@ -2888,7 +2999,9 @@
     var attempt = { id:uid(), result:result, xp:gainFor(result), ts:Date.now(), seq:state.seq, effort:null, reason:null, note:"", gradeType:state.lastGradeType||"boulder", grade:null, photos:[], climbName:proj ? proj.name : "", projectId:proj ? proj.id : null };
     if(proj) projectChoiceSettled[attempt.id] = true; // picked on purpose — nothing to ask
     session.attempts.unshift(attempt);
-    if(session.attempts.length>300) session.attempts.length = 300;
+    // No cap: older attempts used to be silently dropped past 300 (data loss). A very long
+    // session just gets a one-time nudge to finish and start a fresh one.
+    if(session.attempts.length===300) showToast("300 climbs in one session. Consider finishing it and starting a new one.");
 
     var outcome = recomputeProfile();
     saveState();
@@ -6527,6 +6640,7 @@
     if(arrangeMode) setArrangeMode(false);
     state = pendingImport;
     pendingImport = null;
+    allowSaveOverwrite();
     recomputeProfile();
     saveState();
     applyTheme();
@@ -6572,6 +6686,7 @@
     hideComposer();
     if(arrangeMode) setArrangeMode(false);
     state = defaultState();
+    allowSaveOverwrite();
     saveState();
     applyTheme();
     resetTimer();
