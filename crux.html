@@ -365,6 +365,13 @@
      pixel-identical; hidden for blinks and motion clips, which draw their own eyes. */
   .character-wander img.character-face{position:absolute;inset:0;width:100%;height:100%;filter:none;pointer-events:none;cursor:default;}
   .character-wander img.character-face[hidden]{display:none;}
+  /* Outfit layers: transparent delta art on the same 2:3 canvas as the sprite, stacked exactly over it. */
+  .character-wander img.outfit-layer{position:absolute;inset:0;width:100%;height:100%;filter:none;pointer-events:none;cursor:default;}
+  .wl-climber img.outfit-layer{position:absolute;left:0;top:0;filter:none;pointer-events:none;}
+  .cel-cheerbox img.outfit-layer{position:absolute;left:0;top:0;filter:none;}
+  img.outfit-layer[hidden]{display:none !important;}
+  .picker-thumb.outfit-thumb{position:relative;}
+  .picker-thumb.outfit-thumb img{position:absolute;inset:0;object-fit:contain;padding:4px;}
   .character-name{font-family:"Bebas Neue",sans-serif;font-size:19px;letter-spacing:0.02em;margin:4px 0 1px;}
   .character-sub{font-size:11.5px;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;margin:0 0 4px;}
   .character-hint{font-size:11px;color:var(--text-dim);margin:0;}
@@ -1702,6 +1709,11 @@
       <p class="settings-section-hint">Decorate with any gym you've unlocked. Auto always shows your newest.</p>
       <div class="picker-grid" id="environmentPickerGrid"></div>
     </div>
+    <div class="settings-section" id="outfitPickerSection">
+      <p class="settings-section-title">Outfit</p>
+      <p class="settings-section-hint">Dress your climber. Pieces unlock as you level up and climb the Wall.</p>
+      <div class="picker-grid" id="outfitPickerGrid"></div>
+    </div>
     <div class="settings-section">
       <p class="settings-section-title">Decorate</p>
       <p class="settings-section-hint">Tap any number of these on or off — they place themselves in the room. Each gym you unlock adds five of its own.</p>
@@ -1892,6 +1904,149 @@
   ];
 
   /* ---------------- state ---------------- */
+  /* ---------------- outfit (climber layers): the one data table ---------------- */
+  // Each item is a transparent DELTA layer, same canvas as the body frame, drawn over it:
+  //   assets/outfit/<item id>/<folder>/<name>.png   (folder/name = the body frame, e.g. idle/idle-01)
+  // To add a colourway or item, add one row here (and its art folder); nothing else changes.
+  //   slot    one of OUTFIT_SLOTS. One item per slot.
+  //   unlock  derived, never stored: any listed rule met = unlocked. level = state.level, holds = Wall holds
+  //           (wallInfo().holds). No rule = always unlocked.
+  //   frames  null = draw on every frame that is not in skip; or a list of "folder/name" keys that have art.
+  //   skip    frames where this layer must not draw (art doesn't fit that pose).
+  // frames/skip are from the art export's manifest.json (dev/outfit/export). Every item has all 40 frames except the
+  // skipped ones, so frames is null and skip lists the rest; skipped frames show the original orange art.
+  var OUTFIT_SLOTS = ["shoes", "chalkbag", "headband"]; // draw order, bottom to top
+  var OUTFIT_ITEMS = {
+    "teal-knit": { slot:"headband", name:"Teal knit headband", unlock:{ level:3 },            frames:null, skip:[] },
+    "teal":      { slot:"chalkbag", name:"Teal chalk bag",     unlock:{ level:5, holds:10 },  frames:null, skip:[] },
+    "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:[] }
+  };
+  var OUTFIT_SLOT_NAMES = { headband:"Headband", chalkbag:"Chalk bag", shoes:"Shoes" };
+  // Uploaded copies of the layer art, keyed "<item id>/<folder>/<name>" -> blob id. EMPTY until Claude
+  // uploads assets/outfit/ to the Artifact (hard rule 2); an item with no id here only works locally.
+  var OUTFIT_BLOB = {
+    "blue/blink/blink-01": "69d51b86b11df265d898c9197f39550b",
+    "blue/blink/blink-02": "e1831aa53e9ff0fb0bf3fa28c70881bb",
+    "blue/cheer/cheer-1": "cb5b80fdfc3cf2f5d181e0ae1ba26688",
+    "blue/cheer/cheer-2": "686af629c30f9e3e9aa1ffcbeb4c472f",
+    "blue/cheer/cheer-3": "c14a7ce4a225162dcb7f5ad4cb06e0e5",
+    "blue/climb/climb-chalk-up": "5e7dad681279ea062d96b896e814fd8e",
+    "blue/climb/climb-pull": "34533078f17a7efd00c5847bc1e77c32",
+    "blue/climb/climb-reach-left": "0ce8135193a002db11b1863f349ad415",
+    "blue/climb/climb-reach-right": "dac1ef0e574b5e5bd28aca34b0e11b12",
+    "blue/idle/idle-01": "c69ef29d6d9e539384a197592061613b",
+    "blue/idle/idle-02": "c525b2836df81e290a062998b82686ac",
+    "blue/idle/idle-03": "175d64912542d6a208c72ad810406639",
+    "blue/idle/idle-04": "d5f3cdfc4efcc5c20ec8e790745f8eed",
+    "blue/jump/jump-01": "a01396e647dd9b7ff66c2c39f22dffe7",
+    "blue/jump/jump-02": "c405ccc04442831571b71813206a5274",
+    "blue/jump/jump-03": "81958c9b3e31429584e1a883aa19f7ea",
+    "blue/land/land-01": "009762322ccc11f72325771396fa7226",
+    "blue/land/land-02": "33f7122df5f0f7427e422b8b5100a170",
+    "blue/move/move-chalk-clap-1": "8ab445ee202086691eaa0e2311b69d3c",
+    "blue/move/move-chalk-clap-2": "3ee36cd6a0de6b6719addf1df535b1b3",
+    "blue/move/move-chalk-clap-3": "7e76a64fc1db324b1c37af2e00cae01f",
+    "blue/move/move-dance-1": "3156bc8e9941b6f8991d59c034ab8a88",
+    "blue/move/move-dance-2": "d982a7fea29f9d4fa4516140896ea750",
+    "blue/move/move-dance-3": "e0526e646286712b869aadbcc01eb688",
+    "blue/move/move-dance-4": "cef9a5f825377be8bd35d85ee06e4d90",
+    "blue/move/move-fist-pump-1": "34c774438b1b4a2916114828656d1ac5",
+    "blue/move/move-fist-pump-2": "4c422c5d4cb030d4a51490aa8f8f29d3",
+    "blue/move/move-fist-pump-3": "3d26cec5339ca429b01b07bd84235fe1",
+    "blue/move/move-wave-1": "7e9cd65d4faff58ace13cc17745e9dc6",
+    "blue/move/move-wave-2": "481d479f9a662baee7ebff5078cdd36e",
+    "blue/move/move-wave-3": "2ecc3b0166b1fdf11438ff7499d5f557",
+    "blue/move/move-wave-4": "853ef7d3ea886f60314b39200af408d9",
+    "blue/rest/rest-day": "c1a57a1f6be45b7301d481a415bf822c",
+    "blue/sit/ledge-sit": "c48f7c6a4253f70cb8ebb7665e63811f",
+    "blue/sit/ledge-sit-look": "c26a7eb1ab253652e913a8448631b96d",
+    "blue/step/step-01": "ddd43c3fcd171bf87c5b23ab71daf9d0",
+    "blue/step/step-02": "364927adc31ec7d85f84d5b6ea9598db",
+    "blue/step/step-03": "f7ce8391d0f13788e71d12afba3fc5cc",
+    "blue/summit/summit-flag-1": "30cfafe51abdabde36cc2043ed6e9a08",
+    "blue/summit/summit-flag-2": "ee08401725de72f7685d00219cda8906",
+    "teal-knit/blink/blink-01": "a226f92c9aa72a297d4be3c724412f2c",
+    "teal-knit/blink/blink-02": "85fb7ba0c076543eedd598d69543d4b1",
+    "teal-knit/cheer/cheer-1": "afc3dae4c5b177d783d3a8957f0c91cc",
+    "teal-knit/cheer/cheer-2": "d16cb7e5b63bd96d14af649dadd73e7e",
+    "teal-knit/cheer/cheer-3": "0b3135600f31b30f6269532cd0c77789",
+    "teal-knit/climb/climb-chalk-up": "b8ea9476057e03471afee9078854be8a",
+    "teal-knit/climb/climb-pull": "fe9ccf184a9f7c5edc19028ad33bfeb8",
+    "teal-knit/climb/climb-reach-left": "84144edf97473c00b61ab08d7ee2c77a",
+    "teal-knit/climb/climb-reach-right": "a0a53ac3c7c4c7c3b94e3a8c620a637c",
+    "teal-knit/idle/idle-01": "736a087361860e6e835cd437d0661d89",
+    "teal-knit/idle/idle-02": "b491e21c425147e2c0530d9fa879ef57",
+    "teal-knit/idle/idle-03": "d7cdd30afd303bec1a6e69127b5c1b18",
+    "teal-knit/idle/idle-04": "223012107b2dd9e26ef44a7f1cf6bbbd",
+    "teal-knit/jump/jump-01": "6ac6bf4eb7148d77c8e79aefef61732e",
+    "teal-knit/jump/jump-02": "147bd0244ba89b7a04a087140134c382",
+    "teal-knit/jump/jump-03": "e2c0d8dca7d028b3ab82a619918b57e6",
+    "teal-knit/land/land-01": "143867e2ea1fb6df4977d259b5e3f2d4",
+    "teal-knit/land/land-02": "f478b8aa20b19ecedf85b214df18452c",
+    "teal-knit/move/move-chalk-clap-1": "3da041fd906d3e1c723930268b930778",
+    "teal-knit/move/move-chalk-clap-2": "8e2a3d647c6a8abb241a548d61a95eea",
+    "teal-knit/move/move-chalk-clap-3": "ff1ff7031fce10c59feee39f46dfbcd9",
+    "teal-knit/move/move-dance-1": "4a014c9e5c71bb748dda2494a7a7d53b",
+    "teal-knit/move/move-dance-2": "061543fd2d5b02e65bc05d7c2fc830c6",
+    "teal-knit/move/move-dance-3": "2c6c27fc0b92c6b58520a75be5e11ae8",
+    "teal-knit/move/move-dance-4": "9b9327e3e26a80d969989cadbc9d91e3",
+    "teal-knit/move/move-fist-pump-1": "30f98a2cb693e76d3aea19cbbd81dd8b",
+    "teal-knit/move/move-fist-pump-2": "cd3c689acd05ef176b9c7f992553cd9d",
+    "teal-knit/move/move-fist-pump-3": "c54937b63156ebe28d4cb6f668c95fdd",
+    "teal-knit/move/move-wave-1": "904e67ee508725ce250ca07b1b3490cd",
+    "teal-knit/move/move-wave-2": "4dc45245613eef07f2cef61d33215fe8",
+    "teal-knit/move/move-wave-3": "5a473440864cc942562b86c94fb667c4",
+    "teal-knit/move/move-wave-4": "05948c26798b4abd49603ec83eaf0afb",
+    "teal-knit/rest/rest-day": "222251535ec70c8cb6be4831e0e0756a",
+    "teal-knit/sit/ledge-sit": "1c82df584e5b87e30c22f01acdfb6957",
+    "teal-knit/sit/ledge-sit-look": "35842a0a3781a876c6912bf8e6fac484",
+    "teal-knit/step/step-01": "8eb1cd86fb07c4ba13e586d4fe2c2ca4",
+    "teal-knit/step/step-02": "094fc1175a12b98ae514fcf161158820",
+    "teal-knit/step/step-03": "8b5834b1bbc85498c73b5ce52849c8b4",
+    "teal-knit/summit/summit-flag-1": "1758428f1c3f9383bfb5c1f7d251e1b2",
+    "teal-knit/summit/summit-flag-2": "70e9bf15803ef75543195e015fb7698f",
+    "teal/blink/blink-01": "c6be8cfb18a602cdb7a4239ae90fa91c",
+    "teal/blink/blink-02": "4d738fb839a2788903777bf138c5f9ca",
+    "teal/cheer/cheer-1": "814d74d27d4c81186bc1c065379a9a69",
+    "teal/cheer/cheer-2": "1def90db15329cb72d274727b444fc8f",
+    "teal/cheer/cheer-3": "cfdcb7ce37a81577ed5ffe86f7d4e545",
+    "teal/climb/climb-chalk-up": "1f9644f60b3cdff1d6dac5be49543d77",
+    "teal/climb/climb-pull": "6021b499be5158e4a18dc6fd16aa2992",
+    "teal/climb/climb-reach-left": "feb01826ce765cc016a8bd3da01e4c82",
+    "teal/climb/climb-reach-right": "04442b0f123dd44834398bcfed54a185",
+    "teal/idle/idle-01": "611f366de340dfb963631432573b882a",
+    "teal/idle/idle-02": "2cd5678e5cab6069020ecb7e1aee5451",
+    "teal/idle/idle-03": "631743c0005799036e40f3844f4cb7db",
+    "teal/idle/idle-04": "cd1b52f8475d729d0d8709cb2ee565d7",
+    "teal/jump/jump-01": "9ab2d010eaf18c0f4ff1a9a26a3d4ced",
+    "teal/jump/jump-02": "7de9c72af8f3d62d9162951fdae34624",
+    "teal/jump/jump-03": "ef90527f2cf31a7e2a4b65b6953a9f6a",
+    "teal/land/land-01": "a054915b3ec2d013d176b3f2f4d1f40c",
+    "teal/land/land-02": "60443497dbbaf51111efbc30248b316a",
+    "teal/move/move-chalk-clap-1": "f8e172c40ceb130bf8f1ef4d2b87a4ae",
+    "teal/move/move-chalk-clap-2": "9539b16da9561a3347a118ce6c2ac3eb",
+    "teal/move/move-chalk-clap-3": "70342023144aad595582fd0a86d09c0b",
+    "teal/move/move-dance-1": "25506ef1a83781e49eee17d8d0bca347",
+    "teal/move/move-dance-2": "b3e9edb79d53a1f259ab3cb6d17b1e9e",
+    "teal/move/move-dance-3": "80a216c311d8389fdce98a7610e5c259",
+    "teal/move/move-dance-4": "db28571a90eccefc81b009331483f521",
+    "teal/move/move-fist-pump-1": "e8a10a3b43f6f93c50e0a677d1cba129",
+    "teal/move/move-fist-pump-2": "73ee5bb970d551f51a71cb9e74fb683d",
+    "teal/move/move-fist-pump-3": "d9fa8c800ed44f68373f5c111fd734fe",
+    "teal/move/move-wave-1": "836695145e71d9311961e34f1d7acdda",
+    "teal/move/move-wave-2": "3799fcf61ad04cf7405dabe19187d60a",
+    "teal/move/move-wave-3": "bb335361869879aab8fef018181a667d",
+    "teal/move/move-wave-4": "49b44024edc4b8c3b4467007251b3cca",
+    "teal/rest/rest-day": "a3bfcb5d567215841507307db0d49c62",
+    "teal/sit/ledge-sit": "6e99919640f85eb6593bb23fa6eba374",
+    "teal/sit/ledge-sit-look": "2f805900e98ff67e1b5837b01186a5e2",
+    "teal/step/step-01": "5f1fc1079d4150e508d31319010f4a6a",
+    "teal/step/step-02": "d18810905625f5a680bc2363a8cb23bc",
+    "teal/step/step-03": "f29adc11c23c95b072db5c92b0f5a9c5",
+    "teal/summit/summit-flag-1": "97d0c764a51fa77d7515695ac0beb901",
+    "teal/summit/summit-flag-2": "9b48d62ddc1833fd11ff60428aaf094c"
+};
+
   function defaultState(){
     return {
       version:2,
@@ -1918,7 +2073,9 @@
       // A few accessories on by default (new installs only — Object.assign in loadState()
       // never overwrites an existing save's own decorations array) so a brand-new Garage
       // reads as lived-in on first look, not an empty test room waiting for Customize.
-      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[] },
+      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[],
+        // outfit: equipped item id per slot (see OUTFIT_ITEMS), or null. Whether it shows is derived from level / Wall holds.
+        outfit:{ headband:null, chalkbag:null, shoes:null } },
       sessions:[],
       // One entry per climb *at one place*: {id, name, location, createdAt}. Attempts point
       // at these by projectId (see linkProjects), so same-name climbs at different gyms stay apart.
@@ -2028,6 +2185,13 @@
       merged.character.decorPositionsByEnv = { garage: oldChar.decorPositions };
     }
     delete merged.character.decorPositions;
+    // Outfit is additive: older saves and backups have none. Keep only string ids (or null) per slot; other keys and
+    // unknown ids are left alone, they just don't draw.
+    var o = migrated.character && migrated.character.outfit, out = { headband:null, chalkbag:null, shoes:null };
+    if(o && typeof o==="object" && !Array.isArray(o)){
+      Object.keys(o).forEach(function(k){ out[k] = (typeof o[k]==="string" && o[k]) ? o[k] : (k in out ? null : o[k]); });
+    }
+    merged.character.outfit = out;
     backfillSeq(merged);
     linkProjects(merged);
     return merged;
@@ -2305,7 +2469,27 @@
         + '</button>';
     }).join("");
   }
+  // One group per slot: "None" plus every item for it, locked ones greyed with how to unlock them.
+  function outfitItemsHTML(){
+    var worn = state.character.outfit || {}, lvl = state.level, holds = outfitHolds();
+    return OUTFIT_SLOTS.slice().reverse().map(function(slot){
+      var html = '<p class="picker-group">'+escapeHtml(OUTFIT_SLOT_NAMES[slot]||slot)+'</p>'
+        + '<button type="button" class="picker-item'+(worn[slot] ? '' : ' selected')+'" data-outfit-slot="'+slot+'" data-outfit-item="">'
+        + '<div class="picker-thumb auto-thumb">NONE</div><span class="picker-name">Plain</span></button>';
+      Object.keys(OUTFIT_ITEMS).filter(function(id){ return OUTFIT_ITEMS[id].slot===slot; }).forEach(function(id){
+        var it = OUTFIT_ITEMS[id], ok = outfitUnlocked(it, lvl, holds);
+        var layer = asset("outfit/"+id+"/idle/idle-01.png", OUTFIT_BLOB[id+"/idle/idle-01"]);
+        html += '<button type="button" class="picker-item'+(ok ? '' : ' locked')+(worn[slot]===id ? ' selected' : '')+'" '
+          + (ok ? 'data-outfit-slot="'+slot+'" data-outfit-item="'+id+'"' : 'disabled')+'>'
+          + '<div class="picker-thumb outfit-thumb"><img src="'+IMG.mascot.idle[0]+'" alt=""><img src="'+layer+'" alt=""></div>'
+          + '<span class="picker-name">'+escapeHtml(it.name)+'</span>'
+          + (ok ? '' : '<span class="picker-lock">'+escapeHtml(outfitHint(it))+'</span>') + '</button>';
+      });
+      return html;
+    }).join("");
+  }
   function renderCustomizeModal(){
+    document.getElementById("outfitPickerGrid").innerHTML = outfitItemsHTML();
     document.getElementById("environmentPickerGrid").innerHTML = pickerItemsHTML(
       ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
       state.character.selectedEnvironmentId, "pick-env", "cover"
@@ -3111,8 +3295,9 @@
       pic:'<span class="cel-badgewrap"><img src="'+IMG.ui.badge+'" alt=""><b>'+n+'</b></span><span class="cel-cheerbox"><img data-cheer src="'+IMG.ui.cheer[0]+'" alt=""></span>',
       text:"Every attempt you log adds up. Nice climbing.", primary:"Keep climbing",
       onShow:function(box){
-        if(prefersReducedMotion) return null;
         var im = box.querySelector("img[data-cheer]"), seq = [0,1,2,1,0,2], i = 0;
+        outfitFollow(im, im.parentNode);
+        if(prefersReducedMotion) return null;
         var t = setInterval(function(){ i++; im.src = IMG.ui.cheer[seq[i % seq.length]]; }, 260);
         return function(){ clearInterval(t); };
       } });
@@ -4553,9 +4738,13 @@
     return local ? "local" : "blob";
   })();
   // An entry with no blobId exists only in assets/ (not uploaded to the Artifact yet).
+  var ASSET_FILE = {}; // address -> file, so a frame's address (even a /_blob/ one) can be traced back to its file
   function asset(file, blobId){
-    if(ASSET_SOURCE==="local" || !blobId){ var v = window.__CRUX_V && window.__CRUX_V[file]; return "assets/"+file+(v ? "?v="+v : ""); }
-    return "/_blob/"+blobId;
+    var u;
+    if(ASSET_SOURCE==="local" || !blobId){ var v = window.__CRUX_V && window.__CRUX_V[file]; u = "assets/"+file+(v ? "?v="+v : ""); }
+    else u = "/_blob/"+blobId;
+    ASSET_FILE[u] = file;
+    return u;
   }
   var IMG = {
     garage: {
@@ -4795,6 +4984,74 @@
     }
     // ==== END THE WALL ====
   };
+
+  /* ---------------- outfit layers (see OUTFIT_ITEMS) ---------------- */
+  // A body frame's address -> "folder/name" (e.g. "idle/idle-01"), the key the layer art and the table use.
+  function outfitFrameKey(src){
+    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/default\/([^\/]+\/[^\/]+)\.png$/.exec(f);
+    return m ? m[1] : null;
+  }
+  // `holds` may be a number or a function (only called if the level rule didn't already unlock it).
+  function outfitUnlocked(item, level, holds){
+    var u = item.unlock || {}, any = false;
+    if(u.level!=null){ any = true; if(level>=u.level) return true; }
+    if(u.holds!=null){ any = true; if((typeof holds==="function" ? holds() : holds)>=u.holds) return true; }
+    return !any;
+  }
+  function outfitHint(item){
+    var u = item.unlock || {}, p = [];
+    if(u.level!=null) p.push("Level "+u.level);
+    if(u.holds!=null) p.push(u.holds+" Wall holds");
+    return p.join(" or ");
+  }
+  function outfitHolds(){ return WALL_ENABLED ? wallInfo().holds : 0; }
+  // The layers to draw over a body frame, bottom to top (OUTFIT_SLOTS order). Pure: the caller passes the state.
+  function outfitLayersFor(src, outfit, level, holds){
+    var key = outfitFrameKey(src), out = [];
+    if(!key || !outfit) return out;
+    OUTFIT_SLOTS.forEach(function(slot){
+      var id = outfit[slot], it = id && OUTFIT_ITEMS[id];
+      if(!it || it.slot!==slot || !outfitUnlocked(it, level, holds)) return;
+      if(it.skip.indexOf(key)>-1 || (it.frames && it.frames.indexOf(key)<0)) return;
+      out.push({ slot:slot, id:id, key:key, url:asset("outfit/"+id+"/"+key+".png", OUTFIT_BLOB[id+"/"+key]) });
+    });
+    return out;
+  }
+  function outfitLayersLive(src){ return outfitLayersFor(src, state.character.outfit, state.level, outfitHolds); }
+  // Keeps a stack of layer images in `host`, directly after `stage`, matching whatever frame `stage` shows.
+  var OUTFIT_FOLLOWERS = [];
+  function outfitFollow(stage, host){
+    var imgs = {};
+    function sync(){
+      var want = {};
+      outfitLayersLive(stage.getAttribute("src")).forEach(function(l){ want[l.slot] = l.url; });
+      var ref = stage;
+      OUTFIT_SLOTS.forEach(function(slot){
+        var im = imgs[slot];
+        if(!im){
+          if(!want[slot]) return;
+          im = imgs[slot] = document.createElement("img");
+          im.className = "outfit-layer"; im.alt = ""; im.draggable = false; im.setAttribute("aria-hidden", "true");
+          im.addEventListener("error", function(){ im._bad = im.getAttribute("src"); im.hidden = true; });
+        }
+        if(want[slot] && im.getAttribute("src")!==want[slot]) im.src = want[slot];
+        im.hidden = !want[slot] || im._bad===want[slot];
+        im.classList.toggle("wide", stage.classList.contains("wide"));
+        if(ref.nextSibling!==im) host.insertBefore(im, ref.nextSibling);
+        ref = im;
+      });
+    }
+    new MutationObserver(sync).observe(stage, { attributes:true, attributeFilter:["src", "class"] });
+    OUTFIT_FOLLOWERS.push({ host:host, sync:sync });
+    sync();
+  }
+  function outfitRefresh(){
+    OUTFIT_FOLLOWERS = OUTFIT_FOLLOWERS.filter(function(f){ return f.host.isConnected; });
+    OUTFIT_FOLLOWERS.forEach(function(f){ f.sync(); });
+  }
+  outfitFollow(document.getElementById("characterStage"), document.getElementById("characterBody"));
+  // dev/tests.html only (it sets window.__cruxTest): lets the checks reach the pure outfit functions.
+  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, idle:IMG.mascot.idle, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
 
   /* ---------------- the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Rank is
@@ -5316,6 +5573,7 @@
     // stomp on it. playMotion() itself restores the resting pose once it finishes.
     if(!motionPlaying && img.getAttribute("src")!==stage.img) img.src = stage.img;
     syncFace();
+    outfitRefresh();
     renderSceneEnvironment(selectedEnvironment(), stage);
     // Quick-glance level badge floating over the art — reuses the climber's resting pose
     // as the avatar rather than needing a separate asset.
@@ -5827,6 +6085,7 @@
   var WCW = 106, WCH = 159, wallIdleT = null, wallIdleI = 0, wallBlinkAt = 0, wallAt = 0;
   // The climber's frame. The two summit-flag frames are wider than the others (extra canvas each side so the
   // flag fits), so they are drawn 141% wide, shifted back so the head stays where it was.
+  outfitFollow(wallCImg, wallClimber);
   function wallShow(src, wide){ wallCImg.classList.toggle("wide", !!wide); wallCImg.src = src; }
   function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px)"; }
   function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
@@ -6175,6 +6434,20 @@
     renderCharacterCard();
     renderCustomizeModal();
   });
+  document.getElementById("outfitPickerGrid").addEventListener("click", function(e){
+    var btn = e.target.closest(".picker-item");
+    if(!btn || btn.disabled) return;
+    var slot = btn.getAttribute("data-outfit-slot");
+    if(!slot || OUTFIT_SLOTS.indexOf(slot)<0) return;
+    state.character.outfit[slot] = btn.getAttribute("data-outfit-item") || null;
+    saveState();
+    outfitRefresh();
+    renderCustomizeModal();
+  });
+  // A layer file that isn't there yet (art not exported or uploaded) just doesn't show.
+  document.getElementById("outfitPickerGrid").addEventListener("error", function(e){
+    if(e.target.tagName==="IMG") e.target.style.visibility = "hidden";
+  }, true);
   document.getElementById("decoratePickerGrid").addEventListener("click", function(e){
     var btn = e.target.closest(".picker-item");
     if(!btn) return;
@@ -6475,7 +6748,9 @@
     var W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
     var x = c.getContext("2d"), env = selectedEnvironment();
     var fonts = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load('100px "Bebas Neue"'), document.fonts.load('30px "IBM Plex Mono"')]).catch(function(){}) : Promise.resolve();
-    return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0]), loadImage(IMG.ui.start), fonts ]).then(function(r){
+    var meSrc = a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0];
+    var outfit = Promise.all(outfitLayersLive(meSrc).map(function(l){ return loadImage(l.url); }));
+    return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(meSrc), loadImage(IMG.ui.start), fonts, outfit ]).then(function(r){
       var bg = r[0], me = r[1], icon = r[2];
       if(bg){ var sc = W/bg.width, bh = bg.height*sc; x.drawImage(bg, 0, -(bh-H)/2, W, bh); }
       else { var base = x.createLinearGradient(0, 0, 0, H); base.addColorStop(0, "#5A3A1C"); base.addColorStop(1, "#2A1A0C"); x.fillStyle = base; x.fillRect(0, 0, W, H); }
@@ -6484,7 +6759,7 @@
       g = x.createLinearGradient(0, H-420, 0, H); g.addColorStop(0, "rgba(14,8,3,0)"); g.addColorStop(1, "rgba(14,8,3,0.7)"); x.fillStyle = g; x.fillRect(0, H-420, W, 420);
       // your climber, cheering, standing on the bottom edge
       x.fillStyle = "rgba(0,0,0,0.32)"; x.beginPath(); x.ellipse(W-330, 1266, 170, 26, 0, 0, Math.PI*2); x.fill();
-      if(me) x.drawImage(me, W-680, 347, 700, 1050);
+      if(me){ x.drawImage(me, W-680, 347, 700, 1050); r[4].forEach(function(l){ if(l) x.drawImage(l, W-680, 347, 700, 1050); }); }
       x.shadowColor = "rgba(0,0,0,0.55)"; x.shadowBlur = 14; x.shadowOffsetY = 3;
       // brand
       if(icon) x.drawImage(icon, 64, 44, 96, 96*icon.height/icon.width);
