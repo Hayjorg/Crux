@@ -1913,12 +1913,13 @@
   //           (wallInfo().holds). No rule = always unlocked.
   //   frames  null = draw on every frame that is not in skip; or a list of "folder/name" keys that have art.
   //   skip    frames where this layer must not draw (art doesn't fit that pose).
-  // frames/skip come from dev/outfit/export/manifest.json (the art export); null/[] until the art is exported.
+  // frames/skip are from the art export's manifest.json (dev/outfit/export). Every item has all 40 frames except the
+  // skipped ones, so frames is null and skip lists the rest; skipped frames show the original orange art.
   var OUTFIT_SLOTS = ["shoes", "chalkbag", "headband"]; // draw order, bottom to top
   var OUTFIT_ITEMS = {
     "teal-knit": { slot:"headband", name:"Teal knit headband", unlock:{ level:3 },            frames:null, skip:[] },
     "teal":      { slot:"chalkbag", name:"Teal chalk bag",     unlock:{ level:5, holds:10 },  frames:null, skip:[] },
-    "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:[] }
+    "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:["climb/climb-chalk-up","climb/climb-reach-right"] }
   };
   var OUTFIT_SLOT_NAMES = { headband:"Headband", chalkbag:"Chalk bag", shoes:"Shoes" };
   // Uploaded copies of the layer art, keyed "<item id>/<folder>/<name>" -> blob id. EMPTY until Claude
