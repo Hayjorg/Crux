@@ -1087,7 +1087,49 @@ and the project rules. It runs on its own private copy of the data, never your r
     // the Customize picker shows locked items disabled, with a hint
     await openCustomize();
     var locked = qa("#outfitPickerGrid .picker-item.locked");
-    expect(locked.length===3 && locked.every(function(b){ return b.disabled && b.querySelector(".picker-lock").textContent.length>0; }), "locked items: "+locked.length);
+    var wantLocked = Object.keys(O.items).filter(function(id){ return !O.unlocked(O.items[id], 1, 0); }).length;
+    expect(wantLocked>3 && locked.length===wantLocked && locked.every(function(b){ return b.disabled && b.querySelector(".picker-lock").textContent.length>0; }), "locked items: "+locked.length+" of "+wantLocked);
+  });
+  test("Outfit: colourways tint the shared art (table valid, unlocks, layer address, saved id round trip, unknown id, canvas matches CSS)", async function(){
+    var s = clone(TEMPLATE); s.settings.devLevel = 30; s.character.outfit = { headband:"red-knit", chalkbag:"white-bag", shoes:"teal-shoes" };
+    await boot(s);
+    var O = W.__cruxOutfit, ids = Object.keys(O.items);
+    expect(ids.length>=24, "expected many colourways, got "+ids.length);
+    var arts = {}; Object.keys(O.blob).forEach(function(k){ arts[k.split("/")[0]] = 1; });
+    ids.forEach(function(id){
+      var it = O.items[id], art = it.art || id;
+      expect(arts[art], id+": art folder '"+art+"' has no OUTFIT_BLOB entries");
+      expect(it.slot==="headband" || it.slot==="chalkbag" || it.slot==="shoes", id+": bad slot");
+      expect(/^[a-z]+(-[a-z]+)*$/.test(id), id+": id isn't kebab-case");
+      if(it.tint){ expect(isFinite(it.tint.hue) && it.tint.sat>=0 && it.tint.sat<=4 && it.tint.bri>=0 && it.tint.bri<=2.5, id+": bad tint "+JSON.stringify(it.tint)); }
+      else expect(art===id, id+": untinted rows must draw their own art");
+    });
+    ["teal-knit", "teal", "blue"].forEach(function(id){ expect(O.items[id] && !O.items[id].tint, "original "+id+" must keep working untinted"); });
+    // derived unlocks for a few new ids
+    var red = O.items["red-knit"], white = O.items["white-bag"];
+    expect(!O.unlocked(red, 1, 0) && O.unlocked(red, red.unlock.level, 0), "red-knit unlock");
+    expect(!O.unlocked(white, white.unlock.level-1, white.unlock.holds-1) && O.unlocked(white, white.unlock.level, 0) && O.unlocked(white, 1, white.unlock.holds), "white-bag: level or Wall holds");
+    // layer address uses the art id, and carries the tint
+    var L = O.layersFor(O.idle[0], { headband:"red-knit", chalkbag:"white-bag", shoes:"teal-shoes" }, 40, 0);
+    expect(L.length===3 && L[0].art==="blue" && L[1].art==="teal" && L[2].art==="teal-knit", "art ids: "+L.map(function(l){ return l.art; }));
+    expect(L[0].url.indexOf("outfit/teal-shoes")<0 && L[2].url.indexOf("outfit/red-knit")<0, "url used the row id instead of the art id");
+    expect(/hue-rotate\(.*deg\)/.test(L[2].filter) && L[1].tint.sat===0, "layer tint: "+L[2].filter);
+    // a saved outfit with new ids survives a save/reload
+    expect(saved().character.outfit.headband==="red-knit" && saved().character.outfit.shoes==="teal-shoes", "saved outfit: "+JSON.stringify(saved().character.outfit));
+    expect(qa("#characterBody img.outfit-layer").some(function(i){ return /hue-rotate/.test(i.style.filter); }), "Home layers have no CSS filter");
+    // unknown id still draws nothing
+    expect(!O.layersFor(O.idle[0], { headband:"mauve-knit" }, 40, 0).length, "unknown id drew");
+    // canvas pixel path ~ CSS filter (skipped where the engine has no ctx.filter)
+    var im = await new Promise(function(res){ var i = new W.Image(); i.onload = function(){ res(i); }; i.onerror = function(){ res(null); }; i.src = L[2].url; });
+    if(im){
+      var c = W.document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; var x = c.getContext("2d");
+      if("filter" in x){
+        x.filter = L[2].filter; x.drawImage(im, 0, 0); x.filter = "none";
+        var a = x.getImageData(0, 0, c.width, c.height).data, p = O.tintCanvas(im, L[2].tint), b = p.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+        var sum = 0, n = 0; for(var i = 0; i<a.length; i += 4){ if(a[i+3]>200){ sum += Math.abs(a[i]-b[i]) + Math.abs(a[i+1]-b[i+1]) + Math.abs(a[i+2]-b[i+2]); n += 3; } }
+        expect(n>0 && sum/n<6, "canvas tint differs from the CSS filter by "+(sum/n).toFixed(1)+" per channel");
+      }
+    }
   });
   test("Outfit: layers stack shoes, then chalk bag, then headband; skipped frames don't draw; unequipped or locked draw nothing", async function(){
     await boot(TEMPLATE);

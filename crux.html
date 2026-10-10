@@ -1909,6 +1909,11 @@
   //   assets/outfit/<item id>/<folder>/<name>.png   (folder/name = the body frame, e.g. idle/idle-01)
   // To add a colourway or item, add one row here (and its art folder); nothing else changes.
   //   slot    one of OUTFIT_SLOTS. One item per slot.
+  //   art     the art folder (assets/outfit/<art>/ and its OUTFIT_BLOB keys) this row draws; default: the row's own id.
+  //           Many rows share one art folder: a colourway is the same layer tinted at run time (no new art or uploads).
+  //   tint    null = the art as drawn, or { hue:deg, sat:mult, bri:mult } = CSS hue-rotate(deg) saturate(sat) brightness(bri).
+  //           Home/Wall/picker use that as a CSS filter; the share card runs the same numbers through outfitTintCanvas()
+  //           (pixel maths, no ctx.filter). hue is relative to the art, not absolute.
   //   unlock  derived, never stored: any listed rule met = unlocked. level = state.level, holds = Wall holds
   //           (wallInfo().holds). No rule = always unlocked.
   //   frames  null = draw on every frame that is not in skip; or a list of "folder/name" keys that have art.
@@ -1917,9 +1922,35 @@
   // skipped ones, so frames is null and skip lists the rest; skipped frames show the original orange art.
   var OUTFIT_SLOTS = ["shoes", "chalkbag", "headband"]; // draw order, bottom to top
   var OUTFIT_ITEMS = {
-    "teal-knit": { slot:"headband", name:"Teal knit headband", unlock:{ level:3 },            frames:null, skip:[] },
-    "teal":      { slot:"chalkbag", name:"Teal chalk bag",     unlock:{ level:5, holds:10 },  frames:null, skip:[] },
-    "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:[] }
+    // --- headband (base art teal-knit, hue ~183) ---
+    "teal-knit":  { slot:"headband", name:"Teal knit headband", art:"teal-knit", tint:null, unlock:{ level:3 }, frames:null, skip:[] },
+    "red-knit":   { slot:"headband", name:"Red knit headband", art:"teal-knit", tint:{ hue:170, sat:2, bri:0.8 }, unlock:{ level:2 }, frames:null, skip:[] },
+    "yellow-knit":{ slot:"headband", name:"Yellow knit headband", art:"teal-knit", tint:{ hue:238, sat:1.6, bri:1.4 }, unlock:{ level:4 }, frames:null, skip:[] },
+    "orange-knit":{ slot:"headband", name:"Orange knit headband", art:"teal-knit", tint:{ hue:209, sat:1.8, bri:1.1 }, unlock:{ level:6 }, frames:null, skip:[] },
+    "green-knit": { slot:"headband", name:"Green knit headband", art:"teal-knit", tint:{ hue:310, sat:1.2, bri:1 }, unlock:{ level:9 }, frames:null, skip:[] },
+    "purple-knit":{ slot:"headband", name:"Purple knit headband", art:"teal-knit", tint:{ hue:99, sat:1.4, bri:0.9 }, unlock:{ level:12 }, frames:null, skip:[] },
+    "pink-knit":  { slot:"headband", name:"Pink knit headband", art:"teal-knit", tint:{ hue:145, sat:1.2, bri:1.1 }, unlock:{ level:16 }, frames:null, skip:[] },
+    "black-knit": { slot:"headband", name:"Black knit headband", art:"teal-knit", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:22, holds:40 }, frames:null, skip:[] },
+    "white-knit": { slot:"headband", name:"White knit headband", art:"teal-knit", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:28, holds:60 }, frames:null, skip:[] },
+    // --- chalk bag (base art teal, hue ~188) ---
+    "teal":       { slot:"chalkbag", name:"Teal chalk bag", art:"teal", tint:null, unlock:{ level:5, holds:10 }, frames:null, skip:[] },
+    "red-bag":    { slot:"chalkbag", name:"Red chalk bag", art:"teal", tint:{ hue:168, sat:2, bri:0.9 }, unlock:{ level:3 }, frames:null, skip:[] },
+    "yellow-bag": { slot:"chalkbag", name:"Yellow chalk bag", art:"teal", tint:{ hue:227, sat:1.6, bri:1.5 }, unlock:{ level:7 }, frames:null, skip:[] },
+    "green-bag":  { slot:"chalkbag", name:"Green chalk bag", art:"teal", tint:{ hue:305, sat:1.2, bri:1.2 }, unlock:{ level:11 }, frames:null, skip:[] },
+    "orange-bag": { slot:"chalkbag", name:"Orange chalk bag", art:"teal", tint:{ hue:198, sat:2, bri:1.4 }, unlock:{ level:14 }, frames:null, skip:[] },
+    "purple-bag": { slot:"chalkbag", name:"Purple chalk bag", art:"teal", tint:{ hue:94, sat:1.4, bri:1.1 }, unlock:{ level:18 }, frames:null, skip:[] },
+    "pink-bag":   { slot:"chalkbag", name:"Pink chalk bag", art:"teal", tint:{ hue:149, sat:1.4, bri:1.4 }, unlock:{ level:20 }, frames:null, skip:[] },
+    "black-bag":  { slot:"chalkbag", name:"Black chalk bag", art:"teal", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:24, holds:50 }, frames:null, skip:[] },
+    "white-bag":  { slot:"chalkbag", name:"White chalk bag", art:"teal", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:30, holds:60 }, frames:null, skip:[] },
+    // --- shoes (base art blue, hue ~210; the original orange stays as Plain) ---
+    "blue":       { slot:"shoes", name:"Blue shoes", art:"blue", tint:null, unlock:{ level:8 }, frames:null, skip:[] },
+    "red-shoes":  { slot:"shoes", name:"Red shoes", art:"blue", tint:{ hue:128, sat:2, bri:1.3 }, unlock:{ level:4 }, frames:null, skip:[] },
+    "green-shoes":{ slot:"shoes", name:"Green shoes", art:"blue", tint:{ hue:262, sat:1, bri:1.5 }, unlock:{ level:6 }, frames:null, skip:[] },
+    "teal-shoes": { slot:"shoes", name:"Teal shoes", art:"blue", tint:{ hue:318, sat:2, bri:1.5 }, unlock:{ level:10 }, frames:null, skip:[] },
+    "purple-shoes":{ slot:"shoes", name:"Purple shoes", art:"blue", tint:{ hue:45, sat:1.6, bri:1.5 }, unlock:{ level:13 }, frames:null, skip:[] },
+    "pink-shoes": { slot:"shoes", name:"Pink shoes", art:"blue", tint:{ hue:109, sat:1.4, bri:1.5 }, unlock:{ level:17 }, frames:null, skip:[] },
+    "black-shoes":{ slot:"shoes", name:"Black shoes", art:"blue", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:21, holds:45 }, frames:null, skip:[] },
+    "white-shoes":{ slot:"shoes", name:"White shoes", art:"blue", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:26, holds:55 }, frames:null, skip:[] }
   };
   var OUTFIT_SLOT_NAMES = { headband:"Headband", chalkbag:"Chalk bag", shoes:"Shoes" };
   // Uploaded copies of the layer art, keyed "<item id>/<folder>/<name>" -> blob id. EMPTY until Claude
@@ -2476,12 +2507,15 @@
       var html = '<p class="picker-group">'+escapeHtml(OUTFIT_SLOT_NAMES[slot]||slot)+'</p>'
         + '<button type="button" class="picker-item'+(worn[slot] ? '' : ' selected')+'" data-outfit-slot="'+slot+'" data-outfit-item="">'
         + '<div class="picker-thumb auto-thumb">NONE</div><span class="picker-name">Plain</span></button>';
-      Object.keys(OUTFIT_ITEMS).filter(function(id){ return OUTFIT_ITEMS[id].slot===slot; }).forEach(function(id){
+      // earliest unlock first (by level; ties keep table order)
+      var ids = Object.keys(OUTFIT_ITEMS).filter(function(id){ return OUTFIT_ITEMS[id].slot===slot; });
+      ids.map(function(id, i){ return { id:id, i:i, l:(OUTFIT_ITEMS[id].unlock||{}).level||0 }; })
+        .sort(function(a, b){ return a.l-b.l || a.i-b.i; }).map(function(o){ return o.id; }).forEach(function(id){
         var it = OUTFIT_ITEMS[id], ok = outfitUnlocked(it, lvl, holds);
-        var layer = asset("outfit/"+id+"/idle/idle-01.png", OUTFIT_BLOB[id+"/idle/idle-01"]);
+        var art = it.art || id, layer = asset("outfit/"+art+"/idle/idle-01.png", OUTFIT_BLOB[art+"/idle/idle-01"]), flt = outfitFilterCSS(it.tint);
         html += '<button type="button" class="picker-item'+(ok ? '' : ' locked')+(worn[slot]===id ? ' selected' : '')+'" '
           + (ok ? 'data-outfit-slot="'+slot+'" data-outfit-item="'+id+'"' : 'disabled')+'>'
-          + '<div class="picker-thumb outfit-thumb"><img src="'+IMG.mascot.idle[0]+'" alt=""><img src="'+layer+'" alt=""></div>'
+          + '<div class="picker-thumb outfit-thumb"><img src="'+IMG.mascot.idle[0]+'" alt=""><img src="'+layer+'" alt=""'+(flt ? ' style="filter:'+flt+'"' : '')+'></div>'
           + '<span class="picker-name">'+escapeHtml(it.name)+'</span>'
           + (ok ? '' : '<span class="picker-lock">'+escapeHtml(outfitHint(it))+'</span>') + '</button>';
       });
@@ -5005,6 +5039,45 @@
     return p.join(" or ");
   }
   function outfitHolds(){ return WALL_ENABLED ? wallInfo().holds : 0; }
+  // Tint -> the CSS filter string ("" = none). The share card uses the same numbers via outfitTintCanvas().
+  function outfitFilterCSS(t){
+    if(!t) return "";
+    var h = ((t.hue||0)%360+360)%360;
+    return "hue-rotate("+h+"deg) saturate("+(t.sat==null?1:t.sat)+") brightness("+(t.bri==null?1:t.bri)+")";
+  }
+  // The same look in pixel maths (CSS hue-rotate matrix, then saturate, then brightness; alpha untouched), as one 3x3.
+  function outfitTintMatrix(t){
+    var a = (t.hue||0)*Math.PI/180, c = Math.cos(a), n = Math.sin(a), s = t.sat==null ? 1 : t.sat, b = t.bri==null ? 1 : t.bri;
+    var H = [[0.213+c*0.787-n*0.213, 0.715-c*0.715-n*0.715, 0.072-c*0.072+n*0.928],
+             [0.213-c*0.213+n*0.143, 0.715+c*0.285+n*0.140, 0.072-c*0.072-n*0.283],
+             [0.213-c*0.213-n*0.787, 0.715-c*0.715+n*0.715, 0.072+c*0.928+n*0.072]];
+    var S = [[0.213+0.787*s, 0.715-0.715*s, 0.072-0.072*s],
+             [0.213-0.213*s, 0.715+0.285*s, 0.072-0.072*s],
+             [0.213-0.213*s, 0.715-0.715*s, 0.072+0.928*s]];
+    var m = [[0,0,0],[0,0,0],[0,0,0]];
+    for(var i=0;i<3;i++) for(var j=0;j<3;j++) m[i][j] = b*(S[i][0]*H[0][j] + S[i][1]*H[1][j] + S[i][2]*H[2][j]);
+    return m;
+  }
+  // Returns a canvas of `img` with the tint baked in. No ctx.filter (older iOS Safari lacks it). If the pixels can't be
+  // read, falls back to ctx.filter, then to the untinted picture.
+  function outfitTintCanvas(img, t){
+    var c = document.createElement("canvas"); c.width = img.naturalWidth||img.width; c.height = img.naturalHeight||img.height;
+    var x = c.getContext("2d"); x.drawImage(img, 0, 0);
+    if(!t) return c;
+    try{
+      var d = x.getImageData(0, 0, c.width, c.height), p = d.data, m = outfitTintMatrix(t);
+      for(var i=0;i<p.length;i+=4){
+        var r = p[i], g = p[i+1], b = p[i+2];
+        p[i]   = r*m[0][0]+g*m[0][1]+b*m[0][2];
+        p[i+1] = r*m[1][0]+g*m[1][1]+b*m[1][2];
+        p[i+2] = r*m[2][0]+g*m[2][1]+b*m[2][2];
+      }
+      x.putImageData(d, 0, 0);
+    }catch(e){
+      if("filter" in x){ x.clearRect(0, 0, c.width, c.height); x.filter = outfitFilterCSS(t); x.drawImage(img, 0, 0); x.filter = "none"; }
+    }
+    return c;
+  }
   // The layers to draw over a body frame, bottom to top (OUTFIT_SLOTS order). Pure: the caller passes the state.
   function outfitLayersFor(src, outfit, level, holds){
     var key = outfitFrameKey(src), out = [];
@@ -5013,7 +5086,8 @@
       var id = outfit[slot], it = id && OUTFIT_ITEMS[id];
       if(!it || it.slot!==slot || !outfitUnlocked(it, level, holds)) return;
       if(it.skip.indexOf(key)>-1 || (it.frames && it.frames.indexOf(key)<0)) return;
-      out.push({ slot:slot, id:id, key:key, url:asset("outfit/"+id+"/"+key+".png", OUTFIT_BLOB[id+"/"+key]) });
+      var art = it.art || id;
+      out.push({ slot:slot, id:id, art:art, key:key, tint:it.tint||null, filter:outfitFilterCSS(it.tint), url:asset("outfit/"+art+"/"+key+".png", OUTFIT_BLOB[art+"/"+key]) });
     });
     return out;
   }
@@ -5023,8 +5097,8 @@
   function outfitFollow(stage, host){
     var imgs = {};
     function sync(){
-      var want = {};
-      outfitLayersLive(stage.getAttribute("src")).forEach(function(l){ want[l.slot] = l.url; });
+      var want = {}, filt = {};
+      outfitLayersLive(stage.getAttribute("src")).forEach(function(l){ want[l.slot] = l.url; filt[l.slot] = l.filter; });
       var ref = stage;
       OUTFIT_SLOTS.forEach(function(slot){
         var im = imgs[slot];
@@ -5035,6 +5109,7 @@
           im.addEventListener("error", function(){ im._bad = im.getAttribute("src"); im.hidden = true; });
         }
         if(want[slot] && im.getAttribute("src")!==want[slot]) im.src = want[slot];
+        im.style.filter = filt[slot] || "";
         im.hidden = !want[slot] || im._bad===want[slot];
         im.classList.toggle("wide", stage.classList.contains("wide"));
         if(ref.nextSibling!==im) host.insertBefore(im, ref.nextSibling);
@@ -5051,7 +5126,7 @@
   }
   outfitFollow(document.getElementById("characterStage"), document.getElementById("characterBody"));
   // dev/tests.html only (it sets window.__cruxTest): lets the checks reach the pure outfit functions.
-  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, idle:IMG.mascot.idle, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
+  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, filterCSS:outfitFilterCSS, tintCanvas:outfitTintCanvas, idle:IMG.mascot.idle, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
 
   /* ---------------- the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Rank is
@@ -6749,7 +6824,7 @@
     var x = c.getContext("2d"), env = selectedEnvironment();
     var fonts = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load('100px "Bebas Neue"'), document.fonts.load('30px "IBM Plex Mono"')]).catch(function(){}) : Promise.resolve();
     var meSrc = a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0];
-    var outfit = Promise.all(outfitLayersLive(meSrc).map(function(l){ return loadImage(l.url); }));
+    var outfit = Promise.all(outfitLayersLive(meSrc).map(function(l){ return loadImage(l.url).then(function(im){ return im && l.tint ? outfitTintCanvas(im, l.tint) : im; }); }));
     return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(meSrc), loadImage(IMG.ui.start), fonts, outfit ]).then(function(r){
       var bg = r[0], me = r[1], icon = r[2];
       if(bg){ var sc = W/bg.width, bh = bg.height*sc; x.drawImage(bg, 0, -(bh-H)/2, W, bh); }
