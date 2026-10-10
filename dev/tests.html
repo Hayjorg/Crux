@@ -832,6 +832,16 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("devModeOff", 200);
     expect($("developerSection").hidden, "Hide developer tools didn't hide them");
   });
+  test("Home level chip: tag reads LV + level, ring var is set, head picture is clipped inside the disc", async function(){
+    var s = clone(TEMPLATE); s.settings.devLevel = 25;
+    await boot(s); await goHome();
+    var chip = q(".level-chip"), tag = q(".level-chip .lv-tag"), av = q(".level-chip .avatar");
+    expect(chip && tag && av, "level chip pieces are missing");
+    expect(tag.textContent.replace(/\s+/g," ").trim().toUpperCase()==="LV 25", "tag says '"+tag.textContent+"'");
+    expect(chip.style.getPropertyValue("--xp")!=="" && +chip.style.getPropertyValue("--xp")>=2, "ring --xp isn't set: "+chip.style.getPropertyValue("--xp"));
+    expect(getComputedStyle(av).overflow==="hidden", "avatar doesn't clip the head picture to its disc");
+    expect(Math.round(av.getBoundingClientRect().width)===38, "avatar isn't 38px wide");
+  });
   test("Celebration card: reaching a gym's level shows its card and Take a look moves you in", async function(){
     var s = clone(TEMPLATE); s.settings.devLevel = 0; s.settings.devMode = true;
     await boot(s); await goHome(); await click("openSettingsBtn", 300);
