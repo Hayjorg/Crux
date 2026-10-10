@@ -365,6 +365,13 @@
      pixel-identical; hidden for blinks and motion clips, which draw their own eyes. */
   .character-wander img.character-face{position:absolute;inset:0;width:100%;height:100%;filter:none;pointer-events:none;cursor:default;}
   .character-wander img.character-face[hidden]{display:none;}
+  /* Outfit layers: transparent delta art on the same 2:3 canvas as the sprite, stacked exactly over it. */
+  .character-wander img.outfit-layer{position:absolute;inset:0;width:100%;height:100%;filter:none;pointer-events:none;cursor:default;}
+  .wl-climber img.outfit-layer{position:absolute;left:0;top:0;filter:none;pointer-events:none;}
+  .cel-cheerbox img.outfit-layer{position:absolute;left:0;top:0;filter:none;}
+  img.outfit-layer[hidden]{display:none !important;}
+  .picker-thumb.outfit-thumb{position:relative;}
+  .picker-thumb.outfit-thumb img{position:absolute;inset:0;object-fit:contain;padding:4px;}
   .character-name{font-family:"Bebas Neue",sans-serif;font-size:19px;letter-spacing:0.02em;margin:4px 0 1px;}
   .character-sub{font-size:11.5px;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;margin:0 0 4px;}
   .character-hint{font-size:11px;color:var(--text-dim);margin:0;}
@@ -1702,6 +1709,11 @@
       <p class="settings-section-hint">Decorate with any gym you've unlocked. Auto always shows your newest.</p>
       <div class="picker-grid" id="environmentPickerGrid"></div>
     </div>
+    <div class="settings-section" id="outfitPickerSection">
+      <p class="settings-section-title">Outfit</p>
+      <p class="settings-section-hint">Dress your climber. Pieces unlock as you level up and climb the Wall.</p>
+      <div class="picker-grid" id="outfitPickerGrid"></div>
+    </div>
     <div class="settings-section">
       <p class="settings-section-title">Decorate</p>
       <p class="settings-section-hint">Tap any number of these on or off — they place themselves in the room. Each gym you unlock adds five of its own.</p>
@@ -1892,6 +1904,27 @@
   ];
 
   /* ---------------- state ---------------- */
+  /* ---------------- outfit (climber layers): the one data table ---------------- */
+  // Each item is a transparent DELTA layer, same canvas as the body frame, drawn over it:
+  //   assets/outfit/<item id>/<folder>/<name>.png   (folder/name = the body frame, e.g. idle/idle-01)
+  // To add a colourway or item, add one row here (and its art folder); nothing else changes.
+  //   slot    one of OUTFIT_SLOTS. One item per slot.
+  //   unlock  derived, never stored: any listed rule met = unlocked. level = state.level, holds = Wall holds
+  //           (wallInfo().holds). No rule = always unlocked.
+  //   frames  null = draw on every frame that is not in skip; or a list of "folder/name" keys that have art.
+  //   skip    frames where this layer must not draw (art doesn't fit that pose).
+  // frames/skip come from dev/outfit/export/manifest.json (the art export); null/[] until the art is exported.
+  var OUTFIT_SLOTS = ["shoes", "chalkbag", "headband"]; // draw order, bottom to top
+  var OUTFIT_ITEMS = {
+    "teal-knit": { slot:"headband", name:"Teal knit headband", unlock:{ level:3 },            frames:null, skip:[] },
+    "teal":      { slot:"chalkbag", name:"Teal chalk bag",     unlock:{ level:5, holds:10 },  frames:null, skip:[] },
+    "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:[] }
+  };
+  var OUTFIT_SLOT_NAMES = { headband:"Headband", chalkbag:"Chalk bag", shoes:"Shoes" };
+  // Uploaded copies of the layer art, keyed "<item id>/<folder>/<name>" -> blob id. EMPTY until Claude
+  // uploads assets/outfit/ to the Artifact (hard rule 2); an item with no id here only works locally.
+  var OUTFIT_BLOB = {};
+
   function defaultState(){
     return {
       version:2,
@@ -1918,7 +1951,9 @@
       // A few accessories on by default (new installs only — Object.assign in loadState()
       // never overwrites an existing save's own decorations array) so a brand-new Garage
       // reads as lived-in on first look, not an empty test room waiting for Customize.
-      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[] },
+      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[],
+        // outfit: equipped item id per slot (see OUTFIT_ITEMS), or null. Whether it shows is derived from level / Wall holds.
+        outfit:{ headband:null, chalkbag:null, shoes:null } },
       sessions:[],
       // One entry per climb *at one place*: {id, name, location, createdAt}. Attempts point
       // at these by projectId (see linkProjects), so same-name climbs at different gyms stay apart.
@@ -2028,6 +2063,13 @@
       merged.character.decorPositionsByEnv = { garage: oldChar.decorPositions };
     }
     delete merged.character.decorPositions;
+    // Outfit is additive: older saves and backups have none. Keep only string ids (or null) per slot; other keys and
+    // unknown ids are left alone, they just don't draw.
+    var o = migrated.character && migrated.character.outfit, out = { headband:null, chalkbag:null, shoes:null };
+    if(o && typeof o==="object" && !Array.isArray(o)){
+      Object.keys(o).forEach(function(k){ out[k] = (typeof o[k]==="string" && o[k]) ? o[k] : (k in out ? null : o[k]); });
+    }
+    merged.character.outfit = out;
     backfillSeq(merged);
     linkProjects(merged);
     return merged;
@@ -2305,7 +2347,27 @@
         + '</button>';
     }).join("");
   }
+  // One group per slot: "None" plus every item for it, locked ones greyed with how to unlock them.
+  function outfitItemsHTML(){
+    var worn = state.character.outfit || {}, lvl = state.level, holds = outfitHolds();
+    return OUTFIT_SLOTS.slice().reverse().map(function(slot){
+      var html = '<p class="picker-group">'+escapeHtml(OUTFIT_SLOT_NAMES[slot]||slot)+'</p>'
+        + '<button type="button" class="picker-item'+(worn[slot] ? '' : ' selected')+'" data-outfit-slot="'+slot+'" data-outfit-item="">'
+        + '<div class="picker-thumb auto-thumb">NONE</div><span class="picker-name">Plain</span></button>';
+      Object.keys(OUTFIT_ITEMS).filter(function(id){ return OUTFIT_ITEMS[id].slot===slot; }).forEach(function(id){
+        var it = OUTFIT_ITEMS[id], ok = outfitUnlocked(it, lvl, holds);
+        var layer = asset("outfit/"+id+"/idle/idle-01.png", OUTFIT_BLOB[id+"/idle/idle-01"]);
+        html += '<button type="button" class="picker-item'+(ok ? '' : ' locked')+(worn[slot]===id ? ' selected' : '')+'" '
+          + (ok ? 'data-outfit-slot="'+slot+'" data-outfit-item="'+id+'"' : 'disabled')+'>'
+          + '<div class="picker-thumb outfit-thumb"><img src="'+IMG.mascot.idle[0]+'" alt=""><img src="'+layer+'" alt=""></div>'
+          + '<span class="picker-name">'+escapeHtml(it.name)+'</span>'
+          + (ok ? '' : '<span class="picker-lock">'+escapeHtml(outfitHint(it))+'</span>') + '</button>';
+      });
+      return html;
+    }).join("");
+  }
   function renderCustomizeModal(){
+    document.getElementById("outfitPickerGrid").innerHTML = outfitItemsHTML();
     document.getElementById("environmentPickerGrid").innerHTML = pickerItemsHTML(
       ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
       state.character.selectedEnvironmentId, "pick-env", "cover"
@@ -3111,8 +3173,9 @@
       pic:'<span class="cel-badgewrap"><img src="'+IMG.ui.badge+'" alt=""><b>'+n+'</b></span><span class="cel-cheerbox"><img data-cheer src="'+IMG.ui.cheer[0]+'" alt=""></span>',
       text:"Every attempt you log adds up. Nice climbing.", primary:"Keep climbing",
       onShow:function(box){
-        if(prefersReducedMotion) return null;
         var im = box.querySelector("img[data-cheer]"), seq = [0,1,2,1,0,2], i = 0;
+        outfitFollow(im, im.parentNode);
+        if(prefersReducedMotion) return null;
         var t = setInterval(function(){ i++; im.src = IMG.ui.cheer[seq[i % seq.length]]; }, 260);
         return function(){ clearInterval(t); };
       } });
@@ -4553,9 +4616,13 @@
     return local ? "local" : "blob";
   })();
   // An entry with no blobId exists only in assets/ (not uploaded to the Artifact yet).
+  var ASSET_FILE = {}; // address -> file, so a frame's address (even a /_blob/ one) can be traced back to its file
   function asset(file, blobId){
-    if(ASSET_SOURCE==="local" || !blobId){ var v = window.__CRUX_V && window.__CRUX_V[file]; return "assets/"+file+(v ? "?v="+v : ""); }
-    return "/_blob/"+blobId;
+    var u;
+    if(ASSET_SOURCE==="local" || !blobId){ var v = window.__CRUX_V && window.__CRUX_V[file]; u = "assets/"+file+(v ? "?v="+v : ""); }
+    else u = "/_blob/"+blobId;
+    ASSET_FILE[u] = file;
+    return u;
   }
   var IMG = {
     garage: {
@@ -4795,6 +4862,74 @@
     }
     // ==== END THE WALL ====
   };
+
+  /* ---------------- outfit layers (see OUTFIT_ITEMS) ---------------- */
+  // A body frame's address -> "folder/name" (e.g. "idle/idle-01"), the key the layer art and the table use.
+  function outfitFrameKey(src){
+    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/default\/([^\/]+\/[^\/]+)\.png$/.exec(f);
+    return m ? m[1] : null;
+  }
+  // `holds` may be a number or a function (only called if the level rule didn't already unlock it).
+  function outfitUnlocked(item, level, holds){
+    var u = item.unlock || {}, any = false;
+    if(u.level!=null){ any = true; if(level>=u.level) return true; }
+    if(u.holds!=null){ any = true; if((typeof holds==="function" ? holds() : holds)>=u.holds) return true; }
+    return !any;
+  }
+  function outfitHint(item){
+    var u = item.unlock || {}, p = [];
+    if(u.level!=null) p.push("Level "+u.level);
+    if(u.holds!=null) p.push(u.holds+" Wall holds");
+    return p.join(" or ");
+  }
+  function outfitHolds(){ return WALL_ENABLED ? wallInfo().holds : 0; }
+  // The layers to draw over a body frame, bottom to top (OUTFIT_SLOTS order). Pure: the caller passes the state.
+  function outfitLayersFor(src, outfit, level, holds){
+    var key = outfitFrameKey(src), out = [];
+    if(!key || !outfit) return out;
+    OUTFIT_SLOTS.forEach(function(slot){
+      var id = outfit[slot], it = id && OUTFIT_ITEMS[id];
+      if(!it || it.slot!==slot || !outfitUnlocked(it, level, holds)) return;
+      if(it.skip.indexOf(key)>-1 || (it.frames && it.frames.indexOf(key)<0)) return;
+      out.push({ slot:slot, id:id, key:key, url:asset("outfit/"+id+"/"+key+".png", OUTFIT_BLOB[id+"/"+key]) });
+    });
+    return out;
+  }
+  function outfitLayersLive(src){ return outfitLayersFor(src, state.character.outfit, state.level, outfitHolds); }
+  // Keeps a stack of layer images in `host`, directly after `stage`, matching whatever frame `stage` shows.
+  var OUTFIT_FOLLOWERS = [];
+  function outfitFollow(stage, host){
+    var imgs = {};
+    function sync(){
+      var want = {};
+      outfitLayersLive(stage.getAttribute("src")).forEach(function(l){ want[l.slot] = l.url; });
+      var ref = stage;
+      OUTFIT_SLOTS.forEach(function(slot){
+        var im = imgs[slot];
+        if(!im){
+          if(!want[slot]) return;
+          im = imgs[slot] = document.createElement("img");
+          im.className = "outfit-layer"; im.alt = ""; im.draggable = false; im.setAttribute("aria-hidden", "true");
+          im.addEventListener("error", function(){ im._bad = im.getAttribute("src"); im.hidden = true; });
+        }
+        if(want[slot] && im.getAttribute("src")!==want[slot]) im.src = want[slot];
+        im.hidden = !want[slot] || im._bad===want[slot];
+        im.classList.toggle("wide", stage.classList.contains("wide"));
+        if(ref.nextSibling!==im) host.insertBefore(im, ref.nextSibling);
+        ref = im;
+      });
+    }
+    new MutationObserver(sync).observe(stage, { attributes:true, attributeFilter:["src", "class"] });
+    OUTFIT_FOLLOWERS.push({ host:host, sync:sync });
+    sync();
+  }
+  function outfitRefresh(){
+    OUTFIT_FOLLOWERS = OUTFIT_FOLLOWERS.filter(function(f){ return f.host.isConnected; });
+    OUTFIT_FOLLOWERS.forEach(function(f){ f.sync(); });
+  }
+  outfitFollow(document.getElementById("characterStage"), document.getElementById("characterBody"));
+  // dev/tests.html only (it sets window.__cruxTest): lets the checks reach the pure outfit functions.
+  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, idle:IMG.mascot.idle, cheer:IMG.ui.cheer };
 
   /* ---------------- the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Rank is
@@ -5316,6 +5451,7 @@
     // stomp on it. playMotion() itself restores the resting pose once it finishes.
     if(!motionPlaying && img.getAttribute("src")!==stage.img) img.src = stage.img;
     syncFace();
+    outfitRefresh();
     renderSceneEnvironment(selectedEnvironment(), stage);
     // Quick-glance level badge floating over the art — reuses the climber's resting pose
     // as the avatar rather than needing a separate asset.
@@ -5827,6 +5963,7 @@
   var WCW = 106, WCH = 159, wallIdleT = null, wallIdleI = 0, wallBlinkAt = 0, wallAt = 0;
   // The climber's frame. The two summit-flag frames are wider than the others (extra canvas each side so the
   // flag fits), so they are drawn 141% wide, shifted back so the head stays where it was.
+  outfitFollow(wallCImg, wallClimber);
   function wallShow(src, wide){ wallCImg.classList.toggle("wide", !!wide); wallCImg.src = src; }
   function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px)"; }
   function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
@@ -6175,6 +6312,20 @@
     renderCharacterCard();
     renderCustomizeModal();
   });
+  document.getElementById("outfitPickerGrid").addEventListener("click", function(e){
+    var btn = e.target.closest(".picker-item");
+    if(!btn || btn.disabled) return;
+    var slot = btn.getAttribute("data-outfit-slot");
+    if(!slot || OUTFIT_SLOTS.indexOf(slot)<0) return;
+    state.character.outfit[slot] = btn.getAttribute("data-outfit-item") || null;
+    saveState();
+    outfitRefresh();
+    renderCustomizeModal();
+  });
+  // A layer file that isn't there yet (art not exported or uploaded) just doesn't show.
+  document.getElementById("outfitPickerGrid").addEventListener("error", function(e){
+    if(e.target.tagName==="IMG") e.target.style.visibility = "hidden";
+  }, true);
   document.getElementById("decoratePickerGrid").addEventListener("click", function(e){
     var btn = e.target.closest(".picker-item");
     if(!btn) return;
@@ -6475,7 +6626,9 @@
     var W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
     var x = c.getContext("2d"), env = selectedEnvironment();
     var fonts = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load('100px "Bebas Neue"'), document.fonts.load('30px "IBM Plex Mono"')]).catch(function(){}) : Promise.resolve();
-    return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0]), loadImage(IMG.ui.start), fonts ]).then(function(r){
+    var meSrc = a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0];
+    var outfit = Promise.all(outfitLayersLive(meSrc).map(function(l){ return loadImage(l.url); }));
+    return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(meSrc), loadImage(IMG.ui.start), fonts, outfit ]).then(function(r){
       var bg = r[0], me = r[1], icon = r[2];
       if(bg){ var sc = W/bg.width, bh = bg.height*sc; x.drawImage(bg, 0, -(bh-H)/2, W, bh); }
       else { var base = x.createLinearGradient(0, 0, 0, H); base.addColorStop(0, "#5A3A1C"); base.addColorStop(1, "#2A1A0C"); x.fillStyle = base; x.fillRect(0, 0, W, H); }
@@ -6484,7 +6637,7 @@
       g = x.createLinearGradient(0, H-420, 0, H); g.addColorStop(0, "rgba(14,8,3,0)"); g.addColorStop(1, "rgba(14,8,3,0.7)"); x.fillStyle = g; x.fillRect(0, H-420, W, 420);
       // your climber, cheering, standing on the bottom edge
       x.fillStyle = "rgba(0,0,0,0.32)"; x.beginPath(); x.ellipse(W-330, 1266, 170, 26, 0, 0, Math.PI*2); x.fill();
-      if(me) x.drawImage(me, W-680, 347, 700, 1050);
+      if(me){ x.drawImage(me, W-680, 347, 700, 1050); r[4].forEach(function(l){ if(l) x.drawImage(l, W-680, 347, 700, 1050); }); }
       x.shadowColor = "rgba(0,0,0,0.55)"; x.shadowBlur = 14; x.shadowOffsetY = 3;
       // brand
       if(icon) x.drawImage(icon, 64, 44, 96, 96*icon.height/icon.width);
