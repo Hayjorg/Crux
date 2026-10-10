@@ -12,6 +12,10 @@ $html = [IO.File]::ReadAllText((Join-Path $app "crux.html"))
 
 # every image the app can ask for
 $used = [regex]::Matches($html, 'asset\("([^"]+)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
+# the outfit layers are looked up by name at run time ("outfit/" + item + "/" + frame), so the pattern above can't see them
+$assetsRoot = (Join-Path $app "assets") + "\"
+$outfitFiles = @(Get-ChildItem (Join-Path $app "assets\outfit") -Recurse -Filter *.png -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName.Substring($assetsRoot.Length).Replace("\", "/") })
+$used = @($used) + $outfitFiles | Sort-Object -Unique
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
 New-Item -ItemType Directory -Force (Join-Path $Out "assets"), (Join-Path $Out "icons") | Out-Null
 $hash = [ordered]@{}; $bytes = 0
