@@ -1094,7 +1094,8 @@ and the project rules. It runs on its own private copy of the data, never your r
     var O = W.__cruxOutfit, src = O.idle[0], all = { headband:"teal-knit", chalkbag:"teal", shoes:"blue" };
     expect(O.frameKey(src)==="idle/idle-01", "frame key: "+O.frameKey(src));
     expect(O.layersFor(src, all, 40, 0).map(function(l){ return l.slot; }).join()==="shoes,chalkbag,headband", "stack order");
-    expect(O.layersFor(src, all, 40, 0)[0].url.indexOf("outfit/blue/idle/idle-01.png")>=0, "layer address: "+O.layersFor(src, all, 40, 0)[0].url);
+    var u0 = O.layersFor(src, all, 40, 0)[0].url;
+    expect(u0.indexOf("outfit/blue/idle/idle-01.png")>=0 || (O.blob["blue/idle/idle-01"] && u0.indexOf(O.blob["blue/idle/idle-01"])>=0), "layer address: "+u0);
     expect(!O.layersFor(src, all, 1, 0).length, "locked items drew");
     expect(!O.layersFor(src, { headband:null, chalkbag:null, shoes:null }, 40, 0).length, "unequipped drew");
     expect(!O.layersFor(src, { headband:"nope", chalkbag:"blue" }, 40, 0).length, "unknown id or wrong slot drew");
@@ -1112,10 +1113,11 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(o.headband==="teal-knit" && o.chalkbag==="teal" && o.shoes==="blue", "saved outfit: "+JSON.stringify(o));
     var kids = qa("#characterBody > img").map(function(i){ return i.className+"|"+(i.getAttribute("src")||""); });
     // (the layer art may not be exported/uploaded yet, in which case each one hides itself; order is what matters here)
-    var layers = qa("#characterBody img.outfit-layer");
+    var O = W.__cruxOutfit, layers = qa("#characterBody img.outfit-layer");
     expect(layers.length===3, "layers: "+layers.length+" of "+kids.join(" ; "));
     expect(layers[0].previousElementSibling.id==="characterStage", "layers aren't directly over the sprite");
-    expect(layers.map(function(i){ return i.getAttribute("src").replace(/^.*outfit\/([^\/]+)\/.*$/, "$1"); }).join()==="blue,teal,teal-knit", "order: "+layers.map(function(i){ return i.getAttribute("src"); }).join(" "));
+    var ids = layers.map(function(i){ var u = i.getAttribute("src"); var m = u.match(/outfit\/([^\/]+)\//); if(m) return m[1]; var k = Object.keys(O.blob).filter(function(k){ return u.indexOf(O.blob[k])>=0; })[0]; return k ? k.split("/")[0] : u; });
+    expect(ids.join()==="blue,teal,teal-knit", "order: "+ids.join(" ")+" / "+layers.map(function(i){ return i.getAttribute("src"); }).join(" "));
     await click(q('#outfitPickerGrid [data-outfit-slot="headband"][data-outfit-item=""]'), 200);
     expect(saved().character.outfit.headband===null, "Plain didn't clear the headband");
   });
