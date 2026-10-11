@@ -102,6 +102,18 @@ They live in the existing `headband` slot (one head item at a time), as 24 rows 
 - **Picker**: Customize > Outfit > Headwear shows chips by `kind` (Headbands / Beanies / Caps / Bandanas), earliest unlock first.
 - **Blob ids** (`OUTFIT_BLOB["beanie/idle/idle-01"]` etc.) are empty until Claude uploads the three folders (rule 2).
 
+## Accessories: buckets, headlamps, berets, shirts, shorts (2026-10-11)
+
+Same neutral-grey delta-layer + `tint:{color}` method as the hats above (`OUTFIT_GREY` 148).
+- **Headwear** (slot `headband`): new `kind`s `bucket`, `headlamp`, `beret` (6 colours each, `art:` = the kind). The picker chips scroll sideways. `visor` is held back.
+- **New slots `shirt` and `shorts`** (`state.character.outfit` gains both, old saves/backups -> `null` in `normalizeState()`). `OUTFIT_SLOTS` draw order is
+  shoes, chalkbag, shirt, shorts, headband. A layer REPLACES the cream tee / dark shorts by alpha-over (masks come from the default frames; variant frames
+  have the same alpha, so it works on variants too). Picker order is `OUTFIT_PICKER_ORDER`.
+- **Skips:** shirt skips `move/move-chalk-clap-1..3` (dust patches); shorts skips `rest/rest-day` and `climb/climb-reach-left`, `climb/climb-pull`
+  (mask misses the far leg's shorts, looked two-tone). Skipped frames show the original art and the file is not shipped.
+- **Art** in `assets/outfit/{bucket,headlamp,beret,shirt,shorts}/` (web copies from `dev/outfit/out/{hats_more,shirt_shorts}_assets`); `build-site.ps1` covers `assets/outfit/**`.
+- **Blob ids** for all five folders are empty in `OUTFIT_BLOB` until Claude uploads them (rule 2).
+
 ## Projects (climb tracking)
 
 A project is **one named climb at one gym or crag**, and attempts link to it by `projectId`.

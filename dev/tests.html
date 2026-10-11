@@ -1149,9 +1149,9 @@ and the project rules. It runs on its own private copy of the data, never your r
     ids.forEach(function(id){
       var it = O.items[id], art = it.art || id;
       expect(arts[art] || (it.tint && it.tint.color), id+": art folder '"+art+"' has no OUTFIT_BLOB entries");
-      expect(it.slot==="headband" || it.slot==="chalkbag" || it.slot==="shoes", id+": bad slot");
+      expect(["headband", "chalkbag", "shoes", "shirt", "shorts"].indexOf(it.slot)>-1, id+": bad slot");
       expect(/^[a-z]+(-[a-z]+)*$/.test(id), id+": id isn't kebab-case");
-      if(it.tint && it.tint.color){ expect(/^#[0-9a-f]{6}$/i.test(it.tint.color) && art!==id && it.kind, id+": bad colour tint "+JSON.stringify(it.tint)); }
+      if(it.tint && it.tint.color){ expect(/^#[0-9a-f]{6}$/i.test(it.tint.color) && art!==id && (it.kind || it.slot==="shirt" || it.slot==="shorts"), id+": bad colour tint "+JSON.stringify(it.tint)); }
       else if(it.tint){ expect(isFinite(it.tint.hue) && it.tint.sat>=0 && it.tint.sat<=4 && it.tint.bri>=0 && it.tint.bri<=2.5, id+": bad tint "+JSON.stringify(it.tint)); }
       else expect(art===id, id+": untinted rows must draw their own art");
     });
@@ -1221,21 +1221,22 @@ and the project rules. It runs on its own private copy of the data, never your r
     await boot(clone(TEMPLATE));
     var O = W.__cruxOutfit, ids = Object.keys(O.items), heads = ids.filter(function(i){ return O.items[i].slot==="headband"; });
     var hats = heads.filter(function(i){ return O.items[i].kind && O.items[i].kind!=="headband"; });
-    expect(hats.length===24, "expected 24 hats, got "+hats.length);
+    expect(hats.length===42, "expected 42 hats, got "+hats.length);
     var kinds = O.headKinds.map(function(k){ return k.id; });
     var names = {}, arts = {};
     hats.forEach(function(id){
       var it = O.items[id], u = it.unlock || {};
       expect(kinds.indexOf(it.kind)>0 && id.indexOf(it.kind+"-")===0 && it.art===it.kind, id+": kind/art "+it.kind+"/"+it.art);
       expect(typeof it.name==="string" && it.name.indexOf(" \u00b7 ")>0 && !names[it.name], id+": name "+it.name); names[it.name] = 1;
-      expect(u.level==null || (u.level>=2 && u.level<=30 && u.level%1===0), id+": level "+u.level);
+      expect(u.level==null || (u.level>=2 && u.level<=34 && u.level%1===0), id+": level "+u.level);
       expect(u.holds==null || (u.holds>=1 && u.holds<=100 && u.holds%1===0), id+": holds "+u.holds);
       expect(u.level!=null, id+": needs a level rule");
       expect(it.tint && /^#[0-9a-f]{6}$/i.test(it.tint.color), id+": tint "+JSON.stringify(it.tint));
       expect(it.frames===null && Array.isArray(it.skip), id+": frames/skip");
       arts[it.art] = 1;
     });
-    kinds.slice(1).forEach(function(k){ expect(hats.filter(function(i){ return O.items[i].kind===k; }).length===8, k+": expected 8 colourways"); });
+    var WANT = { beanie:8, cap:8, bandana:8, bucket:6, headlamp:6, beret:6 };
+    kinds.slice(1).forEach(function(k){ expect(hats.filter(function(i){ return O.items[i].kind===k; }).length===WANT[k], k+": expected "+WANT[k]+" colourways"); });
     for(var art of Object.keys(arts)){
       var missing = [];
       for(var f of HAT_FRAMES){
@@ -1272,7 +1273,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     var s = clone(TEMPLATE); s.settings.devLevel = 12;
     await boot(s); await openCustomize();
     var grid = q("#outfitPickerGrid"), chips = qa("#outfitPickerGrid .picker-chips [data-outfit-kind]");
-    expect(chips.map(function(c){ return c.textContent; }).join()==="Headbands,Beanies,Caps,Bandanas", "chips: "+chips.map(function(c){ return c.textContent; }).join());
+    expect(chips.map(function(c){ return c.textContent; }).join()==="Headbands,Beanies,Caps,Bandanas,Buckets,Berets,Headlamps", "chips: "+chips.map(function(c){ return c.textContent; }).join());
     expect(qa("#outfitPickerGrid [data-outfit-item^='beanie']").length===0 && qa("#outfitPickerGrid [data-outfit-item]").length>0, "the default group should be Headbands only");
     await click(q('#outfitPickerGrid [data-outfit-kind="beanie"]'), 200);
     var items = qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Beanie/.test((b.querySelector(".picker-name")||{}).textContent||""); });
@@ -1307,6 +1308,106 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().character.outfit.headband==="bandana-orange", "hat id dropped on load");
     var json = await exportJson(); await boot(clone(TEMPLATE)); await importText(json);
     expect(saved().character.outfit.headband==="bandana-orange", "hat id lost in a backup round trip");
+  });
+
+  // ---- Accessories: bucket hats, headlamps, berets (headband slot) + the new shirt and shorts slots ----
+  var ACC_SKIP = { shirt:["move/move-chalk-clap-1", "move/move-chalk-clap-2", "move/move-chalk-clap-3"], shorts:["rest/rest-day", "climb/climb-reach-left", "climb/climb-pull"] };
+  test("Accessories: every shirt/shorts/bucket/headlamp/beret row has valid fields and its art for every frame except skip", async function(){
+    await boot(clone(TEMPLATE));
+    var O = W.__cruxOutfit, ids = Object.keys(O.items), want = { shirt:10, shorts:8, bucket:6, headlamp:6, beret:6 };
+    expect(O.slots.join()==="shoes,chalkbag,shirt,shorts,headband", "slot order: "+O.slots.join());
+    var counts = {}, arts = {}, names = {};
+    ids.forEach(function(id){
+      var it = O.items[id], g = (it.slot==="shirt" || it.slot==="shorts") ? it.slot : (want[it.kind] ? it.kind : null);
+      if(!g) return;
+      counts[g] = (counts[g]||0)+1; arts[it.art] = it;
+      expect(it.art===g && it.tint && /^#[0-9a-f]{6}$/i.test(it.tint.color), id+": art/tint");
+      expect(it.unlock && it.unlock.level>=3 && it.unlock.level<=34, id+": level "+JSON.stringify(it.unlock));
+      expect(it.name.indexOf(" · ")>0 && !names[it.name], id+": name "+it.name); names[it.name] = 1;
+      expect(it.frames===null && it.skip.join()===(ACC_SKIP[it.slot]||[]).join(), id+": skip "+it.skip.join());
+    });
+    Object.keys(want).forEach(function(g){ expect(counts[g]===want[g], g+": expected "+want[g]+", got "+counts[g]); });
+    for(var art of Object.keys(arts)){
+      var skip = arts[art].skip, missing = [], extra = [];
+      for(var f of HAT_FRAMES){
+        var r = await fetch("../assets/outfit/"+art+"/"+f+".png"), skipped = skip.indexOf(f)>-1;
+        if(!skipped && !r.ok) missing.push(f);
+        if(skipped && r.ok) extra.push(f);
+      }
+      expect(!missing.length, art+": missing frames "+missing.join(","));
+      // the art itself must not carry a skipped frame (publish size), except hat folders which have none to skip
+      expect(!extra.length, art+": skipped frames shipped "+extra.join(","));
+    }
+    // the first shirt / shorts options come early
+    expect(O.items["tee-red"].unlock.level===4 && O.items["shorts-khaki"].unlock.level===6, "first shirt/shorts unlock levels");
+  });
+  test("Accessories: old saves and backups get empty shirt/shorts slots; ids survive reload and a backup round trip; unknown ids are inert", async function(){
+    var old = clone(TEMPLATE); old.character.outfit = { headband:"teal-knit", chalkbag:"teal", shoes:"blue" };
+    await boot(old);
+    var o = saved().character.outfit;
+    expect(o.shirt===null && o.shorts===null && o.headband==="teal-knit" && o.shoes==="blue", "migrated outfit: "+JSON.stringify(o));
+    var none = clone(TEMPLATE); delete none.character.outfit; await boot(none);
+    o = saved().character.outfit; expect(o.shirt===null && o.shorts===null && o.headband===null, "no outfit at all: "+JSON.stringify(o));
+    var s = clone(TEMPLATE); s.settings.devLevel = 34; s.character.outfit = { headband:"beret-black", chalkbag:null, shoes:null, shirt:"tee-red", shorts:"shorts-navy" };
+    await boot(s);
+    o = saved().character.outfit; expect(o.shirt==="tee-red" && o.shorts==="shorts-navy" && o.headband==="beret-black", "ids dropped on load: "+JSON.stringify(o));
+    var json = await exportJson(); await boot(clone(TEMPLATE)); await importText(json);
+    o = saved().character.outfit; expect(o.shirt==="tee-red" && o.shorts==="shorts-navy", "ids lost in a backup round trip");
+    var legacy = JSON.parse(json); delete legacy.data.character.outfit.shirt; delete legacy.data.character.outfit.shorts;
+    await boot(clone(TEMPLATE)); await importText(JSON.stringify(legacy));
+    o = saved().character.outfit; expect(o.shirt===null && o.shorts===null, "legacy backup: "+JSON.stringify(o));
+  });
+  test("Accessories: unlocks are derived (level or Wall holds); a locked item never draws", async function(){
+    await boot(clone(TEMPLATE));
+    var O = W.__cruxOutfit, white = O.items["tee-white"], sand = O.items["shorts-sand"], tee = O.items["tee-red"];
+    expect(!O.unlocked(tee, 3, 0) && O.unlocked(tee, 4, 0), "tee-red at level 4");
+    expect(!O.unlocked(white, 33, 64) && O.unlocked(white, 34, 0) && O.unlocked(white, 1, 65), "tee-white: level 34 or 65 holds");
+    expect(!O.unlocked(sand, 32, 59) && O.unlocked(sand, 33, 0) && O.unlocked(sand, 1, 60), "shorts-sand: level 33 or 60 holds");
+    expect(!O.layersFor(O.idle[0], { shirt:"tee-white", shorts:"shorts-sand" }, 10, 0).length, "locked shirt/shorts drew");
+    expect(O.layersFor(O.idle[0], { shirt:"tee-white" }, 1, 65).length===1, "holds route didn't draw");
+    // a shirt id in the shorts slot (or the reverse) is ignored
+    expect(!O.layersFor(O.idle[0], { shorts:"tee-red", shirt:"shorts-navy" }, 40, 0).length, "wrong-slot ids drew");
+    expect(O.layersFor(O.idle[0], { headband:"headlamp-black" }, 40, 0)[0].art==="headlamp", "headlamp art");
+  });
+  test("Accessories: stacking order is shoes, chalk bag, shirt, shorts, headwear; skipped frames draw no layer", async function(){
+    await boot(clone(TEMPLATE));
+    var O = W.__cruxOutfit, all = { headband:"beanie-red", chalkbag:"teal", shoes:"blue", shirt:"tee-red", shorts:"shorts-navy" };
+    var L = O.layersFor(O.idle[0], all, 40, 0);
+    expect(L.map(function(l){ return l.slot; }).join()==="shoes,chalkbag,shirt,shorts,headband", "order: "+L.map(function(l){ return l.slot; }));
+    expect(L[2].art==="shirt" && L[3].art==="shorts" && L[2].filter && L[3].filter && L[2].filter!==L[3].filter, "shirt/shorts layers carry their own tints");
+    // on a variant frame as well
+    var slate = O.variantFrame(O.idle[0], "slate");
+    expect(O.layersFor(slate, all, 40, 0).length===5, "layers missing on a variant frame");
+    // skipped frames: find them through the real frame table by key
+    ["move/move-chalk-clap-1", "move/move-chalk-clap-2", "move/move-chalk-clap-3"].forEach(function(f){ expect(O.items["tee-red"].skip.indexOf(f)>-1, "shirt must skip "+f); });
+    expect(O.items["shorts-navy"].skip.indexOf("rest/rest-day")>-1 && O.items["shorts-navy"].skip.indexOf("move/move-chalk-clap-1")<0, "shorts skip list");
+  });
+  test("Accessories: Customize > Outfit has Shirt and Shorts sections; equip persists; new head chips; no horizontal overflow", async function(){
+    var s = clone(TEMPLATE); s.settings.devLevel = 12;
+    await boot(s); await openCustomize();
+    var titles = qa("#outfitPickerGrid .picker-group").map(function(p){ return p.textContent; });
+    expect(titles.join()==="Headwear,Shirt,Shorts,Chalk bag,Shoes", "sections: "+titles.join());
+    var named = function(re){ return qa("#outfitPickerGrid .picker-item").filter(function(b){ return re.test((b.querySelector(".picker-name")||{}).textContent||""); }).length; };
+    expect(named(/^Tee /)===10 && named(/^Shorts /)===8, "item buttons per section: "+named(/^Tee /)+"/"+named(/^Shorts /));
+    await click(q('#outfitPickerGrid [data-outfit-item="tee-red"]'), 200);
+    await click(q('#outfitPickerGrid [data-outfit-item="shorts-navy"]'), 200);
+    var o = saved().character.outfit; expect(o.shirt==="tee-red" && o.shorts==="shorts-navy", "equip not saved: "+JSON.stringify(o));
+    expect(q('#outfitPickerGrid [data-outfit-item="tee-red"]').classList.contains("selected"), "tee not shown selected");
+    var layers = qa("#characterBody img.outfit-layer");
+    expect(layers.length===2 && layers.every(function(i){ return /otint-/.test(i.style.filter); }), "Home layers: "+layers.length);
+    await click(q('#outfitPickerGrid [data-outfit-kind="bucket"]'), 200);
+    expect(qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Bucket Hat/.test((b.querySelector(".picker-name")||{}).textContent||""); }).length===6, "bucket count");
+    await click(q('#outfitPickerGrid [data-outfit-kind="headlamp"]'), 200);
+    expect(qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Headlamp/.test((b.querySelector(".picker-name")||{}).textContent||""); }).length===6, "headlamp count");
+    await click(q('#outfitPickerGrid [data-outfit-kind="beret"]'), 200);
+    await click(q('#outfitPickerGrid [data-outfit-item="beret-black"]'), 200);
+    expect(saved().character.outfit.headband==="beret-black", "beret not saved");
+    var root = W.document.documentElement, grid = q("#outfitPickerGrid");
+    expect(root.scrollWidth<=root.clientWidth+1 && grid.scrollWidth<=grid.clientWidth+1, "page or picker overflows horizontally");
+    await click(q('#outfitPickerGrid [data-outfit-slot="shirt"][data-outfit-item=""]'), 200);
+    expect(saved().character.outfit.shirt===null, "Plain didn't clear the shirt");
+    await boot(JSON.parse(STORE[KEY])); await openCustomize();
+    expect(q('#outfitPickerGrid [data-outfit-item="shorts-navy"]').classList.contains("selected"), "shorts not selected after reload");
   });
 
   // ---- Character variants (palette recolours of the climber) ----
