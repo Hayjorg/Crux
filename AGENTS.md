@@ -80,7 +80,12 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **One resolver:** `climberFrame(src)` / `climberFrameFor(src, id)` maps a default body-frame address to the variant's. Every place that
   draws the climber goes through it (Home stage and clips, avatar chip, Wall via `wallShow()`, celebration, share card, pickers). Never
   put a raw `IMG.mascot.*` / `IMG.wall.cl_*` / `IMG.ui.cheer` address on screen.
-- **Face overlays** stay the default `face/` files: the eyes are untouched, so they line up. Outfit layers stack on variants (frame key is the same).
+- **Face overlays are per-variant (v3, 2026-10-11):** `assets/mascot/climber/variants/<id>/face/face-{neutral,stoked,focused,tired,sheepish,surprised}.png`.
+  `mascotFace(mood)` / `mascotFaceFor(mood, id)` is the resolver (Home idle overlay and the session/summary buddy go through it);
+  default / locked / unknown variant falls back to `default/face/`. Outfit layers stack on variants (frame key is the same).
+- **v3 recolour method:** OKLab frequency separation on the default frames (hue/chroma remapped on the low-frequency layer, the
+  luminance detail kept), so shading, line art and texture survive. Source in `dev/outfit/out/variants3_assets/`; `dev/build-site.ps1`
+  picks up `variants/**` recursively, so `face/` ships too.
 - **Unlocks** are derived from `state.level` (`CLIMBER_VARIANTS[id].unlock`), never stored; a saved-but-locked choice draws as default.
 - **Blob ids** for the variant art go in `CLIMBER_VARIANT_BLOB` ("<id>/<folder>/<name>"); empty until Claude uploads them (rule 2).
   `night` exists in dev/outfit but is off-model and held back.
@@ -90,12 +95,24 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 They live in the existing `headband` slot (one head item at a time), as 24 rows in `OUTFIT_ITEMS` (`beanie-red`, `cap-navy`, ...).
 - **Art** is three neutral-grey delta-layer folders, `assets/outfit/<beanie|cap|bandana>/<folder>/<name>.png` (40 frames each, 128-colour
   palette PNGs made by `dev/outfit/compress_hats.py` from `dev/outfit/export/headwear-*`). Rows share a folder via `art:`.
-- **Colour** comes from `tint:{ color:"#rrggbb" }`: each pixel is multiplied per channel by `color / OUTFIT_GREY` (162, the art's mean grey).
+- **Colour** comes from `tint:{ color:"#rrggbb" }`: each pixel is multiplied per channel by `color / OUTFIT_GREY` (148, the art's mean grey).
   DOM layers use an inline SVG `feColorMatrix` filter (`outfitFilterCSS()`), the share card the same numbers in `outfitTintCanvas()`.
   Hue-rotate alone cannot colour a grey, so never use `{hue,sat,bri}` on this art.
 - **Two tint kinds, one path** (`outfitFilterCSS` / `outfitTintMatrix` / `outfitTintCanvas`, merged 2026-10-10 with the colourways): `{hue,sat,bri}` re-hues coloured art (the 23 knit/bag/shoe colourways); `{color}` colourises grey art (hats).
 - **Picker**: Customize > Outfit > Headwear shows chips by `kind` (Headbands / Beanies / Caps / Bandanas), earliest unlock first.
 - **Blob ids** (`OUTFIT_BLOB["beanie/idle/idle-01"]` etc.) are empty until Claude uploads the three folders (rule 2).
+
+## Accessories: buckets, headlamps, berets, shirts, shorts (2026-10-11)
+
+Same neutral-grey delta-layer + `tint:{color}` method as the hats above (`OUTFIT_GREY` 148).
+- **Headwear** (slot `headband`): new `kind`s `bucket`, `headlamp`, `beret` (6 colours each, `art:` = the kind). The picker chips scroll sideways. `visor` is held back.
+- **New slots `shirt` and `shorts`** (`state.character.outfit` gains both, old saves/backups -> `null` in `normalizeState()`). `OUTFIT_SLOTS` draw order is
+  shoes, chalkbag, shirt, shorts, headband. A layer REPLACES the cream tee / dark shorts by alpha-over (masks come from the default frames; variant frames
+  have the same alpha, so it works on variants too). Picker order is `OUTFIT_PICKER_ORDER`.
+- **Skips:** shirt skips `move/move-chalk-clap-1..3` (dust patches); shorts skips `rest/rest-day` and `climb/climb-reach-left`, `climb/climb-pull`
+  (mask misses the far leg's shorts, looked two-tone). Skipped frames show the original art and the file is not shipped.
+- **Art** in `assets/outfit/{bucket,headlamp,beret,shirt,shorts}/` (web copies from `dev/outfit/out/{hats_more,shirt_shorts}_assets`); `build-site.ps1` covers `assets/outfit/**`.
+- **Blob ids** for all five folders are empty in `OUTFIT_BLOB` until Claude uploads them (rule 2).
 
 ## Projects (climb tracking)
 
