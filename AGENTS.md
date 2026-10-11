@@ -85,6 +85,17 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **Blob ids** for the variant art go in `CLIMBER_VARIANT_BLOB` ("<id>/<folder>/<name>"); empty until Claude uploads them (rule 2).
   `night` exists in dev/outfit but is off-model and held back.
 
+## Head items: beanies, caps, bandanas (2026-10-10)
+
+They live in the existing `headband` slot (one head item at a time), as 24 rows in `OUTFIT_ITEMS` (`beanie-red`, `cap-navy`, ...).
+- **Art** is three neutral-grey delta-layer folders, `assets/outfit/<beanie|cap|bandana>/<folder>/<name>.png` (40 frames each, 128-colour
+  palette PNGs made by `dev/outfit/compress_hats.py` from `dev/outfit/export/headwear-*`). Rows share a folder via `art:`.
+- **Colour** comes from `tint:{ color:"#rrggbb" }`: each pixel is multiplied per channel by `color / OUTFIT_GREY` (162, the art's mean grey).
+  DOM layers use an inline SVG `feColorMatrix` filter (`outfitFilterCSS()`), the share card the same numbers in `outfitTintCanvas()`.
+  Hue-rotate alone cannot colour a grey, so never use `{hue,sat,bri}` on this art.
+- **Picker**: Customize > Outfit > Headwear shows chips by `kind` (Headbands / Beanies / Caps / Bandanas), earliest unlock first.
+- **Blob ids** (`OUTFIT_BLOB["beanie/idle/idle-01"]` etc.) are empty until Claude uploads the three folders (rule 2).
+
 ## Projects (climb tracking)
 
 A project is **one named climb at one gym or crag**, and attempts link to it by `projectId`.
