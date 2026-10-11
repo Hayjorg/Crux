@@ -1918,6 +1918,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
+    <div class="settings-section" id="characterPickerSection">
+      <p class="settings-section-title">Character</p>
+      <p class="settings-section-hint">Pick your climber's colours. More unlock as you level up.</p>
+      <div class="picker-grid" id="characterPickerGrid"></div>
+    </div>
     <div class="settings-section" id="arrangeSection">
       <p class="settings-section-title">Arrange room</p>
       <p class="settings-section-hint" id="arrangeHint">Drag your decorations to wherever you like.</p>
@@ -2143,6 +2148,23 @@
     "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:[] }
   };
   var OUTFIT_SLOT_NAMES = { headband:"Headband", chalkbag:"Chalk bag", shoes:"Shoes" };
+  /* ---------------- climber variants (palette recolours of the default climber) ---------------- */
+  // A variant is a full recolour of every body frame: assets/mascot/climber/variants/<id>/<folder>/<name>.png, same
+  // folder/frame names as assets/mascot/climber/default/ (the face/ and px/ folders are not recoloured: the eyes are
+  // untouched, so the default face overlays still line up). The choice is state.character.variant. Whether it can
+  // be worn is derived from state.level (same `unlock` rules as OUTFIT_ITEMS), never stored.
+  // Add a variant = one row here + its art folder (+ blob ids below once uploaded). "night" is held back (off-model).
+  var CLIMBER_VARIANTS = {
+    "default":   { name:"Default",   unlock:{} },
+    "slate":     { name:"Slate",     unlock:{ level:5 } },
+    "sandstone": { name:"Sandstone", unlock:{ level:10 } },
+    "moss":      { name:"Moss",      unlock:{ level:18 } }
+  };
+  var CLIMBER_VARIANT_ORDER = ["default", "slate", "sandstone", "moss"];
+  // Uploaded copies of the variant art, keyed "<variant id>/<folder>/<name>" -> blob id. EMPTY until Claude uploads
+  // assets/mascot/climber/variants/ to the Artifact (hard rule 2); a frame with no id here only works locally.
+  var CLIMBER_VARIANT_BLOB = {
+  };
   // Uploaded copies of the layer art, keyed "<item id>/<folder>/<name>" -> blob id. EMPTY until Claude
   // uploads assets/outfit/ to the Artifact (hard rule 2); an item with no id here only works locally.
   var OUTFIT_BLOB = {
@@ -2294,7 +2316,7 @@
       // A few accessories on by default (new installs only — Object.assign in loadState()
       // never overwrites an existing save's own decorations array) so a brand-new Garage
       // reads as lived-in on first look, not an empty test room waiting for Customize.
-      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[],
+      character:{ colorway:"accent", variant:"default", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[],
         // outfit: equipped item id per slot (see OUTFIT_ITEMS), or null. Whether it shows is derived from level / Wall holds.
         outfit:{ headband:null, chalkbag:null, shoes:null } },
       sessions:[],
@@ -2413,6 +2435,9 @@
       Object.keys(o).forEach(function(k){ out[k] = (typeof o[k]==="string" && o[k]) ? o[k] : (k in out ? null : o[k]); });
     }
     merged.character.outfit = out;
+    // Climber variant (palette recolour): older saves and backups have none. Anything that isn't a known id is "default".
+    var vv = migrated.character && migrated.character.variant;
+    merged.character.variant = (typeof vv==="string" && Object.prototype.hasOwnProperty.call(CLIMBER_VARIANTS, vv)) ? vv : "default";
     backfillSeq(merged);
     linkProjects(merged);
     return merged;
@@ -2702,11 +2727,23 @@
         var layer = asset("outfit/"+id+"/idle/idle-01.png", OUTFIT_BLOB[id+"/idle/idle-01"]);
         html += '<button type="button" class="picker-item'+(ok ? '' : ' locked')+(worn[slot]===id ? ' selected' : '')+'" '
           + (ok ? 'data-outfit-slot="'+slot+'" data-outfit-item="'+id+'"' : 'disabled')+'>'
-          + '<div class="picker-thumb outfit-thumb"><img src="'+IMG.mascot.idle[0]+'" alt=""><img src="'+layer+'" alt=""></div>'
+          + '<div class="picker-thumb outfit-thumb"><img src="'+climberFrame(IMG.mascot.idle[0])+'" alt=""><img src="'+layer+'" alt=""></div>'
           + '<span class="picker-name">'+escapeHtml(it.name)+'</span>'
           + (ok ? '' : '<span class="picker-lock">'+escapeHtml(outfitHint(it))+'</span>') + '</button>';
       });
       return html;
+    }).join("");
+  }
+  // Character: Default plus each palette variant, locked ones greyed with the level that unlocks them.
+  function characterItemsHTML(){
+    var cur = climberVariantId(), lvl = state.level;
+    return CLIMBER_VARIANT_ORDER.map(function(id){
+      var v = CLIMBER_VARIANTS[id], ok = climberVariantUnlocked(id, lvl);
+      return '<button type="button" class="picker-item'+(ok ? '' : ' locked')+(cur===id ? ' selected' : '')+'" '
+        + (ok ? 'data-character-variant="'+id+'"' : 'disabled')+'>'
+        + '<div class="picker-thumb fit-contain"><img src="'+climberFrameFor(IMG.mascot.idle[0], id)+'" alt=""></div>'
+        + '<span class="picker-name">'+escapeHtml(v.name)+'</span>'
+        + (ok ? '' : '<span class="picker-lock">'+escapeHtml(outfitHint({ unlock:v.unlock }))+'</span>') + '</button>';
     }).join("");
   }
   function syncArrangeEntry(){
@@ -2718,6 +2755,7 @@
   }
   function renderCustomizeModal(){
     syncArrangeEntry();
+    document.getElementById("characterPickerGrid").innerHTML = characterItemsHTML();
     document.getElementById("outfitPickerGrid").innerHTML = outfitItemsHTML();
     document.getElementById("environmentPickerGrid").innerHTML = pickerItemsHTML(
       ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
@@ -3521,13 +3559,13 @@
   // 5th, when nothing else unlocks) get one on their own: a card on every level would get in the way of logging.
   function celebrateLevel(n){
     celebrate({ kicker:"Level up", title:"Level "+n, tag:"Keep it going", stand:false,
-      pic:'<span class="cel-badgewrap"><img src="'+IMG.ui.badge+'" alt=""><b>'+n+'</b></span><span class="cel-cheerbox"><img data-cheer src="'+IMG.ui.cheer[0]+'" alt=""></span>',
+      pic:'<span class="cel-badgewrap"><img src="'+IMG.ui.badge+'" alt=""><b>'+n+'</b></span><span class="cel-cheerbox"><img data-cheer src="'+climberFrame(IMG.ui.cheer[0])+'" alt=""></span>',
       text:"Every attempt you log adds up. Nice climbing.", primary:"Keep climbing",
       onShow:function(box){
         var im = box.querySelector("img[data-cheer]"), seq = [0,1,2,1,0,2], i = 0;
         outfitFollow(im, im.parentNode);
         if(prefersReducedMotion) return null;
-        var t = setInterval(function(){ i++; im.src = IMG.ui.cheer[seq[i % seq.length]]; }, 260);
+        var t = setInterval(function(){ i++; im.src = climberFrame(IMG.ui.cheer[seq[i % seq.length]]); }, 260);
         return function(){ clearInterval(t); };
       } });
   }
@@ -4913,7 +4951,8 @@
   function setBuddy(prefix, mood){
     var sprite = document.getElementById(prefix+"Sprite"), face = document.getElementById(prefix+"Face");
     if(!sprite || !IMG || !IMG.mascot) return;
-    if(sprite.getAttribute("src")!==IMG.mascot.idle[0]) sprite.src = IMG.mascot.idle[0];
+    var rest = climberFrame(IMG.mascot.idle[0]);
+    if(sprite.getAttribute("src")!==rest) sprite.src = rest;
     var faces = (typeof MASCOT_FACES!=="undefined" && MASCOT_FACES) || {};
     var broken = typeof mascotMood!=="undefined" && mascotMood && mascotMood.broken;
     var want = faces[mood];
@@ -5224,10 +5263,29 @@
 
   /* ---------------- outfit layers (see OUTFIT_ITEMS) ---------------- */
   // A body frame's address -> "folder/name" (e.g. "idle/idle-01"), the key the layer art and the table use.
+  // Variant frames (mascot/climber/variants/<id>/...) share the default frames' keys, so outfit layers stack on them.
   function outfitFrameKey(src){
-    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/default\/([^\/]+\/[^\/]+)\.png$/.exec(f);
+    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/(?:default|variants\/[a-z0-9-]+)\/([^\/]+\/[^\/]+)\.png$/.exec(f);
     return m ? m[1] : null;
   }
+  // The climber variant to draw: the equipped one if it is known and unlocked, otherwise "default".
+  function climberVariantUnlocked(id, level){
+    var v = CLIMBER_VARIANTS[id];
+    return !!v && outfitUnlocked({ unlock:v.unlock }, level, 0);
+  }
+  function climberVariantId(){
+    var id = (typeof state!=="undefined" && state && state.character) ? state.character.variant : "default";
+    return (typeof id==="string" && climberVariantUnlocked(id, state.level)) ? id : "default";
+  }
+  // THE one resolver: any climber body-frame address (default art) -> the same frame in `variant`. Addresses that are
+  // not default body frames (face/ and px/ overlays, the Wall's scenery, variant frames already) come back unchanged.
+  function climberFrameFor(src, variant){
+    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/default\/((?!face\/|px\/)[^\/]+\/[^\/]+)\.png$/.exec(f);
+    if(!m || !variant || variant==="default" || !CLIMBER_VARIANTS[variant]) return src;
+    var file = "mascot/climber/variants/"+variant+"/"+m[1]+".png";
+    return asset(file, CLIMBER_VARIANT_BLOB[variant+"/"+m[1]]);
+  }
+  function climberFrame(src){ return climberFrameFor(src, climberVariantId()); }
   // `holds` may be a number or a function (only called if the level rule didn't already unlock it).
   function outfitUnlocked(item, level, holds){
     var u = item.unlock || {}, any = false;
@@ -5288,7 +5346,7 @@
   }
   outfitFollow(document.getElementById("characterStage"), document.getElementById("characterBody"));
   // dev/tests.html only (it sets window.__cruxTest): lets the checks reach the pure outfit functions.
-  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, idle:IMG.mascot.idle, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
+  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, idle:IMG.mascot.idle, variants:CLIMBER_VARIANTS, variantOrder:CLIMBER_VARIANT_ORDER, variantBlob:CLIMBER_VARIANT_BLOB, variantFrame:climberFrameFor, variantId:climberVariantId, variantUnlocked:climberVariantUnlocked, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
 
   /* ---------------- the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Rank is
@@ -5313,7 +5371,7 @@
   // motion comes from mascotClip(), breathing and blinking from the mascot frame player below.
   function selectedCharacterStage(){
     var unlocked = unlockedCharacterStages();
-    return Object.assign({}, unlocked[unlocked.length-1], { img:IMG.mascot.idle[0] });
+    return Object.assign({}, unlocked[unlocked.length-1], { img:climberFrame(IMG.mascot.idle[0]) });
   }
   // The scene behind the climber — simple code-drawn props, not illustration, but it's what
   // gives "popping around in an environment" real meaning: a floor to wander on and gear
@@ -5863,7 +5921,7 @@
   // makes every swap instant.
   (function preloadCharacterArt(){
     var m = IMG.mascot;
-    m.idle.concat(m.blink, m.step, m.jump, m.land).forEach(function(src){ var im = new Image(); im.src = src; });
+    m.idle.concat(m.blink, m.step, m.jump, m.land).forEach(function(src){ var im = new Image(); im.src = climberFrame(src); });
     ENVIRONMENTS.forEach(function(e){
       [e.wallImg, e.floorImg].concat((e.props||[]).map(function(p){ return p.img; })).forEach(function(src){
         if(src){ var im = new Image(); im.src = src; }
@@ -5891,8 +5949,8 @@
   // stride (fraction of the box width), plus an in-place fallback when there's no room.
   // The drawn frames carry the movement, so CSS easing is off while a clip plays.
   function mascotClip(kind){
-    var rest = IMG.mascot.idle[0], b1 = IMG.mascot.blink[0], b2 = IMG.mascot.blink[1];
-    var step = IMG.mascot.step, jump = IMG.mascot.jump;
+    var rest = climberFrame(IMG.mascot.idle[0]), b1 = climberFrame(IMG.mascot.blink[0]), b2 = climberFrame(IMG.mascot.blink[1]);
+    var step = IMG.mascot.step.map(climberFrame), jump = IMG.mascot.jump.map(climberFrame);
     if(kind==="blink") return { travel:[0, 0], frames:[
       [b1, 60, 0, 0], [b2, 90, 0, 0], [b1, 60, 0, 0], [rest, 1, 0, 0]] };
     // Step art (art-source STEP-SPEC.md): the stride is 50 of the 1024 canvas px, and the
@@ -5908,7 +5966,7 @@
       // Lifts are in 1536ths of the box height (the master canvas). The art already stands the
       // takeoff frame tall on its toes, so the body's arc is stepped in ~40ms slices, with the
       // apex high enough that the head clearly rises past that tiptoe pose (dev/jump-lab.html, B).
-      var f = jump.concat(IMG.mascot.land), up = function(px){ return -px/1536; };
+      var f = jump.concat(IMG.mascot.land.map(climberFrame)), up = function(px){ return -px/1536; };
       return { travel:[0, 0], frames:[
         [f[0], 120, 0, 0],             // jump-01 crouch
         [f[1], 50, 0, 0],              // jump-02 takeoff (toes still down)
@@ -5990,7 +6048,7 @@
         shadow.style.opacity = "";
         void wander.offsetWidth; // commit the rest position before easing comes back on
         wander.classList.remove("in-motion");
-        img.src = IMG.mascot.idle[0];
+        img.src = climberFrame(IMG.mascot.idle[0]);
         motionPlaying = false;
         syncFace();
       }
@@ -6027,10 +6085,12 @@
   // A blink only plays inside the idle-01 rest hold, the pose it was painted from, so it never
   // pops. Motion clips (playMotion) own the sprite while they play; the player waits them out
   // and restarts from the rest pose. Reduced motion never starts it (the rest pose stays put).
+  // (getters: the frames follow the equipped climber variant, see climberFrame())
   var MASCOT_CLIPS = {
-    idle: [[IMG.mascot.idle[0], 900], [IMG.mascot.idle[1], 300], [IMG.mascot.idle[2], 400],
-           [IMG.mascot.idle[3], 300], [IMG.mascot.idle[2], 300], [IMG.mascot.idle[1], 350]],
-    blink: [[IMG.mascot.blink[0], 60], [IMG.mascot.blink[1], 90], [IMG.mascot.blink[0], 60]]
+    get idle(){ var I = IMG.mascot.idle.map(climberFrame);
+      return [[I[0], 900], [I[1], 300], [I[2], 400], [I[3], 300], [I[2], 300], [I[1], 350]]; },
+    get blink(){ var B = IMG.mascot.blink.map(climberFrame);
+      return [[B[0], 60], [B[1], 90], [B[0], 60]]; }
   };
   var mascotAnim = { queue:[], timer:null, nextBlinkAt:0 };
 
@@ -6046,8 +6106,10 @@
     sheepish:  asset("mascot/climber/default/face/face-sheepish.png", "cb40b13498b4a12be752b90f74421bd2"),
     surprised: asset("mascot/climber/default/face/face-surprised.png", "6b2f0426084fcbc0e55e0ccf64f279da")
   };
-  var MASCOT_IDLE_SET = {};
-  IMG.mascot.idle.forEach(function(src){ MASCOT_IDLE_SET[src] = true; });
+  // an idle frame of the default climber or of the equipped variant (the only frames the face overlays fit)
+  function isMascotIdleFrame(src){
+    return IMG.mascot.idle.some(function(s){ return s===src || climberFrame(s)===src; });
+  }
   var mascotMood = { seq:[], until:0, current:null, timer:null, broken:false };
   var pendingMascotMoods = null;
   function baselineMood(){
@@ -6079,7 +6141,7 @@
     var img = document.getElementById("characterStage");
     if(!face || !img) return;
     var want = MASCOT_FACES[currentMood()];
-    var onIdleFrame = !motionPlaying && MASCOT_IDLE_SET[img.getAttribute("src")];
+    var onIdleFrame = !motionPlaying && isMascotIdleFrame(img.getAttribute("src"));
     if(!onIdleFrame || !want || mascotMood.broken){ face.hidden = true; return; }
     if(face.getAttribute("src")!==want) face.src = want;
     face.hidden = false;
@@ -6089,6 +6151,16 @@
   document.getElementById("characterFace").addEventListener("error", function(){
     mascotMood.broken = true; this.hidden = true;
   });
+  // The equipped climber variant changed: swap every climber on screen (Home, avatar, Wall) and restart the idle loops.
+  function applyClimberVariant(){
+    mascotAnim.queue = [];
+    renderCharacterCard();
+    var img = document.getElementById("characterStage");
+    if(!motionPlaying){ var rest = climberFrame(IMG.mascot.idle[0]); if(img.getAttribute("src")!==rest) img.src = rest; }
+    syncFace();
+    if(!document.getElementById("view-wall").hidden) wallStartIdle(); // otherwise the Wall redraws its climber when opened
+    outfitRefresh();
+  }
   function playPendingMascotMoods(){
     if(!pendingMascotMoods) { syncFace(); return; }
     var seq = pendingMascotMoods; pendingMascotMoods = null;
@@ -6281,7 +6353,7 @@
   function wallPlate(name, big){ return '<span class="wl-plate'+(big ? " big" : "")+'" style="background-image:url('+IMG.wall.title_plate+')"><span>'+escapeHtml(name)+'</span></span>'; }
   function wallPic(r, big){
     if(r.kind==="title") return wallPlate(r.name, big);
-    if(r.kind==="move") return r.mv ? '<span class="wl-mvbox"><img class="wl-move" data-mv="'+r.mv+'" src="'+IMG.wall.moves[r.mv][0]+'" alt=""></span>' : '<span class="mv">'+WI.move+'</span>';
+    if(r.kind==="move") return r.mv ? '<span class="wl-mvbox"><img class="wl-move" data-mv="'+r.mv+'" src="'+climberFrame(IMG.wall.moves[r.mv][0])+'" alt=""></span>' : '<span class="mv">'+WI.move+'</span>';
     if(r.img) return '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.kind==="gym" ? ' class="photo"' : "")+'>';
     return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
   }
@@ -6344,7 +6416,7 @@
   // The climber's frame. The two summit-flag frames are wider than the others (extra canvas each side so the
   // flag fits), so they are drawn 141% wide, shifted back so the head stays where it was.
   outfitFollow(wallCImg, wallClimber);
-  function wallShow(src, wide){ wallCImg.classList.toggle("wide", !!wide); wallCImg.src = src; }
+  function wallShow(src, wide){ wallCImg.classList.toggle("wide", !!wide); wallCImg.src = climberFrame(src); }
   function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px)"; }
   function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
   // On a ledge hold your climber sits on the shelf, off to one side so the prize stays in view
@@ -6404,7 +6476,7 @@
     if(wallPreloaded) return; wallPreloaded = true;
     var srcs = [IMG.wall.cl_reach_l, IMG.wall.cl_reach_r, IMG.wall.cl_pull, IMG.wall.cl_sit, IMG.wall.cl_rest, IMG.wall.cl_chalk, IMG.wall.cl_sit_look].concat(IMG.wall.summitFlag);
     Object.keys(IMG.wall.moves).forEach(function(k){ srcs = srcs.concat(IMG.wall.moves[k]); });
-    srcs.forEach(function(s){ new Image().src = s; });
+    srcs.forEach(function(s){ new Image().src = climberFrame(s); });
   }
   function wallPuff(x, y){
     if(prefersReducedMotion) return;
@@ -6462,7 +6534,7 @@
       var imgs = document.querySelectorAll("img.wl-move");
       if(!imgs.length){ clearInterval(wallPicT); wallPicT = null; return; }
       wallPicN++;
-      imgs.forEach(function(im){ var loop = WALL_MOVE_LOOP[im.dataset.mv]; im.src = IMG.wall.moves[im.dataset.mv][loop[wallPicN % loop.length]]; });
+      imgs.forEach(function(im){ var loop = WALL_MOVE_LOOP[im.dataset.mv]; im.src = climberFrame(IMG.wall.moves[im.dataset.mv][loop[wallPicN % loop.length]]); });
     }, 170);
   }
   function wallScrollTo(i, smooth){
@@ -6489,7 +6561,7 @@
     buzz(big ? [40,60,40,60,90] : [25,40,45]);
     wallSheet('<img class="wl-rays" src="'+IMG.wall.rays+'" alt=""><img class="wl-sparkle" src="'+IMG.wall.sparkle+'" alt=""><div class="wl-confetti">'+conf+'</div>'+
       '<div class="wl-kicker">'+(big ? "Ledge "+(i/WALL_LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
-      '<div class="wl-prize'+(r.kind==="gym" ? " gym" : "")+'">'+(r.kind==="gym" ? "" : '<img class="wl-plinth" src="'+IMG.wall.r2_plinth+'" alt="">')+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+IMG.wall.cl_rest+'" alt=""></span></span>' : "")+'</div>'+
+      '<div class="wl-prize'+(r.kind==="gym" ? " gym" : "")+'">'+(r.kind==="gym" ? "" : '<img class="wl-plinth" src="'+IMG.wall.r2_plinth+'" alt="">')+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+climberFrame(IMG.wall.cl_rest)+'" alt=""></span></span>' : "")+'</div>'+
       '<h2>'+(big ? "Ledge reached!" : escapeHtml(r.name))+'</h2>'+
       '<span class="wl-kind">'+(big ? escapeHtml(r.name)+" · " : "")+WALL_KIND[r.kind]+'</span>'+
       '<p>'+(extra ? escapeHtml(extra)+" " : "")+(rest ? "Rest day logged: recovery counts too. " : "")+(big ? "Seven days of showing up. " : "")+
@@ -6786,6 +6858,19 @@
     renderCharacterCard();
     renderCustomizeModal();
   });
+  document.getElementById("characterPickerGrid").addEventListener("click", function(e){
+    var btn = e.target.closest(".picker-item");
+    if(!btn || btn.disabled) return;
+    var id = btn.getAttribute("data-character-variant");
+    if(!id || !climberVariantUnlocked(id, state.level)) return; // locked or unknown: can't be equipped
+    state.character.variant = id;
+    saveState();
+    applyClimberVariant();
+    renderCustomizeModal();
+  });
+  document.getElementById("characterPickerGrid").addEventListener("error", function(e){
+    if(e.target.tagName==="IMG") e.target.style.visibility = "hidden";
+  }, true);
   document.getElementById("outfitPickerGrid").addEventListener("click", function(e){
     var btn = e.target.closest(".picker-item");
     if(!btn || btn.disabled) return;
@@ -7100,7 +7185,7 @@
     var W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
     var x = c.getContext("2d"), env = selectedEnvironment();
     var fonts = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load('100px "Bebas Neue"'), document.fonts.load('30px "IBM Plex Mono"')]).catch(function(){}) : Promise.resolve();
-    var meSrc = a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0];
+    var meSrc = climberFrame(a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0]); // the equipped variant's cheer frame
     var outfit = Promise.all(outfitLayersLive(meSrc).map(function(l){ return loadImage(l.url); }));
     return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(meSrc), loadImage(IMG.ui.start), fonts, outfit ]).then(function(r){
       var bg = r[0], me = r[1], icon = r[2];

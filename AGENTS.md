@@ -73,6 +73,18 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **After changing `crux.html` or any image,** rebuild `site/` and re-host it for the installed app to update.
 - **GitHub Pages (set up 2026-10-08, at the owner's request):** `.github/workflows/pages.yml` runs `dev/build-site.ps1` on a Windows runner and deploys `site/` to https://hayjorg.github.io/Crux/ on every push to `main`. So pushing `crux.html` or image changes to `main` updates the public installed app.
 
+## Climber variants (palette recolours, 2026-10-10)
+
+`state.character.variant` ("default" | "slate" | "sandstone" | "moss") picks a full recolour of every body frame, art in
+`assets/mascot/climber/variants/<id>/<folder>/<name>.png` (same 40 frames as `default/`, minus `face/` and `px/`; web-weight 256-colour PNGs).
+- **One resolver:** `climberFrame(src)` / `climberFrameFor(src, id)` maps a default body-frame address to the variant's. Every place that
+  draws the climber goes through it (Home stage and clips, avatar chip, Wall via `wallShow()`, celebration, share card, pickers). Never
+  put a raw `IMG.mascot.*` / `IMG.wall.cl_*` / `IMG.ui.cheer` address on screen.
+- **Face overlays** stay the default `face/` files: the eyes are untouched, so they line up. Outfit layers stack on variants (frame key is the same).
+- **Unlocks** are derived from `state.level` (`CLIMBER_VARIANTS[id].unlock`), never stored; a saved-but-locked choice draws as default.
+- **Blob ids** for the variant art go in `CLIMBER_VARIANT_BLOB` ("<id>/<folder>/<name>"); empty until Claude uploads them (rule 2).
+  `night` exists in dev/outfit but is off-model and held back.
+
 ## Projects (climb tracking)
 
 A project is **one named climb at one gym or crag**, and attempts link to it by `projectId`.

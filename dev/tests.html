@@ -1172,6 +1172,103 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().character.outfit.headband===null, "Plain didn't clear the headband");
   });
 
+  // ---- Character variants (palette recolours of the climber) ----
+  var VARIANT_FRAMES = ["blink/blink-01","blink/blink-02","cheer/cheer-1","cheer/cheer-2","cheer/cheer-3","climb/climb-chalk-up","climb/climb-pull","climb/climb-reach-left","climb/climb-reach-right","idle/idle-01","idle/idle-02","idle/idle-03","idle/idle-04","jump/jump-01","jump/jump-02","jump/jump-03","land/land-01","land/land-02","move/move-chalk-clap-1","move/move-chalk-clap-2","move/move-chalk-clap-3","move/move-dance-1","move/move-dance-2","move/move-dance-3","move/move-dance-4","move/move-fist-pump-1","move/move-fist-pump-2","move/move-fist-pump-3","move/move-wave-1","move/move-wave-2","move/move-wave-3","move/move-wave-4","rest/rest-day","sit/ledge-sit-look","sit/ledge-sit","step/step-01","step/step-02","step/step-03","summit/summit-flag-1","summit/summit-flag-2"];
+  test("Character variant: old saves get 'default'; bad data is cleaned; a valid choice and other character data survive; backups import", async function(){
+    var old = clone(TEMPLATE); delete old.character.variant; old.character.decorations = ["gearbag"]; old.character.outfit = { headband:"teal-knit", chalkbag:null, shoes:null };
+    await boot(old); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    expect(saved().character.variant==="default", "default: "+saved().character.variant);
+    expect(saved().character.decorations.join()==="gearbag" && saved().character.outfit.headband==="teal-knit", "other character data changed");
+    for(var bad of [42, "night", "SLATE", "", null, {}, ["slate"]]){
+      var b = clone(TEMPLATE); b.character.variant = bad;
+      await boot(b); await click("openSettingsBtn"); await click("closeSettingsBtn");
+      expect(saved().character.variant==="default", "bad "+JSON.stringify(bad)+" became "+saved().character.variant);
+    }
+    var ok = clone(TEMPLATE); ok.character.variant = "moss";
+    await boot(ok); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    expect(saved().character.variant==="moss", "a valid choice was dropped (even though locked, the choice is kept): "+saved().character.variant);
+    var json = await exportJson(), before = STORE[KEY];
+    await importText(json);
+    expect(STORE[KEY]===before, "backup round trip changed the variant");
+    var legacy = JSON.parse(json); delete legacy.data.character.variant;
+    await importText(JSON.stringify(legacy));
+    expect(saved().character.variant==="default", "an old backup didn't get the default variant");
+  });
+  test("Character variant: the resolver returns the variant's frame (body frames only), and outfit layers still stack on it", async function(){
+    await boot(TEMPLATE);
+    var O = W.__cruxOutfit, idle = O.idle[0];
+    var src = O.variantFrame(idle, "slate");
+    expect(artIs(src, /mascot\/climber\/variants\/slate\/idle\/idle-01\.png$/), "variant address: "+src);
+    expect(O.variantFrame(idle, "default")===idle && O.variantFrame(idle, "nope")===idle, "default/unknown should return the frame unchanged");
+    expect(O.variantFrame(src, "moss")===src, "a variant frame was re-mapped");
+    expect(O.frameKey(src)==="idle/idle-01", "variant frame key: "+O.frameKey(src));
+    var all = { headband:"teal-knit", chalkbag:"teal", shoes:"blue" };
+    expect(O.layersFor(src, all, 40, 0).map(function(l){ return l.slot; }).join()==="shoes,chalkbag,headband", "outfit didn't stack on the variant frame");
+    expect(O.layersFor(O.variantFrame(O.cheer[1], "sandstone"), all, 40, 0).length===3, "outfit missing on a variant cheer frame");
+    var wide = O.variantFrame(W.__cruxOutfit.cheer[0], "moss");
+    expect(/moss/.test(wide) || O.blob["moss/cheer/cheer-1"], "cheer not resolved: "+wide);
+    expect(!("night" in O.variants), "night is held back");
+    expect(O.variantOrder.join()==="default,slate,sandstone,moss", "order: "+O.variantOrder.join());
+  });
+  test("Character variant: every variant has all 40 frames, same names as the default climber", async function(){
+    expect(VARIANT_FRAMES.length===40, "list is "+VARIANT_FRAMES.length);
+    var missing = [], ids = ["slate", "sandstone", "moss"];
+    for(var f of VARIANT_FRAMES){
+      var d = await fetch("../assets/mascot/climber/default/"+f+".png", { method:"HEAD", cache:"no-store" });
+      if(!d.ok) missing.push("default/"+f);
+      for(var id of ids){
+        var r = await fetch("../assets/mascot/climber/variants/"+id+"/"+f+".png", { method:"HEAD", cache:"no-store" });
+        if(!r.ok) missing.push(id+"/"+f);
+      }
+    }
+    expect(!missing.length, "missing: "+missing.slice(0, 6).join(", ")+(missing.length>6 ? " (+"+(missing.length-6)+")" : ""));
+  });
+  test("Character variant: locked ones can't be equipped, unlocks come from level, equipping persists and the climber changes everywhere", async function(){
+    await boot(TEMPLATE); // level 1
+    var O = W.__cruxOutfit;
+    expect(O.variantUnlocked("slate", 5) && !O.variantUnlocked("slate", 4), "slate unlocks at level 5");
+    expect(O.variantUnlocked("sandstone", 10) && !O.variantUnlocked("sandstone", 9), "sandstone unlocks at level 10");
+    expect(O.variantUnlocked("moss", 18) && !O.variantUnlocked("moss", 17), "moss unlocks at level 18");
+    await openCustomize();
+    var grid = $("characterPickerGrid"), items = grid.querySelectorAll(".picker-item");
+    expect(items.length===4, "picker items: "+items.length);
+    expect(grid.closest(".settings-section").nextElementSibling.id==="arrangeSection", "Character isn't the first section");
+    var locked = grid.querySelectorAll(".picker-item.locked");
+    expect(locked.length===3 && Array.from(locked).every(function(b){ return b.disabled; }), "locked: "+locked.length);
+    expect(/Level 5/.test(locked[0].textContent) && /Level 10/.test(locked[1].textContent) && /Level 18/.test(locked[2].textContent), "hints: "+Array.from(locked).map(function(b){ return b.textContent; }).join(" | "));
+    await click(locked[0], 150);
+    expect(saved().character.variant==="default", "a locked variant was equipped");
+    // a saved-but-locked choice (e.g. a restored backup at a lower level) draws as default, nothing is rewritten
+    var s = clone(TEMPLATE); s.character.variant = "moss";
+    await boot(s); await goHome();
+    expect(W.__cruxOutfit.variantId()==="default", "locked choice resolved");
+    expect(!/variants\//.test($("characterStage").getAttribute("src")), "Home drew a locked variant: "+$("characterStage").getAttribute("src"));
+    // level 10: slate and sandstone open, moss still locked
+    var s2 = clone(TEMPLATE); s2.settings.devLevel = 10;
+    await boot(s2); await openCustomize();
+    expect(qa("#characterPickerGrid .picker-item.locked").length===1, "level 10 locked count: "+qa("#characterPickerGrid .picker-item.locked").length);
+    await click(q('#characterPickerGrid [data-character-variant="sandstone"]'), 250);
+    expect(saved().character.variant==="sandstone", "choice not saved: "+saved().character.variant);
+    expect(/variants\/sandstone\/idle\//.test($("characterStage").getAttribute("src")) || /sandstone/.test($("characterStage").getAttribute("src")||""), "Home climber: "+$("characterStage").getAttribute("src"));
+    expect(/sandstone/.test($("heroAvatarImg").getAttribute("src")), "level-chip avatar: "+$("heroAvatarImg").getAttribute("src"));
+    expect(q('#characterPickerGrid .picker-item.selected').getAttribute("data-character-variant")==="sandstone", "selected state");
+    // outfit layers stack over the variant on Home
+    for(var id of ["teal-knit", "teal", "blue"]){ await click(q('#outfitPickerGrid [data-outfit-item="'+id+'"]'), 200); }
+    var layers = qa("#characterBody img.outfit-layer");
+    expect(layers.length===3 && layers[0].previousElementSibling.id==="characterStage", "outfit over the variant: "+layers.length);
+    await click(q('#characterPickerGrid [data-character-variant="default"]'), 250);
+    expect(saved().character.variant==="default" && !/variants\//.test($("characterStage").getAttribute("src")), "back to default");
+  });
+  test("Character variant: the Wall climber and the share card use the equipped variant", async function(){
+    var s = wallSave([{ daysAgo:2 }, { daysAgo:1 }]); s.character.variant = "slate"; s.settings.devLevel = 10;
+    await boot(s); await openWallView(); closeSheet(); await wait(1200);
+    var src = $("wallClimberImg").getAttribute("src")||"";
+    expect(/variants\/slate\//.test(src) || /slate/.test(src), "Wall climber: "+src);
+    var O = W.__cruxOutfit;
+    expect(O.layersFor(src, { headband:"teal-knit", chalkbag:null, shoes:null }, 40, 0).length===1, "Wall climber outfit layer key");
+    expect(/climberFrame\(a\.result==="flash"/.test(SRC), "share card doesn't resolve the variant");
+  });
+
   test("Home: Start and Customize sit on the dock; Drills and Progress are in the menu; Workouts and the Wall are one tap away in the bottom bar; no Arrange button", async function(){
     await boot(TEMPLATE); await goHome();
     ["startSessionBtn", "openCustomizeBtn"].forEach(function(id){
