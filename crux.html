@@ -121,9 +121,7 @@
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease, border-color .15s ease, color .15s ease;
   }
   .link-btn svg{width:13px;height:13px;flex-shrink:0;}
-  #openWorkoutsBtn, #openLegalFromHomeBtn{min-height:44px;}
-  /* Home: keep Start Session within thumb reach when the page is taller than the screen. */
-  #startSessionBtn.garage-cta{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom, 0px));z-index:20;}
+  #openLegalFromHomeBtn{min-height:44px;}
   .link-btn:hover{color:var(--text);border-color:var(--text-dim);background:var(--surface);}
   .link-btn:active{transform:scale(0.94);}
   .link-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
@@ -162,21 +160,29 @@
   .icon-btn:active{transform:scale(0.9);}
   .icon-btn svg{width:18px;height:18px;}
 
-  /* ================= GARAGE HERO ================= */
-  /* The whole top-of-home experience — branding, level, utility nav, and the climber scene
-     itself — is one immersive card now instead of a plain white header sitting above a
-     smaller room preview. Everything textual floats over the art as a translucent "glass"
-     overlay (.scene-icon-btn / .scene-chip / .level-chip) so the environment reads as the
-     dominant thing on screen, the way the reference mockup does, while the name/mood/hint
-     text below the art stays on a normal opaque surface for guaranteed readability. */
-  .garage-hero{position:relative;overflow:hidden;margin-bottom:14px;}
-  .scene-overlay-top{
-    position:absolute;top:0;left:0;right:0;z-index:3;
-    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
-    padding:12px 12px 0;pointer-events:none;
+  /* ================= HOME (full-screen room) ================= */
+  /* The first screen of Home is the room itself: one full-viewport hero, edge to edge. The painted
+     room (#sceneEnv), decorations (#sceneLayers) and the climber all live in .character-scene, a
+     fixed 4:5 "stage" that is a little taller than the space above the dock and centred, so a
+     narrow phone crops the room's sides instead of stretching it. Everything on top (the thin top
+     row, the dock, the arrange bar) is dark glass so it reads on every painting, light or dark.
+     --dock-h is measured by script from the real dock; 176px is the fallback. */
+  #view-home{--dock-h:176px;}
+  .home-hero{
+    position:relative;container-type:size;overflow:hidden;isolation:isolate;
+    height:100vh;height:100dvh;min-height:540px;
+    margin:-28px -18px 0;background:var(--surface-2);
   }
-  .scene-overlay-top>*{pointer-events:auto;}
-  .level-chip{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  @media (min-width:600px){
+    .home-hero{max-width:520px;margin:-12px auto 0;height:min(100dvh - 24px, 880px);border-radius:var(--radius-lg);box-shadow:0 3px 14px -4px var(--shadow);}
+  }
+  .home-top{
+    position:absolute;top:0;left:0;right:0;z-index:4;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 22px;
+    background:linear-gradient(180deg, rgba(14,10,6,0.5), rgba(14,10,6,0));
+  }
+  .level-chip{display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding:5px 5px 0;min-width:44px;}
   .level-chip .avatar::before{content:"";position:absolute;inset:-5px;border-radius:50%;pointer-events:none;
     background:conic-gradient(var(--flash) calc(var(--xp,0) * 1%), rgba(255,255,255,0.28) 0);
     -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px));mask:radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px));}
@@ -186,60 +192,95 @@
     border:2px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.35);
   }
   .level-chip .avatar img{width:100%;height:100%;object-fit:contain;padding:3px;display:block;border-radius:50%;}
-  .level-chip{padding:5px 5px 0;}
   .level-chip .lv-tag{
     margin-top:-7px;background:var(--flash);color:#221E19;
     font-family:"Bebas Neue",sans-serif;font-size:11px;letter-spacing:0.03em;
     padding:1px 8px 2px;border-radius:999px;border:2px solid rgba(255,255,255,0.75);
     white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);
   }
-  .hero-brand{text-align:center;flex:1;min-width:0;padding-top:2px;}
+  .hero-brand{text-align:center;flex:1;min-width:0;}
   .hero-brand h1{
-    font-family:"Bebas Neue",system-ui,sans-serif;font-size:clamp(23px,6.8vw,38px);white-space:nowrap;
-    letter-spacing:0.03em;margin:0;line-height:0.9;color:#FBF6E8;
+    font-family:"Bebas Neue",system-ui,sans-serif;font-size:clamp(22px,6vw,30px);white-space:nowrap;
+    letter-spacing:0.06em;margin:0;line-height:1;color:#FBF6E8;
     text-shadow:0 2px 10px rgba(0,0,0,0.6);
   }
-  .hero-brand p{
-    margin:3px 0 0;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;
-    color:rgba(251,246,232,0.85);text-shadow:0 1px 6px rgba(0,0,0,0.55);
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .scene-icon-row{display:flex;gap:7px;flex-shrink:0;}
+  .scene-icon-row{display:flex;gap:8px;flex-shrink:0;}
   .scene-icon-btn img{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));}
-  .scene-chip img{width:20px;height:20px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4));}
-  .start-cta.garage-cta .cta-icon{width:44px;height:44px;object-fit:contain;flex-shrink:0;margin:-8px 0;filter:drop-shadow(0 2px 2px rgba(60,30,0,0.35));}
-  .home-workouts-row .ui-ic{width:24px;height:24px;object-fit:contain;flex-shrink:0;margin:-4px 0;}
-  .empty-state .empty-pic{display:block;width:150px;max-width:55%;margin:0 auto 8px;filter:drop-shadow(0 6px 6px rgba(60,30,0,0.25));}
+  .scene-icon-btn svg{width:20px;height:20px;}
   .scene-icon-btn{
-    width:36px;height:36px;border-radius:50%;flex-shrink:0;
-    background:rgba(24,18,12,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    width:44px;height:44px;border-radius:50%;flex-shrink:0;
+    background:rgba(24,18,12,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
     border:1px solid rgba(255,255,255,0.3);color:#FBF6E8;
     display:flex;align-items:center;justify-content:center;
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease;
   }
   .scene-icon-btn:hover{background:rgba(24,18,12,0.72);}
-  /* Bigger invisible tap area (44px) without changing the painted size or layout. */
-  .scene-icon-btn, .scene-chip{position:relative;}
-  .scene-icon-btn::after, .scene-chip::after{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:44px;transform:translateY(-50%);}
   .scene-icon-btn:active{transform:scale(0.9);}
-  .scene-icon-btn svg{width:15px;height:15px;}
-  .scene-icon-btn:focus-visible{outline:2px solid #FBF6E8;outline-offset:2px;}
-  .scene-overlay-bottom{
-    position:absolute;right:10px;bottom:10px;z-index:3;
-    display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+  .scene-icon-btn:focus-visible, .dock-btn:focus-visible, .dock-more:focus-visible, .home-menu-item:focus-visible{outline:2px solid #FBF6E8;outline-offset:2px;}
+  /* the "more" popover: Drills and Progress */
+  .home-menu{
+    position:absolute;top:calc(100% - 14px);right:12px;min-width:210px;padding:6px;
+    display:flex;flex-direction:column;gap:2px;
+    background:rgba(24,18,12,0.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius-md);box-shadow:0 12px 30px rgba(0,0,0,0.45);
   }
-  .scene-chip{
-    display:inline-flex;align-items:center;gap:5px;
-    background:rgba(24,18,12,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,0.3);color:#FBF6E8;
-    font-size:11.5px;font-weight:700;padding:7px 12px;border-radius:999px;
+  .home-menu[hidden]{display:none;}
+  .home-menu-item{
+    display:flex;align-items:center;gap:10px;min-height:46px;padding:6px 12px;border:0;border-radius:12px;
+    background:transparent;color:#FBF6E8;font-size:14px;font-weight:600;text-align:left;
+  }
+  .home-menu-item:hover, .home-menu-item:active{background:rgba(255,255,255,0.12);}
+  .home-menu-item img{width:26px;height:26px;object-fit:contain;flex-shrink:0;}
+  /* the dock: Start Session, then three small buttons, then a cue to scroll */
+  .home-dock{
+    position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom, 0px));z-index:4;
+    display:flex;flex-direction:column;gap:8px;padding:10px 10px 4px;
+    background:rgba(22,16,10,0.5);backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);
+    border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius-lg);box-shadow:0 10px 28px -8px rgba(0,0,0,0.55);
+  }
+  .home-dock .start-cta{margin:0;padding:10px 16px;}
+  .dock-row{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;}
+  .dock-btn{
+    position:relative;min-width:0;min-height:56px;padding:6px 4px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);border-radius:var(--radius-md);color:#FBF6E8;
+    font-size:11.5px;font-weight:700;line-height:1.15;text-align:center;
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .15s ease;
   }
-  .scene-chip svg{width:13px;height:13px;flex-shrink:0;}
-  .scene-chip:hover{background:rgba(24,18,12,0.78);}
-  .scene-chip:active{transform:scale(0.94);}
-  .scene-chip:focus-visible{outline:2px solid #FBF6E8;outline-offset:2px;}
-  .garage-hero-footer{padding:16px 18px 18px;text-align:center;}
+  .dock-btn:hover{background:rgba(255,255,255,0.2);}
+  .dock-btn:active{transform:scale(0.95);}
+  .dock-btn img{width:28px;height:28px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));}
+  .dock-label{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
+  .dock-more{
+    align-self:center;width:64px;height:24px;border:0;background:transparent;color:rgba(251,246,232,0.8);
+    display:flex;align-items:center;justify-content:center;padding:0;border-radius:12px;
+  }
+  .dock-more svg{width:20px;height:20px;}
+  .dock-more:active{transform:translateY(2px);}
+  .start-cta.garage-cta .cta-icon{width:44px;height:44px;object-fit:contain;flex-shrink:0;margin:-8px 0;filter:drop-shadow(0 2px 2px rgba(60,30,0,0.35));}
+  .empty-state .empty-pic{display:block;width:150px;max-width:55%;margin:0 auto 8px;filter:drop-shadow(0 6px 6px rgba(60,30,0,0.25));}
+  /* arranging the room: just a small bar, so the whole room is free to drag in */
+  .arrange-bar{
+    position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom, 0px));z-index:5;
+    display:flex;flex-direction:column;gap:8px;padding:12px;
+    background:rgba(22,16,10,0.62);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,0.22);border-radius:var(--radius-lg);box-shadow:0 10px 28px -8px rgba(0,0,0,0.55);
+  }
+  .arrange-bar[hidden]{display:none;}
+  .arrange-hint{margin:0;text-align:center;font-size:12.5px;color:#FBF6E8;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
+  .arrange-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .arrange-btn{min-height:48px;flex-direction:row;gap:8px;font-size:13px;}
+  .arrange-btn svg{width:16px;height:16px;flex-shrink:0;}
+  .arrange-btn.done{background:linear-gradient(180deg, #F3C766, #E0A83A);border-color:#6B4A1E;color:#241B0E;}
+  .arrange-btn.done .dock-label{text-shadow:none;}
+  .arrange-open-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;}
+  .arrange-open-btn .ui-ic{width:24px;height:24px;object-fit:contain;}
+  .arrange-btn[hidden]{display:none;}
+  .home-hero.arranging .home-top, .home-hero.arranging .home-dock, .home-hero.arranging .wl-rescue{display:none;}
+  /* below the first screen */
+  .home-more{padding-top:16px;}
+  .climber-card{padding:14px 18px;margin-bottom:14px;text-align:center;}
+  .climber-card .character-name{margin-top:0;}
   /* The climber's habitat, not a headshot frame: room for the full jump arc plus a real room
      drawn into it (see roomSVG / garageSceneSVG in the script below) — walls, floor, and
      the climber's own earned gear placed like furniture, Animal-Crossing style, rather than one
@@ -247,15 +288,18 @@
      as the dominant thing on the card, not a small preview window; sized by aspect-ratio + %,
      not fixed px, so it scales cleanly across phone widths instead of clipping. */
   .character-scene{
-    position:relative;width:100%;aspect-ratio:4/5;
-    overflow:hidden;
-    background:linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+    /* S: the stage's height. Bottom edge sits on the dock; S is 5% taller than the space above the
+       dock (so the ceiling crops a little), and never narrower than the screen (width is 0.8 S). */
+    --S:max(calc((100cqh - var(--dock-h)) * 1.05), 125cqw);
+    position:absolute;left:50%;bottom:var(--dock-h);
+    width:calc(var(--S) * 0.8);height:var(--S);margin-left:calc(var(--S) * -0.4);
   }
   .scene-layers{position:absolute;inset:0;pointer-events:none;}
   /* A soft contact shadow is the cheapest way to stop a real accessory PNG from reading as
      "pasted flat" against the painted background — every decoration/prop gets one. */
   .scene-layers img{position:absolute;display:block;width:auto;height:auto;max-width:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,0.35));}
-  .scene-env{position:absolute;inset:0;width:100%;height:100%;}
+  /* overflow shows the painting's lower strip (and its mirror) behind the glass dock */
+  .scene-env{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
   .scene-env.room-in, .scene-layers.room-in{animation:roomIn .7s ease both;}
   @keyframes roomIn{from{opacity:0;filter:brightness(1.4);}to{opacity:1;filter:none;}}
   /* Ambient-only: a lamp glow and a few drifting dust motes. Independent of the static
@@ -293,8 +337,6 @@
      included) covers a large part of the wall — in Arrange mode that swallowed presses meant
      for props underneath and turned them into taps. While arranging, the climber ignores input. */
   .scene-layers.arrange-mode ~ .character-wander{pointer-events:none;}
-  .arrange-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px;flex-wrap:wrap;}
-  .arrange-row p{margin:0;}
   /* ---- Room Lab: temporary placement-testing squares, see ROOM_SURFACES in the script ----
      The surfaces themselves (climbing wall / back wall / floor) are intentionally invisible
      — nothing drawn here, this is purely a hit-test against detectSurface(). The layer sits
@@ -331,9 +373,11 @@
   .lab-val{font-size:10px;color:var(--text-dim);font-family:"IBM Plex Mono",monospace;min-width:28px;text-align:center;}
   /* Placement B. The climber sprite is a 2:3 canvas with the feet 12.5% up from its bottom
      edge. At 50% of the scene width the box is 60% of the scene's height, so a bottom of 8.5%
-     puts the feet 16% up the scene (8.5 + 12.5 x 0.6). */
+     puts the feet 16% up the scene (8.5 + 12.5 x 0.6). Home now draws the climber larger, 60% of the
+     stage width: the box is 72% of the stage's height, so a bottom of 7% keeps the feet at the same
+     16% (7 + 12.5% x 72). */
   .character-wander{
-    position:absolute;bottom:8.5%;left:50%;width:50%;margin-left:-25%;
+    position:absolute;bottom:7%;left:50%;width:60%;margin-left:-30%;
     transition:transform .15s ease-out;
   }
   /* A dedicated contact shadow reads as "standing on the floor" much better than the
@@ -764,7 +808,6 @@
   .wo-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;align-items:center;}
   .wo-controls .btn{padding:8px 16px;font-size:13px;}
   .wo-controls .link-btn{margin-top:0;}
-  .home-workouts-row{display:flex;justify-content:center;margin:-12px 0 20px;}
   .wo-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
   .wo-row:last-child{border-bottom:none;}
   .wo-row-main{flex:1;min-width:0;}
@@ -992,7 +1035,20 @@
   #endSummaryWallBtn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-bottom:8px;}
   #endSummaryWallBtn[hidden]{display:none;}
   #endSummaryWallBtn .ic{width:30px;height:30px;object-fit:contain;margin:-6px 0;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25));}
-  .wl-rescue{margin:-6px 0 14px;}
+  /* Home: the streak rescue is a small glass banner above the dock; the Wall card is a dock button. */
+  .home-hero .wl-rescue{position:absolute;z-index:4;left:14px;right:14px;bottom:calc(var(--dock-h) + 8px);width:auto;margin:0;
+    min-height:44px;border-style:solid;border-color:rgba(255,255,255,0.28);background:rgba(22,16,10,0.72);color:#FBF6E8;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);text-align:left;}
+  .home-dock .wl-card.dock-btn{width:auto;margin:0;gap:3px;padding:6px 4px;border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.22);
+    background:rgba(255,255,255,0.12);color:#FBF6E8;box-shadow:none;text-align:center;}
+  .home-dock .wl-card.dock-btn:hover{background:rgba(255,255,255,0.2);}
+  .home-dock .wl-card .wl-flame{width:28px;height:28px;border-radius:10px;background:transparent;}
+  .home-dock .wl-card .wl-flame img{width:28px;height:28px;}
+  .home-dock .wl-card-main{flex:0 0 auto;max-width:100%;}
+  .home-dock .wl-card-title{font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:0;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,0.5);overflow:hidden;text-overflow:ellipsis;}
+  /* the sub line is read by screen readers but there is no room for it on a dock button */
+  .home-dock .wl-card-sub{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  .home-dock .wl-card .wl-new{position:absolute;top:-7px;right:-3px;font-size:9px;padding:2px 7px;}
   .wl-rescue .ic{width:26px;height:26px;object-fit:contain;margin:-6px 0;flex-shrink:0;}
   .wl-rescue[hidden]{display:none;}
   .wl-jump{position:fixed;right:max(14px, calc(50% - 226px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:grid;gap:8px;}
@@ -1091,7 +1147,8 @@
 
   <!-- ================= HOME ================= -->
   <div id="view-home">
-    <section class="card garage-hero">
+    <!-- The first screen: the room fills the display, the climber stands in it, controls float on glass. -->
+    <section class="home-hero" id="homeHero">
       <div class="character-scene" id="characterScene">
         <svg class="scene-env" id="sceneEnv" viewBox="0 0 200 240" preserveAspectRatio="none" aria-hidden="true"></svg>
         <div class="scene-effects" id="sceneEffects" aria-hidden="true"></div>
@@ -1104,105 +1161,118 @@
             <img id="characterFace" class="character-face" alt="" aria-hidden="true" hidden>
           </div>
         </div>
+      </div>
 
-        <div class="scene-overlay-top">
-          <div class="level-chip">
-            <div class="avatar"><img id="heroAvatarImg" alt=""></div>
-            <span class="lv-tag">Lv <span id="heroLevelNum">1</span></span>
-          </div>
-          <div class="hero-brand">
-            <h1>CRUX</h1>
-            <p>timer · send log</p>
-          </div>
-          <div class="scene-icon-row">
-            <button type="button" class="scene-icon-btn" id="openDrillsBtn" aria-label="Training drills guide">
-              <img data-ui="drills" alt="">
-            </button>
-            <button type="button" class="scene-icon-btn" id="openProgressBtn" aria-label="Climbing progress">
-              <img data-ui="progress" alt="">
-            </button>
-            <button type="button" class="scene-icon-btn" id="openSettingsBtn" aria-label="Settings">
-              <img data-ui="settings" alt="">
-            </button>
-          </div>
+      <div class="home-top">
+        <div class="level-chip">
+          <div class="avatar"><img id="heroAvatarImg" alt=""></div>
+          <span class="lv-tag">Lv <span id="heroLevelNum">1</span></span>
         </div>
-
-        <div class="scene-overlay-bottom">
-          <button type="button" class="scene-chip" id="arrangeToggleBtn" hidden>
-            <img data-ui="arrange" alt="">
-            <span class="label">Arrange</span>
+        <div class="hero-brand"><h1>CRUX</h1></div>
+        <div class="scene-icon-row">
+          <button type="button" class="scene-icon-btn" id="homeMenuBtn" aria-label="More: drills and progress" aria-haspopup="true" aria-expanded="false" aria-controls="homeMenu">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
-          <button type="button" class="scene-chip" id="openCustomizeBtn">
-            <img data-ui="customize" alt="">
-            Customize
+          <button type="button" class="scene-icon-btn" id="openSettingsBtn" aria-label="Settings">
+            <img data-ui="settings" alt="">
+          </button>
+        </div>
+        <div class="home-menu" id="homeMenu" role="menu" hidden>
+          <button type="button" class="home-menu-item" id="openDrillsBtn" role="menuitem">
+            <img data-ui="drills" alt=""><span>Training drills</span>
+          </button>
+          <button type="button" class="home-menu-item" id="openProgressBtn" role="menuitem">
+            <img data-ui="progress" alt=""><span>Climbing progress</span>
           </button>
         </div>
       </div>
 
-      <div class="garage-hero-footer">
+      <!-- ==== THE WALL (removable feature) ==== -->
+      <button type="button" class="wl-backfill wl-rescue" id="wallRescueBtn" hidden></button>
+      <!-- ==== END THE WALL ==== -->
+
+      <div class="home-dock" id="homeDock">
+        <button class="start-cta garage-cta" id="startSessionBtn">
+          <img class="cta-icon" data-ui="start" alt="">
+          <span class="cta-text">
+            <span class="main">Start Session</span>
+            <span class="sub" id="startCtaSub">45s work / 90s rest</span>
+          </span>
+        </button>
+        <div class="dock-row">
+          <!-- ==== THE WALL (removable feature) ==== -->
+          <button type="button" class="wl-card dock-btn" id="wallCard" hidden>
+            <span class="wl-flame" id="wallCardFlame" aria-hidden="true"><img alt=""></span>
+            <span class="wl-card-main"><span class="wl-card-title" id="wallCardTitle">The Wall</span><span class="wl-card-sub" id="wallCardSub"></span></span>
+            <span class="wl-new" id="wallCardNew" hidden>New hold!</span>
+          </button>
+          <!-- ==== END THE WALL ==== -->
+          <button type="button" class="dock-btn" id="openCustomizeBtn">
+            <img data-ui="customize" alt="">
+            <span class="dock-label">Customize</span>
+          </button>
+          <button type="button" class="dock-btn" id="openWorkoutsBtn">
+            <img data-ui="workouts" alt="">
+            <span class="dock-label">Workouts</span>
+          </button>
+        </div>
+        <button type="button" class="dock-more" id="homeMoreBtn" aria-label="Show your progress and history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+
+      <!-- Arranging the room: the dock and top row step aside for this small bar. -->
+      <div class="arrange-bar" id="arrangeRow" hidden>
+        <p class="arrange-hint">Drag any piece to reposition it.</p>
+        <div class="arrange-actions">
+          <button type="button" class="dock-btn arrange-btn" id="resetLayoutBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            <span class="dock-label">Reset layout</span>
+          </button>
+          <button type="button" class="dock-btn arrange-btn done" id="arrangeToggleBtn" hidden>
+            <span class="dock-label label">Done</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Below the first screen: swipe up. -->
+    <div class="home-more" id="homeMore">
+      <section class="card climber-card">
         <p class="character-name" id="characterStageName">—</p>
         <p class="character-sub" id="characterSub">Level 1</p>
         <p class="character-hint" id="characterHint"></p>
         <p class="environment-hint" id="environmentHint"></p>
-        <div class="arrange-row" id="arrangeRow" hidden>
-          <p class="environment-hint">Drag any piece to reposition it — tap Done when you're happy.</p>
-          <button type="button" class="link-btn" id="resetLayoutBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-            Reset layout
-          </button>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card profile-card">
-      <div class="ring" id="profileRing"><div class="ring-inner"><span class="rl" id="ringLevel">1</span><span class="rc">LEVEL</span></div></div>
-      <div class="profile-stats">
-        <div class="ps-row"><b id="psXpLabel">0 / 100 XP</b><span id="psXpToGo">to next level</span></div>
-        <div class="ps-mini-track"><div class="ps-mini-fill" id="psXpFill" style="width:0%"></div></div>
-        <div class="ps-row"><span>Streak</span><b><span id="psStreakNow">0</span> current · <span id="psStreakBest">0</span> best</b></div>
-        <div class="ps-totals">
-          <span>Flash <b class="flash" id="psFlash">0</b></span>
-          <span>Send <b class="send" id="psSend">0</b></span>
-          <span>Fall <b class="fall" id="psFall">0</b></span>
+      <section class="card profile-card">
+        <div class="ring" id="profileRing"><div class="ring-inner"><span class="rl" id="ringLevel">1</span><span class="rc">LEVEL</span></div></div>
+        <div class="profile-stats">
+          <div class="ps-row"><b id="psXpLabel">0 / 100 XP</b><span id="psXpToGo">to next level</span></div>
+          <div class="ps-mini-track"><div class="ps-mini-fill" id="psXpFill" style="width:0%"></div></div>
+          <div class="ps-row"><span>Streak</span><b><span id="psStreakNow">0</span> current · <span id="psStreakBest">0</span> best</b></div>
+          <div class="ps-totals">
+            <span>Flash <b class="flash" id="psFlash">0</b></span>
+            <span>Send <b class="send" id="psSend">0</b></span>
+            <span>Fall <b class="fall" id="psFall">0</b></span>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <button class="start-cta garage-cta" id="startSessionBtn">
-      <img class="cta-icon" data-ui="start" alt="">
-      <span class="cta-text">
-        <span class="main">Start Session</span>
-        <span class="sub" id="startCtaSub">45s work / 90s rest</span>
-      </span>
-    </button>
-    <div class="home-workouts-row">
-      <button type="button" class="link-btn" id="openWorkoutsBtn">
-        <img class="ui-ic" data-ui="workouts" alt="">
-        Workouts
-      </button>
+      <section class="history-section">
+        <p class="eyebrow">Session History</p>
+        <div id="historyList"></div>
+        <button type="button" class="link-btn" id="historyExpandBtn" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <span class="label">View all sessions</span>
+        </button>
+      </section>
+
+      <footer>
+        <span>Your sessions stay on this device. Climbing is dangerous — you climb at your own risk.</span>
+        <button type="button" class="link-btn" id="openLegalFromHomeBtn">Safety, privacy &amp; terms</button>
+      </footer>
     </div>
-    <!-- ==== THE WALL (removable feature) ==== -->
-    <button type="button" class="wl-card" id="wallCard" hidden>
-      <span class="wl-flame" id="wallCardFlame" aria-hidden="true"><img alt=""></span>
-      <span class="wl-card-main"><span class="wl-card-title" id="wallCardTitle">The Wall</span><span class="wl-card-sub" id="wallCardSub"></span></span>
-      <span class="wl-new" id="wallCardNew" hidden>New hold!</span>
-    </button>
-    <button type="button" class="wl-backfill wl-rescue" id="wallRescueBtn" hidden></button>
-    <!-- ==== END THE WALL ==== -->
-
-    <section class="history-section">
-      <p class="eyebrow">Session History</p>
-      <div id="historyList"></div>
-      <button type="button" class="link-btn" id="historyExpandBtn" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        <span class="label">View all sessions</span>
-      </button>
-    </section>
-
-    <footer>
-      <span>Your sessions stay on this device. Climbing is dangerous — you climb at your own risk.</span>
-      <button type="button" class="link-btn" id="openLegalFromHomeBtn">Safety, privacy &amp; terms</button>
-    </footer>
   </div>
 
   <!-- ================= ACTIVE SESSION ================= -->
@@ -1702,6 +1772,13 @@
       <h2>Customize</h2>
       <button type="button" class="icon-btn" id="closeCustomizeBtn" aria-label="Close customize">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="settings-section" id="arrangeSection">
+      <p class="settings-section-title">Arrange room</p>
+      <p class="settings-section-hint" id="arrangeHint">Drag your decorations to wherever you like.</p>
+      <button type="button" class="btn arrange-open-btn" id="arrangeFromCustomizeBtn">
+        <img class="ui-ic" data-ui="arrange" alt="">Arrange room
       </button>
     </div>
     <div class="settings-section" id="gymPickerSection">
@@ -4367,6 +4444,7 @@
 
   var historyExpanded = false;
   function renderHome(){
+    syncDockHeight(); // the room sits on the dock, so measure it first
     renderWallCard(); // THE WALL hook
     renderCharacterCard();
     var advanced = state.settings.mode==="advanced";
@@ -5153,8 +5231,14 @@
   var GEAR_PLANT_IMG = IMG.gear.pottedPlant;
   var GEAR_PAD_IMG = IMG.gear.crashPadUnfolded;    // real unfolded crash pad
   var GEAR_LIGHTS_IMG = IMG.gear.stringLights;     // real string lights
+  // The painting is drawn a little past the bottom of the viewBox (the Home scene overflows behind the
+  // glass dock). Where a painting ends before that, its own mirror image carries the floor on.
+  function paintingSVG(href, x, y, w, h){
+    var img = function(){ return '<image href="'+href+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" preserveAspectRatio="none"/>'; };
+    return '<g transform="translate(0 '+(2*(y+h)).toFixed(2)+') scale(1 -1)">'+img()+'</g>' + img();
+  }
   function garageSceneSVG(charStage){
-    return '<image href="'+GARAGE_BG_IMG+'" x="0" y="'+GARAGE_BG_Y+'" width="'+GARAGE_BG_W+'" height="'+GARAGE_BG_H+'" preserveAspectRatio="none"/>' + gearSVG(charStage);
+    return paintingSVG(GARAGE_BG_IMG, 0, GARAGE_BG_Y, GARAGE_BG_W, GARAGE_BG_H) + gearSVG(charStage);
   }
   // A room with its own painted background (env.bg = { img, floor }): the 1024x1536 painting is
   // scaled to the scene's width and shifted so its floor line (floor = y in the painting where the
@@ -5162,7 +5246,7 @@
   // the climber, gear and decorations standing on the floor in every room.
   function paintedRoomSVG(env, charStage){
     var k = ROOM_VB_W/1024, h = 1536*k, y = Math.min(0, Math.max(ROOM_VB_H-h, ROOM_FLOOR_Y - env.bg.floor*k));
-    return '<image href="'+env.bg.img+'" x="0" y="'+y.toFixed(2)+'" width="'+ROOM_VB_W+'" height="'+h.toFixed(2)+'" preserveAspectRatio="none"/>' + gearSVG(charStage);
+    return paintingSVG(env.bg.img, 0, +y.toFixed(2), ROOM_VB_W, +h.toFixed(2)) + gearSVG(charStage);
   }
   // The climber's own earned gear, drawn the same way in every painted room.
   function gearSVG(charStage){
@@ -5349,7 +5433,17 @@
     var byEnv = state.character.decorPositionsByEnv || {};
     var o = byEnv[envId] && byEnv[envId][a.id];
     var x = o ? o.x : a.x, y = o ? o.y : (a.foot!=null ? a.foot - a.w*a.ar/1.25 : a.y); // scene is 4:5, so a height of h% of the width is h/1.25 % of the scene
-    return { x:Math.max(0, Math.min(100-a.w, x)), y:Math.max(0, Math.min(96, y)) };
+    var v = sceneVisible();
+    return { x:Math.max(v.x, Math.min(100-v.x-a.w, x)), y:Math.max(v.y, Math.min(96, y)) };
+  }
+  // The stage is a little wider and taller than the screen, so the room's sides and ceiling are
+  // cropped. This says how much (percent of the stage) so decorations are never stranded off screen.
+  function sceneVisible(){
+    var st = document.getElementById("characterScene"), hero = st.parentNode;
+    var sw = st.offsetWidth, sh = st.offsetHeight, hw = hero.clientWidth, hh = hero.clientHeight;
+    if(!sw || !sh || !hw) return { x:0, y:0 };
+    var dock = parseFloat(getComputedStyle(document.getElementById("view-home")).getPropertyValue("--dock-h")) || 0;
+    return { x:Math.max(0, (sw-hw)/2/sw*100), y:Math.max(0, (sh-(hh-dock))/sh*100) };
   }
   // ---- Room Lab: a simple room-placement system, tested with throwaway colored squares ----
   // Three invisible attachment surfaces for the Garage. Nothing is drawn for these — they're
@@ -5435,8 +5529,9 @@
       if(!drag || e.pointerId!==drag.pointerId) return;
       var rect = host.getBoundingClientRect();
       var w = drag.el.offsetWidth, h = drag.el.offsetHeight;
-      var minX = centered ? w/2 : 0, minY = centered ? h/2 : 0;
-      var maxX = Math.max(minX, rect.width - (centered ? w/2 : w));
+      var vis = host.id==="sceneLayers" || host.id==="roomLabLayer" ? sceneVisible() : { x:0, y:0 };
+      var minX = (centered ? w/2 : 0) + vis.x/100*rect.width, minY = (centered ? h/2 : 0) + vis.y/100*rect.height;
+      var maxX = Math.max(minX, rect.width*(1-vis.x/100) - (centered ? w/2 : w));
       var maxY = Math.max(minY, rect.height - (centered ? h/2 : h));
       var x = Math.max(minX, Math.min(maxX, (e.clientX-rect.left) - drag.dx));
       var y = Math.max(minY, Math.min(maxY, (e.clientY-rect.top) - drag.dy));
@@ -5518,6 +5613,10 @@
     // so its button isn't stuck hidden with no way to reach Done.
     var hasDecor = activeDecorations().length>0;
     document.getElementById("arrangeToggleBtn").hidden = !hasDecor;
+    document.getElementById("arrangeFromCustomizeBtn").disabled = !hasDecor;
+    document.getElementById("arrangeHint").textContent = hasDecor
+      ? "Drag your decorations to wherever you like."
+      : "Turn on a piece under Decorate first, then you can move it around.";
     if(!hasDecor && arrangeMode) setArrangeMode(false);
   }
 
@@ -5528,6 +5627,8 @@
     document.getElementById("sceneLayers").classList.toggle("arrange-mode", on);
     document.getElementById("arrangeToggleBtn").querySelector(".label").textContent = on ? "Done" : "Arrange";
     document.getElementById("arrangeRow").hidden = !on;
+    document.getElementById("homeHero").classList.toggle("arranging", on);
+    if(on) closeHomeMenu();
   }
   // Only accessories carry data-decor-id, so a future room prop is never draggable. Positions
   // are saved under the gym currently on screen.
@@ -5692,7 +5793,7 @@
     // Clamp off the actual rendered size, not a hardcoded px number — the scene is a
     // responsive (%-based) box now, so this has to hold on a small phone, a wide tablet,
     // and everything between without ever letting the move clip out of its habitat.
-    var maxX = Math.max(0, scene.clientWidth/2 - wander.offsetWidth/2 - 6);
+    var maxX = Math.max(0, Math.min(scene.clientWidth, scene.parentNode.clientWidth)/2 - wander.offsetWidth/2 - 6);
     var startX = Math.max(-maxX, Math.min(maxX, wanderOffsetX));
     // A drawn step has its foot placement baked in, so its stride is exact (a fraction of the
     // box width): step the way there's room, or react in place if there's room neither way.
@@ -6417,6 +6518,53 @@
   document.getElementById("openCustomizeBtn").addEventListener("click", openCustomize);
   document.getElementById("closeCustomizeBtn").addEventListener("click", closeCustomize);
   document.getElementById("arrangeToggleBtn").addEventListener("click", function(){ setArrangeMode(!arrangeMode); });
+  // Arrange lives inside Customize: its button closes the sheet and starts arranging on the Home scene.
+  document.getElementById("arrangeFromCustomizeBtn").addEventListener("click", function(){
+    if(this.disabled) return;
+    closeCustomize();
+    switchView("home");
+    window.scrollTo(0, 0);
+    setArrangeMode(true);
+  });
+
+  // ---- Home: "more" menu (Drills, Progress), the scroll cue, and the dock's measured height ----
+  function closeHomeMenu(){
+    document.getElementById("homeMenu").hidden = true;
+    document.getElementById("homeMenuBtn").setAttribute("aria-expanded", "false");
+  }
+  document.getElementById("homeMenuBtn").addEventListener("click", function(e){
+    e.stopPropagation();
+    var menu = document.getElementById("homeMenu"), open = menu.hidden;
+    menu.hidden = !open;
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+    if(open) menu.querySelector("button").focus({ preventScroll:true });
+  });
+  document.getElementById("homeMenu").addEventListener("click", closeHomeMenu); // choosing an item opens its sheet
+  document.addEventListener("click", function(e){ if(!e.target.closest("#homeMenu")) closeHomeMenu(); });
+  document.addEventListener("keydown", function(e){
+    if(e.key==="Escape" && !document.getElementById("homeMenu").hidden){ closeHomeMenu(); document.getElementById("homeMenuBtn").focus(); }
+  });
+  document.getElementById("homeMoreBtn").addEventListener("click", function(){
+    document.getElementById("homeMore").scrollIntoView({ behavior:prefersReducedMotion ? "auto" : "smooth", block:"start" });
+  });
+  // The stage sits on top of the dock, so it needs the dock's real height (text size, safe area).
+  function syncDockHeight(){
+    var dock = document.getElementById("homeDock"), hero = document.getElementById("homeHero");
+    if(!dock.offsetHeight) return; // hidden (another view, or arranging): keep the last value
+    var h = Math.ceil(hero.getBoundingClientRect().bottom - dock.getBoundingClientRect().top);
+    if(h>0) document.getElementById("view-home").style.setProperty("--dock-h", h+"px");
+  }
+  var homeResizeTimer = null;
+  function homeRelayout(){
+    clearTimeout(homeResizeTimer);
+    homeResizeTimer = setTimeout(function(){
+      if(document.getElementById("view-home").hidden) return;
+      syncDockHeight();
+      renderSceneEnvironment(selectedEnvironment(), selectedCharacterStage()); // re-place decorations inside the new window
+    }, 120);
+  }
+  window.addEventListener("resize", homeRelayout);
+  if(window.ResizeObserver){ var homeRO = new ResizeObserver(homeRelayout); homeRO.observe(document.getElementById("homeHero")); homeRO.observe(document.getElementById("homeDock")); }
   document.getElementById("resetLayoutBtn").addEventListener("click", function(){
     // Only the gym on screen — other gyms keep their own arrangements.
     if(state.character.decorPositionsByEnv) delete state.character.decorPositionsByEnv[selectedEnvironment().id];

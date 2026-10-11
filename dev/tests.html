@@ -1122,6 +1122,50 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().character.outfit.headband===null, "Plain didn't clear the headband");
   });
 
+  test("Home: Start, Wall, Customize and Workouts sit on the dock; Drills and Progress are in the menu; no Arrange button", async function(){
+    await boot(TEMPLATE); await goHome();
+    ["startSessionBtn", "wallCard", "openCustomizeBtn", "openWorkoutsBtn"].forEach(function(id){
+      expect(visible(id), id+" isn't showing on Home");
+      expect(!!$(id).closest("#homeDock"), id+" isn't in the dock");
+    });
+    expect(!visible("arrangeToggleBtn") && !visible("arrangeRow"), "an Arrange button is showing on Home");
+    expect(!q(".home-hero .scene-chip") && !/Arrange/.test($("homeDock").textContent), "the dock still mentions Arrange");
+    expect(visible("openSettingsBtn") && $("homeHero").contains($("openSettingsBtn")), "no Settings button in the top row");
+    expect(!!$("openDrillsBtn").closest("#homeMenu") && !!$("openProgressBtn").closest("#homeMenu"), "Drills/Progress aren't in the menu");
+    expect(!visible("homeMenu"), "the menu starts open");
+    await click("homeMenuBtn"); expect(visible("homeMenu"), "the menu button doesn't open the menu");
+    await click("openProgressBtn", 250);
+    expect(visible("progressOverlay") && !visible("homeMenu"), "Progress from the menu didn't open (or the menu stayed open)");
+    await click("closeProgressBtn");
+    await click("homeMenuBtn"); await click("openDrillsBtn", 250);
+    expect(visible("drillsOverlay"), "Drills from the menu didn't open");
+    await click("closeDrillsBtn");
+    await click("openCustomizeBtn"); expect(visible("customizeOverlay"), "Customize didn't open"); await click("closeCustomizeBtn");
+    await click("openWorkoutsBtn", 250); expect(visible("workoutsOverlay"), "Workouts didn't open"); await click("closeWorkoutsBtn");
+    await click("wallCard", 400); expect(visible("view-wall"), "The Wall card didn't open the Wall"); await goHomeFromWall();
+    await click("startSessionBtn", 250); expect(visible("view-session"), "Start Session didn't start a session");
+  });
+
+  test("Home: Arrange room is inside Customize and still drags, resets and finishes", async function(){
+    var seed = clone(TEMPLATE); seed.character = seed.character || {}; seed.character.decorations = [];
+    await boot(seed); await goHome();
+    await click("openCustomizeBtn");
+    expect(visible("arrangeFromCustomizeBtn") && $("arrangeFromCustomizeBtn").disabled, "Arrange room should wait for a decoration");
+    await click("closeCustomizeBtn");
+    seed.character.decorations = ["haybail", "chalkbag"];
+    await boot(seed); await goHome();
+    await click("openCustomizeBtn");
+    expect(visible("arrangeFromCustomizeBtn") && !$("arrangeFromCustomizeBtn").disabled, "Arrange room isn't available in Customize");
+    await click("arrangeFromCustomizeBtn", 250);
+    expect(!visible("customizeOverlay"), "Customize stayed open");
+    expect(visible("arrangeRow") && visible("arrangeToggleBtn") && /Done/.test($("arrangeToggleBtn").textContent), "no Done bar while arranging");
+    expect(visible("resetLayoutBtn"), "no Reset layout while arranging");
+    expect($("sceneLayers").classList.contains("arrange-mode"), "the scene isn't in arrange mode");
+    expect(qa("#sceneLayers [data-decor-id]").length===2, "decorations missing from the scene");
+    await click("arrangeToggleBtn");
+    expect(!visible("arrangeRow") && !$("sceneLayers").classList.contains("arrange-mode"), "Done didn't leave arrange mode");
+  });
+
   test("The app is called Crux (never Crimpet)", async function(){
     await boot(TEMPLATE);
     expect(D.title==="Crux", "page title is '"+D.title+"'");
