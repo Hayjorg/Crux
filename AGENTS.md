@@ -90,7 +90,16 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **Blob ids** for the variant art go in `CLIMBER_VARIANT_BLOB` ("<id>/<folder>/<name>"); empty until Claude uploads them (rule 2).
   `night` exists in dev/outfit but is off-model and held back.
 
-## Head items: beanies, caps, bandanas (2026-10-10)
+## Parked hats (2026-10-11)
+
+Beanies, caps, bandanas, bucket hats and berets were taken out of the app (3D-rendered hats looked off to Hayden/Max). Their rows are
+**removed from `OUTFIT_ITEMS`** and their chips from `OUTFIT_HEAD_KINDS`, so Headwear shows Headbands (teal-knit + 23 colourways) and Headlamps only.
+Their ids (`beanie-*`, `cap-*`, `bandana-*`, `bucket-*`, `beret-*`) are reserved: a saved selection of one is kept in the save but inert (draws nothing, picker shows Plain; same path as any unknown id)
+and never throws. **Art is kept** in `assets/outfit/{beanie,cap,bandana,bucket,beret}/` and `dev/outfit/`; **the build excludes nothing** (`build-site.ps1`
+still ships `assets/outfit/**`, so the parked art is in the installed app, ~unused weight). To revive: restore the rows from git history (c1d530e) and the chips.
+The two sections below describe the method and the parked rows.
+
+## Head items: beanies, caps, bandanas (2026-10-10, PARKED)
 
 They live in the existing `headband` slot (one head item at a time), as 24 rows in `OUTFIT_ITEMS` (`beanie-red`, `cap-navy`, ...).
 - **Art** is three neutral-grey delta-layer folders, `assets/outfit/<beanie|cap|bandana>/<folder>/<name>.png` (40 frames each, 128-colour
@@ -102,7 +111,7 @@ They live in the existing `headband` slot (one head item at a time), as 24 rows 
 - **Picker**: Customize > Outfit > Headwear shows chips by `kind` (Headbands / Beanies / Caps / Bandanas), earliest unlock first.
 - **Blob ids** (`OUTFIT_BLOB["beanie/idle/idle-01"]` etc.) are empty until Claude uploads the three folders (rule 2).
 
-## Accessories: buckets, headlamps, berets, shirts, shorts (2026-10-11)
+## Accessories: buckets, headlamps, berets, shirts, shorts (2026-10-11; buckets and berets PARKED, headlamps/shirts/shorts live)
 
 Same neutral-grey delta-layer + `tint:{color}` method as the hats above (`OUTFIT_GREY` 148).
 - **Headwear** (slot `headband`): new `kind`s `bucket`, `headlamp`, `beret` (6 colours each, `art:` = the kind). The picker chips scroll sideways. `visor` is held back.
