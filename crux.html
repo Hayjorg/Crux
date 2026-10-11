@@ -2153,7 +2153,16 @@
   // skipped ones, so frames is null and skip lists the rest; skipped frames show the original orange art.
   var OUTFIT_SLOTS = ["shoes", "chalkbag", "headband"]; // draw order, bottom to top
   var OUTFIT_ITEMS = {
-    "teal-knit": { slot:"headband", name:"Teal knit headband", unlock:{ level:3 },            frames:null, skip:[] },
+    // --- headband (base art teal-knit, hue ~183) ---
+    "teal-knit":  { slot:"headband", name:"Teal knit headband", art:"teal-knit", tint:null, unlock:{ level:3 }, frames:null, skip:[] },
+    "red-knit":   { slot:"headband", name:"Red knit headband", art:"teal-knit", tint:{ hue:170, sat:2, bri:0.8 }, unlock:{ level:2 }, frames:null, skip:[] },
+    "yellow-knit":{ slot:"headband", name:"Yellow knit headband", art:"teal-knit", tint:{ hue:238, sat:1.6, bri:1.4 }, unlock:{ level:4 }, frames:null, skip:[] },
+    "orange-knit":{ slot:"headband", name:"Orange knit headband", art:"teal-knit", tint:{ hue:209, sat:1.8, bri:1.1 }, unlock:{ level:6 }, frames:null, skip:[] },
+    "green-knit": { slot:"headband", name:"Green knit headband", art:"teal-knit", tint:{ hue:310, sat:1.2, bri:1 }, unlock:{ level:9 }, frames:null, skip:[] },
+    "purple-knit":{ slot:"headband", name:"Purple knit headband", art:"teal-knit", tint:{ hue:99, sat:1.4, bri:0.9 }, unlock:{ level:12 }, frames:null, skip:[] },
+    "pink-knit":  { slot:"headband", name:"Pink knit headband", art:"teal-knit", tint:{ hue:145, sat:1.2, bri:1.1 }, unlock:{ level:16 }, frames:null, skip:[] },
+    "black-knit": { slot:"headband", name:"Black knit headband", art:"teal-knit", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:22, holds:40 }, frames:null, skip:[] },
+    "white-knit": { slot:"headband", name:"White knit headband", art:"teal-knit", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:28, holds:60 }, frames:null, skip:[] },
     // --- beanies: neutral-grey base art assets/outfit/beanie/, colourised by tint.color ---
     "beanie-red":     { slot:"headband", kind:"beanie", name:"Beanie · Red", art:"beanie", tint:{ color:"#c8322d" }, unlock:{ level:2 }, frames:null, skip:[] },
     "beanie-navy":    { slot:"headband", kind:"beanie", name:"Beanie · Navy", art:"beanie", tint:{ color:"#1f3566" }, unlock:{ level:6 }, frames:null, skip:[] },
@@ -2181,8 +2190,25 @@
     "bandana-navy":   { slot:"headband", kind:"bandana", name:"Bandana · Navy", art:"bandana", tint:{ color:"#1f3566" }, unlock:{ level:25 }, frames:null, skip:[] },
     "bandana-charcoal":{ slot:"headband", kind:"bandana", name:"Bandana · Charcoal", art:"bandana", tint:{ color:"#3b3d42" }, unlock:{ level:28, holds:50 }, frames:null, skip:[] },
     "bandana-cream":  { slot:"headband", kind:"bandana", name:"Bandana · Cream", art:"bandana", tint:{ color:"#efe6cc" }, unlock:{ level:30, holds:60 }, frames:null, skip:[] },
-    "teal":      { slot:"chalkbag", name:"Teal chalk bag",     unlock:{ level:5, holds:10 },  frames:null, skip:[] },
-    "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:[] }
+    // --- chalk bag (base art teal, hue ~188) ---
+    "teal":       { slot:"chalkbag", name:"Teal chalk bag", art:"teal", tint:null, unlock:{ level:5, holds:10 }, frames:null, skip:[] },
+    "red-bag":    { slot:"chalkbag", name:"Red chalk bag", art:"teal", tint:{ hue:168, sat:2, bri:0.9 }, unlock:{ level:3 }, frames:null, skip:[] },
+    "yellow-bag": { slot:"chalkbag", name:"Yellow chalk bag", art:"teal", tint:{ hue:227, sat:1.6, bri:1.5 }, unlock:{ level:7 }, frames:null, skip:[] },
+    "green-bag":  { slot:"chalkbag", name:"Green chalk bag", art:"teal", tint:{ hue:305, sat:1.2, bri:1.2 }, unlock:{ level:11 }, frames:null, skip:[] },
+    "orange-bag": { slot:"chalkbag", name:"Orange chalk bag", art:"teal", tint:{ hue:198, sat:2, bri:1.4 }, unlock:{ level:14 }, frames:null, skip:[] },
+    "purple-bag": { slot:"chalkbag", name:"Purple chalk bag", art:"teal", tint:{ hue:94, sat:1.4, bri:1.1 }, unlock:{ level:18 }, frames:null, skip:[] },
+    "pink-bag":   { slot:"chalkbag", name:"Pink chalk bag", art:"teal", tint:{ hue:149, sat:1.4, bri:1.4 }, unlock:{ level:20 }, frames:null, skip:[] },
+    "black-bag":  { slot:"chalkbag", name:"Black chalk bag", art:"teal", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:24, holds:50 }, frames:null, skip:[] },
+    "white-bag":  { slot:"chalkbag", name:"White chalk bag", art:"teal", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:30, holds:60 }, frames:null, skip:[] },
+    // --- shoes (base art blue, hue ~210; the original orange stays as Plain) ---
+    "blue":       { slot:"shoes", name:"Blue shoes", art:"blue", tint:null, unlock:{ level:8 }, frames:null, skip:[] },
+    "red-shoes":  { slot:"shoes", name:"Red shoes", art:"blue", tint:{ hue:128, sat:2, bri:1.3 }, unlock:{ level:4 }, frames:null, skip:[] },
+    "green-shoes":{ slot:"shoes", name:"Green shoes", art:"blue", tint:{ hue:262, sat:1, bri:1.5 }, unlock:{ level:6 }, frames:null, skip:[] },
+    "teal-shoes": { slot:"shoes", name:"Teal shoes", art:"blue", tint:{ hue:318, sat:2, bri:1.5 }, unlock:{ level:10 }, frames:null, skip:[] },
+    "purple-shoes":{ slot:"shoes", name:"Purple shoes", art:"blue", tint:{ hue:45, sat:1.6, bri:1.5 }, unlock:{ level:13 }, frames:null, skip:[] },
+    "pink-shoes": { slot:"shoes", name:"Pink shoes", art:"blue", tint:{ hue:109, sat:1.4, bri:1.5 }, unlock:{ level:17 }, frames:null, skip:[] },
+    "black-shoes":{ slot:"shoes", name:"Black shoes", art:"blue", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:21, holds:45 }, frames:null, skip:[] },
+    "white-shoes":{ slot:"shoes", name:"White shoes", art:"blue", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:26, holds:55 }, frames:null, skip:[] }
   };
   var OUTFIT_SLOT_NAMES = { headband:"Headwear", chalkbag:"Chalk bag", shoes:"Shoes" };
   // Head items share one slot (one at a time); `kind` only groups them in the picker. Order = chip order.
@@ -5404,8 +5430,8 @@
     for(var i=0;i<3;i++) for(var j=0;j<3;j++) m[i][j] = b*(S[i][0]*H[0][j] + S[i][1]*H[1][j] + S[i][2]*H[2][j]);
     return m;
   }
-  // A canvas of `img` with the tint baked in (the share card; no ctx.filter, older iOS Safari lacks it). If the pixels
-  // can't be read, the untinted picture is returned.
+  // Returns a canvas of `img` with the tint baked in. No ctx.filter (older iOS Safari lacks it). If the pixels can't be
+  // read, falls back to ctx.filter, then to the untinted picture.
   function outfitTintCanvas(img, t){
     var c = document.createElement("canvas"); c.width = img.naturalWidth||img.width; c.height = img.naturalHeight||img.height;
     var x = c.getContext("2d"); x.drawImage(img, 0, 0);
@@ -5419,7 +5445,9 @@
         p[i+2] = r*m[2][0]+g*m[2][1]+b*m[2][2];
       }
       x.putImageData(d, 0, 0);
-    }catch(e){}
+    }catch(e){
+      if("filter" in x){ x.clearRect(0, 0, c.width, c.height); x.filter = outfitFilterCSS(t); x.drawImage(img, 0, 0); x.filter = "none"; }
+    }
     return c;
   }
   // The layers to draw over a body frame, bottom to top (OUTFIT_SLOTS order). Pure: the caller passes the state.

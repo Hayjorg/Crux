@@ -93,6 +93,7 @@ They live in the existing `headband` slot (one head item at a time), as 24 rows 
 - **Colour** comes from `tint:{ color:"#rrggbb" }`: each pixel is multiplied per channel by `color / OUTFIT_GREY` (162, the art's mean grey).
   DOM layers use an inline SVG `feColorMatrix` filter (`outfitFilterCSS()`), the share card the same numbers in `outfitTintCanvas()`.
   Hue-rotate alone cannot colour a grey, so never use `{hue,sat,bri}` on this art.
+- **Two tint kinds, one path** (`outfitFilterCSS` / `outfitTintMatrix` / `outfitTintCanvas`, merged 2026-10-10 with the colourways): `{hue,sat,bri}` re-hues coloured art (the 23 knit/bag/shoe colourways); `{color}` colourises grey art (hats).
 - **Picker**: Customize > Outfit > Headwear shows chips by `kind` (Headbands / Beanies / Caps / Bandanas), earliest unlock first.
 - **Blob ids** (`OUTFIT_BLOB["beanie/idle/idle-01"]` etc.) are empty until Claude uploads the three folders (rule 2).
 
