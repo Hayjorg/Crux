@@ -1215,13 +1215,13 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().character.outfit.headband===null, "Plain didn't clear the headband");
   });
 
-  // ---- Head items: beanies, caps, bandanas (neutral-grey art, colourised at run time) ----
+  // ---- Head items: headlamps (neutral-grey art, colourised at run time; beanie/cap/bandana/bucket/beret are parked, see AGENTS.md) ----
   var HAT_FRAMES = ["blink/blink-01", "blink/blink-02", "cheer/cheer-1", "cheer/cheer-2", "cheer/cheer-3", "climb/climb-chalk-up", "climb/climb-pull", "climb/climb-reach-left", "climb/climb-reach-right", "idle/idle-01", "idle/idle-02", "idle/idle-03", "idle/idle-04", "jump/jump-01", "jump/jump-02", "jump/jump-03", "land/land-01", "land/land-02", "move/move-chalk-clap-1", "move/move-chalk-clap-2", "move/move-chalk-clap-3", "move/move-dance-1", "move/move-dance-2", "move/move-dance-3", "move/move-dance-4", "move/move-fist-pump-1", "move/move-fist-pump-2", "move/move-fist-pump-3", "move/move-wave-1", "move/move-wave-2", "move/move-wave-3", "move/move-wave-4", "rest/rest-day", "sit/ledge-sit-look", "sit/ledge-sit", "step/step-01", "step/step-02", "step/step-03", "summit/summit-flag-1", "summit/summit-flag-2"];
   test("Hats: every head item has its art folder with all 40 frames, valid unlock fields and a valid tint", async function(){
     await boot(clone(TEMPLATE));
     var O = W.__cruxOutfit, ids = Object.keys(O.items), heads = ids.filter(function(i){ return O.items[i].slot==="headband"; });
     var hats = heads.filter(function(i){ return O.items[i].kind && O.items[i].kind!=="headband"; });
-    expect(hats.length===42, "expected 42 hats, got "+hats.length);
+    expect(hats.length===6, "expected 6 hats (headlamps), got "+hats.length);
     var kinds = O.headKinds.map(function(k){ return k.id; });
     var names = {}, arts = {};
     hats.forEach(function(id){
@@ -1235,7 +1235,9 @@ and the project rules. It runs on its own private copy of the data, never your r
       expect(it.frames===null && Array.isArray(it.skip), id+": frames/skip");
       arts[it.art] = 1;
     });
-    var WANT = { beanie:8, cap:8, bandana:8, bucket:6, headlamp:6, beret:6 };
+    var WANT = { headlamp:6 };
+    expect(kinds.join()==="headband,headlamp", "head kinds: "+kinds.join());
+    ["beanie-red", "cap-navy", "bandana-orange", "bucket-cream", "beret-black"].forEach(function(id){ expect(!O.items[id], id+" should be parked (not in OUTFIT_ITEMS)"); });
     kinds.slice(1).forEach(function(k){ expect(hats.filter(function(i){ return O.items[i].kind===k; }).length===WANT[k], k+": expected "+WANT[k]+" colourways"); });
     for(var art of Object.keys(arts)){
       var missing = [];
@@ -1249,7 +1251,7 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
   test("Hats: tint.color colourises a grey (DOM filter and share-card pixels agree), and layers carry it", async function(){
     await boot(clone(TEMPLATE));
-    var O = W.__cruxOutfit, it = O.items["beanie-red"];
+    var O = W.__cruxOutfit, it = O.items["headlamp-red"];
     var css = O.filterCSS(it.tint);
     expect(/^url\(#otint-[0-9a-f]{6}\)$/.test(css) && D.getElementById(css.slice(5, -1)), "filter: "+css);
     var vals = D.getElementById(css.slice(5, -1)).firstChild.getAttribute("values").split(/\s+/).map(Number);
@@ -1262,59 +1264,66 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(Math.abs(o[0]-0xc8)<=1 && Math.abs(o[1]-0x32)<=1 && Math.abs(o[2]-0x2d)<=1 && o[3]===255, "tinted grey: "+Array.prototype.join.call(o, ","));
     // hue-rotate-only tints still use CSS filter functions
     expect(/^hue-rotate\(/.test(O.filterCSS({ hue:90, sat:1, bri:1 })), "hue tint form");
-    var L = O.layersFor(O.idle[0], { headband:"cap-navy", chalkbag:"teal", shoes:"blue" }, 40, 0);
+    var L = O.layersFor(O.idle[0], { headband:"headlamp-red", chalkbag:"teal", shoes:"blue" }, 40, 0);
     expect(L.map(function(l){ return l.slot; }).join()==="shoes,chalkbag,headband", "stack order with a hat");
-    expect(L[2].art==="cap" && L[2].filter===O.filterCSS(O.items["cap-navy"].tint) && !L[0].filter, "layer tint/filter");
-    expect(L[2].url.indexOf("outfit/cap/idle/idle-01.png")>=0, "hat layer address: "+L[2].url);
-    expect(!O.layersFor(O.idle[0], { headband:"cap-cream" }, 28, 0).length, "cap-cream drew while locked");
-    expect(O.layersFor(O.idle[0], { headband:"cap-cream" }, 1, 55).length===1 && O.layersFor(O.idle[0], { headband:"cap-cream" }, 29, 0).length===1, "cap-cream: level 29 or 55 holds");
+    expect(L[2].art==="headlamp" && L[2].filter===O.filterCSS(O.items["headlamp-red"].tint) && !L[0].filter, "layer tint/filter");
+    expect(L[2].url.indexOf("outfit/headlamp/idle/idle-01.png")>=0, "hat layer address: "+L[2].url);
+    expect(!O.layersFor(O.idle[0], { headband:"headlamp-cream" }, 31, 0).length, "headlamp-cream drew while locked");
+    expect(O.layersFor(O.idle[0], { headband:"headlamp-cream" }, 32, 0).length===1, "headlamp-cream: level 32");
+    expect(!O.layersFor(O.idle[0], { headband:"beanie-red" }, 40, 0).length, "a parked hat id drew");
   });
   test("Hats: the Headwear picker groups by type with chips, sorted by unlock level, locked ones disabled; one head item at a time; choice persists", async function(){
     var s = clone(TEMPLATE); s.settings.devLevel = 12;
     await boot(s); await openCustomize();
     var grid = q("#outfitPickerGrid"), chips = qa("#outfitPickerGrid .picker-chips [data-outfit-kind]");
-    expect(chips.map(function(c){ return c.textContent; }).join()==="Headbands,Beanies,Caps,Bandanas,Buckets,Berets,Headlamps", "chips: "+chips.map(function(c){ return c.textContent; }).join());
-    expect(qa("#outfitPickerGrid [data-outfit-item^='beanie']").length===0 && qa("#outfitPickerGrid [data-outfit-item]").length>0, "the default group should be Headbands only");
-    await click(q('#outfitPickerGrid [data-outfit-kind="beanie"]'), 200);
-    var items = qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Beanie/.test((b.querySelector(".picker-name")||{}).textContent||""); });
-    expect(items.length===8, "beanies shown: "+items.length);
+    expect(chips.map(function(c){ return c.textContent; }).join()==="Headbands,Headlamps", "chips: "+chips.map(function(c){ return c.textContent; }).join());
+    expect(qa("#outfitPickerGrid [data-outfit-item^='headlamp']").length===0 && qa("#outfitPickerGrid [data-outfit-item]").length>0, "the default group should be Headbands only");
+    await click(q('#outfitPickerGrid [data-outfit-kind="headlamp"]'), 200);
+    var items = qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Headlamp/.test((b.querySelector(".picker-name")||{}).textContent||""); });
+    expect(items.length===6, "headlamps shown: "+items.length);
     var lv = items.map(function(b){ var m = (b.querySelector(".picker-lock")||{}).textContent||""; return b.classList.contains("locked") ? +(/Level (\d+)/.exec(m)||[0, 99])[1] : 0; });
-    expect(items.filter(function(b){ return b.classList.contains("locked"); }).every(function(b){ return b.disabled && /Level \d+/.test(b.querySelector(".picker-lock").textContent); }), "locked beanies need a disabled button and level hint");
-    expect(lv.every(function(v, i){ return i===0 || v>=lv[i-1]; }), "beanies aren't sorted by unlock level: "+lv.join());
-    expect(items.some(function(b){ return /Charcoal/.test(b.textContent) && /Wall holds/.test(b.textContent); }), "charcoal should show its Wall holds route");
+    expect(items.filter(function(b){ return b.classList.contains("locked"); }).every(function(b){ return b.disabled && /Level \d+/.test(b.querySelector(".picker-lock").textContent); }), "locked headlamps need a disabled button and level hint");
+    expect(lv.every(function(v, i){ return i===0 || v>=lv[i-1]; }), "headlamps aren't sorted by unlock level: "+lv.join());
     expect(grid.scrollWidth<=grid.clientWidth+1, "picker overflows horizontally");
-    // equip a beanie, then a cap: one head item at a time, saved
-    await click(q('#outfitPickerGrid [data-outfit-item="beanie-red"]'), 200);
-    expect(saved().character.outfit.headband==="beanie-red", "beanie not saved: "+saved().character.outfit.headband);
-    await click(q('#outfitPickerGrid [data-outfit-kind="cap"]'), 200);
-    expect(q('#outfitPickerGrid [data-outfit-item="beanie-red"]')===null, "other types stay hidden");
-    await click(q('#outfitPickerGrid [data-outfit-item="cap-navy"]'), 200);
-    expect(saved().character.outfit.headband==="cap-navy", "cap not saved");
+    // equip a headlamp, then a knit headband: one head item at a time, saved
+    await click(q('#outfitPickerGrid [data-outfit-item="headlamp-red"]'), 200);
+    expect(saved().character.outfit.headband==="headlamp-red", "headlamp not saved: "+saved().character.outfit.headband);
+    await click(q('#outfitPickerGrid [data-outfit-kind="headband"]'), 200);
+    expect(q('#outfitPickerGrid [data-outfit-item="headlamp-red"]')===null, "other types stay hidden");
+    await click(q('#outfitPickerGrid [data-outfit-item="yellow-knit"]'), 200);
+    expect(saved().character.outfit.headband==="yellow-knit", "headband not saved");
     expect(qa("#outfitPickerGrid .picker-item.selected").filter(function(b){ return b.getAttribute("data-outfit-slot")==="headband"; }).length===1, "exactly one head item selected");
     var layers = qa("#characterBody img.outfit-layer");
-    expect(layers.length===1 && /url\(["']?#otint-/.test(layers[0].style.filter), "Home layer isn't tinted: "+layers.length);
+    expect(layers.length===1, "Home layer count: "+layers.length);
     // reopening Customize starts on the worn item's type; the saved choice survives a reload
     await boot(JSON.parse(STORE[KEY])); await openCustomize();
-    expect(q('#outfitPickerGrid [data-outfit-kind="cap"]').classList.contains("selected"), "picker should open on the worn type");
-    expect(q('#outfitPickerGrid [data-outfit-item="cap-navy"]').classList.contains("selected"), "equipped hat not selected after reload");
-    expect(saved().character.outfit.headband==="cap-navy", "equip didn't persist");
+    expect(q('#outfitPickerGrid [data-outfit-kind="headband"]').classList.contains("selected"), "picker should open on the worn type");
+    expect(q('#outfitPickerGrid [data-outfit-item="yellow-knit"]').classList.contains("selected"), "equipped headband not selected after reload");
+    expect(saved().character.outfit.headband==="yellow-knit", "equip didn't persist");
   });
-  test("Hats: old saves and backups are unaffected; a hat id survives normalizeState and a backup round trip", async function(){
+  test("Hats: old saves and backups are unaffected; a headlamp id survives normalizeState and a backup round trip; a parked hat id is inert (draws nothing, no throw)", async function(){
     var old = clone(TEMPLATE); old.character.outfit = { headband:"teal-knit", chalkbag:"teal", shoes:null };
     await boot(old);
     expect(saved().character.outfit.headband==="teal-knit" && saved().character.outfit.chalkbag==="teal", "existing outfit changed");
-    var s = clone(TEMPLATE); s.character.outfit = { headband:"bandana-orange", chalkbag:null, shoes:null }; s.settings.devLevel = 10;
+    var s = clone(TEMPLATE); s.character.outfit = { headband:"headlamp-red", chalkbag:null, shoes:null }; s.settings.devLevel = 12;
     await boot(s);
-    expect(saved().character.outfit.headband==="bandana-orange", "hat id dropped on load");
+    expect(saved().character.outfit.headband==="headlamp-red", "headlamp id dropped on load");
     var json = await exportJson(); await boot(clone(TEMPLATE)); await importText(json);
-    expect(saved().character.outfit.headband==="bandana-orange", "hat id lost in a backup round trip");
+    expect(saved().character.outfit.headband==="headlamp-red", "headlamp id lost in a backup round trip");
+    for(var parked of ["beanie-red", "cap-navy", "bandana-orange", "bucket-cream", "beret-black"]){
+      var p = clone(TEMPLATE); p.character.outfit = { headband:parked, chalkbag:"teal", shoes:null }; p.settings.devLevel = 34;
+      await boot(p);
+      // the id is kept in the save (forward compatible) but is inert: nothing draws for it, and Plain shows as selected
+      expect(saved().character.outfit.chalkbag==="teal", "other slots changed for "+parked);
+      expect(qa("#characterBody img.outfit-layer").length===1, parked+" drew a layer (only the chalk bag should)");
+    }
   });
 
   // ---- Accessories: bucket hats, headlamps, berets (headband slot) + the new shirt and shorts slots ----
   var ACC_SKIP = { shirt:["move/move-chalk-clap-1", "move/move-chalk-clap-2", "move/move-chalk-clap-3"], shorts:["rest/rest-day", "climb/climb-reach-left", "climb/climb-pull"] };
-  test("Accessories: every shirt/shorts/bucket/headlamp/beret row has valid fields and its art for every frame except skip", async function(){
+  test("Accessories: every shirt/shorts/headlamp row has valid fields and its art for every frame except skip", async function(){
     await boot(clone(TEMPLATE));
-    var O = W.__cruxOutfit, ids = Object.keys(O.items), want = { shirt:10, shorts:8, bucket:6, headlamp:6, beret:6 };
+    var O = W.__cruxOutfit, ids = Object.keys(O.items), want = { shirt:10, shorts:8, headlamp:6 };
     expect(O.slots.join()==="shoes,chalkbag,shirt,shorts,headband", "slot order: "+O.slots.join());
     var counts = {}, arts = {}, names = {};
     ids.forEach(function(id){
@@ -1348,9 +1357,9 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(o.shirt===null && o.shorts===null && o.headband==="teal-knit" && o.shoes==="blue", "migrated outfit: "+JSON.stringify(o));
     var none = clone(TEMPLATE); delete none.character.outfit; await boot(none);
     o = saved().character.outfit; expect(o.shirt===null && o.shorts===null && o.headband===null, "no outfit at all: "+JSON.stringify(o));
-    var s = clone(TEMPLATE); s.settings.devLevel = 34; s.character.outfit = { headband:"beret-black", chalkbag:null, shoes:null, shirt:"tee-red", shorts:"shorts-navy" };
+    var s = clone(TEMPLATE); s.settings.devLevel = 34; s.character.outfit = { headband:"headlamp-black", chalkbag:null, shoes:null, shirt:"tee-red", shorts:"shorts-navy" };
     await boot(s);
-    o = saved().character.outfit; expect(o.shirt==="tee-red" && o.shorts==="shorts-navy" && o.headband==="beret-black", "ids dropped on load: "+JSON.stringify(o));
+    o = saved().character.outfit; expect(o.shirt==="tee-red" && o.shorts==="shorts-navy" && o.headband==="headlamp-black", "ids dropped on load: "+JSON.stringify(o));
     var json = await exportJson(); await boot(clone(TEMPLATE)); await importText(json);
     o = saved().character.outfit; expect(o.shirt==="tee-red" && o.shorts==="shorts-navy", "ids lost in a backup round trip");
     var legacy = JSON.parse(json); delete legacy.data.character.outfit.shirt; delete legacy.data.character.outfit.shorts;
@@ -1371,7 +1380,7 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
   test("Accessories: stacking order is shoes, chalk bag, shirt, shorts, headwear; skipped frames draw no layer", async function(){
     await boot(clone(TEMPLATE));
-    var O = W.__cruxOutfit, all = { headband:"beanie-red", chalkbag:"teal", shoes:"blue", shirt:"tee-red", shorts:"shorts-navy" };
+    var O = W.__cruxOutfit, all = { headband:"headlamp-red", chalkbag:"teal", shoes:"blue", shirt:"tee-red", shorts:"shorts-navy" };
     var L = O.layersFor(O.idle[0], all, 40, 0);
     expect(L.map(function(l){ return l.slot; }).join()==="shoes,chalkbag,shirt,shorts,headband", "order: "+L.map(function(l){ return l.slot; }));
     expect(L[2].art==="shirt" && L[3].art==="shorts" && L[2].filter && L[3].filter && L[2].filter!==L[3].filter, "shirt/shorts layers carry their own tints");
@@ -1382,7 +1391,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     ["move/move-chalk-clap-1", "move/move-chalk-clap-2", "move/move-chalk-clap-3"].forEach(function(f){ expect(O.items["tee-red"].skip.indexOf(f)>-1, "shirt must skip "+f); });
     expect(O.items["shorts-navy"].skip.indexOf("rest/rest-day")>-1 && O.items["shorts-navy"].skip.indexOf("move/move-chalk-clap-1")<0, "shorts skip list");
   });
-  test("Accessories: Customize > Outfit has Shirt and Shorts sections; equip persists; new head chips; no horizontal overflow", async function(){
+  test("Accessories: Customize > Outfit has Shirt and Shorts sections; equip persists; headlamp chip; no horizontal overflow", async function(){
     var s = clone(TEMPLATE); s.settings.devLevel = 12;
     await boot(s); await openCustomize();
     var titles = qa("#outfitPickerGrid .picker-group").map(function(p){ return p.textContent; });
@@ -1395,13 +1404,10 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(q('#outfitPickerGrid [data-outfit-item="tee-red"]').classList.contains("selected"), "tee not shown selected");
     var layers = qa("#characterBody img.outfit-layer");
     expect(layers.length===2 && layers.every(function(i){ return /otint-/.test(i.style.filter); }), "Home layers: "+layers.length);
-    await click(q('#outfitPickerGrid [data-outfit-kind="bucket"]'), 200);
-    expect(qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Bucket Hat/.test((b.querySelector(".picker-name")||{}).textContent||""); }).length===6, "bucket count");
     await click(q('#outfitPickerGrid [data-outfit-kind="headlamp"]'), 200);
     expect(qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Headlamp/.test((b.querySelector(".picker-name")||{}).textContent||""); }).length===6, "headlamp count");
-    await click(q('#outfitPickerGrid [data-outfit-kind="beret"]'), 200);
-    await click(q('#outfitPickerGrid [data-outfit-item="beret-black"]'), 200);
-    expect(saved().character.outfit.headband==="beret-black", "beret not saved");
+    await click(q('#outfitPickerGrid [data-outfit-item="headlamp-black"]'), 200);
+    expect(saved().character.outfit.headband==="headlamp-black", "headlamp not saved");
     var root = W.document.documentElement, grid = q("#outfitPickerGrid");
     expect(root.scrollWidth<=root.clientWidth+1 && grid.scrollWidth<=grid.clientWidth+1, "page or picker overflows horizontally");
     await click(q('#outfitPickerGrid [data-outfit-slot="shirt"][data-outfit-item=""]'), 200);
