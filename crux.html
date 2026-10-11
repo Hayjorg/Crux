@@ -276,7 +276,7 @@
   .arrange-open-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;}
   .arrange-open-btn .ui-ic{width:24px;height:24px;object-fit:contain;}
   .arrange-btn[hidden]{display:none;}
-  .home-hero.arranging .home-top, .home-hero.arranging .home-dock, .home-hero.arranging .wl-rescue{display:none;}
+  .home-hero.arranging .home-top, .home-hero.arranging .home-dock{display:none;}
   /* below the first screen */
   .home-more{padding-top:16px;}
   .climber-card{padding:14px 18px;margin-bottom:14px;text-align:center;}
@@ -290,10 +290,11 @@
   .character-scene{
     /* S: the stage's height. Bottom edge sits on the dock; S is 5% taller than the space above the
        dock (so the ceiling crops a little), and never narrower than the screen (width is 0.8 S). */
-    --S:max(calc((100cqh - var(--dock-h)) * 1.05), 125cqw);
+    --S:max(calc((100dvh - var(--dock-h)) * 1.05), 125vw); /* fallback without container units */
     position:absolute;left:50%;bottom:var(--dock-h);
     width:calc(var(--S) * 0.8);height:var(--S);margin-left:calc(var(--S) * -0.4);
   }
+  @supports (height:1cqh){ .character-scene{--S:max(calc((100cqh - var(--dock-h)) * 1.05), 125cqw);} }
   .scene-layers{position:absolute;inset:0;pointer-events:none;}
   /* A soft contact shadow is the cheapest way to stop a real accessory PNG from reading as
      "pasted flat" against the painted background — every decoration/prop gets one. */
@@ -1041,6 +1042,7 @@
     backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);text-align:left;}
   .home-dock .wl-card.dock-btn{width:auto;margin:0;gap:3px;padding:6px 4px;border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.22);
     background:rgba(255,255,255,0.12);color:#FBF6E8;box-shadow:none;text-align:center;}
+  .home-hero.arranging .wl-rescue{display:none;}
   .home-dock .wl-card.dock-btn:hover{background:rgba(255,255,255,0.2);}
   .home-dock .wl-card .wl-flame{width:28px;height:28px;border-radius:10px;background:transparent;}
   .home-dock .wl-card .wl-flame img{width:28px;height:28px;}
@@ -1170,18 +1172,18 @@
         </div>
         <div class="hero-brand"><h1>CRUX</h1></div>
         <div class="scene-icon-row">
-          <button type="button" class="scene-icon-btn" id="homeMenuBtn" aria-label="More: drills and progress" aria-haspopup="true" aria-expanded="false" aria-controls="homeMenu">
+          <button type="button" class="scene-icon-btn" id="homeMenuBtn" aria-label="More: drills and progress" aria-expanded="false" aria-controls="homeMenu">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
           <button type="button" class="scene-icon-btn" id="openSettingsBtn" aria-label="Settings">
             <img data-ui="settings" alt="">
           </button>
         </div>
-        <div class="home-menu" id="homeMenu" role="menu" hidden>
-          <button type="button" class="home-menu-item" id="openDrillsBtn" role="menuitem">
+        <div class="home-menu" id="homeMenu" hidden>
+          <button type="button" class="home-menu-item" id="openDrillsBtn">
             <img data-ui="drills" alt=""><span>Training drills</span>
           </button>
-          <button type="button" class="home-menu-item" id="openProgressBtn" role="menuitem">
+          <button type="button" class="home-menu-item" id="openProgressBtn">
             <img data-ui="progress" alt=""><span>Climbing progress</span>
           </button>
         </div>
@@ -2565,7 +2567,15 @@
       return html;
     }).join("");
   }
+  function syncArrangeEntry(){
+    var hasDecor = activeDecorations().length>0;
+    document.getElementById("arrangeFromCustomizeBtn").disabled = !hasDecor;
+    document.getElementById("arrangeHint").textContent = hasDecor
+      ? "Drag your decorations to wherever you like."
+      : "Turn on a piece under Decorate first, then you can move it around.";
+  }
   function renderCustomizeModal(){
+    syncArrangeEntry();
     document.getElementById("outfitPickerGrid").innerHTML = outfitItemsHTML();
     document.getElementById("environmentPickerGrid").innerHTML = pickerItemsHTML(
       ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
@@ -5613,10 +5623,7 @@
     // so its button isn't stuck hidden with no way to reach Done.
     var hasDecor = activeDecorations().length>0;
     document.getElementById("arrangeToggleBtn").hidden = !hasDecor;
-    document.getElementById("arrangeFromCustomizeBtn").disabled = !hasDecor;
-    document.getElementById("arrangeHint").textContent = hasDecor
-      ? "Drag your decorations to wherever you like."
-      : "Turn on a piece under Decorate first, then you can move it around.";
+    syncArrangeEntry();
     if(!hasDecor && arrangeMode) setArrangeMode(false);
   }
 
@@ -6467,6 +6474,7 @@
   /* ---------------- view switching ---------------- */
   function switchView(name){
     editingAttemptId = null; // leaving a view always closes any open attempt editor in it
+    if(name!=="home" && arrangeMode) setArrangeMode(false);
     document.getElementById("view-home").hidden = name!=="home";
     document.getElementById("view-session").hidden = name!=="session";
     document.getElementById("view-detail").hidden = name!=="detail";
@@ -6540,9 +6548,14 @@
     if(open) menu.querySelector("button").focus({ preventScroll:true });
   });
   document.getElementById("homeMenu").addEventListener("click", closeHomeMenu); // choosing an item opens its sheet
+  document.getElementById("homeMenu").addEventListener("focusout", function(e){
+    if(!e.relatedTarget || (!this.contains(e.relatedTarget) && e.relatedTarget.id!=="homeMenuBtn")) closeHomeMenu();
+  });
   document.addEventListener("click", function(e){ if(!e.target.closest("#homeMenu")) closeHomeMenu(); });
   document.addEventListener("keydown", function(e){
-    if(e.key==="Escape" && !document.getElementById("homeMenu").hidden){ closeHomeMenu(); document.getElementById("homeMenuBtn").focus(); }
+    if(e.key!=="Escape") return;
+    if(!document.getElementById("homeMenu").hidden){ closeHomeMenu(); document.getElementById("homeMenuBtn").focus(); }
+    else if(arrangeMode) setArrangeMode(false);
   });
   document.getElementById("homeMoreBtn").addEventListener("click", function(){
     document.getElementById("homeMore").scrollIntoView({ behavior:prefersReducedMotion ? "auto" : "smooth", block:"start" });
@@ -6554,12 +6567,16 @@
     var h = Math.ceil(hero.getBoundingClientRect().bottom - dock.getBoundingClientRect().top);
     if(h>0) document.getElementById("view-home").style.setProperty("--dock-h", h+"px");
   }
-  var homeResizeTimer = null;
+  var homeResizeTimer = null, homeVisibleKey = null;
   function homeRelayout(){
     clearTimeout(homeResizeTimer);
     homeResizeTimer = setTimeout(function(){
       if(document.getElementById("view-home").hidden) return;
+      if(document.querySelector("#sceneLayers .dragging")){ homeRelayout(); return; } // never re-render under a finger
       syncDockHeight();
+      var v = sceneVisible(), key = v.x.toFixed(1)+"/"+v.y.toFixed(1);
+      if(key===homeVisibleKey) return; // the window didn't really change (URL bar showing/hiding)
+      homeVisibleKey = key;
       renderSceneEnvironment(selectedEnvironment(), selectedCharacterStage()); // re-place decorations inside the new window
     }, 120);
   }
