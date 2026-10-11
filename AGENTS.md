@@ -80,7 +80,12 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **One resolver:** `climberFrame(src)` / `climberFrameFor(src, id)` maps a default body-frame address to the variant's. Every place that
   draws the climber goes through it (Home stage and clips, avatar chip, Wall via `wallShow()`, celebration, share card, pickers). Never
   put a raw `IMG.mascot.*` / `IMG.wall.cl_*` / `IMG.ui.cheer` address on screen.
-- **Face overlays** stay the default `face/` files: the eyes are untouched, so they line up. Outfit layers stack on variants (frame key is the same).
+- **Face overlays are per-variant (v3, 2026-10-11):** `assets/mascot/climber/variants/<id>/face/face-{neutral,stoked,focused,tired,sheepish,surprised}.png`.
+  `mascotFace(mood)` / `mascotFaceFor(mood, id)` is the resolver (Home idle overlay and the session/summary buddy go through it);
+  default / locked / unknown variant falls back to `default/face/`. Outfit layers stack on variants (frame key is the same).
+- **v3 recolour method:** OKLab frequency separation on the default frames (hue/chroma remapped on the low-frequency layer, the
+  luminance detail kept), so shading, line art and texture survive. Source in `dev/outfit/out/variants3_assets/`; `dev/build-site.ps1`
+  picks up `variants/**` recursively, so `face/` ships too.
 - **Unlocks** are derived from `state.level` (`CLIMBER_VARIANTS[id].unlock`), never stored; a saved-but-locked choice draws as default.
 - **Blob ids** for the variant art go in `CLIMBER_VARIANT_BLOB` ("<id>/<folder>/<name>"); empty until Claude uploads them (rule 2).
   `night` exists in dev/outfit but is off-model and held back.
@@ -90,7 +95,7 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 They live in the existing `headband` slot (one head item at a time), as 24 rows in `OUTFIT_ITEMS` (`beanie-red`, `cap-navy`, ...).
 - **Art** is three neutral-grey delta-layer folders, `assets/outfit/<beanie|cap|bandana>/<folder>/<name>.png` (40 frames each, 128-colour
   palette PNGs made by `dev/outfit/compress_hats.py` from `dev/outfit/export/headwear-*`). Rows share a folder via `art:`.
-- **Colour** comes from `tint:{ color:"#rrggbb" }`: each pixel is multiplied per channel by `color / OUTFIT_GREY` (162, the art's mean grey).
+- **Colour** comes from `tint:{ color:"#rrggbb" }`: each pixel is multiplied per channel by `color / OUTFIT_GREY` (148, the art's mean grey).
   DOM layers use an inline SVG `feColorMatrix` filter (`outfitFilterCSS()`), the share card the same numbers in `outfitTintCanvas()`.
   Hue-rotate alone cannot colour a grey, so never use `{hue,sat,bri}` on this art.
 - **Two tint kinds, one path** (`outfitFilterCSS` / `outfitTintMatrix` / `outfitTintCanvas`, merged 2026-10-10 with the colourways): `{hue,sat,bri}` re-hues coloured art (the 23 knit/bag/shoe colourways); `{color}` colourises grey art (hats).

@@ -2216,8 +2216,7 @@
   var OUTFIT_GREY = 148; // the mean grey of the neutral hat art: what tint.color is multiplied relative to
   /* ---------------- climber variants (palette recolours of the default climber) ---------------- */
   // A variant is a full recolour of every body frame: assets/mascot/climber/variants/<id>/<folder>/<name>.png, same
-  // folder/frame names as assets/mascot/climber/default/ (the face/ and px/ folders are not recoloured: the eyes are
-  // untouched, so the default face overlays still line up). The choice is state.character.variant. Whether it can
+  // folder/frame names as assets/mascot/climber/default/ (plus face/face-<mood>.png, the per-variant expression overlays; px/ is not recoloured). The choice is state.character.variant. Whether it can
   // be worn is derived from state.level (same `unlock` rules as OUTFIT_ITEMS), never stored.
   // Add a variant = one row here + its art folder (+ blob ids below once uploaded). "night" is held back (off-model).
   var CLIMBER_VARIANTS = {
@@ -5033,9 +5032,8 @@
     if(!sprite || !IMG || !IMG.mascot) return;
     var rest = climberFrame(IMG.mascot.idle[0]);
     if(sprite.getAttribute("src")!==rest) sprite.src = rest;
-    var faces = (typeof MASCOT_FACES!=="undefined" && MASCOT_FACES) || {};
     var broken = typeof mascotMood!=="undefined" && mascotMood && mascotMood.broken;
-    var want = faces[mood];
+    var want = (typeof mascotFace==="function") ? mascotFace(mood) : null;
     if(want && !broken){ if(face.getAttribute("src")!==want) face.src = want; face.hidden = false; }
     else face.hidden = true;
   }
@@ -5498,7 +5496,7 @@
   }
   outfitFollow(document.getElementById("characterStage"), document.getElementById("characterBody"));
   // dev/tests.html only (it sets window.__cruxTest): lets the checks reach the pure outfit functions.
-  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, filterCSS:outfitFilterCSS, tintCanvas:outfitTintCanvas, tintMatrix:outfitTintMatrix, headKinds:OUTFIT_HEAD_KINDS, idle:IMG.mascot.idle, variants:CLIMBER_VARIANTS, variantOrder:CLIMBER_VARIANT_ORDER, variantBlob:CLIMBER_VARIANT_BLOB, variantFrame:climberFrameFor, variantId:climberVariantId, variantUnlocked:climberVariantUnlocked, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB, grey:OUTFIT_GREY };
+  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, filterCSS:outfitFilterCSS, tintCanvas:outfitTintCanvas, tintMatrix:outfitTintMatrix, headKinds:OUTFIT_HEAD_KINDS, idle:IMG.mascot.idle, variants:CLIMBER_VARIANTS, variantOrder:CLIMBER_VARIANT_ORDER, variantBlob:CLIMBER_VARIANT_BLOB, variantFrame:climberFrameFor, variantId:climberVariantId, variantUnlocked:climberVariantUnlocked, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB, grey:OUTFIT_GREY, faceFor:mascotFaceFor };
 
   /* ---------------- the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Rank is
@@ -6258,6 +6256,15 @@
     sheepish:  asset("mascot/climber/default/face/face-sheepish.png", "cb40b13498b4a12be752b90f74421bd2"),
     surprised: asset("mascot/climber/default/face/face-surprised.png", "6b2f0426084fcbc0e55e0ccf64f279da")
   };
+  // The face overlay for a mood: the equipped variant's own file (assets/mascot/climber/variants/<id>/face/), else the default.
+  // Resolver-style: a mood the variant has no file for (or a locked / unknown variant) falls back to the default face.
+  var MASCOT_FACE_MOODS = ["neutral", "stoked", "focused", "tired", "sheepish", "surprised"];
+  function mascotFaceFor(mood, variant){
+    var base = MASCOT_FACES[mood];
+    if(!base || !variant || variant==="default" || !CLIMBER_VARIANTS[variant] || MASCOT_FACE_MOODS.indexOf(mood)<0) return base;
+    return asset("mascot/climber/variants/"+variant+"/face/face-"+mood+".png", CLIMBER_VARIANT_BLOB[variant+"/face/face-"+mood]);
+  }
+  function mascotFace(mood){ return mascotFaceFor(mood, climberVariantId()); }
   // an idle frame of the default climber or of the equipped variant (the only frames the face overlays fit)
   function isMascotIdleFrame(src){
     return IMG.mascot.idle.some(function(s){ return s===src || climberFrame(s)===src; });
@@ -6292,7 +6299,7 @@
     var face = document.getElementById("characterFace");
     var img = document.getElementById("characterStage");
     if(!face || !img) return;
-    var want = MASCOT_FACES[currentMood()];
+    var want = mascotFace(currentMood());
     var onIdleFrame = !motionPlaying && isMascotIdleFrame(img.getAttribute("src"));
     if(!onIdleFrame || !want || mascotMood.broken){ face.hidden = true; return; }
     if(face.getAttribute("src")!==want) face.src = want;

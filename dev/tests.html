@@ -1360,6 +1360,25 @@ and the project rules. It runs on its own private copy of the data, never your r
     }
     expect(!missing.length, "missing: "+missing.slice(0, 6).join(", ")+(missing.length>6 ? " (+"+(missing.length-6)+")" : ""));
   });
+  test("Character variant: every variant has all 6 face overlays, and the face path swaps with the equipped variant (default fallback kept)", async function(){
+    await boot(clone(TEMPLATE));
+    var O = W.__cruxOutfit, moods = ["neutral", "stoked", "focused", "tired", "sheepish", "surprised"], missing = [];
+    expect(moods.length===6, "moods: "+moods.join());
+    for(var id of ["slate", "sandstone", "moss"]) for(var m of moods){
+      var r = await fetch("../assets/mascot/climber/variants/"+id+"/face/face-"+m+".png", { method:"HEAD", cache:"no-store" });
+      if(!r.ok) missing.push(id+"/"+m);
+    }
+    expect(!missing.length, "missing faces: "+missing.join(", "));
+    expect(artIs(O.faceFor("stoked", "default"), /mascot\/climber\/default\/face\/face-stoked\.png$/), "default face: "+O.faceFor("stoked", "default"));
+    expect(artIs(O.faceFor("tired", "moss"), /mascot\/climber\/variants\/moss\/face\/face-tired\.png$/), "moss face: "+O.faceFor("tired", "moss"));
+    expect(artIs(O.faceFor("neutral", "nope"), /default\/face\/face-neutral\.png$/), "unknown variant should fall back");
+    expect(O.faceFor("nonsense", "moss")===undefined, "unknown mood");
+    // on Home the overlay follows the equipped variant
+    var s = clone(TEMPLATE); s.settings.devLevel = 20; s.character.variant = "moss"; await boot(s);
+    expect(W.__cruxOutfit.variantId()==="moss", "moss not equipped at level 20 (variantId "+W.__cruxOutfit.variantId()+")");
+    var f = $("characterFace");
+    if(!f.hidden) expect(/variants\/moss\/face\//.test(f.getAttribute("src")||""), "Home face overlay: "+f.getAttribute("src"));
+  });
   test("Character variant: locked ones can't be equipped, unlocks come from level, equipping persists and the climber changes everywhere", async function(){
     await boot(TEMPLATE); // level 1
     var O = W.__cruxOutfit;
