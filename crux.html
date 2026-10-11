@@ -474,6 +474,8 @@
   .wl-climber img.outfit-layer{position:absolute;left:0;top:0;filter:none;pointer-events:none;}
   .cel-cheerbox img.outfit-layer{position:absolute;left:0;top:0;filter:none;}
   img.outfit-layer[hidden]{display:none !important;}
+  .picker-chips{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 2px;}
+  .picker-chips .chip{cursor:pointer;flex:1 1 auto;padding:8px 6px;min-height:36px;font-size:12px;text-align:center;}
   .picker-thumb.outfit-thumb{position:relative;}
   .picker-thumb.outfit-thumb img{position:absolute;inset:0;object-fit:contain;padding:4px;}
   .character-name{font-family:"Bebas Neue",sans-serif;font-size:19px;letter-spacing:0.02em;margin:4px 0 1px;}
@@ -489,7 +491,7 @@
     padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), border-color .15s ease, box-shadow .15s ease;
   }
-  button.picker-item{font-family:inherit;width:100%;}
+  button.picker-item{font-family:inherit;width:100%;color:var(--text);}
   .picker-item:not(.locked):active{transform:scale(0.94);}
   .picker-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .picker-item.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);}
@@ -1918,6 +1920,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
+    <div class="settings-section" id="characterPickerSection">
+      <p class="settings-section-title">Character</p>
+      <p class="settings-section-hint">Pick your climber's colours. More unlock as you level up.</p>
+      <div class="picker-grid" id="characterPickerGrid"></div>
+    </div>
     <div class="settings-section" id="arrangeSection">
       <p class="settings-section-title">Arrange room</p>
       <p class="settings-section-hint" id="arrangeHint">Drag your decorations to wherever you like.</p>
@@ -2130,6 +2137,14 @@
   //   assets/outfit/<item id>/<folder>/<name>.png   (folder/name = the body frame, e.g. idle/idle-01)
   // To add a colourway or item, add one row here (and its art folder); nothing else changes.
   //   slot    one of OUTFIT_SLOTS. One item per slot.
+  //   art     the art folder (assets/outfit/<art>/ and its OUTFIT_BLOB keys) this row draws; default: the row's own id.
+  //           Many rows can share one art folder: a colourway is the same layer tinted at run time (no new art or uploads).
+  //   tint    null/absent = the art as drawn. { color:"#rrggbb" } = COLOURISE a neutral-grey base: every pixel is multiplied
+  //           per channel by color / OUTFIT_GREY (so the base's mid grey becomes exactly `color`, its shading stays).
+  //           { hue:deg, sat:mult, bri:mult } = hue-rotate/saturate/brightness for art that already has colour (hue-rotate
+  //           alone can't colour a grey). DOM layers use a CSS filter (an inline SVG feColorMatrix for `color`); the share
+  //           card runs the same numbers in outfitTintCanvas() (pixel maths, no ctx.filter).
+  //   kind    head items only: which picker group it is in (OUTFIT_HEAD_KINDS); default "headband".
   //   unlock  derived, never stored: any listed rule met = unlocked. level = state.level, holds = Wall holds
   //           (wallInfo().holds). No rule = always unlocked.
   //   frames  null = draw on every frame that is not in skip; or a list of "folder/name" keys that have art.
@@ -2138,11 +2153,84 @@
   // skipped ones, so frames is null and skip lists the rest; skipped frames show the original orange art.
   var OUTFIT_SLOTS = ["shoes", "chalkbag", "headband"]; // draw order, bottom to top
   var OUTFIT_ITEMS = {
-    "teal-knit": { slot:"headband", name:"Teal knit headband", unlock:{ level:3 },            frames:null, skip:[] },
-    "teal":      { slot:"chalkbag", name:"Teal chalk bag",     unlock:{ level:5, holds:10 },  frames:null, skip:[] },
-    "blue":      { slot:"shoes",    name:"Blue shoes",         unlock:{ level:8 },            frames:null, skip:[] }
+    // --- headband (base art teal-knit, hue ~183) ---
+    "teal-knit":  { slot:"headband", name:"Teal knit headband", art:"teal-knit", tint:null, unlock:{ level:3 }, frames:null, skip:[] },
+    "red-knit":   { slot:"headband", name:"Red knit headband", art:"teal-knit", tint:{ hue:170, sat:2, bri:0.8 }, unlock:{ level:2 }, frames:null, skip:[] },
+    "yellow-knit":{ slot:"headband", name:"Yellow knit headband", art:"teal-knit", tint:{ hue:238, sat:1.6, bri:1.4 }, unlock:{ level:4 }, frames:null, skip:[] },
+    "orange-knit":{ slot:"headband", name:"Orange knit headband", art:"teal-knit", tint:{ hue:209, sat:1.8, bri:1.1 }, unlock:{ level:6 }, frames:null, skip:[] },
+    "green-knit": { slot:"headband", name:"Green knit headband", art:"teal-knit", tint:{ hue:310, sat:1.2, bri:1 }, unlock:{ level:9 }, frames:null, skip:[] },
+    "purple-knit":{ slot:"headband", name:"Purple knit headband", art:"teal-knit", tint:{ hue:99, sat:1.4, bri:0.9 }, unlock:{ level:12 }, frames:null, skip:[] },
+    "pink-knit":  { slot:"headband", name:"Pink knit headband", art:"teal-knit", tint:{ hue:145, sat:1.2, bri:1.1 }, unlock:{ level:16 }, frames:null, skip:[] },
+    "black-knit": { slot:"headband", name:"Black knit headband", art:"teal-knit", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:22, holds:40 }, frames:null, skip:[] },
+    "white-knit": { slot:"headband", name:"White knit headband", art:"teal-knit", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:28, holds:60 }, frames:null, skip:[] },
+    // --- beanies: neutral-grey base art assets/outfit/beanie/, colourised by tint.color ---
+    "beanie-red":     { slot:"headband", kind:"beanie", name:"Beanie · Red", art:"beanie", tint:{ color:"#c8322d" }, unlock:{ level:2 }, frames:null, skip:[] },
+    "beanie-navy":    { slot:"headband", kind:"beanie", name:"Beanie · Navy", art:"beanie", tint:{ color:"#1f3566" }, unlock:{ level:6 }, frames:null, skip:[] },
+    "beanie-forest":  { slot:"headband", kind:"beanie", name:"Beanie · Forest", art:"beanie", tint:{ color:"#2f6b3f" }, unlock:{ level:11 }, frames:null, skip:[] },
+    "beanie-mustard": { slot:"headband", kind:"beanie", name:"Beanie · Mustard", art:"beanie", tint:{ color:"#d6a021" }, unlock:{ level:15 }, frames:null, skip:[] },
+    "beanie-pink":    { slot:"headband", kind:"beanie", name:"Beanie · Pink", art:"beanie", tint:{ color:"#e885a8" }, unlock:{ level:19 }, frames:null, skip:[] },
+    "beanie-orange":  { slot:"headband", kind:"beanie", name:"Beanie · Orange", art:"beanie", tint:{ color:"#e8731f" }, unlock:{ level:23 }, frames:null, skip:[] },
+    "beanie-charcoal":{ slot:"headband", kind:"beanie", name:"Beanie · Charcoal", art:"beanie", tint:{ color:"#3b3d42" }, unlock:{ level:26, holds:40 }, frames:null, skip:[] },
+    "beanie-cream":   { slot:"headband", kind:"beanie", name:"Beanie · Cream", art:"beanie", tint:{ color:"#efe6cc" }, unlock:{ level:30, holds:60 }, frames:null, skip:[] },
+    // --- caps: neutral-grey base art assets/outfit/cap/, colourised by tint.color ---
+    "cap-navy":       { slot:"headband", kind:"cap", name:"Cap · Navy", art:"cap", tint:{ color:"#1f3566" }, unlock:{ level:4 }, frames:null, skip:[] },
+    "cap-red":        { slot:"headband", kind:"cap", name:"Cap · Red", art:"cap", tint:{ color:"#c8322d" }, unlock:{ level:8 }, frames:null, skip:[] },
+    "cap-mustard":    { slot:"headband", kind:"cap", name:"Cap · Mustard", art:"cap", tint:{ color:"#d6a021" }, unlock:{ level:13 }, frames:null, skip:[] },
+    "cap-forest":     { slot:"headband", kind:"cap", name:"Cap · Forest", art:"cap", tint:{ color:"#2f6b3f" }, unlock:{ level:17 }, frames:null, skip:[] },
+    "cap-orange":     { slot:"headband", kind:"cap", name:"Cap · Orange", art:"cap", tint:{ color:"#e8731f" }, unlock:{ level:21 }, frames:null, skip:[] },
+    "cap-pink":       { slot:"headband", kind:"cap", name:"Cap · Pink", art:"cap", tint:{ color:"#e885a8" }, unlock:{ level:24 }, frames:null, skip:[] },
+    "cap-charcoal":   { slot:"headband", kind:"cap", name:"Cap · Charcoal", art:"cap", tint:{ color:"#3b3d42" }, unlock:{ level:27, holds:45 }, frames:null, skip:[] },
+    "cap-cream":      { slot:"headband", kind:"cap", name:"Cap · Cream", art:"cap", tint:{ color:"#efe6cc" }, unlock:{ level:29, holds:55 }, frames:null, skip:[] },
+    // --- bandanas: neutral-grey base art assets/outfit/bandana/, colourised by tint.color ---
+    "bandana-orange": { slot:"headband", kind:"bandana", name:"Bandana · Orange", art:"bandana", tint:{ color:"#e8731f" }, unlock:{ level:5 }, frames:null, skip:[] },
+    "bandana-mustard":{ slot:"headband", kind:"bandana", name:"Bandana · Mustard", art:"bandana", tint:{ color:"#d6a021" }, unlock:{ level:9 }, frames:null, skip:[] },
+    "bandana-red":    { slot:"headband", kind:"bandana", name:"Bandana · Red", art:"bandana", tint:{ color:"#c8322d" }, unlock:{ level:14 }, frames:null, skip:[] },
+    "bandana-pink":   { slot:"headband", kind:"bandana", name:"Bandana · Pink", art:"bandana", tint:{ color:"#e885a8" }, unlock:{ level:18 }, frames:null, skip:[] },
+    "bandana-forest": { slot:"headband", kind:"bandana", name:"Bandana · Forest", art:"bandana", tint:{ color:"#2f6b3f" }, unlock:{ level:22 }, frames:null, skip:[] },
+    "bandana-navy":   { slot:"headband", kind:"bandana", name:"Bandana · Navy", art:"bandana", tint:{ color:"#1f3566" }, unlock:{ level:25 }, frames:null, skip:[] },
+    "bandana-charcoal":{ slot:"headband", kind:"bandana", name:"Bandana · Charcoal", art:"bandana", tint:{ color:"#3b3d42" }, unlock:{ level:28, holds:50 }, frames:null, skip:[] },
+    "bandana-cream":  { slot:"headband", kind:"bandana", name:"Bandana · Cream", art:"bandana", tint:{ color:"#efe6cc" }, unlock:{ level:30, holds:60 }, frames:null, skip:[] },
+    // --- chalk bag (base art teal, hue ~188) ---
+    "teal":       { slot:"chalkbag", name:"Teal chalk bag", art:"teal", tint:null, unlock:{ level:5, holds:10 }, frames:null, skip:[] },
+    "red-bag":    { slot:"chalkbag", name:"Red chalk bag", art:"teal", tint:{ hue:168, sat:2, bri:0.9 }, unlock:{ level:3 }, frames:null, skip:[] },
+    "yellow-bag": { slot:"chalkbag", name:"Yellow chalk bag", art:"teal", tint:{ hue:227, sat:1.6, bri:1.5 }, unlock:{ level:7 }, frames:null, skip:[] },
+    "green-bag":  { slot:"chalkbag", name:"Green chalk bag", art:"teal", tint:{ hue:305, sat:1.2, bri:1.2 }, unlock:{ level:11 }, frames:null, skip:[] },
+    "orange-bag": { slot:"chalkbag", name:"Orange chalk bag", art:"teal", tint:{ hue:198, sat:2, bri:1.4 }, unlock:{ level:14 }, frames:null, skip:[] },
+    "purple-bag": { slot:"chalkbag", name:"Purple chalk bag", art:"teal", tint:{ hue:94, sat:1.4, bri:1.1 }, unlock:{ level:18 }, frames:null, skip:[] },
+    "pink-bag":   { slot:"chalkbag", name:"Pink chalk bag", art:"teal", tint:{ hue:149, sat:1.4, bri:1.4 }, unlock:{ level:20 }, frames:null, skip:[] },
+    "black-bag":  { slot:"chalkbag", name:"Black chalk bag", art:"teal", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:24, holds:50 }, frames:null, skip:[] },
+    "white-bag":  { slot:"chalkbag", name:"White chalk bag", art:"teal", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:30, holds:60 }, frames:null, skip:[] },
+    // --- shoes (base art blue, hue ~210; the original orange stays as Plain) ---
+    "blue":       { slot:"shoes", name:"Blue shoes", art:"blue", tint:null, unlock:{ level:8 }, frames:null, skip:[] },
+    "red-shoes":  { slot:"shoes", name:"Red shoes", art:"blue", tint:{ hue:128, sat:2, bri:1.3 }, unlock:{ level:4 }, frames:null, skip:[] },
+    "green-shoes":{ slot:"shoes", name:"Green shoes", art:"blue", tint:{ hue:262, sat:1, bri:1.5 }, unlock:{ level:6 }, frames:null, skip:[] },
+    "teal-shoes": { slot:"shoes", name:"Teal shoes", art:"blue", tint:{ hue:318, sat:2, bri:1.5 }, unlock:{ level:10 }, frames:null, skip:[] },
+    "purple-shoes":{ slot:"shoes", name:"Purple shoes", art:"blue", tint:{ hue:45, sat:1.6, bri:1.5 }, unlock:{ level:13 }, frames:null, skip:[] },
+    "pink-shoes": { slot:"shoes", name:"Pink shoes", art:"blue", tint:{ hue:109, sat:1.4, bri:1.5 }, unlock:{ level:17 }, frames:null, skip:[] },
+    "black-shoes":{ slot:"shoes", name:"Black shoes", art:"blue", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:21, holds:45 }, frames:null, skip:[] },
+    "white-shoes":{ slot:"shoes", name:"White shoes", art:"blue", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:26, holds:55 }, frames:null, skip:[] }
   };
-  var OUTFIT_SLOT_NAMES = { headband:"Headband", chalkbag:"Chalk bag", shoes:"Shoes" };
+  var OUTFIT_SLOT_NAMES = { headband:"Headwear", chalkbag:"Chalk bag", shoes:"Shoes" };
+  // Head items share one slot (one at a time); `kind` only groups them in the picker. Order = chip order.
+  var OUTFIT_HEAD_KINDS = [ { id:"headband", name:"Headbands" }, { id:"beanie", name:"Beanies" }, { id:"cap", name:"Caps" }, { id:"bandana", name:"Bandanas" } ];
+  var OUTFIT_GREY = 162; // the mean grey of the neutral hat art: what tint.color is multiplied relative to
+  /* ---------------- climber variants (palette recolours of the default climber) ---------------- */
+  // A variant is a full recolour of every body frame: assets/mascot/climber/variants/<id>/<folder>/<name>.png, same
+  // folder/frame names as assets/mascot/climber/default/ (the face/ and px/ folders are not recoloured: the eyes are
+  // untouched, so the default face overlays still line up). The choice is state.character.variant. Whether it can
+  // be worn is derived from state.level (same `unlock` rules as OUTFIT_ITEMS), never stored.
+  // Add a variant = one row here + its art folder (+ blob ids below once uploaded). "night" is held back (off-model).
+  var CLIMBER_VARIANTS = {
+    "default":   { name:"Default",   unlock:{} },
+    "slate":     { name:"Slate",     unlock:{ level:5 } },
+    "sandstone": { name:"Sandstone", unlock:{ level:10 } },
+    "moss":      { name:"Moss",      unlock:{ level:18 } }
+  };
+  var CLIMBER_VARIANT_ORDER = ["default", "slate", "sandstone", "moss"];
+  // Uploaded copies of the variant art, keyed "<variant id>/<folder>/<name>" -> blob id. EMPTY until Claude uploads
+  // assets/mascot/climber/variants/ to the Artifact (hard rule 2); a frame with no id here only works locally.
+  var CLIMBER_VARIANT_BLOB = {
+  };
   // Uploaded copies of the layer art, keyed "<item id>/<folder>/<name>" -> blob id. EMPTY until Claude
   // uploads assets/outfit/ to the Artifact (hard rule 2); an item with no id here only works locally.
   var OUTFIT_BLOB = {
@@ -2294,7 +2382,7 @@
       // A few accessories on by default (new installs only — Object.assign in loadState()
       // never overwrites an existing save's own decorations array) so a brand-new Garage
       // reads as lived-in on first look, not an empty test room waiting for Customize.
-      character:{ colorway:"accent", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[],
+      character:{ colorway:"accent", variant:"default", selectedStageId:null, selectedEnvironmentId:null, decorations:["holdred","holdblue","wallshelf","gearbag"], decorPositionsByEnv:{}, roomLab:[],
         // outfit: equipped item id per slot (see OUTFIT_ITEMS), or null. Whether it shows is derived from level / Wall holds.
         outfit:{ headband:null, chalkbag:null, shoes:null } },
       sessions:[],
@@ -2413,6 +2501,9 @@
       Object.keys(o).forEach(function(k){ out[k] = (typeof o[k]==="string" && o[k]) ? o[k] : (k in out ? null : o[k]); });
     }
     merged.character.outfit = out;
+    // Climber variant (palette recolour): older saves and backups have none. Anything that isn't a known id is "default".
+    var vv = migrated.character && migrated.character.variant;
+    merged.character.variant = (typeof vv==="string" && Object.prototype.hasOwnProperty.call(CLIMBER_VARIANTS, vv)) ? vv : "default";
     backfillSeq(merged);
     linkProjects(merged);
     return merged;
@@ -2690,23 +2781,49 @@
         + '</button>';
     }).join("");
   }
+  var outfitHeadKind = null; // which head type the Customize chips show (view state only, never saved; null = the worn item's type)
   // One group per slot: "None" plus every item for it, locked ones greyed with how to unlock them.
   function outfitItemsHTML(){
     var worn = state.character.outfit || {}, lvl = state.level, holds = outfitHolds();
     return OUTFIT_SLOTS.slice().reverse().map(function(slot){
-      var html = '<p class="picker-group">'+escapeHtml(OUTFIT_SLOT_NAMES[slot]||slot)+'</p>'
-        + '<button type="button" class="picker-item'+(worn[slot] ? '' : ' selected')+'" data-outfit-slot="'+slot+'" data-outfit-item="">'
+      var html = '<p class="picker-group">'+escapeHtml(OUTFIT_SLOT_NAMES[slot]||slot)+'</p>';
+      var ids = Object.keys(OUTFIT_ITEMS).filter(function(id){ return OUTFIT_ITEMS[id].slot===slot; });
+      if(slot==="headband"){
+        // many head items: one type at a time via chips (default = the worn item's type), earliest unlock first
+        var wornKind = worn.headband && OUTFIT_ITEMS[worn.headband] ? (OUTFIT_ITEMS[worn.headband].kind||"headband") : null;
+        if(!OUTFIT_HEAD_KINDS.some(function(k){ return k.id===outfitHeadKind; })) outfitHeadKind = wornKind || "headband";
+        html += '<div class="picker-chips" role="group" aria-label="Headwear type">' + OUTFIT_HEAD_KINDS.map(function(k){
+          var n = ids.filter(function(id){ return (OUTFIT_ITEMS[id].kind||"headband")===k.id; }).length;
+          return n ? '<button type="button" class="chip'+(k.id===outfitHeadKind ? ' selected' : '')+'" data-outfit-kind="'+k.id+'" aria-pressed="'+(k.id===outfitHeadKind)+'">'+escapeHtml(k.name)+'</button>' : '';
+        }).join("") + '</div>';
+        ids = ids.filter(function(id){ return (OUTFIT_ITEMS[id].kind||"headband")===outfitHeadKind; });
+      }
+      ids = ids.map(function(id, i){ return { id:id, i:i, l:(OUTFIT_ITEMS[id].unlock||{}).level||0 }; })
+        .sort(function(a, b){ return a.l-b.l || a.i-b.i; }).map(function(o){ return o.id; });
+      html += '<button type="button" class="picker-item'+(worn[slot] ? '' : ' selected')+'" data-outfit-slot="'+slot+'" data-outfit-item="">'
         + '<div class="picker-thumb auto-thumb">NONE</div><span class="picker-name">Plain</span></button>';
-      Object.keys(OUTFIT_ITEMS).filter(function(id){ return OUTFIT_ITEMS[id].slot===slot; }).forEach(function(id){
+      ids.forEach(function(id){
         var it = OUTFIT_ITEMS[id], ok = outfitUnlocked(it, lvl, holds);
-        var layer = asset("outfit/"+id+"/idle/idle-01.png", OUTFIT_BLOB[id+"/idle/idle-01"]);
+        var art = it.art || id, layer = asset("outfit/"+art+"/idle/idle-01.png", OUTFIT_BLOB[art+"/idle/idle-01"]), flt = outfitFilterCSS(it.tint);
         html += '<button type="button" class="picker-item'+(ok ? '' : ' locked')+(worn[slot]===id ? ' selected' : '')+'" '
           + (ok ? 'data-outfit-slot="'+slot+'" data-outfit-item="'+id+'"' : 'disabled')+'>'
-          + '<div class="picker-thumb outfit-thumb"><img src="'+IMG.mascot.idle[0]+'" alt=""><img src="'+layer+'" alt=""></div>'
+          + '<div class="picker-thumb outfit-thumb"><img src="'+climberFrame(IMG.mascot.idle[0])+'" alt=""><img src="'+layer+'" alt=""'+(flt ? ' style="filter:'+flt+'"' : '')+'></div>'
           + '<span class="picker-name">'+escapeHtml(it.name)+'</span>'
           + (ok ? '' : '<span class="picker-lock">'+escapeHtml(outfitHint(it))+'</span>') + '</button>';
       });
       return html;
+    }).join("");
+  }
+  // Character: Default plus each palette variant, locked ones greyed with the level that unlocks them.
+  function characterItemsHTML(){
+    var cur = climberVariantId(), lvl = state.level;
+    return CLIMBER_VARIANT_ORDER.map(function(id){
+      var v = CLIMBER_VARIANTS[id], ok = climberVariantUnlocked(id, lvl);
+      return '<button type="button" class="picker-item'+(ok ? '' : ' locked')+(cur===id ? ' selected' : '')+'" '
+        + (ok ? 'data-character-variant="'+id+'"' : 'disabled')+'>'
+        + '<div class="picker-thumb fit-contain"><img src="'+climberFrameFor(IMG.mascot.idle[0], id)+'" alt=""></div>'
+        + '<span class="picker-name">'+escapeHtml(v.name)+'</span>'
+        + (ok ? '' : '<span class="picker-lock">'+escapeHtml(outfitHint({ unlock:v.unlock }))+'</span>') + '</button>';
     }).join("");
   }
   function syncArrangeEntry(){
@@ -2718,6 +2835,7 @@
   }
   function renderCustomizeModal(){
     syncArrangeEntry();
+    document.getElementById("characterPickerGrid").innerHTML = characterItemsHTML();
     document.getElementById("outfitPickerGrid").innerHTML = outfitItemsHTML();
     document.getElementById("environmentPickerGrid").innerHTML = pickerItemsHTML(
       ENVIRONMENTS, unlockedEnvironments().map(function(e){ return e.id; }),
@@ -3521,13 +3639,13 @@
   // 5th, when nothing else unlocks) get one on their own: a card on every level would get in the way of logging.
   function celebrateLevel(n){
     celebrate({ kicker:"Level up", title:"Level "+n, tag:"Keep it going", stand:false,
-      pic:'<span class="cel-badgewrap"><img src="'+IMG.ui.badge+'" alt=""><b>'+n+'</b></span><span class="cel-cheerbox"><img data-cheer src="'+IMG.ui.cheer[0]+'" alt=""></span>',
+      pic:'<span class="cel-badgewrap"><img src="'+IMG.ui.badge+'" alt=""><b>'+n+'</b></span><span class="cel-cheerbox"><img data-cheer src="'+climberFrame(IMG.ui.cheer[0])+'" alt=""></span>',
       text:"Every attempt you log adds up. Nice climbing.", primary:"Keep climbing",
       onShow:function(box){
         var im = box.querySelector("img[data-cheer]"), seq = [0,1,2,1,0,2], i = 0;
         outfitFollow(im, im.parentNode);
         if(prefersReducedMotion) return null;
-        var t = setInterval(function(){ i++; im.src = IMG.ui.cheer[seq[i % seq.length]]; }, 260);
+        var t = setInterval(function(){ i++; im.src = climberFrame(IMG.ui.cheer[seq[i % seq.length]]); }, 260);
         return function(){ clearInterval(t); };
       } });
   }
@@ -4913,7 +5031,8 @@
   function setBuddy(prefix, mood){
     var sprite = document.getElementById(prefix+"Sprite"), face = document.getElementById(prefix+"Face");
     if(!sprite || !IMG || !IMG.mascot) return;
-    if(sprite.getAttribute("src")!==IMG.mascot.idle[0]) sprite.src = IMG.mascot.idle[0];
+    var rest = climberFrame(IMG.mascot.idle[0]);
+    if(sprite.getAttribute("src")!==rest) sprite.src = rest;
     var faces = (typeof MASCOT_FACES!=="undefined" && MASCOT_FACES) || {};
     var broken = typeof mascotMood!=="undefined" && mascotMood && mascotMood.broken;
     var want = faces[mood];
@@ -5224,10 +5343,29 @@
 
   /* ---------------- outfit layers (see OUTFIT_ITEMS) ---------------- */
   // A body frame's address -> "folder/name" (e.g. "idle/idle-01"), the key the layer art and the table use.
+  // Variant frames (mascot/climber/variants/<id>/...) share the default frames' keys, so outfit layers stack on them.
   function outfitFrameKey(src){
-    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/default\/([^\/]+\/[^\/]+)\.png$/.exec(f);
+    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/(?:default|variants\/[a-z0-9-]+)\/([^\/]+\/[^\/]+)\.png$/.exec(f);
     return m ? m[1] : null;
   }
+  // The climber variant to draw: the equipped one if it is known and unlocked, otherwise "default".
+  function climberVariantUnlocked(id, level){
+    var v = CLIMBER_VARIANTS[id];
+    return !!v && outfitUnlocked({ unlock:v.unlock }, level, 0);
+  }
+  function climberVariantId(){
+    var id = (typeof state!=="undefined" && state && state.character) ? state.character.variant : "default";
+    return (typeof id==="string" && climberVariantUnlocked(id, state.level)) ? id : "default";
+  }
+  // THE one resolver: any climber body-frame address (default art) -> the same frame in `variant`. Addresses that are
+  // not default body frames (face/ and px/ overlays, the Wall's scenery, variant frames already) come back unchanged.
+  function climberFrameFor(src, variant){
+    var f = ASSET_FILE[src], m = f && /^mascot\/climber\/default\/((?!face\/|px\/)[^\/]+\/[^\/]+)\.png$/.exec(f);
+    if(!m || !variant || variant==="default" || !CLIMBER_VARIANTS[variant]) return src;
+    var file = "mascot/climber/variants/"+variant+"/"+m[1]+".png";
+    return asset(file, CLIMBER_VARIANT_BLOB[variant+"/"+m[1]]);
+  }
+  function climberFrame(src){ return climberFrameFor(src, climberVariantId()); }
   // `holds` may be a number or a function (only called if the level rule didn't already unlock it).
   function outfitUnlocked(item, level, holds){
     var u = item.unlock || {}, any = false;
@@ -5242,6 +5380,76 @@
     return p.join(" or ");
   }
   function outfitHolds(){ return WALL_ENABLED ? wallInfo().holds : 0; }
+  // tint.color -> per-channel multipliers [r,g,b] (the base's mean grey maps to `color`).
+  function outfitColorMul(t){
+    var m = /^#?([0-9a-f]{6})$/i.exec(t && t.color || "");
+    if(!m) return null;
+    var n = parseInt(m[1], 16);
+    return [((n>>16)&255)/OUTFIT_GREY, ((n>>8)&255)/OUTFIT_GREY, (n&255)/OUTFIT_GREY];
+  }
+  // Tint -> the CSS filter string ("" = none). A colour tint points at a tiny inline SVG filter (feColorMatrix, sRGB
+  // space), made once per colour; CSS filter functions alone can't multiply a grey by a colour.
+  function outfitFilterCSS(t){
+    if(!t) return "";
+    var mul = outfitColorMul(t);
+    if(mul){
+      var id = "otint-"+t.color.replace("#", "").toLowerCase();
+      if(!document.getElementById(id)){
+        var host = document.getElementById("outfitTintDefs");
+        if(!host){
+          host = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          host.id = "outfitTintDefs"; host.setAttribute("width", "0"); host.setAttribute("height", "0"); host.setAttribute("aria-hidden", "true");
+          host.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;";
+          document.body.appendChild(host);
+        }
+        var f = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+        f.id = id; f.setAttribute("color-interpolation-filters", "sRGB");
+        f.setAttribute("x", "0"); f.setAttribute("y", "0"); f.setAttribute("width", "1"); f.setAttribute("height", "1");
+        var cm = document.createElementNS("http://www.w3.org/2000/svg", "feColorMatrix");
+        cm.setAttribute("type", "matrix");
+        cm.setAttribute("values", mul[0].toFixed(4)+" 0 0 0 0  0 "+mul[1].toFixed(4)+" 0 0 0  0 0 "+mul[2].toFixed(4)+" 0 0  0 0 0 1 0");
+        f.appendChild(cm); host.appendChild(f);
+      }
+      return "url(#"+id+")";
+    }
+    var h = ((t.hue||0)%360+360)%360;
+    return "hue-rotate("+h+"deg) saturate("+(t.sat==null?1:t.sat)+") brightness("+(t.bri==null?1:t.bri)+")";
+  }
+  // The hue/sat/bri look in pixel maths (CSS hue-rotate matrix, then saturate, then brightness; alpha untouched), as one 3x3.
+  function outfitTintMatrix(t){
+    var mul = outfitColorMul(t);
+    if(mul) return [[mul[0],0,0],[0,mul[1],0],[0,0,mul[2]]];
+    var a = (t.hue||0)*Math.PI/180, c = Math.cos(a), n = Math.sin(a), s = t.sat==null ? 1 : t.sat, b = t.bri==null ? 1 : t.bri;
+    var H = [[0.213+c*0.787-n*0.213, 0.715-c*0.715-n*0.715, 0.072-c*0.072+n*0.928],
+             [0.213-c*0.213+n*0.143, 0.715+c*0.285+n*0.140, 0.072-c*0.072-n*0.283],
+             [0.213-c*0.213-n*0.787, 0.715-c*0.715+n*0.715, 0.072+c*0.928+n*0.072]];
+    var S = [[0.213+0.787*s, 0.715-0.715*s, 0.072-0.072*s],
+             [0.213-0.213*s, 0.715+0.285*s, 0.072-0.072*s],
+             [0.213-0.213*s, 0.715-0.715*s, 0.072+0.928*s]];
+    var m = [[0,0,0],[0,0,0],[0,0,0]];
+    for(var i=0;i<3;i++) for(var j=0;j<3;j++) m[i][j] = b*(S[i][0]*H[0][j] + S[i][1]*H[1][j] + S[i][2]*H[2][j]);
+    return m;
+  }
+  // Returns a canvas of `img` with the tint baked in. No ctx.filter (older iOS Safari lacks it). If the pixels can't be
+  // read, falls back to ctx.filter, then to the untinted picture.
+  function outfitTintCanvas(img, t){
+    var c = document.createElement("canvas"); c.width = img.naturalWidth||img.width; c.height = img.naturalHeight||img.height;
+    var x = c.getContext("2d"); x.drawImage(img, 0, 0);
+    if(!t) return c;
+    try{
+      var d = x.getImageData(0, 0, c.width, c.height), p = d.data, m = outfitTintMatrix(t);
+      for(var i=0;i<p.length;i+=4){
+        var r = p[i], g = p[i+1], b = p[i+2];
+        p[i]   = r*m[0][0]+g*m[0][1]+b*m[0][2];
+        p[i+1] = r*m[1][0]+g*m[1][1]+b*m[1][2];
+        p[i+2] = r*m[2][0]+g*m[2][1]+b*m[2][2];
+      }
+      x.putImageData(d, 0, 0);
+    }catch(e){
+      if("filter" in x){ x.clearRect(0, 0, c.width, c.height); x.filter = outfitFilterCSS(t); x.drawImage(img, 0, 0); x.filter = "none"; }
+    }
+    return c;
+  }
   // The layers to draw over a body frame, bottom to top (OUTFIT_SLOTS order). Pure: the caller passes the state.
   function outfitLayersFor(src, outfit, level, holds){
     var key = outfitFrameKey(src), out = [];
@@ -5250,7 +5458,8 @@
       var id = outfit[slot], it = id && OUTFIT_ITEMS[id];
       if(!it || it.slot!==slot || !outfitUnlocked(it, level, holds)) return;
       if(it.skip.indexOf(key)>-1 || (it.frames && it.frames.indexOf(key)<0)) return;
-      out.push({ slot:slot, id:id, key:key, url:asset("outfit/"+id+"/"+key+".png", OUTFIT_BLOB[id+"/"+key]) });
+      var art = it.art || id;
+      out.push({ slot:slot, id:id, art:art, key:key, tint:it.tint||null, filter:outfitFilterCSS(it.tint), url:asset("outfit/"+art+"/"+key+".png", OUTFIT_BLOB[art+"/"+key]) });
     });
     return out;
   }
@@ -5260,8 +5469,8 @@
   function outfitFollow(stage, host){
     var imgs = {};
     function sync(){
-      var want = {};
-      outfitLayersLive(stage.getAttribute("src")).forEach(function(l){ want[l.slot] = l.url; });
+      var want = {}, filt = {};
+      outfitLayersLive(stage.getAttribute("src")).forEach(function(l){ want[l.slot] = l.url; filt[l.slot] = l.filter; });
       var ref = stage;
       OUTFIT_SLOTS.forEach(function(slot){
         var im = imgs[slot];
@@ -5272,6 +5481,7 @@
           im.addEventListener("error", function(){ im._bad = im.getAttribute("src"); im.hidden = true; });
         }
         if(want[slot] && im.getAttribute("src")!==want[slot]) im.src = want[slot];
+        im.style.filter = filt[slot] || "";
         im.hidden = !want[slot] || im._bad===want[slot];
         im.classList.toggle("wide", stage.classList.contains("wide"));
         if(ref.nextSibling!==im) host.insertBefore(im, ref.nextSibling);
@@ -5288,7 +5498,7 @@
   }
   outfitFollow(document.getElementById("characterStage"), document.getElementById("characterBody"));
   // dev/tests.html only (it sets window.__cruxTest): lets the checks reach the pure outfit functions.
-  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, idle:IMG.mascot.idle, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
+  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, filterCSS:outfitFilterCSS, tintCanvas:outfitTintCanvas, tintMatrix:outfitTintMatrix, headKinds:OUTFIT_HEAD_KINDS, idle:IMG.mascot.idle, variants:CLIMBER_VARIANTS, variantOrder:CLIMBER_VARIANT_ORDER, variantBlob:CLIMBER_VARIANT_BLOB, variantFrame:climberFrameFor, variantId:climberVariantId, variantUnlocked:climberVariantUnlocked, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
 
   /* ---------------- the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Rank is
@@ -5313,7 +5523,7 @@
   // motion comes from mascotClip(), breathing and blinking from the mascot frame player below.
   function selectedCharacterStage(){
     var unlocked = unlockedCharacterStages();
-    return Object.assign({}, unlocked[unlocked.length-1], { img:IMG.mascot.idle[0] });
+    return Object.assign({}, unlocked[unlocked.length-1], { img:climberFrame(IMG.mascot.idle[0]) });
   }
   // The scene behind the climber — simple code-drawn props, not illustration, but it's what
   // gives "popping around in an environment" real meaning: a floor to wander on and gear
@@ -5863,7 +6073,7 @@
   // makes every swap instant.
   (function preloadCharacterArt(){
     var m = IMG.mascot;
-    m.idle.concat(m.blink, m.step, m.jump, m.land).forEach(function(src){ var im = new Image(); im.src = src; });
+    m.idle.concat(m.blink, m.step, m.jump, m.land).forEach(function(src){ var im = new Image(); im.src = climberFrame(src); });
     ENVIRONMENTS.forEach(function(e){
       [e.wallImg, e.floorImg].concat((e.props||[]).map(function(p){ return p.img; })).forEach(function(src){
         if(src){ var im = new Image(); im.src = src; }
@@ -5891,8 +6101,8 @@
   // stride (fraction of the box width), plus an in-place fallback when there's no room.
   // The drawn frames carry the movement, so CSS easing is off while a clip plays.
   function mascotClip(kind){
-    var rest = IMG.mascot.idle[0], b1 = IMG.mascot.blink[0], b2 = IMG.mascot.blink[1];
-    var step = IMG.mascot.step, jump = IMG.mascot.jump;
+    var rest = climberFrame(IMG.mascot.idle[0]), b1 = climberFrame(IMG.mascot.blink[0]), b2 = climberFrame(IMG.mascot.blink[1]);
+    var step = IMG.mascot.step.map(climberFrame), jump = IMG.mascot.jump.map(climberFrame);
     if(kind==="blink") return { travel:[0, 0], frames:[
       [b1, 60, 0, 0], [b2, 90, 0, 0], [b1, 60, 0, 0], [rest, 1, 0, 0]] };
     // Step art (art-source STEP-SPEC.md): the stride is 50 of the 1024 canvas px, and the
@@ -5908,7 +6118,7 @@
       // Lifts are in 1536ths of the box height (the master canvas). The art already stands the
       // takeoff frame tall on its toes, so the body's arc is stepped in ~40ms slices, with the
       // apex high enough that the head clearly rises past that tiptoe pose (dev/jump-lab.html, B).
-      var f = jump.concat(IMG.mascot.land), up = function(px){ return -px/1536; };
+      var f = jump.concat(IMG.mascot.land.map(climberFrame)), up = function(px){ return -px/1536; };
       return { travel:[0, 0], frames:[
         [f[0], 120, 0, 0],             // jump-01 crouch
         [f[1], 50, 0, 0],              // jump-02 takeoff (toes still down)
@@ -5990,7 +6200,7 @@
         shadow.style.opacity = "";
         void wander.offsetWidth; // commit the rest position before easing comes back on
         wander.classList.remove("in-motion");
-        img.src = IMG.mascot.idle[0];
+        img.src = climberFrame(IMG.mascot.idle[0]);
         motionPlaying = false;
         syncFace();
       }
@@ -6027,10 +6237,12 @@
   // A blink only plays inside the idle-01 rest hold, the pose it was painted from, so it never
   // pops. Motion clips (playMotion) own the sprite while they play; the player waits them out
   // and restarts from the rest pose. Reduced motion never starts it (the rest pose stays put).
+  // (getters: the frames follow the equipped climber variant, see climberFrame())
   var MASCOT_CLIPS = {
-    idle: [[IMG.mascot.idle[0], 900], [IMG.mascot.idle[1], 300], [IMG.mascot.idle[2], 400],
-           [IMG.mascot.idle[3], 300], [IMG.mascot.idle[2], 300], [IMG.mascot.idle[1], 350]],
-    blink: [[IMG.mascot.blink[0], 60], [IMG.mascot.blink[1], 90], [IMG.mascot.blink[0], 60]]
+    get idle(){ var I = IMG.mascot.idle.map(climberFrame);
+      return [[I[0], 900], [I[1], 300], [I[2], 400], [I[3], 300], [I[2], 300], [I[1], 350]]; },
+    get blink(){ var B = IMG.mascot.blink.map(climberFrame);
+      return [[B[0], 60], [B[1], 90], [B[0], 60]]; }
   };
   var mascotAnim = { queue:[], timer:null, nextBlinkAt:0 };
 
@@ -6046,8 +6258,10 @@
     sheepish:  asset("mascot/climber/default/face/face-sheepish.png", "cb40b13498b4a12be752b90f74421bd2"),
     surprised: asset("mascot/climber/default/face/face-surprised.png", "6b2f0426084fcbc0e55e0ccf64f279da")
   };
-  var MASCOT_IDLE_SET = {};
-  IMG.mascot.idle.forEach(function(src){ MASCOT_IDLE_SET[src] = true; });
+  // an idle frame of the default climber or of the equipped variant (the only frames the face overlays fit)
+  function isMascotIdleFrame(src){
+    return IMG.mascot.idle.some(function(s){ return s===src || climberFrame(s)===src; });
+  }
   var mascotMood = { seq:[], until:0, current:null, timer:null, broken:false };
   var pendingMascotMoods = null;
   function baselineMood(){
@@ -6079,7 +6293,7 @@
     var img = document.getElementById("characterStage");
     if(!face || !img) return;
     var want = MASCOT_FACES[currentMood()];
-    var onIdleFrame = !motionPlaying && MASCOT_IDLE_SET[img.getAttribute("src")];
+    var onIdleFrame = !motionPlaying && isMascotIdleFrame(img.getAttribute("src"));
     if(!onIdleFrame || !want || mascotMood.broken){ face.hidden = true; return; }
     if(face.getAttribute("src")!==want) face.src = want;
     face.hidden = false;
@@ -6089,6 +6303,16 @@
   document.getElementById("characterFace").addEventListener("error", function(){
     mascotMood.broken = true; this.hidden = true;
   });
+  // The equipped climber variant changed: swap every climber on screen (Home, avatar, Wall) and restart the idle loops.
+  function applyClimberVariant(){
+    mascotAnim.queue = [];
+    renderCharacterCard();
+    var img = document.getElementById("characterStage");
+    if(!motionPlaying){ var rest = climberFrame(IMG.mascot.idle[0]); if(img.getAttribute("src")!==rest) img.src = rest; }
+    syncFace();
+    if(!document.getElementById("view-wall").hidden) wallStartIdle(); // otherwise the Wall redraws its climber when opened
+    outfitRefresh();
+  }
   function playPendingMascotMoods(){
     if(!pendingMascotMoods) { syncFace(); return; }
     var seq = pendingMascotMoods; pendingMascotMoods = null;
@@ -6281,7 +6505,7 @@
   function wallPlate(name, big){ return '<span class="wl-plate'+(big ? " big" : "")+'" style="background-image:url('+IMG.wall.title_plate+')"><span>'+escapeHtml(name)+'</span></span>'; }
   function wallPic(r, big){
     if(r.kind==="title") return wallPlate(r.name, big);
-    if(r.kind==="move") return r.mv ? '<span class="wl-mvbox"><img class="wl-move" data-mv="'+r.mv+'" src="'+IMG.wall.moves[r.mv][0]+'" alt=""></span>' : '<span class="mv">'+WI.move+'</span>';
+    if(r.kind==="move") return r.mv ? '<span class="wl-mvbox"><img class="wl-move" data-mv="'+r.mv+'" src="'+climberFrame(IMG.wall.moves[r.mv][0])+'" alt=""></span>' : '<span class="mv">'+WI.move+'</span>';
     if(r.img) return '<img src="'+IMG.wall[r.img]+'" alt=""'+(r.kind==="gym" ? ' class="photo"' : "")+'>';
     return '<span class="swatch" style="background:radial-gradient(circle at 35% 30%, #fff8, transparent 45%),'+r.c+'"></span>';
   }
@@ -6344,7 +6568,7 @@
   // The climber's frame. The two summit-flag frames are wider than the others (extra canvas each side so the
   // flag fits), so they are drawn 141% wide, shifted back so the head stays where it was.
   outfitFollow(wallCImg, wallClimber);
-  function wallShow(src, wide){ wallCImg.classList.toggle("wide", !!wide); wallCImg.src = src; }
+  function wallShow(src, wide){ wallCImg.classList.toggle("wide", !!wide); wallCImg.src = climberFrame(src); }
   function wallSetClimber(x, y){ wallClimber.style.transform = "translate("+(x-WCW/2)+"px,"+(y-WCH*0.875)+"px)"; }
   function wallHoldTop(i){ var p = wallPx(wallPos(i)); return { x:p.x, y:p.y - (i>0 ? 16 : 0) }; }
   // On a ledge hold your climber sits on the shelf, off to one side so the prize stays in view
@@ -6404,7 +6628,7 @@
     if(wallPreloaded) return; wallPreloaded = true;
     var srcs = [IMG.wall.cl_reach_l, IMG.wall.cl_reach_r, IMG.wall.cl_pull, IMG.wall.cl_sit, IMG.wall.cl_rest, IMG.wall.cl_chalk, IMG.wall.cl_sit_look].concat(IMG.wall.summitFlag);
     Object.keys(IMG.wall.moves).forEach(function(k){ srcs = srcs.concat(IMG.wall.moves[k]); });
-    srcs.forEach(function(s){ new Image().src = s; });
+    srcs.forEach(function(s){ new Image().src = climberFrame(s); });
   }
   function wallPuff(x, y){
     if(prefersReducedMotion) return;
@@ -6462,7 +6686,7 @@
       var imgs = document.querySelectorAll("img.wl-move");
       if(!imgs.length){ clearInterval(wallPicT); wallPicT = null; return; }
       wallPicN++;
-      imgs.forEach(function(im){ var loop = WALL_MOVE_LOOP[im.dataset.mv]; im.src = IMG.wall.moves[im.dataset.mv][loop[wallPicN % loop.length]]; });
+      imgs.forEach(function(im){ var loop = WALL_MOVE_LOOP[im.dataset.mv]; im.src = climberFrame(IMG.wall.moves[im.dataset.mv][loop[wallPicN % loop.length]]); });
     }, 170);
   }
   function wallScrollTo(i, smooth){
@@ -6489,7 +6713,7 @@
     buzz(big ? [40,60,40,60,90] : [25,40,45]);
     wallSheet('<img class="wl-rays" src="'+IMG.wall.rays+'" alt=""><img class="wl-sparkle" src="'+IMG.wall.sparkle+'" alt=""><div class="wl-confetti">'+conf+'</div>'+
       '<div class="wl-kicker">'+(big ? "Ledge "+(i/WALL_LEDGE)+" · hold "+i : "Hold "+i+" unlocked")+'</div>'+
-      '<div class="wl-prize'+(r.kind==="gym" ? " gym" : "")+'">'+(r.kind==="gym" ? "" : '<img class="wl-plinth" src="'+IMG.wall.r2_plinth+'" alt="">')+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+IMG.wall.cl_rest+'" alt=""></span></span>' : "")+'</div>'+
+      '<div class="wl-prize'+(r.kind==="gym" ? " gym" : "")+'">'+(r.kind==="gym" ? "" : '<img class="wl-plinth" src="'+IMG.wall.r2_plinth+'" alt="">')+wallPic(r, true)+(rest ? '<span class="wl-restbuddy"><span class="wl-mvbox"><img src="'+climberFrame(IMG.wall.cl_rest)+'" alt=""></span></span>' : "")+'</div>'+
       '<h2>'+(big ? "Ledge reached!" : escapeHtml(r.name))+'</h2>'+
       '<span class="wl-kind">'+(big ? escapeHtml(r.name)+" · " : "")+WALL_KIND[r.kind]+'</span>'+
       '<p>'+(extra ? escapeHtml(extra)+" " : "")+(rest ? "Rest day logged: recovery counts too. " : "")+(big ? "Seven days of showing up. " : "")+
@@ -6786,7 +7010,22 @@
     renderCharacterCard();
     renderCustomizeModal();
   });
+  document.getElementById("characterPickerGrid").addEventListener("click", function(e){
+    var btn = e.target.closest(".picker-item");
+    if(!btn || btn.disabled) return;
+    var id = btn.getAttribute("data-character-variant");
+    if(!id || !climberVariantUnlocked(id, state.level)) return; // locked or unknown: can't be equipped
+    state.character.variant = id;
+    saveState();
+    applyClimberVariant();
+    renderCustomizeModal();
+  });
+  document.getElementById("characterPickerGrid").addEventListener("error", function(e){
+    if(e.target.tagName==="IMG") e.target.style.visibility = "hidden";
+  }, true);
   document.getElementById("outfitPickerGrid").addEventListener("click", function(e){
+    var chip = e.target.closest("[data-outfit-kind]");
+    if(chip){ outfitHeadKind = chip.getAttribute("data-outfit-kind"); renderCustomizeModal(); return; }
     var btn = e.target.closest(".picker-item");
     if(!btn || btn.disabled) return;
     var slot = btn.getAttribute("data-outfit-slot");
@@ -7100,8 +7339,8 @@
     var W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
     var x = c.getContext("2d"), env = selectedEnvironment();
     var fonts = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load('100px "Bebas Neue"'), document.fonts.load('30px "IBM Plex Mono"')]).catch(function(){}) : Promise.resolve();
-    var meSrc = a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0];
-    var outfit = Promise.all(outfitLayersLive(meSrc).map(function(l){ return loadImage(l.url); }));
+    var meSrc = climberFrame(a.result==="flash" ? IMG.ui.cheer[1] : IMG.ui.cheer[0]); // the equipped variant's cheer frame
+    var outfit = Promise.all(outfitLayersLive(meSrc).map(function(l){ return loadImage(l.url).then(function(im){ return im && l.tint ? outfitTintCanvas(im, l.tint) : im; }); }));
     return Promise.all([ loadImage(env.bg ? env.bg.img : GARAGE_BG_IMG), loadImage(meSrc), loadImage(IMG.ui.start), fonts, outfit ]).then(function(r){
       var bg = r[0], me = r[1], icon = r[2];
       if(bg){ var sc = W/bg.width, bh = bg.height*sc; x.drawImage(bg, 0, -(bh-H)/2, W, bh); }

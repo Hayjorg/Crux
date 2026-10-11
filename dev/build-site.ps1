@@ -15,7 +15,9 @@ $used = [regex]::Matches($html, 'asset\("([^"]+)"') | ForEach-Object { $_.Groups
 # the outfit layers are looked up by name at run time ("outfit/" + item + "/" + frame), so the pattern above can't see them
 $assetsRoot = (Join-Path $app "assets") + "\"
 $outfitFiles = @(Get-ChildItem (Join-Path $app "assets\outfit") -Recurse -Filter *.png -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName.Substring($assetsRoot.Length).Replace("\", "/") })
-$used = @($used) + $outfitFiles | Sort-Object -Unique
+# the climber variants (recoloured body frames) are looked up the same way ("mascot/climber/variants/" + id + "/" + frame)
+$variantFiles = @(Get-ChildItem (Join-Path $app "assets\mascot\climber\variants") -Recurse -Filter *.png -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName.Substring($assetsRoot.Length).Replace("\", "/") })
+$used = @($used) + $outfitFiles + $variantFiles | Where-Object { $_ -match '\.\w+$' } | Sort-Object -Unique
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
 New-Item -ItemType Directory -Force (Join-Path $Out "assets"), (Join-Path $Out "icons") | Out-Null
 $hash = [ordered]@{}; $bytes = 0

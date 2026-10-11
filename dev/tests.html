@@ -1137,7 +1137,50 @@ and the project rules. It runs on its own private copy of the data, never your r
     // the Customize picker shows locked items disabled, with a hint
     await openCustomize();
     var locked = qa("#outfitPickerGrid .picker-item.locked");
-    expect(locked.length===3 && locked.every(function(b){ return b.disabled && b.querySelector(".picker-lock").textContent.length>0; }), "locked items: "+locked.length);
+    var wantLocked = Object.keys(O.items).filter(function(id){ return (O.items[id].kind||"headband")==="headband" && !O.unlocked(O.items[id], 1, 0); }).length; // the picker shows one head type at a time (Headbands first)
+    expect(wantLocked>3 && locked.length===wantLocked && locked.every(function(b){ return b.disabled && b.querySelector(".picker-lock").textContent.length>0; }), "locked items: "+locked.length+" of "+wantLocked);
+  });
+  test("Outfit: colourways tint the shared art (table valid, unlocks, layer address, saved id round trip, unknown id, canvas matches CSS)", async function(){
+    var s = clone(TEMPLATE); s.settings.devLevel = 30; s.character.outfit = { headband:"red-knit", chalkbag:"white-bag", shoes:"teal-shoes" };
+    await boot(s);
+    var O = W.__cruxOutfit, ids = Object.keys(O.items);
+    expect(ids.length>=24, "expected many colourways, got "+ids.length);
+    var arts = {}; Object.keys(O.blob).forEach(function(k){ arts[k.split("/")[0]] = 1; });
+    ids.forEach(function(id){
+      var it = O.items[id], art = it.art || id;
+      expect(arts[art] || (it.tint && it.tint.color), id+": art folder '"+art+"' has no OUTFIT_BLOB entries");
+      expect(it.slot==="headband" || it.slot==="chalkbag" || it.slot==="shoes", id+": bad slot");
+      expect(/^[a-z]+(-[a-z]+)*$/.test(id), id+": id isn't kebab-case");
+      if(it.tint && it.tint.color){ expect(/^#[0-9a-f]{6}$/i.test(it.tint.color) && art!==id && it.kind, id+": bad colour tint "+JSON.stringify(it.tint)); }
+      else if(it.tint){ expect(isFinite(it.tint.hue) && it.tint.sat>=0 && it.tint.sat<=4 && it.tint.bri>=0 && it.tint.bri<=2.5, id+": bad tint "+JSON.stringify(it.tint)); }
+      else expect(art===id, id+": untinted rows must draw their own art");
+    });
+    ["teal-knit", "teal", "blue"].forEach(function(id){ expect(O.items[id] && !O.items[id].tint, "original "+id+" must keep working untinted"); });
+    // derived unlocks for a few new ids
+    var red = O.items["red-knit"], white = O.items["white-bag"];
+    expect(!O.unlocked(red, 1, 0) && O.unlocked(red, red.unlock.level, 0), "red-knit unlock");
+    expect(!O.unlocked(white, white.unlock.level-1, white.unlock.holds-1) && O.unlocked(white, white.unlock.level, 0) && O.unlocked(white, 1, white.unlock.holds), "white-bag: level or Wall holds");
+    // layer address uses the art id, and carries the tint
+    var L = O.layersFor(O.idle[0], { headband:"red-knit", chalkbag:"white-bag", shoes:"teal-shoes" }, 40, 0);
+    expect(L.length===3 && L[0].art==="blue" && L[1].art==="teal" && L[2].art==="teal-knit", "art ids: "+L.map(function(l){ return l.art; }));
+    expect(L[0].url.indexOf("outfit/teal-shoes")<0 && L[2].url.indexOf("outfit/red-knit")<0, "url used the row id instead of the art id");
+    expect(/hue-rotate\(.*deg\)/.test(L[2].filter) && L[1].tint.sat===0, "layer tint: "+L[2].filter);
+    // a saved outfit with new ids survives a save/reload
+    expect(saved().character.outfit.headband==="red-knit" && saved().character.outfit.shoes==="teal-shoes", "saved outfit: "+JSON.stringify(saved().character.outfit));
+    expect(qa("#characterBody img.outfit-layer").some(function(i){ return /hue-rotate/.test(i.style.filter); }), "Home layers have no CSS filter");
+    // unknown id still draws nothing
+    expect(!O.layersFor(O.idle[0], { headband:"mauve-knit" }, 40, 0).length, "unknown id drew");
+    // canvas pixel path ~ CSS filter (skipped where the engine has no ctx.filter)
+    var im = await new Promise(function(res){ var i = new W.Image(); i.onload = function(){ res(i); }; i.onerror = function(){ res(null); }; i.src = L[2].url; });
+    if(im){
+      var c = W.document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; var x = c.getContext("2d");
+      if("filter" in x){
+        x.filter = L[2].filter; x.drawImage(im, 0, 0); x.filter = "none";
+        var a = x.getImageData(0, 0, c.width, c.height).data, p = O.tintCanvas(im, L[2].tint), b = p.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+        var sum = 0, n = 0; for(var i = 0; i<a.length; i += 4){ if(a[i+3]>200){ sum += Math.abs(a[i]-b[i]) + Math.abs(a[i+1]-b[i+1]) + Math.abs(a[i+2]-b[i+2]); n += 3; } }
+        expect(n>0 && sum/n<6, "canvas tint differs from the CSS filter by "+(sum/n).toFixed(1)+" per channel");
+      }
+    }
   });
   test("Outfit: layers stack shoes, then chalk bag, then headband; skipped frames don't draw; unequipped or locked draw nothing", async function(){
     await boot(TEMPLATE);
@@ -1170,6 +1213,196 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(ids.join()==="blue,teal,teal-knit", "order: "+ids.join(" ")+" / "+layers.map(function(i){ return i.getAttribute("src"); }).join(" "));
     await click(q('#outfitPickerGrid [data-outfit-slot="headband"][data-outfit-item=""]'), 200);
     expect(saved().character.outfit.headband===null, "Plain didn't clear the headband");
+  });
+
+  // ---- Head items: beanies, caps, bandanas (neutral-grey art, colourised at run time) ----
+  var HAT_FRAMES = ["blink/blink-01", "blink/blink-02", "cheer/cheer-1", "cheer/cheer-2", "cheer/cheer-3", "climb/climb-chalk-up", "climb/climb-pull", "climb/climb-reach-left", "climb/climb-reach-right", "idle/idle-01", "idle/idle-02", "idle/idle-03", "idle/idle-04", "jump/jump-01", "jump/jump-02", "jump/jump-03", "land/land-01", "land/land-02", "move/move-chalk-clap-1", "move/move-chalk-clap-2", "move/move-chalk-clap-3", "move/move-dance-1", "move/move-dance-2", "move/move-dance-3", "move/move-dance-4", "move/move-fist-pump-1", "move/move-fist-pump-2", "move/move-fist-pump-3", "move/move-wave-1", "move/move-wave-2", "move/move-wave-3", "move/move-wave-4", "rest/rest-day", "sit/ledge-sit-look", "sit/ledge-sit", "step/step-01", "step/step-02", "step/step-03", "summit/summit-flag-1", "summit/summit-flag-2"];
+  test("Hats: every head item has its art folder with all 40 frames, valid unlock fields and a valid tint", async function(){
+    await boot(clone(TEMPLATE));
+    var O = W.__cruxOutfit, ids = Object.keys(O.items), heads = ids.filter(function(i){ return O.items[i].slot==="headband"; });
+    var hats = heads.filter(function(i){ return O.items[i].kind && O.items[i].kind!=="headband"; });
+    expect(hats.length===24, "expected 24 hats, got "+hats.length);
+    var kinds = O.headKinds.map(function(k){ return k.id; });
+    var names = {}, arts = {};
+    hats.forEach(function(id){
+      var it = O.items[id], u = it.unlock || {};
+      expect(kinds.indexOf(it.kind)>0 && id.indexOf(it.kind+"-")===0 && it.art===it.kind, id+": kind/art "+it.kind+"/"+it.art);
+      expect(typeof it.name==="string" && it.name.indexOf(" \u00b7 ")>0 && !names[it.name], id+": name "+it.name); names[it.name] = 1;
+      expect(u.level==null || (u.level>=2 && u.level<=30 && u.level%1===0), id+": level "+u.level);
+      expect(u.holds==null || (u.holds>=1 && u.holds<=100 && u.holds%1===0), id+": holds "+u.holds);
+      expect(u.level!=null, id+": needs a level rule");
+      expect(it.tint && /^#[0-9a-f]{6}$/i.test(it.tint.color), id+": tint "+JSON.stringify(it.tint));
+      expect(it.frames===null && Array.isArray(it.skip), id+": frames/skip");
+      arts[it.art] = 1;
+    });
+    kinds.slice(1).forEach(function(k){ expect(hats.filter(function(i){ return O.items[i].kind===k; }).length===8, k+": expected 8 colourways"); });
+    for(var art of Object.keys(arts)){
+      var missing = [];
+      for(var f of HAT_FRAMES){
+        var r = await fetch("../assets/outfit/"+art+"/"+f+".png"); if(!r.ok) missing.push(f);
+      }
+      expect(!missing.length, art+": missing frames "+missing.join(","));
+    }
+    // existing items are untouched
+    expect(O.items["teal-knit"].slot==="headband" && O.items["teal-knit"].unlock.level===3 && O.items["teal"].unlock.holds===10 && O.items["blue"].unlock.level===8, "existing items changed");
+  });
+  test("Hats: tint.color colourises a grey (DOM filter and share-card pixels agree), and layers carry it", async function(){
+    await boot(clone(TEMPLATE));
+    var O = W.__cruxOutfit, it = O.items["beanie-red"];
+    var css = O.filterCSS(it.tint);
+    expect(/^url\(#otint-[0-9a-f]{6}\)$/.test(css) && D.getElementById(css.slice(5, -1)), "filter: "+css);
+    var vals = D.getElementById(css.slice(5, -1)).firstChild.getAttribute("values").split(/\s+/).map(Number);
+    var m = O.tintMatrix(it.tint);
+    expect(Math.abs(vals[0]-m[0][0])<1e-3 && Math.abs(vals[6]-m[1][1])<1e-3 && Math.abs(vals[12]-m[2][2])<1e-3, "matrix mismatch "+vals.join(" "));
+    // the canvas path: a 162-grey pixel becomes the item's colour
+    var c = W.document.createElement("canvas"); c.width = c.height = 2; var x = c.getContext("2d"); x.fillStyle = "rgb(162,162,162)"; x.fillRect(0, 0, 2, 2);
+    var o = O.tintCanvas(c, it.tint).getContext("2d").getImageData(0, 0, 1, 1).data;
+    expect(Math.abs(o[0]-0xc8)<=1 && Math.abs(o[1]-0x32)<=1 && Math.abs(o[2]-0x2d)<=1 && o[3]===255, "tinted grey: "+Array.prototype.join.call(o, ","));
+    // hue-rotate-only tints still use CSS filter functions
+    expect(/^hue-rotate\(/.test(O.filterCSS({ hue:90, sat:1, bri:1 })), "hue tint form");
+    var L = O.layersFor(O.idle[0], { headband:"cap-navy", chalkbag:"teal", shoes:"blue" }, 40, 0);
+    expect(L.map(function(l){ return l.slot; }).join()==="shoes,chalkbag,headband", "stack order with a hat");
+    expect(L[2].art==="cap" && L[2].filter===O.filterCSS(O.items["cap-navy"].tint) && !L[0].filter, "layer tint/filter");
+    expect(L[2].url.indexOf("outfit/cap/idle/idle-01.png")>=0, "hat layer address: "+L[2].url);
+    expect(!O.layersFor(O.idle[0], { headband:"cap-cream" }, 28, 0).length, "cap-cream drew while locked");
+    expect(O.layersFor(O.idle[0], { headband:"cap-cream" }, 1, 55).length===1 && O.layersFor(O.idle[0], { headband:"cap-cream" }, 29, 0).length===1, "cap-cream: level 29 or 55 holds");
+  });
+  test("Hats: the Headwear picker groups by type with chips, sorted by unlock level, locked ones disabled; one head item at a time; choice persists", async function(){
+    var s = clone(TEMPLATE); s.settings.devLevel = 12;
+    await boot(s); await openCustomize();
+    var grid = q("#outfitPickerGrid"), chips = qa("#outfitPickerGrid .picker-chips [data-outfit-kind]");
+    expect(chips.map(function(c){ return c.textContent; }).join()==="Headbands,Beanies,Caps,Bandanas", "chips: "+chips.map(function(c){ return c.textContent; }).join());
+    expect(qa("#outfitPickerGrid [data-outfit-item^='beanie']").length===0 && qa("#outfitPickerGrid [data-outfit-item]").length>0, "the default group should be Headbands only");
+    await click(q('#outfitPickerGrid [data-outfit-kind="beanie"]'), 200);
+    var items = qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Beanie/.test((b.querySelector(".picker-name")||{}).textContent||""); });
+    expect(items.length===8, "beanies shown: "+items.length);
+    var lv = items.map(function(b){ var m = (b.querySelector(".picker-lock")||{}).textContent||""; return b.classList.contains("locked") ? +(/Level (\d+)/.exec(m)||[0, 99])[1] : 0; });
+    expect(items.filter(function(b){ return b.classList.contains("locked"); }).every(function(b){ return b.disabled && /Level \d+/.test(b.querySelector(".picker-lock").textContent); }), "locked beanies need a disabled button and level hint");
+    expect(lv.every(function(v, i){ return i===0 || v>=lv[i-1]; }), "beanies aren't sorted by unlock level: "+lv.join());
+    expect(items.some(function(b){ return /Charcoal/.test(b.textContent) && /Wall holds/.test(b.textContent); }), "charcoal should show its Wall holds route");
+    expect(grid.scrollWidth<=grid.clientWidth+1, "picker overflows horizontally");
+    // equip a beanie, then a cap: one head item at a time, saved
+    await click(q('#outfitPickerGrid [data-outfit-item="beanie-red"]'), 200);
+    expect(saved().character.outfit.headband==="beanie-red", "beanie not saved: "+saved().character.outfit.headband);
+    await click(q('#outfitPickerGrid [data-outfit-kind="cap"]'), 200);
+    expect(q('#outfitPickerGrid [data-outfit-item="beanie-red"]')===null, "other types stay hidden");
+    await click(q('#outfitPickerGrid [data-outfit-item="cap-navy"]'), 200);
+    expect(saved().character.outfit.headband==="cap-navy", "cap not saved");
+    expect(qa("#outfitPickerGrid .picker-item.selected").filter(function(b){ return b.getAttribute("data-outfit-slot")==="headband"; }).length===1, "exactly one head item selected");
+    var layers = qa("#characterBody img.outfit-layer");
+    expect(layers.length===1 && /url\(["']?#otint-/.test(layers[0].style.filter), "Home layer isn't tinted: "+layers.length);
+    // reopening Customize starts on the worn item's type; the saved choice survives a reload
+    await boot(JSON.parse(STORE[KEY])); await openCustomize();
+    expect(q('#outfitPickerGrid [data-outfit-kind="cap"]').classList.contains("selected"), "picker should open on the worn type");
+    expect(q('#outfitPickerGrid [data-outfit-item="cap-navy"]').classList.contains("selected"), "equipped hat not selected after reload");
+    expect(saved().character.outfit.headband==="cap-navy", "equip didn't persist");
+  });
+  test("Hats: old saves and backups are unaffected; a hat id survives normalizeState and a backup round trip", async function(){
+    var old = clone(TEMPLATE); old.character.outfit = { headband:"teal-knit", chalkbag:"teal", shoes:null };
+    await boot(old);
+    expect(saved().character.outfit.headband==="teal-knit" && saved().character.outfit.chalkbag==="teal", "existing outfit changed");
+    var s = clone(TEMPLATE); s.character.outfit = { headband:"bandana-orange", chalkbag:null, shoes:null }; s.settings.devLevel = 10;
+    await boot(s);
+    expect(saved().character.outfit.headband==="bandana-orange", "hat id dropped on load");
+    var json = await exportJson(); await boot(clone(TEMPLATE)); await importText(json);
+    expect(saved().character.outfit.headband==="bandana-orange", "hat id lost in a backup round trip");
+  });
+
+  // ---- Character variants (palette recolours of the climber) ----
+  var VARIANT_FRAMES = ["blink/blink-01","blink/blink-02","cheer/cheer-1","cheer/cheer-2","cheer/cheer-3","climb/climb-chalk-up","climb/climb-pull","climb/climb-reach-left","climb/climb-reach-right","idle/idle-01","idle/idle-02","idle/idle-03","idle/idle-04","jump/jump-01","jump/jump-02","jump/jump-03","land/land-01","land/land-02","move/move-chalk-clap-1","move/move-chalk-clap-2","move/move-chalk-clap-3","move/move-dance-1","move/move-dance-2","move/move-dance-3","move/move-dance-4","move/move-fist-pump-1","move/move-fist-pump-2","move/move-fist-pump-3","move/move-wave-1","move/move-wave-2","move/move-wave-3","move/move-wave-4","rest/rest-day","sit/ledge-sit-look","sit/ledge-sit","step/step-01","step/step-02","step/step-03","summit/summit-flag-1","summit/summit-flag-2"];
+  test("Character variant: old saves get 'default'; bad data is cleaned; a valid choice and other character data survive; backups import", async function(){
+    var old = clone(TEMPLATE); delete old.character.variant; old.character.decorations = ["gearbag"]; old.character.outfit = { headband:"teal-knit", chalkbag:null, shoes:null };
+    await boot(old); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    expect(saved().character.variant==="default", "default: "+saved().character.variant);
+    expect(saved().character.decorations.join()==="gearbag" && saved().character.outfit.headband==="teal-knit", "other character data changed");
+    for(var bad of [42, "night", "SLATE", "", null, {}, ["slate"]]){
+      var b = clone(TEMPLATE); b.character.variant = bad;
+      await boot(b); await click("openSettingsBtn"); await click("closeSettingsBtn");
+      expect(saved().character.variant==="default", "bad "+JSON.stringify(bad)+" became "+saved().character.variant);
+    }
+    var ok = clone(TEMPLATE); ok.character.variant = "moss";
+    await boot(ok); await click("openSettingsBtn"); await click("closeSettingsBtn");
+    expect(saved().character.variant==="moss", "a valid choice was dropped (even though locked, the choice is kept): "+saved().character.variant);
+    var json = await exportJson(), before = STORE[KEY];
+    await importText(json);
+    expect(STORE[KEY]===before, "backup round trip changed the variant");
+    var legacy = JSON.parse(json); delete legacy.data.character.variant;
+    await importText(JSON.stringify(legacy));
+    expect(saved().character.variant==="default", "an old backup didn't get the default variant");
+  });
+  test("Character variant: the resolver returns the variant's frame (body frames only), and outfit layers still stack on it", async function(){
+    await boot(TEMPLATE);
+    var O = W.__cruxOutfit, idle = O.idle[0];
+    var src = O.variantFrame(idle, "slate");
+    expect(artIs(src, /mascot\/climber\/variants\/slate\/idle\/idle-01\.png$/), "variant address: "+src);
+    expect(O.variantFrame(idle, "default")===idle && O.variantFrame(idle, "nope")===idle, "default/unknown should return the frame unchanged");
+    expect(O.variantFrame(src, "moss")===src, "a variant frame was re-mapped");
+    expect(O.frameKey(src)==="idle/idle-01", "variant frame key: "+O.frameKey(src));
+    var all = { headband:"teal-knit", chalkbag:"teal", shoes:"blue" };
+    expect(O.layersFor(src, all, 40, 0).map(function(l){ return l.slot; }).join()==="shoes,chalkbag,headband", "outfit didn't stack on the variant frame");
+    expect(O.layersFor(O.variantFrame(O.cheer[1], "sandstone"), all, 40, 0).length===3, "outfit missing on a variant cheer frame");
+    var wide = O.variantFrame(W.__cruxOutfit.cheer[0], "moss");
+    expect(/moss/.test(wide) || O.blob["moss/cheer/cheer-1"], "cheer not resolved: "+wide);
+    expect(!("night" in O.variants), "night is held back");
+    expect(O.variantOrder.join()==="default,slate,sandstone,moss", "order: "+O.variantOrder.join());
+  });
+  test("Character variant: every variant has all 40 frames, same names as the default climber", async function(){
+    expect(VARIANT_FRAMES.length===40, "list is "+VARIANT_FRAMES.length);
+    var missing = [], ids = ["slate", "sandstone", "moss"];
+    for(var f of VARIANT_FRAMES){
+      var d = await fetch("../assets/mascot/climber/default/"+f+".png", { method:"HEAD", cache:"no-store" });
+      if(!d.ok) missing.push("default/"+f);
+      for(var id of ids){
+        var r = await fetch("../assets/mascot/climber/variants/"+id+"/"+f+".png", { method:"HEAD", cache:"no-store" });
+        if(!r.ok) missing.push(id+"/"+f);
+      }
+    }
+    expect(!missing.length, "missing: "+missing.slice(0, 6).join(", ")+(missing.length>6 ? " (+"+(missing.length-6)+")" : ""));
+  });
+  test("Character variant: locked ones can't be equipped, unlocks come from level, equipping persists and the climber changes everywhere", async function(){
+    await boot(TEMPLATE); // level 1
+    var O = W.__cruxOutfit;
+    expect(O.variantUnlocked("slate", 5) && !O.variantUnlocked("slate", 4), "slate unlocks at level 5");
+    expect(O.variantUnlocked("sandstone", 10) && !O.variantUnlocked("sandstone", 9), "sandstone unlocks at level 10");
+    expect(O.variantUnlocked("moss", 18) && !O.variantUnlocked("moss", 17), "moss unlocks at level 18");
+    await openCustomize();
+    var grid = $("characterPickerGrid"), items = grid.querySelectorAll(".picker-item");
+    expect(items.length===4, "picker items: "+items.length);
+    expect(grid.closest(".settings-section").nextElementSibling.id==="arrangeSection", "Character isn't the first section");
+    var locked = grid.querySelectorAll(".picker-item.locked");
+    expect(locked.length===3 && Array.from(locked).every(function(b){ return b.disabled; }), "locked: "+locked.length);
+    expect(/Level 5/.test(locked[0].textContent) && /Level 10/.test(locked[1].textContent) && /Level 18/.test(locked[2].textContent), "hints: "+Array.from(locked).map(function(b){ return b.textContent; }).join(" | "));
+    await click(locked[0], 150);
+    expect(saved().character.variant==="default", "a locked variant was equipped");
+    // a saved-but-locked choice (e.g. a restored backup at a lower level) draws as default, nothing is rewritten
+    var s = clone(TEMPLATE); s.character.variant = "moss";
+    await boot(s); await goHome();
+    expect(W.__cruxOutfit.variantId()==="default", "locked choice resolved");
+    expect(!/variants\//.test($("characterStage").getAttribute("src")), "Home drew a locked variant: "+$("characterStage").getAttribute("src"));
+    // level 10: slate and sandstone open, moss still locked
+    var s2 = clone(TEMPLATE); s2.settings.devLevel = 10;
+    await boot(s2); await openCustomize();
+    expect(qa("#characterPickerGrid .picker-item.locked").length===1, "level 10 locked count: "+qa("#characterPickerGrid .picker-item.locked").length);
+    await click(q('#characterPickerGrid [data-character-variant="sandstone"]'), 250);
+    expect(saved().character.variant==="sandstone", "choice not saved: "+saved().character.variant);
+    expect(/variants\/sandstone\/idle\//.test($("characterStage").getAttribute("src")) || /sandstone/.test($("characterStage").getAttribute("src")||""), "Home climber: "+$("characterStage").getAttribute("src"));
+    expect(/sandstone/.test($("heroAvatarImg").getAttribute("src")), "level-chip avatar: "+$("heroAvatarImg").getAttribute("src"));
+    expect(q('#characterPickerGrid .picker-item.selected').getAttribute("data-character-variant")==="sandstone", "selected state");
+    // outfit layers stack over the variant on Home
+    for(var id of ["teal-knit", "teal", "blue"]){ await click(q('#outfitPickerGrid [data-outfit-item="'+id+'"]'), 200); }
+    var layers = qa("#characterBody img.outfit-layer");
+    expect(layers.length===3 && layers[0].previousElementSibling.id==="characterStage", "outfit over the variant: "+layers.length);
+    await click(q('#characterPickerGrid [data-character-variant="default"]'), 250);
+    expect(saved().character.variant==="default" && !/variants\//.test($("characterStage").getAttribute("src")), "back to default");
+  });
+  test("Character variant: the Wall climber and the share card use the equipped variant", async function(){
+    var s = wallSave([{ daysAgo:2 }, { daysAgo:1 }]); s.character.variant = "slate"; s.settings.devLevel = 10;
+    await boot(s); await openWallView(); closeSheet(); await wait(1200);
+    var src = $("wallClimberImg").getAttribute("src")||"";
+    expect(/variants\/slate\//.test(src) || /slate/.test(src), "Wall climber: "+src);
+    var O = W.__cruxOutfit;
+    expect(O.layersFor(src, { headband:"teal-knit", chalkbag:null, shoes:null }, 40, 0).length===1, "Wall climber outfit layer key");
+    expect(/climberFrame\(a\.result==="flash"/.test(SRC), "share card doesn't resolve the variant");
   });
 
   test("Home: Start and Customize sit on the dock; Drills and Progress are in the menu; Workouts and the Wall are one tap away in the bottom bar; no Arrange button", async function(){
