@@ -662,6 +662,44 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("closeWorkoutsBtn");
   });
 
+  test("Workouts: no built-in example (or untitled step) shows \"undefined\" or \"NaN\" in the list, editor, runner or result", async function(){
+    var bad = /undefined|NaN|null/;
+    var ids = ["ex-limit", "ex-4x4", "ex-arc", "ex-cond"];
+    for(var k=0;k<ids.length;k++){
+      var id = ids[k], seed = workoutSave();
+      // an untitled step of every kind, saved by an older build or a hand-made file
+      seed.workouts.push({ id:"w-bare", workout:{ v:1, title:"Bare", steps:[
+        { id:"a", type:"instruction" }, { id:"b", type:"timed", duration:60 }, { id:"c", type:"intervals", work:10, rest:5, rounds:2 },
+        { id:"d", type:"climbing", target:"sends", count:3 }, { id:"e", type:"setsReps", sets:2, reps:5 }, { id:"f", type:"rest", duration:30 } ] }, createdAt:1, updatedAt:1 });
+      await boot(seed); await toTrain(); await click("openWorkoutsBtn");
+      expect(!bad.test($("workoutsExamples").textContent) && !bad.test($("workoutsMine").textContent), "library list: "+$("workoutsExamples").textContent+" | "+$("workoutsMine").textContent);
+      await click(q('#workoutsExamples .wo-lib[data-act="copy"][data-id="'+id+'"]'));
+      qa('#woSteps input[data-k="title"]').forEach(function(i){ expect(i.value.trim() && !bad.test(i.value), id+" editor step name: '"+i.value+"'"); });
+      expect(!bad.test($("woSteps").textContent), id+" editor text");
+      await click("cancelWorkoutBtn");
+      await click(q('#workoutsExamples .wo-start[data-id="'+id+'"]'), 300);
+      var guard = 0;
+      while(activeWorkout().index < activeWorkout().doc.steps.length && guard++ < 12){
+        expect(!bad.test($("workoutBody").textContent) && !bad.test($("workoutTitle").textContent), id+" runner step "+activeWorkout().index+": "+$("workoutBody").textContent);
+        await woAct("skip");
+      }
+      expect(!bad.test($("workoutBody").textContent), id+" runner complete: "+$("workoutBody").textContent);
+      await click("finishSessionBtn", 400);
+      expect(visible("endWorkout") && !bad.test($("endWorkout").textContent), id+" result: "+$("endWorkout").textContent);
+      await click("endSummaryDoneBtn", 200);
+      await click("navTrainBtn", 150); await click("openWorkoutsBtn");
+      await click(q('#workoutsMine .wo-start[data-id="w-bare"]'), 300);
+      guard = 0;
+      while(activeWorkout().index < activeWorkout().doc.steps.length && guard++ < 12){
+        expect(!bad.test($("workoutBody").textContent), "untitled steps, runner step "+activeWorkout().index+": "+$("workoutBody").textContent);
+        await woAct("skip");
+      }
+      await click("finishSessionBtn", 400);
+      expect(!bad.test($("endWorkout").textContent), "untitled steps, result: "+$("endWorkout").textContent);
+      await click("endSummaryDoneBtn", 200);
+    }
+  });
+
   test("Workouts: old saves load without a library; backups keep workouts and results", async function(){
     var old = clone(TEMPLATE); delete old.workouts;
     await boot(old); await click("openSettingsBtn"); await click("closeSettingsBtn");
