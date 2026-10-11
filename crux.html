@@ -2213,7 +2213,7 @@
   var OUTFIT_SLOT_NAMES = { headband:"Headwear", chalkbag:"Chalk bag", shoes:"Shoes" };
   // Head items share one slot (one at a time); `kind` only groups them in the picker. Order = chip order.
   var OUTFIT_HEAD_KINDS = [ { id:"headband", name:"Headbands" }, { id:"beanie", name:"Beanies" }, { id:"cap", name:"Caps" }, { id:"bandana", name:"Bandanas" } ];
-  var OUTFIT_GREY = 162; // the mean grey of the neutral hat art: what tint.color is multiplied relative to
+  var OUTFIT_GREY = 148; // the mean grey of the neutral hat art: what tint.color is multiplied relative to
   /* ---------------- climber variants (palette recolours of the default climber) ---------------- */
   // A variant is a full recolour of every body frame: assets/mascot/climber/variants/<id>/<folder>/<name>.png, same
   // folder/frame names as assets/mascot/climber/default/ (the face/ and px/ folders are not recoloured: the eyes are
@@ -5498,7 +5498,7 @@
   }
   outfitFollow(document.getElementById("characterStage"), document.getElementById("characterBody"));
   // dev/tests.html only (it sets window.__cruxTest): lets the checks reach the pure outfit functions.
-  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, filterCSS:outfitFilterCSS, tintCanvas:outfitTintCanvas, tintMatrix:outfitTintMatrix, headKinds:OUTFIT_HEAD_KINDS, idle:IMG.mascot.idle, variants:CLIMBER_VARIANTS, variantOrder:CLIMBER_VARIANT_ORDER, variantBlob:CLIMBER_VARIANT_BLOB, variantFrame:climberFrameFor, variantId:climberVariantId, variantUnlocked:climberVariantUnlocked, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB };
+  if(window.__cruxTest) window.__cruxOutfit = { items:OUTFIT_ITEMS, slots:OUTFIT_SLOTS, layersFor:outfitLayersFor, unlocked:outfitUnlocked, frameKey:outfitFrameKey, filterCSS:outfitFilterCSS, tintCanvas:outfitTintCanvas, tintMatrix:outfitTintMatrix, headKinds:OUTFIT_HEAD_KINDS, idle:IMG.mascot.idle, variants:CLIMBER_VARIANTS, variantOrder:CLIMBER_VARIANT_ORDER, variantBlob:CLIMBER_VARIANT_BLOB, variantFrame:climberFrameFor, variantId:climberVariantId, variantUnlocked:climberVariantUnlocked, cheer:IMG.ui.cheer, blob:OUTFIT_BLOB, grey:OUTFIT_GREY };
 
   /* ---------------- the climber character ---------------- */
   // An idle-game layer on top of real data — no separate currency, no games (yet). Rank is

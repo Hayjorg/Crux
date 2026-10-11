@@ -1254,8 +1254,9 @@ and the project rules. It runs on its own private copy of the data, never your r
     var vals = D.getElementById(css.slice(5, -1)).firstChild.getAttribute("values").split(/\s+/).map(Number);
     var m = O.tintMatrix(it.tint);
     expect(Math.abs(vals[0]-m[0][0])<1e-3 && Math.abs(vals[6]-m[1][1])<1e-3 && Math.abs(vals[12]-m[2][2])<1e-3, "matrix mismatch "+vals.join(" "));
-    // the canvas path: a 162-grey pixel becomes the item's colour
-    var c = W.document.createElement("canvas"); c.width = c.height = 2; var x = c.getContext("2d"); x.fillStyle = "rgb(162,162,162)"; x.fillRect(0, 0, 2, 2);
+    // the canvas path: a pixel at the art's mean grey (OUTFIT_GREY) becomes the item's colour
+    var g = O.grey; expect(g>100 && g<200, "OUTFIT_GREY not exposed: "+g);
+    var c = W.document.createElement("canvas"); c.width = c.height = 2; var x = c.getContext("2d"); x.fillStyle = "rgb("+g+","+g+","+g+")"; x.fillRect(0, 0, 2, 2);
     var o = O.tintCanvas(c, it.tint).getContext("2d").getImageData(0, 0, 1, 1).data;
     expect(Math.abs(o[0]-0xc8)<=1 && Math.abs(o[1]-0x32)<=1 && Math.abs(o[2]-0x2d)<=1 && o[3]===255, "tinted grey: "+Array.prototype.join.call(o, ","));
     // hue-rotate-only tints still use CSS filter functions
