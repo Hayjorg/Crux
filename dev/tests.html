@@ -78,7 +78,9 @@ and the project rules. It runs on its own private copy of the data, never your r
     if(W.localStorage instanceof W.Storage) throw new Error("storage stand-in not installed: the real save would be used");
   }
   async function ackSafety(){ if(visible("legalOverlay") && visible("legalAckBtn")) await click("legalAckBtn"); }
-  async function goHome(){ if(!D.getElementById("view-session").hidden) await click("sessionHomeBtn"); if(!D.getElementById("view-detail").hidden) await click("backFromDetailBtn"); }
+  async function goHome(){ if(!D.getElementById("view-session").hidden) await click("sessionHomeBtn"); if(!D.getElementById("view-detail").hidden) await click("backFromDetailBtn"); if(!D.getElementById("view-train").hidden) await click("navHomeBtn"); }
+  // Workouts live in the Train area now (the bottom bar's Train tab), not on the Home dock.
+  async function toTrain(){ await goHome(); await click("navTrainBtn", 150); }
   async function startOrResume(){ await goHome(); await click("startSessionBtn", 250); }
   async function log(kind, name){
     await click("log"+kind[0].toUpperCase()+kind.slice(1), 200);
@@ -537,13 +539,13 @@ and the project rules. It runs on its own private copy of the data, never your r
   function activeWorkout(){ var a = active(); return a && a.workout; }
   function stepStatus(id){ var w = activeWorkout(); return w && w.steps[id] ? w.steps[id].status : "pending"; }
   async function startQuick(){
-    await goHome(); await click("openWorkoutsBtn");
+    await toTrain(); await click("openWorkoutsBtn");
     await click(q('#workoutsMine .wo-start[data-id="w-quick"]'), 300);
   }
   async function woAct(act){ var b = q('#workoutBody .wo-ctl[data-act="'+act+'"]'); expect(b, "no '"+act+"' button on the current step"); await click(b, 250); }
 
   test("Workouts: examples are listed and Start begins a session with the runner", async function(){
-    await boot(TEMPLATE); await goHome();
+    await boot(TEMPLATE); await toTrain();
     await click("openWorkoutsBtn");
     var rows = qa("#workoutsExamples .wo-row");
     expect(rows.length===4, rows.length+" examples");
@@ -635,7 +637,7 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
 
   test("Workouts: build, edit and delete your own in Advanced; Simple can only run them", async function(){
-    await boot(workoutSave()); await goHome(); await click("openWorkoutsBtn");
+    await boot(workoutSave()); await toTrain(); await click("openWorkoutsBtn");
     await click("newWorkoutBtn");
     await click(q('#woAddRow [data-add="timed"]')); await click(q('#woAddRow [data-add="climbing"]'));
     await click("saveWorkoutBtn");
@@ -655,9 +657,47 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("deleteWorkoutBtn"); await click("deleteWorkoutBtn", 200);
     expect(!saved().workouts.some(function(x){ return x.id===mine.id; }), "delete didn't remove it");
     await click("closeWorkoutsBtn");
-    await setMode("simple"); await click("openWorkoutsBtn");
+    await setMode("simple"); await toTrain(); await click("openWorkoutsBtn");
     expect(!visible("newWorkoutBtn") && !q("#workoutsMine .wo-lib[data-act=\"edit\"]") && q('#workoutsMine .wo-start'), "Simple mode shows editing controls or can't start");
     await click("closeWorkoutsBtn");
+  });
+
+  test("Workouts: no built-in example (or untitled step) shows \"undefined\" or \"NaN\" in the list, editor, runner or result", async function(){
+    var bad = /undefined|NaN|null/;
+    var ids = ["ex-limit", "ex-4x4", "ex-arc", "ex-cond"];
+    for(var k=0;k<ids.length;k++){
+      var id = ids[k], seed = workoutSave();
+      // an untitled step of every kind, saved by an older build or a hand-made file
+      seed.workouts.push({ id:"w-bare", workout:{ v:1, title:"Bare", steps:[
+        { id:"a", type:"instruction" }, { id:"b", type:"timed", duration:60 }, { id:"c", type:"intervals", work:10, rest:5, rounds:2 },
+        { id:"d", type:"climbing", target:"sends", count:3 }, { id:"e", type:"setsReps", sets:2, reps:5 }, { id:"f", type:"rest", duration:30 } ] }, createdAt:1, updatedAt:1 });
+      await boot(seed); await toTrain(); await click("openWorkoutsBtn");
+      expect(!bad.test($("workoutsExamples").textContent) && !bad.test($("workoutsMine").textContent), "library list: "+$("workoutsExamples").textContent+" | "+$("workoutsMine").textContent);
+      await click(q('#workoutsExamples .wo-lib[data-act="copy"][data-id="'+id+'"]'));
+      qa('#woSteps input[data-k="title"]').forEach(function(i){ expect(i.value.trim() && !bad.test(i.value), id+" editor step name: '"+i.value+"'"); });
+      expect(!bad.test($("woSteps").textContent), id+" editor text");
+      await click("cancelWorkoutBtn");
+      await click(q('#workoutsExamples .wo-start[data-id="'+id+'"]'), 300);
+      var guard = 0;
+      while(activeWorkout().index < activeWorkout().doc.steps.length && guard++ < 12){
+        expect(!bad.test($("workoutBody").textContent) && !bad.test($("workoutTitle").textContent), id+" runner step "+activeWorkout().index+": "+$("workoutBody").textContent);
+        await woAct("skip");
+      }
+      expect(!bad.test($("workoutBody").textContent), id+" runner complete: "+$("workoutBody").textContent);
+      await click("finishSessionBtn", 400);
+      expect(visible("endWorkout") && !bad.test($("endWorkout").textContent), id+" result: "+$("endWorkout").textContent);
+      await click("endSummaryDoneBtn", 200);
+      await click("navTrainBtn", 150); await click("openWorkoutsBtn");
+      await click(q('#workoutsMine .wo-start[data-id="w-bare"]'), 300);
+      guard = 0;
+      while(activeWorkout().index < activeWorkout().doc.steps.length && guard++ < 12){
+        expect(!bad.test($("workoutBody").textContent), "untitled steps, runner step "+activeWorkout().index+": "+$("workoutBody").textContent);
+        await woAct("skip");
+      }
+      await click("finishSessionBtn", 400);
+      expect(!bad.test($("endWorkout").textContent), "untitled steps, result: "+$("endWorkout").textContent);
+      await click("endSummaryDoneBtn", 200);
+    }
   });
 
   test("Workouts: old saves load without a library; backups keep workouts and results", async function(){
@@ -1132,11 +1172,14 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().character.outfit.headband===null, "Plain didn't clear the headband");
   });
 
-  test("Home: Start, Wall, Customize and Workouts sit on the dock; Drills and Progress are in the menu; no Arrange button", async function(){
+  test("Home: Start and Customize sit on the dock; Drills and Progress are in the menu; Workouts and the Wall are one tap away in the bottom bar; no Arrange button", async function(){
     await boot(TEMPLATE); await goHome();
-    ["startSessionBtn", "wallCard", "openCustomizeBtn", "openWorkoutsBtn"].forEach(function(id){
+    ["startSessionBtn", "openCustomizeBtn"].forEach(function(id){
       expect(visible(id), id+" isn't showing on Home");
       expect(!!$(id).closest("#homeDock"), id+" isn't in the dock");
+    });
+    ["navHomeBtn", "navTrainBtn", "wallCard"].forEach(function(id){
+      expect(visible(id) && !!$(id).closest("#appNav"), id+" isn't a tab in the bottom bar");
     });
     expect(!visible("arrangeToggleBtn") && !visible("arrangeRow"), "an Arrange button is showing on Home");
     expect(!q(".home-hero .scene-chip") && !/Arrange/.test($("homeDock").textContent), "the dock still mentions Arrange");
@@ -1151,9 +1194,41 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(visible("drillsOverlay"), "Drills from the menu didn't open");
     await click("closeDrillsBtn");
     await click("openCustomizeBtn"); expect(visible("customizeOverlay"), "Customize didn't open"); await click("closeCustomizeBtn");
+    await click("navTrainBtn", 250); expect(visible("view-train"), "the Train tab didn't open Train");
     await click("openWorkoutsBtn", 250); expect(visible("workoutsOverlay"), "Workouts didn't open"); await click("closeWorkoutsBtn");
-    await click("wallCard", 400); expect(visible("view-wall"), "The Wall card didn't open the Wall"); await goHomeFromWall();
+    await click("wallCard", 400); expect(visible("view-wall"), "The Wall tab didn't open the Wall"); await goHomeFromWall();
     await click("startSessionBtn", 250); expect(visible("view-session"), "Start Session didn't start a session");
+  });
+
+  test("Nav: the bottom bar moves between Home, Train and the Wall, marks where you are, and the Wall has a way home", async function(){
+    await boot(TEMPLATE); await goHome();
+    function cur(){ return qa("#appNav .nav-tab").filter(function(b){ return b.getAttribute("aria-current")==="page"; }).map(function(b){ return b.dataset.nav; }).join(); }
+    expect(visible("view-home") && cur()==="home", "Home isn't marked: "+cur());
+    await click("navTrainBtn", 250);
+    expect(visible("view-train") && !visible("view-home") && cur()==="train", "Train tab: "+cur());
+    expect(visible("appNav"), "the bar isn't showing on Train");
+    expect(visible("trainStartBtn") && visible("openWorkoutsBtn") && visible("trainDrillsBtn") && visible("trainProgressBtn"), "Train is missing an action");
+    await click("trainDrillsBtn", 250); expect(visible("drillsOverlay"), "Drills didn't open from Train");
+    expect(W.getComputedStyle($("appNav")).display==="none", "the bar shows under a sheet");
+    await click("closeDrillsBtn", 250); expect(visible("view-train") && visible("appNav"), "closing a sheet didn't bring the bar back on Train");
+    await click("wallCard", 400);
+    expect(visible("view-wall") && !visible("view-train") && cur()==="wall", "Wall tab: "+cur());
+    expect(visible("appNav") && visible("wallHomeBtn"), "the Wall needs the bar and a Home button");
+    await click("navHomeBtn", 250);
+    expect(visible("view-home") && !visible("view-wall") && cur()==="home", "Home tab from the Wall didn't go home");
+    await click("wallCard", 400); await click("wallHomeBtn", 300);
+    expect(visible("view-home"), "the Wall's Home button didn't go home");
+  });
+
+  test("Nav: the bar is hidden while a session is on screen and returns at Home", async function(){
+    await boot(TEMPLATE); await goHome();
+    await click("navTrainBtn", 200); await click("trainStartBtn", 300);
+    expect(visible("view-session"), "Train's Start Session didn't open the session");
+    expect(!visible("appNav") && D.body.classList.contains("no-nav"), "the bar is showing during a session");
+    await click("sessionHomeBtn", 250);
+    expect(visible("view-home") && visible("appNav"), "the bar didn't come back at Home");
+    await click("navTrainBtn", 200);
+    expect(/Resume/.test($("trainStartBtn").textContent), "Train doesn't offer to resume the running session: "+$("trainStartBtn").textContent.trim());
   });
 
   test("Home: Arrange room is inside Customize and still drags, resets and finishes", async function(){
