@@ -69,10 +69,12 @@
     font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
     -webkit-font-smoothing:antialiased;
   }
+  :root{--nav-h:calc(62px + env(safe-area-inset-bottom, 0px));}
+  body.no-nav{--nav-h:0px;}
   .app{
     max-width:760px;
     margin:0 auto;
-    padding:28px 18px 60px;
+    padding:28px 18px calc(60px + var(--nav-h));
   }
   h1,h2,h3{text-wrap:balance;}
   [hidden]{display:none !important;}
@@ -160,6 +162,58 @@
   .icon-btn:active{transform:scale(0.9);}
   .icon-btn svg{width:18px;height:18px;}
 
+  /* ================= APP NAV (Home / Train / Wall) ================= */
+  /* One persistent bar, dark glass like the Home dock. Hidden while a session is on screen (it has its
+     own Home button), while arranging the room, and under any sheet, so it never covers a control. */
+  .app-nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0 auto;max-width:560px;
+    display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    background:rgba(22,16,10,0.88);backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);
+    border:1px solid rgba(255,255,255,0.16);border-bottom:0;border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow:0 -8px 24px -10px rgba(0,0,0,0.5);
+  }
+  .app-nav[hidden], body:has(.modal-overlay:not([hidden])) .app-nav, body:has(.wl-sheet, .cel-sheet) .app-nav{display:none;}
+  .app-nav .nav-tab{
+    position:relative;min-width:0;min-height:50px;margin:0;padding:4px 6px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    background:transparent;border:1px solid transparent;border-radius:var(--radius-md);color:rgba(251,246,232,0.72);
+    font-size:11.5px;font-weight:700;line-height:1.1;text-align:center;box-shadow:none;width:auto;
+    transition:background .15s ease, color .15s ease;
+  }
+  .app-nav .nav-tab:hover{background:rgba(255,255,255,0.08);}
+  .app-nav .nav-tab:active{transform:scale(0.96);}
+  .app-nav .nav-tab:focus-visible{outline:2px solid #FBF6E8;outline-offset:1px;}
+  .app-nav .nav-tab[aria-current="page"]{background:rgba(243,199,102,0.2);border-color:rgba(243,199,102,0.55);color:#FBE7B0;}
+  .app-nav .nav-tab .nav-ic{width:26px;height:26px;object-fit:contain;flex-shrink:0;display:block;}
+  .app-nav .nav-tab svg.nav-ic{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;padding:2px;}
+  .app-nav .nav-label{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .app-nav .nav-tab .wl-flame{width:26px;height:26px;border-radius:0;background:transparent;}
+  .app-nav .nav-tab .wl-flame img{width:26px;height:26px;}
+  .app-nav .nav-tab .wl-card-main{flex:0 0 auto;max-width:100%;overflow:hidden;}
+  .app-nav .nav-tab .wl-card-title{font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:0;line-height:1.1;overflow:hidden;text-overflow:ellipsis;}
+  .app-nav .nav-tab .wl-card-sub{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  .app-nav .nav-tab .wl-new{position:absolute;top:-2px;right:2px;font-size:9px;padding:2px 6px;}
+
+  /* ================= TRAIN (the training area) ================= */
+  .train-title{font-family:"Bebas Neue",system-ui,sans-serif;font-size:34px;letter-spacing:0.04em;font-weight:400;margin:0 0 14px;line-height:1;}
+  #view-train .start-cta{margin-bottom:16px;}
+  .train-plan{padding:14px 16px;margin-bottom:14px;}
+  .train-plan b{display:block;font-size:14px;margin-bottom:2px;}
+  .train-plan p{margin:0;font-size:13px;line-height:1.45;color:var(--text-dim);}
+  .train-list{display:grid;gap:10px;}
+  .train-item{
+    display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:10px 14px;text-align:left;
+    background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);
+    box-shadow:0 3px 14px -4px var(--shadow);
+  }
+  .train-item:active{transform:scale(0.98);}
+  .train-item img{width:40px;height:40px;object-fit:contain;flex-shrink:0;}
+  .train-item-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .train-item-text b{font-size:15px;}
+  .train-item-text small{font-size:12.5px;color:var(--text-dim);}
+  .train-item > svg{width:18px;height:18px;flex-shrink:0;color:var(--text-dim);}
+
   /* ================= HOME (full-screen room) ================= */
   /* The first screen of Home is the room itself: one full-viewport hero, edge to edge. The painted
      room (#sceneEnv), decorations (#sceneLayers) and the climber all live in .character-scene, a
@@ -170,11 +224,11 @@
   #view-home{--dock-h:176px;}
   .home-hero{
     position:relative;container-type:size;overflow:hidden;isolation:isolate;
-    height:100vh;height:100dvh;min-height:540px;
+    height:calc(100vh - var(--nav-h));height:calc(100dvh - var(--nav-h));min-height:540px;
     margin:-28px -18px 0;background:var(--surface-2);
   }
   @media (min-width:600px){
-    .home-hero{max-width:520px;margin:-12px auto 0;height:min(100dvh - 24px, 880px);border-radius:var(--radius-lg);box-shadow:0 3px 14px -4px var(--shadow);}
+    .home-hero{max-width:520px;margin:-12px auto 0;height:min(100dvh - 24px - var(--nav-h), 880px);border-radius:var(--radius-lg);box-shadow:0 3px 14px -4px var(--shadow);}
   }
   .home-top{
     position:absolute;top:0;left:0;right:0;z-index:4;
@@ -236,7 +290,7 @@
   .home-menu-item img{width:26px;height:26px;object-fit:contain;flex-shrink:0;}
   /* the dock: Start Session, then three small buttons, then a cue to scroll */
   .home-dock{
-    position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom, 0px));z-index:4;
+    position:absolute;left:10px;right:10px;bottom:10px;z-index:4;
     display:flex;flex-direction:column;gap:8px;padding:10px 10px 4px;
     background:rgba(22,16,10,0.5);backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);
     border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius-lg);box-shadow:0 10px 28px -8px rgba(0,0,0,0.55);
@@ -279,6 +333,8 @@
   .arrange-open-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;}
   .arrange-open-btn .ui-ic{width:24px;height:24px;object-fit:contain;}
   .arrange-btn[hidden]{display:none;}
+  /* A lone dock button (Customize) is a wide row, not a tall tile. */
+  .dock-row > .dock-btn:only-child{flex-direction:row;gap:10px;min-height:48px;font-size:13px;}
   .home-hero.arranging .home-top, .home-hero.arranging .home-dock{display:none;}
   /* below the first screen */
   .home-more{padding-top:16px;}
@@ -891,7 +947,7 @@
   .legal-body h3:first-child{margin-top:4px;}
   .legal-body p{font-size:13px;line-height:1.55;color:var(--text-dim);margin:0 0 8px;}
   .legal-actions{position:sticky;bottom:-24px;margin:8px -22px -24px;padding:12px 22px 20px;background:var(--surface);border-top:1px solid var(--border);}
-  .toast-stack{position:fixed;left:0;right:0;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:150;}
+  .toast-stack{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + 18px);display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:150;}
   .toast{background:var(--accent);color:var(--accent-contrast);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:0 6px 18px var(--shadow);animation:toastin .4s cubic-bezier(.34,1.56,.64,1), toastout .4s ease 2.6s forwards;}
   @keyframes toastin{from{transform:translateY(10px) scale(0.9);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
   @keyframes toastout{to{opacity:0;transform:translateY(-6px);}}
@@ -1056,7 +1112,7 @@
   .home-dock .wl-card .wl-new{position:absolute;top:-7px;right:-3px;font-size:9px;padding:2px 7px;}
   .wl-rescue .ic{width:26px;height:26px;object-fit:contain;margin:-6px 0;flex-shrink:0;}
   .wl-rescue[hidden]{display:none;}
-  .wl-jump{position:fixed;right:max(14px, calc(50% - 226px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:grid;gap:8px;}
+  .wl-jump{position:fixed;right:max(14px, calc(50% - 226px));bottom:calc(var(--nav-h) + 14px);z-index:30;display:grid;gap:8px;}
   .wl-jump button{width:44px;height:44px;border-radius:50%;border:1px solid var(--wl-gold);background:linear-gradient(180deg, var(--wl-gold-hi), color-mix(in srgb, var(--wl-gold) 60%, var(--wl-gold-hi)));color:#4A2E0A;display:grid;place-items:center;box-shadow:0 3px 0 color-mix(in srgb, var(--wl-gold) 75%, #000), 0 8px 14px -6px rgba(0,0,0,0.45);}
   .wl-jump button:active{transform:translateY(3px);box-shadow:0 0 0 transparent;}
   .wl-jump svg{width:22px;height:22px;}
@@ -1205,20 +1261,9 @@
           </span>
         </button>
         <div class="dock-row">
-          <!-- ==== THE WALL (removable feature) ==== -->
-          <button type="button" class="wl-card dock-btn" id="wallCard" hidden>
-            <span class="wl-flame" id="wallCardFlame" aria-hidden="true"><img alt=""></span>
-            <span class="wl-card-main"><span class="wl-card-title" id="wallCardTitle">The Wall</span><span class="wl-card-sub" id="wallCardSub"></span></span>
-            <span class="wl-new" id="wallCardNew" hidden>New hold!</span>
-          </button>
-          <!-- ==== END THE WALL ==== -->
           <button type="button" class="dock-btn" id="openCustomizeBtn">
             <img data-ui="customize" alt="">
             <span class="dock-label">Customize</span>
-          </button>
-          <button type="button" class="dock-btn" id="openWorkoutsBtn">
-            <img data-ui="workouts" alt="">
-            <span class="dock-label">Workouts</span>
           </button>
         </div>
         <button type="button" class="dock-more" id="homeMoreBtn" aria-label="Show your progress and history">
@@ -1277,6 +1322,40 @@
         <span>Your sessions stay on this device. Climbing is dangerous — you climb at your own risk.</span>
         <button type="button" class="link-btn" id="openLegalFromHomeBtn">Safety, privacy &amp; terms</button>
       </footer>
+    </div>
+  </div>
+
+  <!-- ================= TRAIN ================= -->
+  <div id="view-train" hidden>
+    <h1 class="train-title">Train</h1>
+    <button type="button" class="start-cta garage-cta" id="trainStartBtn">
+      <img class="cta-icon" data-ui="start" alt="">
+      <span class="cta-text">
+        <span class="main">Start Session</span>
+        <span class="sub" id="trainStartSub"></span>
+      </span>
+    </button>
+    <section class="card train-plan" id="trainPlan" hidden>
+      <p class="eyebrow">Today's plan</p>
+      <b id="trainPlanWhy"></b>
+      <p id="trainPlanText"></p>
+    </section>
+    <div class="train-list">
+      <button type="button" class="train-item" id="openWorkoutsBtn">
+        <img data-ui="workouts" alt="">
+        <span class="train-item-text"><b>Workouts</b><small>Run a routine, or build your own</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <button type="button" class="train-item" id="trainDrillsBtn">
+        <img data-ui="drills" alt="">
+        <span class="train-item-text"><b>Training drills</b><small>Short exercises to work on</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <button type="button" class="train-item" id="trainProgressBtn">
+        <img data-ui="progress" alt="">
+        <span class="train-item-text"><b>Climbing progress</b><small>Your pyramid, projects and history</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
     </div>
   </div>
 
@@ -1437,7 +1516,7 @@
   <!-- ==== THE WALL (removable feature; see AGENTS.md "The Wall") ==== -->
   <div id="view-wall" hidden>
     <div class="topbar">
-      <button class="topbar-btn" id="wallHomeBtn">
+      <button class="topbar-btn" id="wallHomeBtn" aria-label="Back to home">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
         <span>Home</span>
       </button>
@@ -1540,6 +1619,25 @@
   </div>
 
 </div>
+
+<!-- ================= APP NAV: Home / Train / Wall ================= -->
+<nav class="app-nav" id="appNav" aria-label="Main">
+  <button type="button" class="nav-tab" id="navHomeBtn" data-nav="home">
+    <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 3.5 20.5 11"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg>
+    <span class="nav-label">Home</span>
+  </button>
+  <button type="button" class="nav-tab" id="navTrainBtn" data-nav="train">
+    <img class="nav-ic" data-ui="workouts" alt="">
+    <span class="nav-label">Train</span>
+  </button>
+  <!-- ==== THE WALL (removable feature) ==== -->
+  <button type="button" class="nav-tab wl-card" id="wallCard" data-nav="wall" hidden>
+    <span class="wl-flame" id="wallCardFlame" aria-hidden="true"><img alt=""></span>
+    <span class="wl-card-main"><span class="wl-card-title" id="wallCardTitle">The Wall</span><span class="wl-card-sub" id="wallCardSub"></span></span>
+    <span class="wl-new" id="wallCardNew" hidden>New hold!</span>
+  </button>
+  <!-- ==== END THE WALL ==== -->
+</nav>
 
 <div class="modal-overlay" id="settingsOverlay" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-label="Settings">
@@ -5639,6 +5737,7 @@
     document.getElementById("arrangeRow").hidden = !on;
     document.getElementById("homeHero").classList.toggle("arranging", on);
     if(on) closeHomeMenu();
+    if(typeof syncNav==="function") syncNav();
   }
   // Only accessories carry data-decor-id, so a future room prop is never draggable. Positions
   // are saved under the gym currently on screen.
@@ -6475,16 +6574,46 @@
   document.querySelectorAll("img[data-ui]").forEach(function(im){ im.src = IMG.ui[im.dataset.ui]; });
 
   /* ---------------- view switching ---------------- */
+  // The bottom bar: Home / Train / Wall. It is hidden on the session view (which has its own Home button)
+  // and while arranging the room; sheets hide it by CSS. --nav-h drops to 0 so pages reclaim the space.
+  var currentViewName = "home";
+  function syncNav(){
+    var hide = currentViewName==="session" || arrangeMode;
+    document.getElementById("appNav").hidden = hide;
+    document.body.classList.toggle("no-nav", hide);
+    var tab = currentViewName==="train" ? "train" : currentViewName==="wall" ? "wall" : "home";
+    document.querySelectorAll("#appNav .nav-tab").forEach(function(b){
+      if(b.dataset.nav===tab) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+    });
+  }
+  function renderTrain(){
+    var s = getActiveSession();
+    document.querySelector("#trainStartBtn .main").textContent = s ? "Resume Session" : "Start Session";
+    document.getElementById("trainStartSub").textContent = s
+      ? (timer.running ? "Timer running" : "In progress")+" · "+s.attempts.length+" logged"
+      : state.timerDefaults.workSec+"s work / "+state.timerDefaults.restSec+"s rest";
+    var card = document.getElementById("trainPlan"), p = null;
+    try{ p = planFor(s || { id:"__preview", startedAt:Date.now(), projectId:null }); }catch(e){ p = null; }
+    var main = p && p.steps.filter(function(x){ return x.main; })[0];
+    card.hidden = !(p && main && !(s && s.workout));
+    if(card.hidden) return;
+    document.getElementById("trainPlanWhy").textContent = p.why;
+    document.getElementById("trainPlanText").textContent = main.title+": "+main.text;
+  }
   function switchView(name){
     editingAttemptId = null; // leaving a view always closes any open attempt editor in it
     if(name!=="home" && arrangeMode) setArrangeMode(false);
     document.getElementById("view-home").hidden = name!=="home";
     document.getElementById("view-session").hidden = name!=="session";
     document.getElementById("view-detail").hidden = name!=="detail";
+    document.getElementById("view-train").hidden = name!=="train";
     document.getElementById("view-wall").hidden = name!=="wall"; // THE WALL hook
     if(name==="home"){ renderHome(); playPendingLevelUpJump(); playPendingMascotMoods(); }
     if(name==="session"){ render(); renderTimer(); }
     if(name==="detail" && currentDetailId) renderDetail(currentDetailId);
+    if(name==="train") renderTrain();
+    currentViewName = name;
+    syncNav();
     window.scrollTo(0,0);
     if(name==="wall") onWallShown(); // THE WALL hook
   }
@@ -6503,6 +6632,13 @@
   document.getElementById("startSessionBtn").addEventListener("click", function(){
     if(getActiveSession()) switchView("session"); else startSession();
   });
+  document.getElementById("trainStartBtn").addEventListener("click", function(){
+    if(getActiveSession()) switchView("session"); else startSession();
+  });
+  document.getElementById("trainDrillsBtn").addEventListener("click", openDrills);
+  document.getElementById("trainProgressBtn").addEventListener("click", openProgress);
+  document.getElementById("navHomeBtn").addEventListener("click", function(){ switchView("home"); });
+  document.getElementById("navTrainBtn").addEventListener("click", function(){ switchView("train"); });
   document.getElementById("sessionHomeBtn").addEventListener("click", function(){ flushPendingSaves(); switchView("home"); });
   document.getElementById("finishSessionBtn").addEventListener("click", finishSession);
   document.getElementById("endSummaryDoneBtn").addEventListener("click", closeEndSummary);
