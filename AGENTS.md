@@ -102,9 +102,9 @@ unknown id) and never throws. **Art is kept** in `assets/outfit/{beanie,cap,band
 ## Painted beanie (2026-10-11, live: Headwear > Hats)
 
 One ChatGPT-painted hat, fitted to the climber by script. Source: `Desktop/Crux-previews/ChatGPT-work/hat-objects/hat-beanie-q3left-simple-v2.png`
-(1254px, 3/4 left view, pom, chunky cuff). Pipeline: `dev/outfit/painted_beanie_v3.py` (v2 = `painted_beanie_pilot.py`; `dev/outfit/` is local and untracked), outputs `dev/outfit/out/painted_v3/`.
+(1254px, 3/4 left view, pom, chunky cuff). Pipeline: `dev/outfit/painted_beanie_v4.py` (v3 = `painted_beanie_v3.py`, v2 = `painted_beanie_pilot.py`; `dev/outfit/` is local and untracked), outputs `dev/outfit/out/painted_v4/`. v4 reshapes the hat before fitting: synthetic dome crown (apex lower), pom shrunk to 0.62 and set lower, ribs converge toward the top (texture warp), crown x0.90 / cuff x0.92 vertical squash (total height about -17%), anisotropic rib extraction to calm the mottle, blink frames shadow-masked by their own eye pixels.
 - **Cleaning:** alpha eroded 1px, edge colour replaced by the nearest interior colour (no light/dark fringe), grey luminance only, cuff re-cut along a hand-read contour (everything below is the opening).
-- **Tone:** form (blur 24) and rib/groove structure (blur 6) are kept, **grooves (valleys) amplified x1.8** so the cuff stays chunky; the hat's own fine grain is damped to 0.35.
+- **Tone:** form (blur 24) and rib/groove structure (blur 6) are kept, **grooves (valleys) amplified x1.9** so the cuff stays chunky; the hat's own fine grain is damped to 0.35.
   Normalised by gain only (soft knee above 158, never lift the darks) to **mean 148 (`OUTFIT_GREY`), peak <= 170** (shipped 164).
 - **Texture blend:** the climber's own mosaic (high-pass of the idle-01 cheek, blur 5, std 0.07) is multiplied on at **high frequency only**, so ribs are not washed out.
 - **Fit:** head ellipse + roll from `lib/headmodel.py`; hat rotated by the roll, scaled by head radius, cuff lower edge re-contoured to a bowl that wraps the dome (sag 46).
