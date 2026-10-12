@@ -816,6 +816,31 @@
   .gm-art-ring{border:3px solid var(--accent);border-radius:50%;background:transparent;}
   .gm-art-flag{background:var(--send);border-radius:4px 14px 14px 4px;}
   .gm-art-img{object-fit:contain;}
+  /* ==== .cr- Chalk Rhythm CSS BEGIN ==== */
+  .cr-field{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .cr-outline, .cr-live{position:absolute;left:50%;top:44%;margin:-115px 0 0 -115px;}
+  .cr-outline.gm-art-ring{border:3px solid color-mix(in srgb, var(--accent) 80%, transparent);}
+  .cr-live.gm-art-ring{border:6px solid color-mix(in srgb, var(--send) 70%, transparent);background:color-mix(in srgb, var(--send) 10%, transparent);transform:scale(0.35);will-change:transform;}
+  .cr-live.cr-dim{opacity:0.35 !important;}
+  .cr-puff{position:absolute;left:50%;top:44%;margin:-52px 0 0 34px;opacity:0;pointer-events:none;
+    background:color-mix(in srgb, var(--text) 16%, transparent);box-shadow:none;}
+  .cr-puff.go{animation:cr-puff .3s ease-out forwards;}
+  @keyframes cr-puff{from{transform:scale(0.4);opacity:0.9;}to{transform:scale(1.25);opacity:0;}}
+  .cr-bar{position:absolute;left:24px;right:24px;bottom:54px;height:14px;display:none;border-radius:7px;
+    background:color-mix(in srgb, var(--text) 8%, transparent);border:1px solid var(--border);}
+  .cr-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:color-mix(in srgb, var(--send) 75%, transparent);}
+  .cr-bar::after{content:"";position:absolute;right:-1px;top:-8px;bottom:-8px;width:3px;border-radius:2px;background:var(--accent);}
+  .cr-rm .cr-bar{display:block;}
+  .cr-rm .cr-live, .cr-rm .cr-outline, .cr-rm .cr-puff{display:none;}
+  .cr-label{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:8px;min-height:24px;
+    font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);opacity:0;transition:opacity .12s ease;pointer-events:none;}
+  .cr-label.on{opacity:1;}
+  .cr-rm .cr-label{transition:none;}
+  .cr-j{display:inline-block;box-sizing:border-box;width:16px;height:16px;border-radius:50%;flex-shrink:0;}
+  .cr-j-perfect{border:2px solid var(--send);box-shadow:0 0 0 3px var(--surface-2), 0 0 0 5px var(--send);margin:0 5px;}
+  .cr-j-good{border:3px solid var(--send);}
+  .cr-j-close{width:10px;height:10px;border:2px solid var(--text-dim);margin:0 3px;}
+  /* ==== .cr- Chalk Rhythm CSS END ==== */
   /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
@@ -7060,7 +7085,6 @@
   // only, and keep a best score and a play count per game in state.games. They never touch XP, levels, streaks or holds.
   // This SHELL (registry, art slots, sound, pause, seeded RNG, recording, menu, rest hand-off) belongs to T0.
   // Each game lives in its own region further down and registers itself with gmRegister(); see docs/GAMES-DESIGN.md.
-  var CHALK_CYCLE_MS = 3000, CHALK_BEATS = 15;
 
   /*GAMES-PURE-BEGIN*/
   // mulberry32: the one seeded RNG for every game (and for tests). Same seed, same sequence.
@@ -7083,17 +7107,6 @@
     g[id] = next;
     return { games:g, counted:true, newBest:score>c.best, best:next.best };
   }
-  // Legacy Chalk Up rules (T1 replaces these with Chalk Rhythm).
-  function chalkBeatMs(k){ return CHALK_CYCLE_MS/2 + k*CHALK_CYCLE_MS; }   // the ring meets its outline at the top of each breath
-  function chalkRate(errMs){ var e = Math.abs(errMs); return e<=130 ? "perfect" : e<=260 ? "good" : "miss"; }
-  function chalkRun(ratings){
-    var cur = 0, best = 0, hits = 0, perfects = 0;
-    ratings.forEach(function(r){
-      if(r==="perfect" || r==="good"){ cur++; hits++; if(r==="perfect") perfects++; if(cur>best) best = cur; } else cur = 0;
-    });
-    return { streak:cur, best:best, hits:hits, perfects:perfects };
-  }
-  function chalkRingScale(tMs){ var p = (((tMs % CHALK_CYCLE_MS)+CHALK_CYCLE_MS) % CHALK_CYCLE_MS)/CHALK_CYCLE_MS; return 0.38 + 0.62*(0.5-0.5*Math.cos(2*Math.PI*p)); }
   /*GAMES-PURE-END*/
 
   // -- registry (design doc 4.1) --
@@ -7286,72 +7299,6 @@
     gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
   }
 
-  /* ==== chalkUp BEGIN (legacy Chalk Up, keeps working until T1 replaces it with chalkRhythm; T1 may delete this region) ==== */
-  gmRegister({
-    id:"chalkUp", title:"Chalk Up", order:1, blurb:"Breathe with the ring and tap on the beat. Calm, good for rest.",
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>',
-    intro:{ title:"Breathe and tap", text:"Breathe in as the ring grows. Tap just as it meets the outline. Keep your streak going for 45 seconds.", hint:"Calm, one tap per breath." },
-    hud0:function(best){ return "Streak 0 · Best "+best; },
-    start:function(){ chalkStart(); },
-    state:function(){ return { score:chalkRun(gm.ratings).best, actions:gm.taps||0, extra:{} }; },
-    resume:function(dt){ gm.holdUntil += dt; if(gm.frame) gmRaf = requestAnimationFrame(gm.frame); }
-  });
-  function chalkStart(){
-    var f = gmFrames(); gmPreload(f);
-    gmEl("gmStage").innerHTML = '<div class="gm-ring gm-ring-target" aria-hidden="true"></div><div class="gm-ring gm-ring-live" id="gmRing" aria-hidden="true"></div>'
-      + '<div class="gm-climber gm-climber-big" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
-      + '<p class="gm-phase" id="gmPhase" aria-hidden="true">Breathe in</p>'
-      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap when the ring meets the outline"></button>';
-    var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
-    var g = gmBegin("chalkUp", f, { ratings:[], tapped:{}, judged:-1, idleN:0, clapN:0, holdUntil:0, lastScale:0, taps:0 });
-    gmHud(0, "Streak 0 · Best "+state.games.chalkUp.best);
-    gmSay("Go. Tap as the ring meets the outline.");
-    function tap(){
-      if(gm!==g || g.paused) return;
-      g.taps++;
-      var t = performance.now()-g.t0;
-      var k = Math.max(0, Math.min(CHALK_BEATS-1, Math.round((t-CHALK_CYCLE_MS/2)/CHALK_CYCLE_MS)));
-      var err = t-chalkBeatMs(k), rating = chalkRate(err);
-      if(g.tapped[k] || rating==="miss"){ g.ratings.push("miss"); chalkShow("Off the beat", g); gmSetSrc(img, g.frames.idle[0]); return; }
-      g.tapped[k] = true; g.ratings.push(rating);
-      chalkShow(rating==="perfect" ? "Perfect" : "Good", g);
-      gmBeep(200, 60, 0.08); if(rating==="perfect") gmBuzz(8);
-      gmSetSrc(img, g.frames.clap[g.clapN++ % g.frames.clap.length]); g.holdUntil = t+260;
-    }
-    gmEl("gmTap").addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
-    gmEl("gmTap").addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
-    gmEl("gmTap").focus({ preventScroll:true });
-    var ring = gmEl("gmRing"), phase = gmEl("gmPhase");
-    function frame(){
-      if(gm!==g || g.paused) return;
-      var t = performance.now()-g.t0, p = (t % CHALK_CYCLE_MS)/CHALK_CYCLE_MS;
-      var s = chalkRingScale(t);
-      if(prefersReducedMotion) s = Math.round(s*4)/4;   // simplified: the ring steps instead of gliding
-      if(s!==g.lastScale){ ring.style.transform = "scale("+s.toFixed(3)+")"; g.lastScale = s; }
-      var label = p<0.5 ? "Breathe in" : "Breathe out";
-      if(phase.textContent!==label) phase.textContent = label;
-      // a beat nobody tapped within its window is a miss
-      while(g.judged+1<CHALK_BEATS && t>chalkBeatMs(g.judged+1)+260){
-        g.judged++; if(!g.tapped[g.judged]){ g.ratings.push("miss"); chalkShow("Missed", g); }
-      }
-      if(t>=g.holdUntil){
-        var want = (p>0.38 && p<0.62) ? g.frames.chalk : g.frames.idle[Math.floor(t/700)%g.frames.idle.length];
-        gmSetSrc(img, want);
-      }
-      gmEl("gmTime").textContent = Math.max(0, Math.ceil((CHALK_BEATS*CHALK_CYCLE_MS-t)/1000))+"s";
-      if(t>=CHALK_BEATS*CHALK_CYCLE_MS){ var run = chalkRun(g.ratings); gmOver("chalkUp", run.best, { note:run.hits+" of "+CHALK_BEATS+" in time", actions:g.taps }); return; }
-      gmRaf = requestAnimationFrame(frame);
-    }
-    g.frame = frame;
-    gmRaf = requestAnimationFrame(frame);
-  }
-  function chalkShow(word, g){
-    var run = chalkRun(g.ratings);
-    gmHud(run.best, "Streak "+run.streak+" · Best "+state.games.chalkUp.best);
-    gmSay(word+". Streak "+run.streak+".");
-  }
-  /* ==== chalkUp END ==== */
-
   // Stubs for the games still to come. A game's region replaces its stub by calling gmRegister() with the same id
   // (and no `soon`). Order matters: stubs first, regions after.
   [
@@ -7365,7 +7312,154 @@
       icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>' }
   ].forEach(function(d){ d.soon = true; d.intro = { title:d.title, text:d.blurb }; d.state = function(){ return { score:0, actions:0, extra:{} }; }; gmRegister(d); });
 
-  /* ==== chalkRhythm BEGIN (T1: chalkRhythm* functions, .cr- CSS, gmRegister({id:"chalkRhythm", ...}), migrate nothing: gamesNormalize already copied the legacy best) ==== */
+  /* ==== chalkRhythm BEGIN (T1: replaces the legacy Chalk Up; the saved chalkUp data stays, its best was copied by gamesNormalize) ==== */
+  // Rules: a ring grows toward a fixed outline once per beat; tap when it meets the outline. Fixed grid from round start,
+  // no hidden beats, no fail. Tempo 60 -> 64 -> 70 bpm; windows +-80 / +-160 / +-280 ms (design doc 2.1).
+  /*CHALKRHYTHM-PURE-BEGIN*/
+  var CR_ROUND_MS = 45000, CR_WIN = { perfect:80, good:160, close:280 };
+  var CR_PHASES = [ { to:15000, bpm:60, beat:1000 }, { to:30000, bpm:64, beat:937 }, { to:45000, bpm:70, beat:857 } ];
+  function chalkPhase(tMs){ for(var i=0;i<CR_PHASES.length;i++){ if(tMs<CR_PHASES[i].to) return CR_PHASES[i]; } return CR_PHASES[CR_PHASES.length-1]; }
+  function chalkBpm(tMs){ return chalkPhase(tMs).bpm; }
+  function chalkBeatLen(tMs){ return chalkPhase(tMs).beat; }
+  var crBeatsCache = null;
+  // The fixed beat grid, in ms from round start. Each beat's length is set by the phase its ring starts in.
+  function chalkBeats(){
+    if(crBeatsCache) return crBeatsCache;
+    var out = [], t = 0;
+    for(;;){ var b = t+chalkBeatLen(t); if(b>CR_ROUND_MS) break; out.push(b); t = b; }
+    return (crBeatsCache = out);
+  }
+  function chalkWindow(deltaMs){ var d = Math.abs(deltaMs); return d<=CR_WIN.perfect ? "perfect" : d<=CR_WIN.good ? "good" : d<=CR_WIN.close ? "close" : "miss"; }
+  function chalkPoints(label){ return label==="perfect" ? 3 : label==="good" ? 2 : label==="close" ? 1 : 0; }
+  // A tap goes to the nearest UNCLAIMED beat within the Close window; a claimed beat can never be claimed again.
+  function chalkAttribute(tMs, claimed){
+    var beats = chalkBeats(), best = -1, bd = Infinity;
+    for(var k=0;k<beats.length;k++){
+      if(claimed && claimed[k]) continue;
+      var d = Math.abs(tMs-beats[k]);
+      if(d<=CR_WIN.close && d<bd){ best = k; bd = d; }
+    }
+    if(best<0) return null;
+    var delta = tMs-beats[best];
+    return { k:best, delta:delta, label:chalkWindow(delta) };
+  }
+  // Which beat's ring is growing at tMs: { k, p } with p 0..1 (1 = the ring meets the outline).
+  function chalkRingAt(tMs){
+    var beats = chalkBeats(), n = beats.length;
+    for(var k=0;k<n;k++){
+      if(tMs<=beats[k]){ var s = k ? beats[k-1] : 0; return { k:k, p:Math.max(0, Math.min(1, (tMs-s)/(beats[k]-s))) }; }
+    }
+    return { k:n-1, p:1 };
+  }
+  function chalkRingScale(p){ return 0.35+0.65*Math.max(0, Math.min(1, p)); }
+  function chalkRingOpacity(p){ return Math.min(1, 0.3+Math.max(0, p)*5); }   // fades in over the first ~14% of the beat, then stays full
+  // Replays a list of tap times (ms from round start) through the same rules the game uses.
+  function chalkSimulate(taps){
+    var claimed = {}, score = 0, perfects = 0, hits = 0, labels = [];
+    taps.slice().sort(function(a, b){ return a-b; }).forEach(function(t){
+      var r = chalkAttribute(t, claimed);
+      if(!r){ labels.push(null); return; }
+      claimed[r.k] = true; hits++; score += chalkPoints(r.label); if(r.label==="perfect") perfects++; labels.push(r);
+    });
+    return { score:score, perfects:perfects, hits:hits, claimed:claimed, labels:labels };
+  }
+  /*CHALKRHYTHM-PURE-END*/
+
+  var crRMOverride = null;   // tests only
+  function crReduced(){ return crRMOverride===null ? !!prefersReducedMotion : crRMOverride; }
+  var CR_LABEL = { perfect:"Perfect", good:"Good", close:"Close" };
+  gmRegister({
+    id:"chalkRhythm", title:"Chalk Rhythm", order:1, blurb:"A slow beat, a ring, a tap. Calm and forgiving.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>',
+    intro:{ title:"Breathe and tap", text:"Breathe in as the ring grows. Tap when it meets the outline. A missed beat just scores 0, the next one comes.", hint:"Tap anywhere. 45 seconds, no fail." },
+    hud0:function(best){ return "Best "+best; },
+    start:function(){ chalkRhythmStart(); },
+    state:function(){ var g = gm && gm.id==="chalkRhythm" ? gm : null; return { score:g ? g.score : 0, actions:g ? g.taps : 0, extra:{ perfectBest:g ? g.perfects : 0 } }; },
+    rest:{ closeScore:function(){ var g = gm && gm.id==="chalkRhythm" ? gm : null; return { score:g ? g.score : 0, actions:g ? g.taps : 0, extra:{ perfectBest:g ? g.perfects : 0 } }; } },
+    resume:function(){ if(gm && gm.frame) gmRaf = requestAnimationFrame(gm.frame); },
+    art:["cr.ring", "cr.puff"], frames:["idle", "chalk", "clap", "cheer"]
+  });
+  function chalkRhythmStart(){
+    var f = gmFrames(); gmPreload(f);
+    var rm = crReduced(), outline = gmArt("cr.ring"), live = gmArt("cr.ring"), puff = gmArt("cr.puff");
+    outline.classList.add("cr-outline"); live.classList.add("cr-live"); live.id = "crRing"; puff.classList.add("cr-puff");
+    var stage = gmEl("gmStage");
+    stage.innerHTML = '<div class="cr-field'+(rm ? ' cr-rm' : '')+'" id="crField" aria-hidden="true"></div>'
+      + '<div class="gm-climber gm-climber-big" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<div class="cr-label" id="crLabel" aria-hidden="true"></div>'
+      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap when the ring meets the outline"></button>';
+    var field = gmEl("crField");
+    field.appendChild(outline); field.appendChild(live); field.appendChild(puff);
+    field.insertAdjacentHTML("beforeend", '<div class="cr-bar"><i id="crBarFill"></i></div>');
+    var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
+    var beats = chalkBeats();
+    var g = gmBegin("chalkRhythm", f, { claimed:{}, judged:-1, score:0, perfects:0, taps:0, streak:0, chalkUntil:0, clapFrom:0, clapUntil:0,
+      puffUntil:0, labelUntil:0, dimUntil:0, lastScale:-1, lastOp:-1, lastSec:-1 });
+    gmHud(0, "Best "+state.games.chalkRhythm.best);
+    gmSay("Go. Tap as the ring meets the outline.");
+    var label = gmEl("crLabel"), bar = gmEl("crBarFill");
+    function tap(){
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      g.taps++;
+      var r = chalkAttribute(t, g.claimed);
+      if(!r) return;                                   // between beats, or that beat is taken: nothing happens, nothing is lost
+      g.claimed[r.k] = true; g.score += chalkPoints(r.label);
+      g.streak++;
+      if(r.label==="perfect"){
+        g.perfects++; g.chalkUntil = t+300; g.puffUntil = t+300;
+        if(!rm){ puff.classList.remove("go"); void puff.offsetWidth; puff.classList.add("go"); }
+        gmBuzz(8);
+      }
+      if(r.label==="perfect" || r.label==="good") gmBeep(200, 60, 0.15);
+      if(g.streak%8===0){ g.clapFrom = t; g.clapUntil = t+900; }
+      label.innerHTML = '<span class="cr-j cr-j-'+r.label+'" aria-hidden="true"></span><span>'+CR_LABEL[r.label]+'</span>';
+      label.classList.add("on"); g.labelUntil = t+650;
+      gmHud(g.score, "Best "+state.games.chalkRhythm.best);
+      gmSay(CR_LABEL[r.label]+". "+g.score+" points.");
+    }
+    gmEl("gmTap").addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
+    gmEl("gmTap").addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
+    gmEl("gmTap").focus({ preventScroll:true });
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      // a beat nobody claimed within its Close window is simply a 0
+      while(g.judged+1<beats.length && t>beats[g.judged+1]+CR_WIN.close){
+        g.judged++;
+        if(!g.claimed[g.judged]){ g.streak = 0; g.dimUntil = t+250; }
+      }
+      var ring = chalkRingAt(t);
+      if(rm){
+        var w = (ring.p*100).toFixed(1)+"%"; if(bar.style.width!==w) bar.style.width = w;
+      } else {
+        var s = chalkRingScale(ring.p), op = chalkRingOpacity(ring.p);
+        if(s!==g.lastScale){ live.style.transform = "scale("+s.toFixed(3)+")"; g.lastScale = s; }
+        if(op!==g.lastOp){ live.style.opacity = op.toFixed(2); g.lastOp = op; }
+        live.classList.toggle("cr-dim", t<g.dimUntil);
+      }
+      if(label.classList.contains("on") && t>=g.labelUntil) label.classList.remove("on");
+      var want = t<g.chalkUntil ? f.chalk : t<g.clapUntil ? f.clap[Math.floor((t-g.clapFrom)/300)%f.clap.length] : f.idle[0];
+      gmSetSrc(img, want);
+      var sec = Math.max(0, Math.ceil((CR_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ gmEl("gmTime").textContent = sec+"s"; g.lastSec = sec; }
+      if(t>=CR_ROUND_MS){
+        gmOver("chalkRhythm", g.score, { title:"Nice breathing.", note:g.perfects+" perfect", actions:g.taps, extra:{ perfectBest:g.perfects } });
+        return;
+      }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    gmRaf = requestAnimationFrame(frame);
+  }
+  // Test API. This region runs before the shell creates window.__cruxGames, so it extends it a tick later (after the script ends).
+  if(window.__cruxTest) Promise.resolve().then(function(){
+    Object.assign(window.__cruxGames, {
+      chalkBpm:chalkBpm, chalkBeatLen:chalkBeatLen, chalkBeats:chalkBeats, chalkWindow:chalkWindow, chalkPoints:chalkPoints,
+      chalkAttribute:chalkAttribute, chalkRingAt:chalkRingAt, chalkRingScale:chalkRingScale, chalkRingOpacity:chalkRingOpacity,
+      chalkSimulate:chalkSimulate, chalkReduced:function(v){ crRMOverride = v; }
+    });
+  });
   /* ==== chalkRhythm END ==== */
   /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
   /* ==== routeRead END ==== */
@@ -7377,7 +7471,6 @@
   // Test hook (dev/tests.html). A game's region extends it with Object.assign(window.__cruxGames, {...}) inside `if(window.__cruxTest)`.
   if(window.__cruxTest) window.__cruxGames = {
     normalize:gamesNormalize, recordRound:recordRound, mulberry32:mulberry32, seedFor:gmSeedFor,
-    chalkBeatMs:chalkBeatMs, chalkRate:chalkRate, chalkRun:chalkRun, chalkRingScale:chalkRingScale,
     ids:function(){ return Object.keys(GAMES); }, def:function(id){ return GAMES[id]; }, menuIds:function(){ return gmList(true).map(function(d){ return d.id; }); },
     art:GAME_ART, gmArt:gmArt, gmArtRegister:gmArtRegister, frames:gmFrames,
     soundOk:gmSoundOk, beep:gmBeep, beepCount:function(){ return gmBeeps; },
