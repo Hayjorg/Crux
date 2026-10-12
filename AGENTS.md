@@ -90,7 +90,36 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **Blob ids** for the variant art go in `CLIMBER_VARIANT_BLOB` ("<id>/<folder>/<name>"); empty until Claude uploads them (rule 2).
   `night` exists in dev/outfit but is off-model and held back.
 
-## Head items: beanies, caps, bandanas (2026-10-10)
+## Parked hats (2026-10-11)
+
+Caps, bandanas, bucket hats and berets were taken out of the app (3D-rendered hats looked off to Hayden/Max). Their rows are
+**removed from `OUTFIT_ITEMS`** and their chips from `OUTFIT_HEAD_KINDS`. Their ids (`cap-*`, `bandana-*`, `bucket-*`, `beret-*`, and
+`beanie-navy`) are reserved: a saved selection of one is kept in the save but inert (draws nothing, picker shows Plain; same path as any
+unknown id) and never throws. **Art is kept** in `assets/outfit/{beanie,cap,bandana,bucket,beret}/` and `dev/outfit/`; **the build excludes nothing**
+(`build-site.ps1` ships `assets/outfit/**`, so the parked art is in the installed app, ~unused weight). To revive: restore the rows from git history (c1d530e) and the chips.
+**The 3D beanie is replaced by the painted beanie below** (the old `assets/outfit/beanie/` art is no longer referenced).
+
+## Painted beanie (2026-10-11, live: Headwear > Hats)
+
+One ChatGPT-painted hat, fitted to the climber by script. Source: `Desktop/Crux-previews/ChatGPT-work/hat-objects/hat-beanie-q3left-simple-v2.png`
+(1254px, 3/4 left view, pom, chunky cuff). Pipeline: `dev/outfit/painted_beanie_v5.py` (v4 = `painted_beanie_v4.py`, v3 = `painted_beanie_v3.py`, v2 = `painted_beanie_pilot.py`; `dev/outfit/` is local and untracked), outputs `dev/outfit/out/painted_v5/`. v5 reshapes the hat before fitting, gently: the source crown dome is kept (parabola apex fill, so the original pom can be removed), the pom is re-pasted at 0.88x, crown x0.97 / cuff x0.94 vertically (total about -7%), ribs converge only slightly (CONV 0.10). v4 cut much harder (pom 0.62, crown 0.90) and lost the beanie shape (flat tam, nub pom): do not go there. Calmer mottle from a mostly-vertical rib blur, stray specks dropped, blink frames shadow-masked by their own eye pixels (no light patch).
+- **Cleaning:** alpha eroded 1px, edge colour replaced by the nearest interior colour (no light/dark fringe), grey luminance only, cuff re-cut along a hand-read contour (everything below is the opening).
+- **Tone:** form (blur 24) and rib/groove structure (blur 6) are kept, **grooves (valleys) amplified x1.9** so the cuff stays chunky; the hat's own fine grain is damped to 0.35.
+  Normalised by gain only (soft knee above 158, never lift the darks) to **mean 148 (`OUTFIT_GREY`), peak <= 170** (shipped 164).
+- **Texture blend:** the climber's own mosaic (high-pass of the idle-01 cheek, blur 5, std 0.07) is multiplied on at **high frequency only**, so ribs are not washed out.
+- **Fit:** head ellipse + roll from `lib/headmodel.py`; hat rotated by the roll, scaled by head radius, cuff lower edge re-contoured to a bowl that wraps the dome (sag 46).
+  Rolled heads (|roll| > 1.5) get a small per-frame search (angle +-3, shift) minimising exposed skin above the cuff; horns at the cuff ends are shaved by a 5px alpha opening;
+  the hat is erased where something is held in front of the head (flag pole, fists). Eye pixels are never covered or shadowed (shadow masked 3px around them).
+- **Export:** a DELTA layer = hat over its own contact shadow (neutral grey 34, alpha), 128-colour RGBA palette PNG, palette rescaled so the mean stays 148. 36 frames, ~0.4 MB.
+  `assets/outfit/painted-beanie/<folder>/<name>.png`.
+- **Skip list** (`BEANIE_SKIP`, no file shipped; the original art shows): `climb/climb-pull` (turned, yaw 100), `climb/climb-chalk-up`, `climb/climb-reach-left`,
+  `climb/climb-reach-right` (back-facing). QA: `dev/outfit/tools/outfit_check.py --item headband --dir dev/outfit/out/painted_v3/check --naming folder-name`
+  (hard gates pass: canvas, alpha, outside; the box-based `zone`/`eyes` flags are expected for a hat that rises above the head).
+- **App:** 9 rows in `OUTFIT_ITEMS`, slot `headband`, `kind:"hats"` (chip "Hats"), `art:"painted-beanie"`, `tint:{color}` colourways (Plain grey = untinted, red, mustard, orange, forest, purple, pink, charcoal, cream),
+  unlocks by level (and holds for the last two) like the knit headbands. **Ids reuse the old parked `beanie-*` ids**, so an old save wearing `beanie-red` now wears the painted red one.
+- **Blob ids:** `OUTFIT_BLOB["painted-beanie/..."]` is empty until Claude uploads the folder (rule 2).
+
+## Head items: 3D beanies, caps, bandanas (2026-10-10, PARKED; method reference)
 
 They live in the existing `headband` slot (one head item at a time), as 24 rows in `OUTFIT_ITEMS` (`beanie-red`, `cap-navy`, ...).
 - **Art** is three neutral-grey delta-layer folders, `assets/outfit/<beanie|cap|bandana>/<folder>/<name>.png` (40 frames each, 128-colour
@@ -102,7 +131,7 @@ They live in the existing `headband` slot (one head item at a time), as 24 rows 
 - **Picker**: Customize > Outfit > Headwear shows chips by `kind` (Headbands / Beanies / Caps / Bandanas), earliest unlock first.
 - **Blob ids** (`OUTFIT_BLOB["beanie/idle/idle-01"]` etc.) are empty until Claude uploads the three folders (rule 2).
 
-## Accessories: buckets, headlamps, berets, shirts, shorts (2026-10-11)
+## Accessories: buckets, headlamps, berets, shirts, shorts (2026-10-11; buckets and berets PARKED, headlamps/shirts/shorts live)
 
 Same neutral-grey delta-layer + `tint:{color}` method as the hats above (`OUTFIT_GREY` 148).
 - **Headwear** (slot `headband`): new `kind`s `bucket`, `headlamp`, `beret` (6 colours each, `art:` = the kind). The picker chips scroll sideways. `visor` is held back.
