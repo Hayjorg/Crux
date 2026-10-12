@@ -2153,6 +2153,8 @@
   // skipped ones, so frames is null and skip lists the rest; skipped frames show the original orange art.
   var OUTFIT_SLOTS = ["shoes", "chalkbag", "shirt", "shorts", "headband"]; // draw order, bottom to top
   var OUTFIT_PICKER_ORDER = ["headband", "shirt", "shorts", "chalkbag", "shoes"]; // section order in Customize > Outfit
+  // frames the painted beanie is not fitted to (turned/back-facing head): they show the original art, the file is not shipped
+  var BEANIE_SKIP = ["climb/climb-pull", "climb/climb-chalk-up", "climb/climb-reach-left", "climb/climb-reach-right"];
   var OUTFIT_ITEMS = {
     // --- headband (base art teal-knit, hue ~183) ---
     "teal-knit":  { slot:"headband", name:"Teal knit headband", art:"teal-knit", tint:null, unlock:{ level:3 }, frames:null, skip:[] },
@@ -2164,7 +2166,17 @@
     "pink-knit":  { slot:"headband", name:"Pink knit headband", art:"teal-knit", tint:{ hue:145, sat:1.2, bri:1.1 }, unlock:{ level:16 }, frames:null, skip:[] },
     "black-knit": { slot:"headband", name:"Black knit headband", art:"teal-knit", tint:{ hue:0, sat:0.25, bri:0.35 }, unlock:{ level:22, holds:40 }, frames:null, skip:[] },
     "white-knit": { slot:"headband", name:"White knit headband", art:"teal-knit", tint:{ hue:0, sat:0, bri:1.8 }, unlock:{ level:28, holds:60 }, frames:null, skip:[] },
-    // --- beanies: neutral-grey base art assets/outfit/beanie/, colourised by tint.color ---
+    // --- hats: the painted beanie. One neutral-grey delta-layer folder assets/outfit/painted-beanie/, colourised by tint.color (Plain grey = #949494 = OUTFIT_GREY, i.e. as drawn).
+    //     Ids reuse the old parked 3D `beanie-*` ids, so a save that wore beanie-red now wears the painted red one (cap/bandana/bucket/beret ids stay inert). ---
+    "beanie-grey":      { slot:"headband", kind:"hats", name:"Beanie · Plain grey", art:"painted-beanie", tint:{ color:"#949494" }, unlock:{ level:2 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-red":       { slot:"headband", kind:"hats", name:"Beanie · Red", art:"painted-beanie", tint:{ color:"#c8322d" }, unlock:{ level:3 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-mustard":   { slot:"headband", kind:"hats", name:"Beanie · Mustard", art:"painted-beanie", tint:{ color:"#d6a021" }, unlock:{ level:5 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-orange":    { slot:"headband", kind:"hats", name:"Beanie · Orange", art:"painted-beanie", tint:{ color:"#e8731f" }, unlock:{ level:8 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-forest":    { slot:"headband", kind:"hats", name:"Beanie · Forest", art:"painted-beanie", tint:{ color:"#2f6b3f" }, unlock:{ level:11 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-purple":    { slot:"headband", kind:"hats", name:"Beanie · Purple", art:"painted-beanie", tint:{ color:"#6a3d9a" }, unlock:{ level:14 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-pink":      { slot:"headband", kind:"hats", name:"Beanie · Pink", art:"painted-beanie", tint:{ color:"#e885a8" }, unlock:{ level:18 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-charcoal":  { slot:"headband", kind:"hats", name:"Beanie · Charcoal", art:"painted-beanie", tint:{ color:"#3b3d42" }, unlock:{ level:23, holds:45 }, frames:null, skip:BEANIE_SKIP },
+    "beanie-cream":     { slot:"headband", kind:"hats", name:"Beanie · Cream", art:"painted-beanie", tint:{ color:"#efe6cc" }, unlock:{ level:29, holds:58 }, frames:null, skip:BEANIE_SKIP },
     // --- caps: neutral-grey base art assets/outfit/cap/, colourised by tint.color ---
     // --- bandanas: neutral-grey base art assets/outfit/bandana/, colourised by tint.color ---
     // --- buckets / berets / headlamps: neutral-grey base art assets/outfit/<bucket|beret|headlamp>/, colourised by tint.color ---
@@ -2216,7 +2228,7 @@
   };
   var OUTFIT_SLOT_NAMES = { headband:"Headwear", shirt:"Shirt", shorts:"Shorts", chalkbag:"Chalk bag", shoes:"Shoes" };
   // Head items share one slot (one at a time); `kind` only groups them in the picker. Order = chip order.
-  var OUTFIT_HEAD_KINDS = [ { id:"headband", name:"Headbands" }, { id:"headlamp", name:"Headlamps" } ];
+  var OUTFIT_HEAD_KINDS = [ { id:"headband", name:"Headbands" }, { id:"hats", name:"Hats" }, { id:"headlamp", name:"Headlamps" } ];
   var OUTFIT_GREY = 148; // the mean grey of the neutral hat art: what tint.color is multiplied relative to
   /* ---------------- climber variants (palette recolours of the default climber) ---------------- */
   // A variant is a full recolour of every body frame: assets/mascot/climber/variants/<id>/<folder>/<name>.png, same

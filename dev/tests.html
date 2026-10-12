@@ -1215,36 +1215,43 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().character.outfit.headband===null, "Plain didn't clear the headband");
   });
 
-  // ---- Head items: headlamps (neutral-grey art, colourised at run time; beanie/cap/bandana/bucket/beret are parked, see AGENTS.md) ----
+  // ---- Head items: the painted beanie (kind "hats") + headlamps (neutral-grey art, colourised at run time; cap/bandana/bucket/beret are parked, see AGENTS.md) ----
+  var BEANIE_SKIP = ["climb/climb-pull", "climb/climb-chalk-up", "climb/climb-reach-left", "climb/climb-reach-right"]; // painted beanie is not fitted to turned/back-facing heads
   var HAT_FRAMES = ["blink/blink-01", "blink/blink-02", "cheer/cheer-1", "cheer/cheer-2", "cheer/cheer-3", "climb/climb-chalk-up", "climb/climb-pull", "climb/climb-reach-left", "climb/climb-reach-right", "idle/idle-01", "idle/idle-02", "idle/idle-03", "idle/idle-04", "jump/jump-01", "jump/jump-02", "jump/jump-03", "land/land-01", "land/land-02", "move/move-chalk-clap-1", "move/move-chalk-clap-2", "move/move-chalk-clap-3", "move/move-dance-1", "move/move-dance-2", "move/move-dance-3", "move/move-dance-4", "move/move-fist-pump-1", "move/move-fist-pump-2", "move/move-fist-pump-3", "move/move-wave-1", "move/move-wave-2", "move/move-wave-3", "move/move-wave-4", "rest/rest-day", "sit/ledge-sit-look", "sit/ledge-sit", "step/step-01", "step/step-02", "step/step-03", "summit/summit-flag-1", "summit/summit-flag-2"];
   test("Hats: every head item has its art folder with all 40 frames, valid unlock fields and a valid tint", async function(){
     await boot(clone(TEMPLATE));
     var O = W.__cruxOutfit, ids = Object.keys(O.items), heads = ids.filter(function(i){ return O.items[i].slot==="headband"; });
     var hats = heads.filter(function(i){ return O.items[i].kind && O.items[i].kind!=="headband"; });
-    expect(hats.length===6, "expected 6 hats (headlamps), got "+hats.length);
+    expect(hats.length===15, "expected 15 head items (9 painted beanies + 6 headlamps), got "+hats.length);
     var kinds = O.headKinds.map(function(k){ return k.id; });
     var names = {}, arts = {};
     hats.forEach(function(id){
       var it = O.items[id], u = it.unlock || {};
-      expect(kinds.indexOf(it.kind)>0 && id.indexOf(it.kind+"-")===0 && it.art===it.kind, id+": kind/art "+it.kind+"/"+it.art);
+      var painted = it.kind==="hats";
+      expect(kinds.indexOf(it.kind)>0 && (painted ? id.indexOf("beanie-")===0 && it.art==="painted-beanie" : id.indexOf(it.kind+"-")===0 && it.art===it.kind), id+": kind/art "+it.kind+"/"+it.art);
       expect(typeof it.name==="string" && it.name.indexOf(" \u00b7 ")>0 && !names[it.name], id+": name "+it.name); names[it.name] = 1;
       expect(u.level==null || (u.level>=2 && u.level<=34 && u.level%1===0), id+": level "+u.level);
       expect(u.holds==null || (u.holds>=1 && u.holds<=100 && u.holds%1===0), id+": holds "+u.holds);
       expect(u.level!=null, id+": needs a level rule");
       expect(it.tint && /^#[0-9a-f]{6}$/i.test(it.tint.color), id+": tint "+JSON.stringify(it.tint));
-      expect(it.frames===null && Array.isArray(it.skip), id+": frames/skip");
-      arts[it.art] = 1;
+      expect(it.frames===null && Array.isArray(it.skip) && it.skip.join()===(painted ? BEANIE_SKIP.join() : ""), id+": frames/skip "+it.skip.join());
+      arts[it.art] = it;
     });
-    var WANT = { headlamp:6 };
-    expect(kinds.join()==="headband,headlamp", "head kinds: "+kinds.join());
-    ["beanie-red", "cap-navy", "bandana-orange", "bucket-cream", "beret-black"].forEach(function(id){ expect(!O.items[id], id+" should be parked (not in OUTFIT_ITEMS)"); });
+    var WANT = { hats:9, headlamp:6 };
+    expect(kinds.join()==="headband,hats,headlamp", "head kinds: "+kinds.join());
+    expect(O.headKinds[1].name==="Hats", "Hats chip name");
+    ["beanie-navy", "cap-navy", "bandana-orange", "bucket-cream", "beret-black"].forEach(function(id){ expect(!O.items[id], id+" should be parked (not in OUTFIT_ITEMS)"); });
+    expect(O.items["beanie-red"] && O.items["beanie-red"].art==="painted-beanie", "beanie-red is the painted beanie (migration of the parked id)");
     kinds.slice(1).forEach(function(k){ expect(hats.filter(function(i){ return O.items[i].kind===k; }).length===WANT[k], k+": expected "+WANT[k]+" colourways"); });
     for(var art of Object.keys(arts)){
-      var missing = [];
+      var missing = [], extra = [], skipA = arts[art].skip;
       for(var f of HAT_FRAMES){
-        var r = await fetch("../assets/outfit/"+art+"/"+f+".png"); if(!r.ok) missing.push(f);
+        var r = await fetch("../assets/outfit/"+art+"/"+f+".png"), sk = skipA.indexOf(f)>-1;
+        if(!sk && !r.ok) missing.push(f);
+        if(sk && r.ok) extra.push(f);
       }
       expect(!missing.length, art+": missing frames "+missing.join(","));
+      expect(!extra.length, art+": skipped frames shipped "+extra.join(","));
     }
     // existing items are untouched
     expect(O.items["teal-knit"].slot==="headband" && O.items["teal-knit"].unlock.level===3 && O.items["teal"].unlock.holds===10 && O.items["blue"].unlock.level===8, "existing items changed");
@@ -1270,13 +1277,28 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(L[2].url.indexOf("outfit/headlamp/idle/idle-01.png")>=0, "hat layer address: "+L[2].url);
     expect(!O.layersFor(O.idle[0], { headband:"headlamp-cream" }, 31, 0).length, "headlamp-cream drew while locked");
     expect(O.layersFor(O.idle[0], { headband:"headlamp-cream" }, 32, 0).length===1, "headlamp-cream: level 32");
-    expect(!O.layersFor(O.idle[0], { headband:"beanie-red" }, 40, 0).length, "a parked hat id drew");
+    expect(!O.layersFor(O.idle[0], { headband:"cap-navy" }, 40, 0).length, "a parked hat id drew");
+    // painted beanie: colour tint parity (same numbers on DOM filter and share card), unlock, skip frames
+    var B = O.items["beanie-red"], bm = O.tintMatrix(B.tint);
+    expect(Math.abs(bm[0][0]-0xc8/O.grey)<1e-6 && Math.abs(bm[1][1]-0x32/O.grey)<1e-6 && Math.abs(bm[2][2]-0x2d/O.grey)<1e-6, "beanie-red matrix");
+    var bc = W.document.createElement("canvas"); bc.width = bc.height = 2; var bx = bc.getContext("2d"); bx.fillStyle = "rgb("+O.grey+","+O.grey+","+O.grey+")"; bx.fillRect(0, 0, 2, 2);
+    var bo = O.tintCanvas(bc, B.tint).getContext("2d").getImageData(0, 0, 1, 1).data;
+    expect(Math.abs(bo[0]-0xc8)<=1 && Math.abs(bo[1]-0x32)<=1 && Math.abs(bo[2]-0x2d)<=1, "beanie-red canvas tint: "+Array.prototype.join.call(bo, ","));
+    var BL = O.layersFor(O.idle[0], { headband:"beanie-red" }, 40, 0);
+    expect(BL.length===1 && BL[0].url.indexOf("outfit/painted-beanie/idle/idle-01.png")>=0 && BL[0].filter===O.filterCSS(B.tint), "painted beanie layer");
+    expect(!O.layersFor(O.idle[0], { headband:"beanie-red" }, 2, 0).length && O.layersFor(O.idle[0], { headband:"beanie-red" }, 3, 0).length===1, "beanie-red unlocks at level 3");
+    expect(!O.layersFor(O.idle[0], { headband:"beanie-cream" }, 28, 57).length && O.layersFor(O.idle[0], { headband:"beanie-cream" }, 28, 58).length===1 && O.layersFor(O.idle[0], { headband:"beanie-cream" }, 29, 0).length===1, "beanie-cream: level 29 or 58 holds");
+    expect(O.items["beanie-grey"].tint.color==="#949494" && parseInt("94", 16)===O.grey, "plain grey is the art's own grey");
+    ["climb/climb-pull", "climb/climb-chalk-up", "climb/climb-reach-left", "climb/climb-reach-right"].forEach(function(k){
+      expect(B.skip.indexOf(k)>-1, "skip list misses "+k);
+    });
+    expect(!B.skip.some(function(k){ return HAT_FRAMES.indexOf(k)<0; }), "skip list has an unknown frame");
   });
   test("Hats: the Headwear picker groups by type with chips, sorted by unlock level, locked ones disabled; one head item at a time; choice persists", async function(){
     var s = clone(TEMPLATE); s.settings.devLevel = 12;
     await boot(s); await openCustomize();
     var grid = q("#outfitPickerGrid"), chips = qa("#outfitPickerGrid .picker-chips [data-outfit-kind]");
-    expect(chips.map(function(c){ return c.textContent; }).join()==="Headbands,Headlamps", "chips: "+chips.map(function(c){ return c.textContent; }).join());
+    expect(chips.map(function(c){ return c.textContent; }).join()==="Headbands,Hats,Headlamps", "chips: "+chips.map(function(c){ return c.textContent; }).join());
     expect(qa("#outfitPickerGrid [data-outfit-item^='headlamp']").length===0 && qa("#outfitPickerGrid [data-outfit-item]").length>0, "the default group should be Headbands only");
     await click(q('#outfitPickerGrid [data-outfit-kind="headlamp"]'), 200);
     var items = qa("#outfitPickerGrid .picker-item").filter(function(b){ return /^Headlamp/.test((b.querySelector(".picker-name")||{}).textContent||""); });
@@ -1310,7 +1332,15 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(saved().character.outfit.headband==="headlamp-red", "headlamp id dropped on load");
     var json = await exportJson(); await boot(clone(TEMPLATE)); await importText(json);
     expect(saved().character.outfit.headband==="headlamp-red", "headlamp id lost in a backup round trip");
-    for(var parked of ["beanie-red", "cap-navy", "bandana-orange", "bucket-cream", "beret-black"]){
+    // saved-id migration: a save that wore the parked 3D beanie-red now wears the painted red beanie (same id, new art); other old beanie ids stay inert
+    var mg = clone(TEMPLATE); mg.character.outfit = { headband:"beanie-red", chalkbag:null, shoes:null }; mg.settings.devLevel = 12;
+    await boot(mg);
+    expect(saved().character.outfit.headband==="beanie-red", "beanie-red id dropped on load");
+    var ml = qa("#characterBody img.outfit-layer");
+    expect(ml.length===1 && /painted-beanie/.test(ml[0].getAttribute("src")), "beanie-red should draw the painted beanie: "+ml.map(function(i){ return i.getAttribute("src"); }).join());
+    var mj = await exportJson(); await boot(clone(TEMPLATE)); await importText(mj);
+    expect(saved().character.outfit.headband==="beanie-red", "beanie-red lost in a backup round trip");
+    for(var parked of ["beanie-navy", "cap-navy", "bandana-orange", "bucket-cream", "beret-black"]){
       var p = clone(TEMPLATE); p.character.outfit = { headband:parked, chalkbag:"teal", shoes:null }; p.settings.devLevel = 34;
       await boot(p);
       // the id is kept in the save (forward compatible) but is inert: nothing draws for it, and Plain shows as selected
