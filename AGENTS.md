@@ -125,6 +125,7 @@ A small, optional play area for rest times, using the player's own climber. Remo
   running untouched. Opened from the rest button, it shows the rest clock; when rest ends the round closes itself (the score still counts
   if it had an action), says "Back to work" with no buttons and closes after 1.8 s. In the last 10 s of a rest an end screen has no "Play again" / "Games"
   ("Rest is almost over."), and buttons already on screen are removed when the clock crosses 10 s. A hidden page pauses the round ("Paused. Tap to resume"); a paused round never resumed records nothing.
+- **Shell conveniences:** `gmHud` leaves the clock alone while a round runs; `gmSetSrc` does a 100 ms opacity settle on pose swaps (skipped for reduced motion and rapid cycling; its animationend never bubbles to a host); a game may set `gmSheetTap` to make the whole sheet (minus header/HUD/rest strip/buttons) a tap target (Summit Stack does); in a game the sheet hugs its content (`:has(.gm-play:not([hidden]))`).
 - **The four games** (menu order; all calm, best score only, no XP/streaks/rewards, no fail state, hardest reaction window >= 400 ms):
   1. **Chalk Rhythm** `chalkRhythm`, 45 s. A ring grows to a fixed outline once per beat (60 -> 64 -> 70 bpm); tap on the beat. Windows
      Perfect +-80 / Good +-160 / Close +-280 ms = 3/2/1 points; a miss is 0. Reduced motion: a bar fills instead of a ring scaling.

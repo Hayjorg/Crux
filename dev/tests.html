@@ -2339,7 +2339,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect([0, 1, 2, 4, 5, 9, 10, 40].map(G.reachStreakTier).join()==="0,0,1,1,2,2,3,3", "tiers: "+[0, 1, 2, 4, 5, 9, 10, 40].map(G.reachStreakTier).join());
     var prev = 0, ok = true; for(var n=0;n<=30;n++){ var f = G.reachPitch(n); if(f<prev || f<500 || f>700) ok = false; prev = f; }
     expect(ok && G.reachPitch(0)===520, "pitch is soft and never falls as the run grows");
-    expect(G.reachRise(0)===0 && G.reachRise(3)===24 && G.reachRise(99)===G.reachRise(10) && G.reachRise(-4)===0, "rise caps at the ladder");
+    expect(G.reachRise(0)===0 && G.reachRise(3)===3*G.reachRise(1)&&G.reachRise(1)>=12 && G.reachRise(99)===G.reachRise(10) && G.reachRise(-4)===0, "rise caps at the ladder");
   });
 
   test("Games: Reach Timer polish feel (half flash, run chip, gliding ghost, early tap, no ghost clicks, tap targets)", async function(){

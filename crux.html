@@ -1033,8 +1033,13 @@
     .games-overlay.gm-closing .games-card{transform:translateY(28px);}
   }
   .games-card .modal-head{margin-bottom:10px;}
+  /* in a game the sheet hugs its content (no empty band under the hint); the menu keeps its steady height */
+  .modal-card.games-card:has(.gm-play:not([hidden])){min-height:0;}
   .gm-menu:not([hidden]), .gm-play:not([hidden]){animation:gmPanelIn .18s ease;}
   .gm-stage .gm-panel{animation:gmPanelFade .2s ease;}
+  .gm-stage .gm-panel.gm-end{animation:gmPanelFade .32s ease-out;}
+  @keyframes gmSwap{from{opacity:0.7;}to{opacity:1;}}
+  .gm-climber img.gm-swap{animation:gmSwap .1s ease-out;}
   .gm-rest{margin:0 0 10px;padding:6px 12px;min-height:36px;box-sizing:border-box;}
   .gm-menu{gap:8px;}
   .gm-cards{gap:8px;}
@@ -1071,7 +1076,7 @@
   .play-rest-btn svg{color:var(--send);}
   .dock-btn#openGamesBtn svg{color:#FBF6E8;}
   @media (prefers-reduced-motion: reduce){
-    .modal-overlay.games-overlay, .modal-card.games-card, .gm-menu:not([hidden]), .gm-play:not([hidden]), .gm-stage .gm-panel{animation:none;}
+    .modal-overlay.games-overlay, .modal-card.games-card, .gm-menu:not([hidden]), .gm-play:not([hidden]), .gm-stage .gm-panel, .gm-climber img.gm-swap{animation:none;}
     .modal-overlay.games-overlay, .modal-card.games-card{transition:none;}
     .games-overlay.gm-closing .games-card{transform:none;}
     .gm-card:active .gm-card-go{transform:none;}
@@ -7403,7 +7408,15 @@
   var gmKey = null, gmWatchId = null, gmOpener = null, gmFromRest = false, gmClosing = false;
   function gmEl(id){ return document.getElementById(id); }
   function gmSay(msg){ var h = gmEl("gmHint"); if(h) h.textContent = msg; }
-  function gmSetSrc(img, src){ if(img && img.getAttribute("src")!==src) img.src = src; }
+  // Pose swap with a quick opacity settle (skipped for reduced motion and for rapid frame cycling such as idle/step loops).
+  function gmSetSrc(img, src){
+    if(!img || img.getAttribute("src")===src) return;
+    var now = performance.now(), slow = !img._gmSwapAt || now-img._gmSwapAt>160;
+    img._gmSwapAt = now;
+    img.src = src;
+    if(!img._gmSwapEnd){ img._gmSwapEnd = true; img.addEventListener("animationend", function(e){ e.stopPropagation(); img.classList.remove("gm-swap"); }); }   // never let it reach a host's own animationend
+    if(slow && img.getAttribute("src") && !prefersReducedMotion){ img.classList.remove("gm-swap"); void img.offsetWidth; img.classList.add("gm-swap"); }
+  }
   function gmPreload(f){
     [].concat(f.idle, f.chalk, f.reachL, f.reachR, f.pull, f.clap, f.hit, f.cheer, f.step, f.jump, f.ledgeSit, f.ledgeLook, f.flag).forEach(function(s){ try{ var i = new Image(); i.src = s; }catch(e){} });
   }
@@ -7503,13 +7516,17 @@
     if(target && !gmEl("gamesOverlay").hidden) try{ target.focus({ preventScroll:true }); }catch(e){}
   }
   var gmRaf = null, gmTimeouts = [];
+  // A game may make the whole sheet its tap target by setting gmSheetTap(e). Taps on the header, HUD, rest strip, buttons and switches are never taken.
+  var gmSheetTap = null;
   function stopGameLoop(){
+    gmSheetTap = null;
     if(gmKey){ document.removeEventListener("keydown", gmKey); gmKey = null; }
     if(gmRaf){ cancelAnimationFrame(gmRaf); gmRaf = null; }
     gmTimeouts.forEach(clearTimeout); gmTimeouts = [];
   }
   function gmLater(fn, ms){ var id = setTimeout(function(){ gmTimeouts = gmTimeouts.filter(function(x){ return x!==id; }); fn(); }, ms); gmTimeouts.push(id); }
-  function gmHud(score, line){ gmEl("gmScore").textContent = score; gmEl("gmLine").textContent = line; gmEl("gmTime").textContent = ""; }
+  // The clock belongs to the running round (its loop writes it); only the menu/intro/end panels blank it.
+  function gmHud(score, line){ gmEl("gmScore").textContent = score; gmEl("gmLine").textContent = line; if(!gm) gmEl("gmTime").textContent = ""; }
 
   // -- intro / over panels --
   // In the last 10 s of a rest no "Play again" / "Games" prompt is offered; the round that is running finishes by itself.
@@ -7563,7 +7580,7 @@
       gmEl("gmMenuBtn").addEventListener("click", function(){ renderGamesMenu(id); });
       gmEl("gmAgainBtn").focus({ preventScroll:true });
     }
-    gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
+    gmSay(noButtons ? "" : rec.newBest ? "A new high for you." : "Go again, or try another game.");
   }
 
   // Test hook (dev/tests.html). Created before the game regions; each region extends it with Object.assign(window.__cruxGames, {...}) inside `if(window.__cruxTest)`.
@@ -7719,7 +7736,7 @@
       label.innerHTML = '<span class="cr-j cr-j-'+r.label+'" aria-hidden="true"></span><span>'+CR_LABEL[r.label]+'</span>'+(cue ? '<small>'+cue+'</small>' : '');
       label.classList.add("on"); g.labelUntil = t+700;
       teach.classList.remove("on"); g.teachUntil = 0;
-      gmHud(g.score, "Best "+state.games.chalkRhythm.best);
+      gmHud(g.score, "Best "+Math.max(g.score, state.games.chalkRhythm.best));
       g.lastSec = -1;                                   // gmHud blanks the clock; put it straight back on the next frame
       gmSay(CR_LABEL[r.label]+(cue ? ", "+cue : "")+". "+g.score+" points.");
     }
@@ -8122,7 +8139,7 @@
       gmLater(function(){ if(g.labelN===stamp) label.classList.remove("on"); }, 900);
     }
     g.labelN = 0;
-    function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, 0)); }
+    function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, g.score)); }
     function chunk(left, y, w, dir){
       var c = mkBlock(w); c.classList.add("ss-chunk"); c.style.left = left+"px"; c.style.top = y+"px"; cam.appendChild(c);
       requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*30)+"px,200px) rotate("+(dir*26)+"deg)"; }); });
@@ -8187,6 +8204,7 @@
     tapBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(e); });
     tapBtn.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(null); } });
     tapBtn.focus({ preventScroll:true });
+    gmSheetTap = function(e){ tap(e); tapBtn.focus({ preventScroll:true }); };
 
     var lastKey = "";
     function frame(){
@@ -8260,7 +8278,7 @@
   // Reach Timer (design doc 2.4): one telegraphed target at a time on the left or right half; tap that half before it times out.
   // Hit = up one step, wrong half or timeout = down one step (floor 0). Score = peak height. Every time below is on the round clock
   // (performance.now() minus gm.t0), so pausing and resuming shifts it for free.
-  var RT_ROUND_MS = 45000, RT_FADE_MS = 150, RT_FIRST_MS = 600, RT_LADDER = 10, RT_MAX_SAME = 3;
+  var RT_ROUND_MS = 45000, RT_FADE_MS = 150, RT_FIRST_MS = 600, RT_LADDER = 10, RT_MAX_SAME = 3, RT_STEP_PX = 14;
   // Polish: slot elements in rotation, how early (ms) a right-side tap is still taken, pose timings (reach, then pull/jump) per hit.
   var RT_SLOTS = 5, RT_EARLY_MS = 150, RT_REACH_MS = 150, RT_PULL_MS = 250;
   // Pure rules. The dwell never drops below 1000 ms (design floor is 400 ms); the dwell timer starts once the target is fully visible.
@@ -8319,7 +8337,7 @@
   // Hit tone climbs a little with the run and stays soft (the shell caps volume).
   function reachPitch(streak){ return 520+Math.min(Math.max(0, Math.floor(Number(streak))||0), 8)*14; }
   // How far (px) the climber sits above the floor for a height; it stops with the ladder.
-  function reachRise(h){ return Math.min(Math.max(0, Math.floor(Number(h))||0), RT_LADDER)*8; }
+  function reachRise(h){ return Math.min(Math.max(0, Math.floor(Number(h))||0), RT_LADDER)*RT_STEP_PX; }
   gmRegister({
     id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>',
@@ -8386,7 +8404,7 @@
     function paintHeight(){
       var n = Math.min(g.h, RT_LADDER);
       marks.forEach(function(m, idx){ attr(m, "data-on", idx<n ? "1" : "0"); });
-      gmHud(g.peak, "Height "+g.h+" · Best "+state.games.reachTimer.best);
+      gmHud(g.peak, "Height "+g.h+" · Best "+Math.max(g.peak, state.games.reachTimer.best));
       g.lastSec = Math.max(0, Math.ceil((RT_ROUND_MS-(performance.now()-g.t0))/1000));
       gmEl("gmTime").textContent = g.lastSec+"s";      // gmHud blanks it; put it straight back so it never flickers
     }
@@ -8541,6 +8559,12 @@
   document.getElementById("openGamesBtn").addEventListener("click", function(){ openGames({ fromRest:false }); });
   document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
   document.getElementById("closeGamesBtn").addEventListener("click", function(){ closeGames(); });
+  document.getElementById("gamesCard").addEventListener("pointerdown", function(e){
+    if(!gmSheetTap || e.button>0) return;
+    var t = e.target;
+    if(!t.closest || t.closest(".modal-head, .gm-hud, .gm-rest, .gm-stage, button, a, input, .switch-row")) return;   // the stage handles its own taps
+    e.preventDefault(); gmSheetTap(e);
+  });
   document.getElementById("gamesOverlay").addEventListener("click", function(e){ if(e.target.id==="gamesOverlay") closeGames(); });
   document.getElementById("gmCards").addEventListener("click", function(e){
     var b = e.target.closest(".gm-card"); if(!b || b.disabled) return;
