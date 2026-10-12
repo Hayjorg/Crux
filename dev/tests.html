@@ -2327,6 +2327,65 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("startBtn", 150);
   });
   // ---- end reachTimer tests ----
+  // ---- reachTimer polish tests ----
+  test("Games: Reach Timer polish rules (early-tap buffer, run tiers, pitch, rise)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, E = G.RT_EARLY_MS;
+    expect(E>=100 && E<=250, "early window should be small: "+E);
+    expect(G.reachJudge("gap", "L", "L", 1000-E, 1000)==="hit" && G.reachJudge("gap", "L", "L", 1000-E-1, 1000)==="ignore", "early window edge");
+    expect(G.reachJudge("gap", "R", "L", 1000, 1000)==="ignore", "a wrong half in the gap is never judged");
+    expect(G.reachJudge("in", "L", "L", 0, 0)==="hit" && G.reachJudge("in", "R", "L", 0, 0)==="ignore" && G.reachJudge("live", "R", "L", 0, 0)==="slip" && G.reachJudge("live", "L", "L", 0, 0)==="hit", "in/live verdicts");
+    expect([0, 1, 2, 4, 5, 9, 10, 40].map(G.reachStreakTier).join()==="0,0,1,1,2,2,3,3", "tiers: "+[0, 1, 2, 4, 5, 9, 10, 40].map(G.reachStreakTier).join());
+    var prev = 0, ok = true; for(var n=0;n<=30;n++){ var f = G.reachPitch(n); if(f<prev || f<500 || f>700) ok = false; prev = f; }
+    expect(ok && G.reachPitch(0)===520, "pitch is soft and never falls as the run grows");
+    expect(G.reachRise(0)===0 && G.reachRise(3)===24 && G.reachRise(99)===G.reachRise(10) && G.reachRise(-4)===0, "rise caps at the ladder");
+  });
+
+  test("Games: Reach Timer polish feel (half flash, run chip, gliding ghost, early tap, no ghost clicks, tap targets)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250); await click("gmCard_reachTimer", 150); await click("gmStartBtn", 120);
+    var g = G.current();
+    function press(side){ $("rt"+side).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); }
+    async function untilLive(){ for(var k=0;k<60 && g.st!=="live";k++) await wait(40); expect(g.st==="live", "never live"); }
+    ["rtL", "rtR"].forEach(function(id){
+      var cs = W.getComputedStyle($(id));
+      expect(cs.touchAction==="manipulation" && $(id).offsetHeight>=200 && $(id).offsetWidth>=150, id+" touch-action "+cs.touchAction+" size "+$(id).offsetWidth+"x"+$(id).offsetHeight);
+      expect($(id).querySelector(".rt-pad").offsetHeight>=56, id+" pad too small");
+    });
+    expect(+$("rtCombo").getAttribute("data-tier")===0, "chip should start hidden");
+    // the letter belongs to its element: the ghost that is next keeps its element and moves up to the live place
+    var ghostEl = qa(".rt-slot[data-kind='ghost'][data-k='1']")[0], ghostSide = ghostEl.getAttribute("data-side");
+    await untilLive();
+    var liveEl = q(".rt-slot[data-kind='live']");
+    expect(liveEl && liveEl.getAttribute("data-k")==="0" && liveEl.getAttribute("data-side")===g.seq[g.i], "live slot");
+    press(g.seq[g.i]); await wait(30);
+    expect($("rt"+liveEl.getAttribute("data-side")).hasAttribute("data-flash"), "the half should flash on a tap");
+    expect(g.h===1 && qa(".rt-slot[data-kind='done']").length===1, "answered slot should fade out as done");
+    var nextEl = q(".rt-slot[data-kind='ghost'][data-k='0']");
+    expect(nextEl===ghostEl && nextEl.getAttribute("data-side")===ghostSide, "the ghost should become the next target in place (identity kept)");
+    expect(+$("rtCombo").getAttribute("data-tier")===0, "one hit is not a run");
+    await untilLive(); press(g.seq[g.i]); await wait(30);
+    expect(g.streak===2 && +$("rtCombo").getAttribute("data-tier")===1 && /2/.test($("rtCombo").textContent), "run chip at 2: "+$("rtCombo").textContent);
+    // an early correct tap in the last RT_EARLY_MS of the gap counts; a wrong one does nothing
+    for(var k=0;k<80 && !(g.st==="gap" && performance.now()-g.t0>=g.appearAt-60 && performance.now()-g.t0<g.appearAt-10);k++) await wait(5);
+    var h0 = g.h, want = g.seq[g.i], wrong = want==="L" ? "R" : "L";
+    if(g.st==="gap" && W.performance.now()-g.t0>=g.appearAt-G.RT_EARLY_MS){
+      press(wrong); await wait(10); expect(g.h===h0 && g.i===g.i, "wrong half early must be ignored");
+      press(want); await wait(30); expect(g.h===h0+1, "early correct tap should count: h "+g.h+" want "+(h0+1));
+    }
+    // a click that follows a pointer tap (detail 1) is the ghost click and must not count again
+    await untilLive(); var taps0 = g.taps, side = g.seq[g.i];
+    press(side); await wait(20);
+    $("rt"+side).dispatchEvent(new W.MouseEvent("click", { bubbles:true, cancelable:true, detail:1 })); await wait(20);
+    expect(g.taps===taps0+1, "ghost click counted: "+(g.taps-taps0));
+    await untilLive(); press(g.seq[g.i]==="L" ? "R" : "L"); await wait(30);
+    expect(g.streak===0 && +$("rtCombo").getAttribute("data-tier")===0, "a slip clears the run chip");
+    await click("closeGamesBtn", 250);
+  });
+  // ---- end reachTimer polish tests ----
 
   test("Only the climber mascot is used (old pebble art stays retired)", async function(){
     var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });
