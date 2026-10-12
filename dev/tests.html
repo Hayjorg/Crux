@@ -2431,6 +2431,82 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
   // ---- end summitStack tests ----
 
+  // ---- shell polish tests ----
+  test("Games shell: menu cards read as best / plays, the sound row is one big target with a spoken state, and the sheet locks the page behind it", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.games = { chalkRhythm:{ best:21, plays:3, perfectBest:2 } };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    expect(G.howto(G.def("routeRead")).length>0 && G.howto(G.def("routeRead")).length<70, "one-line how-to missing or long: "+G.howto(G.def("routeRead")));
+    expect(G.esc('<b>"x"</b>')==="&lt;b&gt;&quot;x&quot;&lt;/b&gt;", "gmEsc: "+G.esc('<b>"x"</b>'));
+    await click("openGamesBtn", 350);
+    expect(/Best 21 · played 3/.test($("gmCard_chalkRhythm").textContent) && /Not played yet/.test($("gmCard_routeRead").textContent), "card lines: "+$("gmCard_chalkRhythm").textContent);
+    var lab = $("gmCard_chalkRhythm").getAttribute("aria-label")||"";
+    expect(/Chalk Rhythm/.test(lab) && /Best 21, played 3 times/.test(lab), "card aria-label: "+lab);
+    expect(D.activeElement && D.activeElement.id==="gmCard_chalkRhythm", "focus didn't land on the first card: "+(D.activeElement && D.activeElement.id));
+    expect(W.getComputedStyle(D.body).overflow==="hidden", "the page behind the sheet can scroll");
+    qa("#gmCards .gm-card").forEach(function(c){ expect(c.getBoundingClientRect().height>=44, "card under 44 px: "+c.id); });
+    expect(/On\./.test($("gmSoundDesc").textContent), "sound text: "+$("gmSoundDesc").textContent);
+    await click("gmSoundRow", 150);                      // the row, not just the thumb, toggles
+    expect($("gmSoundSwitch").getAttribute("aria-pressed")==="false" && saved().settings.gameSound===false && /Off\./.test($("gmSoundDesc").textContent), "row didn't toggle: "+$("gmSoundDesc").textContent);
+    await click("gmSoundSwitch", 150);                   // and the switch alone toggles exactly once
+    expect($("gmSoundSwitch").getAttribute("aria-pressed")==="true" && saved().settings.gameSound===true, "switch toggled twice or not at all");
+    await click("closeGamesBtn", 350);
+    expect(!visible("gamesOverlay") && W.getComputedStyle(D.body).overflow!=="hidden", "sheet stayed or the page stayed locked");
+  });
+
+  test("Games shell: intro is one line and a big Start, Escape steps back a level, Back returns focus to the game's card, Tab stays in the sheet", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    function esc(){ D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); }
+    function tab(sh){ var e = new W.KeyboardEvent("keydown", { key:"Tab", shiftKey:!!sh, bubbles:true, cancelable:true }); D.dispatchEvent(e); return e; }
+    $("openGamesBtn").focus(); await click("openGamesBtn", 300);
+    await click("gmCard_summitStack", 200);
+    var st = $("gmStartBtn"), r = st.getBoundingClientRect();
+    expect(r.height>=48 && D.activeElement===st, "Start is small or unfocused: "+r.height);
+    expect(!!q(".gm-howto") && q(".gm-howto").textContent.length<70 && /First time/.test($("gmStage").textContent), "intro: "+$("gmStage").textContent);
+    expect(q(".gm-panel").getAttribute("aria-describedby")==="gmIntroFull" && $("gmIntroFull").textContent.length>0, "intro has no spoken description");
+    esc(); await wait(60);
+    expect(visible("gmCards") && !visible("gmStartBtn") && /Play/.test($("gamesTitle").textContent) && visible("gamesOverlay"), "Escape on an intro should go back to the menu");
+    expect(D.activeElement && D.activeElement.id==="gmCard_summitStack", "focus didn't return to the card: "+(D.activeElement && D.activeElement.id));
+    // Tab wraps inside the sheet
+    var btns = qa("#gamesCard button:not([disabled])").filter(function(b){ return b.offsetParent!==null; });
+    btns[btns.length-1].focus(); var e1 = tab(false);
+    expect(e1.defaultPrevented && D.activeElement===btns[0], "Tab from the last control left the sheet");
+    btns[0].focus(); var e2 = tab(true);
+    expect(e2.defaultPrevented && D.activeElement===btns[btns.length-1], "Shift+Tab from the first control left the sheet");
+    // a running round: Back banks it and returns to the card
+    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    expect(!!W.__cruxGames.current(), "no round");
+    await click("gmBackBtn", 250);
+    expect(visible("gmCards") && D.activeElement.id==="gmCard_chalkRhythm" && !W.__cruxGames.current(), "Back from a round: "+(D.activeElement && D.activeElement.id));
+    esc(); await wait(300);
+    expect(!visible("gamesOverlay"), "Escape on the menu should close the sheet");
+    expect(D.activeElement && D.activeElement.id==="openGamesBtn", "focus didn't return to Play: "+(D.activeElement && D.activeElement.id));
+  });
+
+  test("Games shell: the sheet fades out before it hides, a quick reopen cancels the close, the end screen puts Play again first with a calm best line", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    await click("openGamesBtn", 300);
+    $("closeGamesBtn").click(); await wait(20);
+    expect($("gamesOverlay").classList.contains("gm-closing") || !visible("gamesOverlay"), "no closing state");
+    await click("openGamesBtn", 10);                     // reopen mid-fade (dock button sits behind; call the hook as a tap would)
+    W.__cruxGames.open({ fromRest:false }); await wait(250);
+    expect(visible("gamesOverlay") && !$("gamesOverlay").classList.contains("gm-closing"), "a reopen during the fade was swallowed");
+    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    var G = W.__cruxGames; G.current().taps = 1; G.current().score = 3; G.current().t0 -= 45000; await wait(300);
+    var again = $("gmAgainBtn"), menu = $("gmMenuBtn");
+    expect(!!again && !!menu && (again.compareDocumentPosition(menu) & W.Node.DOCUMENT_POSITION_FOLLOWING), "Play again should come before Games");
+    expect(again.classList.contains("btn-primary") && again.getBoundingClientRect().height>=44 && menu.getBoundingClientRect().height>=44, "end buttons: primary or 44 px");
+    expect(!!q(".gm-best-line") && D.activeElement===again, "no best line or focus not on Play again");
+    expect(!/!/.test($("gmStage").textContent), "the end screen shouts: "+$("gmStage").textContent);
+    await click("gmMenuBtn", 200);
+    expect(visible("gmCards") && D.activeElement.id==="gmCard_chalkRhythm", "Games didn't return focus to the card");
+    await click("closeGamesBtn", 350);
+  });
+  // ---- end shell polish tests ----
+
+
   /* ---------- runner ---------- */
   var running = false;
   async function runAll(){

@@ -159,6 +159,10 @@ A small, optional play area for rest times, using the player's own climber. Remo
   `window.__cruxGames` (only with `window.__cruxTest`; `chalk*`, `route*`, `stack*`, `reach*`, `mulberry32`, `recordRound`, `normalize`),
   each with a 500-seed property test (routes solvable, no side repeated > 3, stack window >= 400 ms, chalk windows), plus browser runs
   for the rest hand-off, hidden-page pause, sound off, reduced motion and the registry/menu.
+- **Shell polish (2026-10-12):** the sheet is a bottom sheet <= 520 px wide (centered above) that slides up and fades down (~110 ms close, then `hidden`;
+  `__cruxGames.close()` and reduced motion hide at once); body scroll is locked while it is open. Cards show best / plays and have a spoken aria-label;
+  the intro is one line (`GM_HOWTO`, falls back to `intro.text`) and a 56 px Start; Escape steps back (round or intro -> menu -> closed), Back returns
+  focus to the game's card, Tab is trapped inside the sheet; the whole sound row toggles and states On/Off in words. The end screen puts Play again first.
 - **Reduced motion:** every game has a still variant (bar instead of ring scale, no wobble, no scroll, crossfades <= 120 ms).
 
 ## Projects (climb tracking)

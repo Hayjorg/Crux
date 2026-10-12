@@ -762,11 +762,13 @@
   .gm-card-sub{font-size:12.5px;color:var(--text-dim);line-height:1.35;}
   .gm-card-best{font-size:11.5px;font-weight:700;color:var(--text-dim);letter-spacing:0.04em;text-transform:uppercase;}
   .gm-note{margin:2px 2px 0;font-size:12px;color:var(--text-dim);text-align:center;}
-  .gm-hud{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
-  .gm-back{min-height:44px;padding:0 8px;}
+  .gm-hud{display:flex;align-items:center;gap:10px;margin-bottom:8px;min-height:44px;}
+  .gm-back{min-height:44px;padding:0 10px 0 6px;display:inline-flex;align-items:center;gap:2px;}
+  .gm-back svg{width:18px;height:18px;}
   .gm-score{font-family:"Bebas Neue",sans-serif;font-size:30px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums;}
-  .gm-line{font-size:12px;font-weight:700;color:var(--text-dim);}
-  .gm-time{font-size:12px;font-weight:700;color:var(--text-dim);min-width:26px;text-align:right;font-variant-numeric:tabular-nums;}
+  .gm-meta{display:flex;flex-direction:column;align-items:flex-end;gap:1px;min-width:64px;}
+  .gm-line{font-size:12px;font-weight:700;color:var(--text-dim);line-height:1.25;text-align:right;}
+  .gm-time{font-size:13px;font-weight:700;color:var(--text);min-width:26px;min-height:16px;line-height:1.2;text-align:right;font-variant-numeric:tabular-nums;}
   .gm-stage{position:relative;height:352px;overflow:hidden;border-radius:var(--radius-md);border:1px solid var(--border);
     background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, var(--surface-2)), var(--surface-2));
     touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
@@ -925,6 +927,72 @@
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
     .gm-card:active{transform:none;}
     .modal-card.games-card{animation:none;}
+  }
+
+  /* ---- shell polish: sheet motion, cards, intro, end, HUD ---- */
+  body:has(#gamesOverlay:not([hidden])){overflow:hidden;}
+  .modal-overlay.games-overlay{animation:gmFade .2s ease;transition:opacity .11s ease;}
+  .modal-overlay.games-overlay.gm-closing{opacity:0;pointer-events:none;}
+  .modal-card.games-card{min-height:min(580px, calc(100dvh - 40px));animation:gmSheetIn .26s cubic-bezier(.2,.8,.2,1);
+    transition:transform .11s ease;overscroll-behavior:contain;}
+  .games-overlay.gm-closing .games-card{transform:translateY(12px);}
+  .modal-card.games-card:focus{outline:none;}
+  @keyframes gmFade{from{opacity:0;}to{opacity:1;}}
+  @keyframes gmSheetIn{from{transform:translateY(14px) scale(0.985);opacity:0;}to{transform:none;opacity:1;}}
+  @keyframes gmSheetUp{from{transform:translateY(36px);opacity:0.4;}to{transform:none;opacity:1;}}
+  @keyframes gmPanelIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @keyframes gmPanelFade{from{opacity:0;}to{opacity:1;}}
+  @media (max-width:520px){
+    .modal-overlay.games-overlay{align-items:flex-end;padding:0;}
+    .modal-card.games-card{max-width:none;border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:0;
+      padding:18px 18px calc(16px + env(safe-area-inset-bottom));
+      max-height:calc(100dvh - 12px - env(safe-area-inset-top));min-height:min(576px, calc(100dvh - 12px - env(safe-area-inset-top)));
+      animation:gmSheetUp .3s cubic-bezier(.2,.8,.2,1);}
+    .games-overlay.gm-closing .games-card{transform:translateY(28px);}
+  }
+  .games-card .modal-head{margin-bottom:10px;}
+  .gm-menu:not([hidden]), .gm-play:not([hidden]){animation:gmPanelIn .18s ease;}
+  .gm-stage .gm-panel{animation:gmPanelFade .2s ease;}
+  .gm-rest{margin:0 0 10px;padding:6px 12px;min-height:36px;box-sizing:border-box;}
+  .gm-menu{gap:8px;}
+  .gm-cards{gap:8px;}
+  .gm-card{min-height:76px;padding:10px 12px 10px 12px;gap:12px;}
+  .gm-card-main{flex:1;gap:1px;}
+  .gm-card-title{font-size:21px;}
+  .gm-card-sub{font-size:12.5px;line-height:1.3;}
+  .gm-card-best{font-size:11.5px;letter-spacing:0.03em;text-transform:none;font-weight:600;margin-top:2px;}
+  .gm-card-best b{color:var(--text);font-weight:800;}
+  .gm-card-best.gm-new{color:var(--accent);font-weight:700;}
+  .gm-card-go{width:18px;height:18px;flex-shrink:0;color:var(--text-dim);}
+  .gm-card:active .gm-card-go{transform:translateX(2px);}
+  .gm-sound{cursor:pointer;min-height:52px;padding:6px 2px;border-top:1px solid var(--border);margin-top:2px;}
+  .gm-sound .switch{flex-shrink:0;}
+  .gm-note{margin:0 2px;font-size:11.5px;}
+  .gm-intro{gap:12px;}
+  .gm-intro-best{margin:0;font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);}
+  .gm-intro .gm-panel-title{font-size:32px;line-height:1.05;}
+  .gm-howto{margin:0;font-size:15.5px;line-height:1.4;color:var(--text);max-width:270px;}
+  .gm-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  .gm-panel .gm-start{min-height:56px;width:100%;max-width:240px;font-size:17px;margin-top:6px;}
+  .gm-end{gap:6px;}
+  .gm-end .gm-climber-mid{position:relative;width:72px;height:108px;margin-bottom:2px;}
+  .gm-end .gm-panel-title{font-size:26px;}
+  .gm-best-line{margin:0;font-size:13px;font-weight:700;color:var(--text-dim);}
+  .gm-best-line.gm-best-new{color:var(--accent);}
+  .gm-end .gm-panel-text{min-height:0;}
+  .gm-end .gm-actions{margin-top:10px;}
+  .gm-end .gm-actions .btn{min-height:48px;}
+  .gm-end .gm-actions .btn-primary{flex:1.5;}
+  .gm-end .gm-actions .btn-ghost{flex:1;}
+  .play-rest-btn{width:100%;max-width:280px;min-height:48px;padding:0 16px;border-radius:999px;border:1px solid color-mix(in srgb, var(--send) 45%, var(--border));
+    background:color-mix(in srgb, var(--send) 12%, var(--surface-2));color:var(--text);font-weight:700;}
+  .play-rest-btn svg{color:var(--send);}
+  .dock-btn#openGamesBtn svg{color:#FBF6E8;}
+  @media (prefers-reduced-motion: reduce){
+    .modal-overlay.games-overlay, .modal-card.games-card, .gm-menu:not([hidden]), .gm-play:not([hidden]), .gm-stage .gm-panel{animation:none;}
+    .modal-overlay.games-overlay, .modal-card.games-card{transition:none;}
+    .games-overlay.gm-closing .games-card{transform:none;}
+    .gm-card:active .gm-card-go{transform:none;}
   }
 
   /* ================= FINISH SESSION ================= */
@@ -1500,7 +1568,7 @@
             <img data-ui="customize" alt="">
             <span class="dock-label">Customize</span>
           </button>
-          <button type="button" class="dock-btn" id="openGamesBtn" aria-haspopup="dialog">
+          <button type="button" class="dock-btn" id="openGamesBtn" aria-haspopup="dialog" aria-label="Play a game">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
             <span class="dock-label">Play</span>
           </button>
@@ -1637,7 +1705,7 @@
       </div>
       <div class="countdown" id="countdown">00:45</div>
       <div class="progress-track"><div class="progress-fill" id="timerFill" style="width:100%"></div></div>
-      <button type="button" class="link-btn play-rest-btn" id="playRestBtn" hidden>
+      <button type="button" class="link-btn play-rest-btn" id="playRestBtn" aria-haspopup="dialog" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
         <span>Play while you rest</span>
       </button>
@@ -1884,7 +1952,7 @@
 
 <!-- ==== GAMES (removable; see AGENTS.md "Games") ==== -->
 <div class="modal-overlay games-overlay" id="gamesOverlay" hidden>
-  <div class="modal-card games-card" role="dialog" aria-modal="true" aria-labelledby="gamesTitle">
+  <div class="modal-card games-card" id="gamesCard" role="dialog" aria-modal="true" aria-labelledby="gamesTitle">
     <div class="modal-head">
       <h2 id="gamesTitle">Play</h2>
       <button type="button" class="icon-btn" id="closeGamesBtn" aria-label="Close games">
@@ -1898,20 +1966,22 @@
     </div>
     <div class="gm-menu" id="gamesMenu">
       <div class="gm-cards" id="gmCards"></div>
-      <div class="switch-row gm-sound">
-        <div><div class="switch-label">Game sounds</div><div class="switch-desc">Soft ticks, never over the timer beeps</div></div>
-        <button type="button" class="switch" id="gmSoundSwitch" aria-pressed="true" aria-label="Game sounds"><span class="switch-thumb"></span></button>
+      <div class="switch-row gm-sound" id="gmSoundRow">
+        <div><div class="switch-label">Game sounds</div><div class="switch-desc" id="gmSoundDesc">On. Soft ticks, never over the timer beeps.</div></div>
+        <button type="button" class="switch" id="gmSoundSwitch" aria-pressed="true" aria-label="Game sounds" aria-describedby="gmSoundDesc"><span class="switch-thumb"></span></button>
       </div>
       <p class="gm-note">Just for fun. Games never change your XP, level, streak or Wall.</p>
     </div>
     <div class="gm-play" id="gamesPlay" hidden>
       <div class="gm-hud">
-        <button type="button" class="link-btn gm-back" id="gmBackBtn">Games</button>
-        <span class="gm-score" id="gmScore" aria-label="Score">0</span>
-        <span class="gm-line" id="gmLine"></span>
-        <span class="gm-time" id="gmTime"></span>
+        <button type="button" class="link-btn gm-back" id="gmBackBtn" aria-label="Back to all games">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 6 9 12 15 18"/></svg>
+          <span>Games</span>
+        </button>
+        <span class="gm-score" id="gmScore" role="img" aria-label="Score">0</span>
+        <span class="gm-meta"><span class="gm-line" id="gmLine"></span><span class="gm-time" id="gmTime"></span></span>
       </div>
-      <div class="gm-stage" id="gmStage"></div>
+      <div class="gm-stage" id="gmStage" tabindex="-1"></div>
       <p class="gm-hint" id="gmHint" aria-live="polite"></p>
     </div>
   </div>
@@ -7312,18 +7382,43 @@
   }
 
   function gamesBestLine(id){ var g = state.games && state.games[id] || { best:0, plays:0 }; return g.plays ? "Best "+g.best+" · played "+g.plays : "Not played yet"; }
-  function renderGamesMenu(){
+  var GM_CHEVRON = '<svg class="gm-card-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>';
+  function gmEsc(t){ return String(t==null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  // One line of how-to per game for the intro (the game's own intro.text stays as the spoken description).
+  var GM_HOWTO = {
+    chalkRhythm:"Tap when the ring meets the outline.",
+    routeRead:"Remember the numbered holds, then tap them in order.",
+    summitStack:"Tap to drop the block and stack it neatly.",
+    reachTimer:"Tap the side where the next hold is."
+  };
+  function gmHowto(d){ return GM_HOWTO[d.id] || (d.intro && d.intro.text) || d.blurb || ""; }
+  function gmSoundText(on){ return on ? "On. Soft ticks, never over the timer beeps." : "Off. Games stay silent."; }
+  function gmSyncSound(){
+    var sw = gmEl("gmSoundSwitch"), on = !!state.settings.gameSound;
+    if(sw) sw.setAttribute("aria-pressed", on ? "true" : "false");
+    var d = gmEl("gmSoundDesc"); if(d) d.textContent = gmSoundText(on);
+  }
+  function gmToggleSound(){ state.settings.gameSound = !state.settings.gameSound; saveState(); gmSyncSound(); }
+  // focusId: a game id to put focus back on (after Back), or null for the first card.
+  function renderGamesMenu(focusId){
     gm = null; stopGameLoop();
     gmEl("gamesMenu").hidden = false; gmEl("gamesPlay").hidden = true;
     gmEl("gamesTitle").textContent = "Play";
     gmEl("gmCards").innerHTML = gmList(true).map(function(d){
       var art = GAME_ART["card."+d.id], ic = art && art.src ? '<img src="'+art.src+'" alt="">' : (d.icon || "");
-      return '<button type="button" class="gm-card'+(d.soon ? ' gm-soon' : '')+'" id="gmCard_'+d.id+'" data-game="'+d.id+'"'+(d.soon ? ' disabled aria-disabled="true"' : '')+'>'
+      var g = state.games && state.games[d.id] || { best:0, plays:0 };
+      var line = d.soon ? '<span class="gm-card-best">Coming soon</span>'
+        : g.plays ? '<span class="gm-card-best"><b>Best '+g.best+'</b> · played '+g.plays+'</span>'
+        : '<span class="gm-card-best gm-new">Not played yet</span>';
+      var label = d.title+". "+d.blurb+" "+(d.soon ? "Coming soon." : g.plays ? "Best "+g.best+", played "+g.plays+(g.plays===1 ? " time." : " times.") : "Not played yet.");
+      return '<button type="button" class="gm-card'+(d.soon ? ' gm-soon' : '')+'" id="gmCard_'+d.id+'" data-game="'+d.id+'" aria-label="'+gmEsc(label)+'"'+(d.soon ? ' disabled aria-disabled="true"' : '')+'>'
         + '<span class="gm-card-ic" aria-hidden="true">'+ic+'</span>'
-        + '<span class="gm-card-main"><span class="gm-card-title">'+d.title+'</span><span class="gm-card-sub">'+d.blurb+'</span>'
-        + '<span class="gm-card-best">'+(d.soon ? "Coming soon" : gamesBestLine(d.id))+'</span></span></button>';
+        + '<span class="gm-card-main"><span class="gm-card-title">'+d.title+'</span><span class="gm-card-sub">'+d.blurb+'</span>'+line+'</span>'
+        + (d.soon ? '' : GM_CHEVRON)+'</button>';
     }).join("");
-    var sw = gmEl("gmSoundSwitch"); if(sw) sw.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
+    gmSyncSound();
+    var target = (focusId && gmEl("gmCard_"+focusId)) || document.querySelector("#gmCards .gm-card:not([disabled])");
+    if(target && !gmEl("gamesOverlay").hidden) try{ target.focus({ preventScroll:true }); }catch(e){}
   }
   var gmRaf = null, gmTimeouts = [];
   function stopGameLoop(){
@@ -7339,16 +7434,24 @@
   function gmRestLow(){ if(!gmFromRest) return false; var r = gamesRestState(); return r.resting && r.ms<=10000; }
   function gmIntro(id){
     var d = GAMES[id]; if(!d || d.soon) return;
+    gmLastId = id;
     var intro = d.intro || {};
     gmEl("gamesTitle").textContent = d.title;
     gmEl("gamesMenu").hidden = true; gmEl("gamesPlay").hidden = false;
-    var best = state.games[id] ? state.games[id].best : 0;
+    var g = state.games[id] || { best:0, plays:0 }, best = g.best;
     gmHud(0, d.hud0 ? d.hud0(best) : "Best "+best);
-    gmEl("gmStage").innerHTML = '<div class="gm-panel"><p class="gm-panel-title">'+(intro.title || d.title)+'</p>'
-      + '<p class="gm-panel-text">'+(intro.text || d.blurb)+'</p>'
-      + '<button type="button" class="btn btn-primary" id="gmStartBtn">Start</button></div>';
+    gmEl("gmStage").innerHTML = '<div class="gm-panel gm-intro" role="group" aria-labelledby="gmIntroTitle" aria-describedby="gmIntroFull">'
+      + '<p class="gm-intro-best">'+(g.plays ? "Best "+best : "First time")+'</p>'
+      + '<p class="gm-panel-title" id="gmIntroTitle">'+(intro.title || d.title)+'</p>'
+      + '<p class="gm-howto">'+gmEsc(gmHowto(d))+'</p>'
+      + '<span class="gm-sr" id="gmIntroFull">'+gmEsc(intro.text || d.blurb || "")+'</span>'
+      + '<button type="button" class="btn btn-primary gm-start" id="gmStartBtn">Start</button></div>';
     gmSay(intro.hint || "No XP, just for fun.");
-    gmEl("gmStartBtn").addEventListener("click", function(){ d.start(); });
+    gmEl("gmStartBtn").addEventListener("click", function(){
+      d.start();
+      // the Start button is gone: keep focus inside the sheet (on the stage) so keys and Tab don't fall to the page
+      var st = gmEl("gmStage"); if(st && !st.contains(document.activeElement) && document.activeElement!==st){ try{ st.focus({ preventScroll:true }); }catch(e){} }
+    });
     gmEl("gmStartBtn").focus({ preventScroll:true });
   }
   // extra: { title, note, noButtons, actions, extra }. actions < 1 means the round isn't recorded (design doc 4.7).
@@ -7362,10 +7465,11 @@
     var low = gmRestLow();   // no "Play again" in the last 10 s of rest
     var noButtons = !!extra.noButtons || low;
     var note = low && !extra.noButtons ? (extra.note ? extra.note+" · " : "")+"Rest is almost over." : extra.note;
-    gmEl("gmStage").innerHTML = '<div class="gm-panel"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
+    gmEl("gmStage").innerHTML = '<div class="gm-panel gm-end"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
       + '<p class="gm-panel-title">'+(extra.title||"Round over")+'</p>'
       + '<p class="gm-big" aria-live="polite">'+score+'</p>'
-      + '<p class="gm-panel-text">'+(rec.newBest ? "New personal best!" : "Best "+rec.best)+(note ? " · "+note : "")+'</p>'
+      + '<p class="gm-best-line'+(rec.newBest ? ' gm-best-new' : '')+'">'+(rec.newBest ? "New personal best." : "Best "+rec.best)+'</p>'
+      + (note ? '<p class="gm-panel-text">'+note+'</p>' : '')
       + (noButtons ? '' : '<div class="gm-actions"><button type="button" class="btn btn-primary" id="gmAgainBtn">Play again</button><button type="button" class="btn btn-ghost" id="gmMenuBtn">Games</button></div>')
       + '</div>';
     var fr = f || gmFrames();
@@ -7374,7 +7478,7 @@
     gmHud(score, rec.newBest ? "New best" : "Best "+rec.best);
     if(!noButtons){
       gmEl("gmAgainBtn").addEventListener("click", function(){ gmIntro(id); });
-      gmEl("gmMenuBtn").addEventListener("click", renderGamesMenu);
+      gmEl("gmMenuBtn").addEventListener("click", function(){ renderGamesMenu(id); });
       gmEl("gmAgainBtn").focus({ preventScroll:true });
     }
     gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
@@ -7387,8 +7491,10 @@
     art:GAME_ART, gmArt:gmArt, gmArtRegister:gmArtRegister, frames:gmFrames,
     soundOk:gmSoundOk, beep:gmBeep, beepCount:function(){ return gmBeeps; },
     paused:function(){ return !!(gm && gm.paused); }, current:function(){ return gm; },
-    open:function(o){ openGames(o); }, close:function(){ closeGames(); }
+    open:function(o){ openGames(o); }, close:function(){ closeGames(true); }
   };
+
+  if(window.__cruxTest) Object.assign(window.__cruxGames, { howto:gmHowto, esc:gmEsc });
 
   /* ==== chalkRhythm BEGIN (T1: replaces the legacy Chalk Up; the saved chalkUp data stays, its best was copied by gamesNormalize) ==== */
   // Rules: a ring grows toward a fixed outline once per beat; tap when it meets the outline. Fixed grid from round start,
@@ -8092,45 +8198,64 @@
   }
   function openGames(opts){
     var o = gmEl("gamesOverlay"); if(!o) return;
+    if(gmCloseTimer){ clearTimeout(gmCloseTimer); gmCloseTimer = null; }
+    o.classList.remove("gm-closing");
     gmClosing = false; gmFromRest = !!(opts && opts.fromRest);
-    gmOpener = document.activeElement;
+    if(o.hidden) gmOpener = document.activeElement;
     gmEl("gamesRest").classList.remove("back");
-    renderGamesMenu();
     o.hidden = false;
+    renderGamesMenu();
     gamesWatch();
     if(!gmWatchId) gmWatchId = setInterval(gamesWatch, 250);
-    gmEl("closeGamesBtn").focus({ preventScroll:true });
   }
   // Leaving a round by hand keeps what you scored, unless it is paused and never resumed (that records nothing).
   function gmBankRound(){
     if(!gm || gm.paused) return;
     var s = gmRoundState(); gamesRecordRound(gm.id, s);
   }
-  function closeGames(){
-    var o = gmEl("gamesOverlay"); if(!o || o.hidden) return;
+  var gmCloseTimer = null;
+  // The sheet fades down for ~110 ms before it hides (reduced motion, and the test hook, hide at once). All state is released right away.
+  function closeGames(now){
+    var o = gmEl("gamesOverlay"); if(!o || o.hidden || o.classList.contains("gm-closing")) return;
     gmBankRound();
     stopGameLoop(); gm = null; gmClosing = false;
     if(gmWatchId){ clearInterval(gmWatchId); gmWatchId = null; }
-    o.hidden = true;
-    gmEl("gmStage").innerHTML = "";
+    var finish = function(){ gmCloseTimer = null; o.classList.remove("gm-closing"); o.hidden = true; gmEl("gmStage").innerHTML = ""; };
+    if(now===true || prefersReducedMotion){ finish(); }
+    else { o.classList.add("gm-closing"); gmCloseTimer = setTimeout(finish, 110); }
     if(gmOpener && gmOpener.focus && gmOpener.isConnected && !gmOpener.hidden){ try{ gmOpener.focus({ preventScroll:true }); }catch(e){} }
     gmOpener = null; gmFromRest = false;
   }
   document.getElementById("openGamesBtn").addEventListener("click", function(){ openGames({ fromRest:false }); });
   document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
-  document.getElementById("closeGamesBtn").addEventListener("click", closeGames);
+  document.getElementById("closeGamesBtn").addEventListener("click", function(){ closeGames(); });
   document.getElementById("gamesOverlay").addEventListener("click", function(e){ if(e.target.id==="gamesOverlay") closeGames(); });
   document.getElementById("gmCards").addEventListener("click", function(e){
     var b = e.target.closest(".gm-card"); if(!b || b.disabled) return;
     gmIntro(b.dataset.game);
   });
-  document.getElementById("gmSoundSwitch").addEventListener("click", function(){
-    state.settings.gameSound = !state.settings.gameSound; saveState();
-    this.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
+  // the whole row is the target (the switch alone is only 44 x 26); a click on the switch bubbles here too
+  document.getElementById("gmSoundRow").addEventListener("click", gmToggleSound);
+  document.getElementById("gmBackBtn").addEventListener("click", function(){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(gmLastId); });
+  var gmLastId = null;
+  function closeRoundToMenu(){ var id = gm && gm.id; gmBankRound(); renderGamesMenu(id); }
+  // Escape steps back one level: round or intro -> menu -> closed.
+  document.addEventListener("keydown", function(e){
+    var o = document.getElementById("gamesOverlay"); if(o.hidden) return;
+    if(e.key==="Escape"){
+      if(!gmEl("gamesPlay").hidden && !gmClosing){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(gmLastId); }
+      else closeGames();
+      return;
+    }
+    if(e.key==="Tab"){   // keep Tab inside the sheet
+      var f = Array.prototype.filter.call(gmEl("gamesCard").querySelectorAll("button:not([disabled]), [tabindex]:not([tabindex='-1'])"), function(b){ return b.offsetParent!==null; });
+      if(!f.length) return;
+      var first = f[0], last = f[f.length-1], a = document.activeElement;
+      if(!gmEl("gamesCard").contains(a)){ e.preventDefault(); first.focus(); }
+      else if(e.shiftKey && a===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && a===last){ e.preventDefault(); first.focus(); }
+    }
   });
-  document.getElementById("gmBackBtn").addEventListener("click", function(){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(); });
-  function closeRoundToMenu(){ gmBankRound(); renderGamesMenu(); }
-  document.addEventListener("keydown", function(e){ if(e.key==="Escape" && !document.getElementById("gamesOverlay").hidden) closeGames(); });
   // A hidden page can't keep a fair clock: the round pauses (the timer carries on by itself) and a tap resumes it.
   document.addEventListener("visibilitychange", function(){ if(document.hidden && gm && !document.getElementById("gamesOverlay").hidden) gmPause(); });
   /* ==== END GAMES ==== */
