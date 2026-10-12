@@ -2108,6 +2108,61 @@ and the project rules. It runs on its own private copy of the data, never your r
     for(var j=0;j<80 && visible("gamesOverlay");j++) await wait(100);
     await click("startBtn", 150);
   });
+  // ---- chalkRhythm polish tests ----
+  test("Chalk Rhythm polish: echo, tap-time, cue and smoothing rules (pure)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, b = G.chalkBeats();
+    expect(G.chalkEcho(0)===null && G.chalkEcho(b[0]-1)===null, "an echo before the first beat");
+    var e0 = G.chalkEcho(b[0]), e1 = G.chalkEcho(b[0]+100), e2 = G.chalkEcho(b[0]+250);
+    expect(e0 && e0.k===0 && e0.scale===1 && Math.abs(e0.opacity-0.9)<1e-9, "echo at the beat: "+JSON.stringify(e0));
+    expect(e1.scale>e0.scale && e2.scale>e1.scale && e2.scale<=1.22 && e1.opacity<e0.opacity && e2.opacity<e1.opacity && e2.opacity>0, "echo isn't monotone: "+JSON.stringify([e0, e1, e2]));
+    expect(G.chalkEcho(b[0]+300)===null && G.chalkEcho(b[0]+299)!==null, "echo window edge");
+    // a beat's echo is finished before the next beat's ring is half grown, for every beat of the grid
+    for(var i=0;i<b.length;i++){ var nxt = i+1<b.length ? b[i+1] : 45000; expect(nxt-b[i]>=300, "beat "+i+" is shorter than its echo"); }
+    expect(G.chalkEase(0)===0 && G.chalkEase(1)===1 && G.chalkEase(0.5)>0.5 && G.chalkEase(-3)===0 && G.chalkEase(9)===1, "ease");
+    expect(G.chalkRingOpacity(0)===0 && G.chalkRingOpacity(0.1)>=0.5 && G.chalkRingOpacity(0.2)===1 && G.chalkRingOpacity(1)===1, "ring fade-in");
+    expect(G.chalkTapTime(1000, 1010)===1000 && G.chalkTapTime(1010, 1010)===1010 && G.chalkTapTime(0, 1010)===1010 && G.chalkTapTime(NaN, 1010)===1010
+      && G.chalkTapTime(undefined, 1010)===1010 && G.chalkTapTime(500, 1010)===1010 && G.chalkTapTime(2000, 1010)===1010 && G.chalkTapTime(1000.5, 1000)===1000, "tap time");
+    expect(G.chalkCue("perfect", 5)===null && G.chalkCue("good", -90)==="early" && G.chalkCue("close", 200)==="late" && G.chalkCue("miss", 400)===null, "cue");
+    var v = 0, prev = 0; for(var j=0;j<40;j++){ v = G.chalkSmooth(v, 1, 16, 90); expect(v>prev && v<1, "smooth step "+j); prev = v; }
+    expect(v>0.9 && G.chalkSmooth(0.5, 0.5, 16, 90)===0.5 && G.chalkSmooth(0, 1, 0, 90)===0, "smooth ends");
+  });
+
+  test("Chalk Rhythm polish: hit feedback, steady clock, first-round hint, tap target", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = await crOpen(), b = G.chalkBeats();
+    expect(W.getComputedStyle($("gmTap")).touchAction==="manipulation" || $("gmTap").style.touchAction==="manipulation", "tap layer lacks touch-action: manipulation");
+    var tr = $("gmTap").getBoundingClientRect(); expect(tr.width>=56 && tr.height>=56, "tap target "+tr.width+"x"+tr.height);
+    expect($("crTeach").classList.contains("on"), "no first-round hint");
+    await wait(80);
+    expect(/\d+s/.test($("gmTime").textContent), "clock missing at start: '"+$("gmTime").textContent+"'");
+    crTapAt(G, b[0]-90); await wait(60);
+    expect(/Good/.test($("crLabel").textContent) && /early/.test($("crLabel").textContent), "early cue: "+$("crLabel").textContent);
+    expect(!$("crTeach").classList.contains("on"), "hint stayed after the first tap");
+    expect(/\d+s/.test($("gmTime").textContent), "clock blanked by a tap: '"+$("gmTime").textContent+"'");
+    expect(q(".cr-outline").classList.contains("cr-hit") && !q(".cr-outline").classList.contains("cr-hit-perfect"), "outline pulse (good)");
+    crTapAt(G, b[1]); await wait(40);
+    expect(q(".cr-outline").classList.contains("cr-hit-perfect") && q(".cr-puff.go") && $("gmScore").classList.contains("cr-bump"), "perfect pulse/puff/score bump");
+    crTapAt(G, b[2]+200); await wait(40);
+    expect(/Close/.test($("crLabel").textContent) && /late/.test($("crLabel").textContent), "late cue: "+$("crLabel").textContent);
+    var before = +$("gmScore").textContent;
+    crTapAt(G, b[3]+600); await wait(40);
+    expect(+$("gmScore").textContent===before && $("gmClimber").classList.contains("cr-hop-sm"), "an off-beat tap gave no answer / changed the score");
+    // the echo of a landed beat is drawn and then goes away
+    G.current().t0 = W.performance.now()-(b[5]+100); await wait(40);
+    expect(+q(".cr-echo").style.opacity>0, "no echo after a beat");
+    await wait(450);
+    expect(+q(".cr-echo").style.opacity===0 || q(".cr-echo").style.opacity==="0", "echo didn't clear: "+q(".cr-echo").style.opacity);
+    G.current().t0 -= 45000; await wait(250);
+    expect(/beats/.test($("gmStage").textContent) && /of 48 beats/.test($("gmStage").textContent), "end note lacks the beat count: "+$("gmStage").textContent);
+    // a second round: the first-round hint is gone
+    await click("gmAgainBtn", 150); await click("gmStartBtn", 100);
+    expect(!$("crTeach").classList.contains("on"), "the hint came back on round 2");
+    await click("closeGamesBtn", 250);
+  });
+
   // ---- end chalkRhythm tests ----
 
   test("Games: Play while you rest keeps the timer running, shows the rest clock, and returns to work when rest ends", async function(){
