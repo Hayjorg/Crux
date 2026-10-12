@@ -2517,6 +2517,26 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("closeGamesBtn", 250);
   });
   // ---- end summitStack tests ----
+  // ---- summitStack polish tests ----
+  test("Games: Summit Stack polish helpers are pure and bounded (drop ease, fall, squash, input time, streak pitch)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    expect(G.stackDropEase(0)===0 && Math.abs(G.stackDropEase(1)-1)<1e-12 && G.stackDropEase(-3)===0 && G.stackDropEase(9)===1, "drop ease endpoints/clamp");
+    var prev = -1, mono = true; for(var i=0;i<=20;i++){ var v = G.stackDropEase(i/20); if(v<prev) mono = false; prev = v; }
+    expect(mono && G.stackDropEase(0.1)>0.02 && G.stackDropEase(0.5)<0.5, "drop ease monotonic, quick start, still accelerating");
+    expect(G.stackFallY(0)===0 && G.stackFallY(380)>150 && G.stackFallY(100)<G.stackFallY(200), "fall accelerates and clears the tower: "+G.stackFallY(380));
+    expect(G.stackSquash(-1)===null && G.stackSquash(400)===null && G.stackSquash(0).sy===1, "squash is null outside its window and starts at rest");
+    var mid = G.stackSquash(80, 0.14); expect(mid.sy<1 && mid.sy>0.8 && mid.sx>1 && mid.sx<1.1, "squash dips a little: "+JSON.stringify(mid));
+    expect(G.stackInputTime(1000, 1050)===1000 && G.stackInputTime(100, 1050)===1050 && G.stackInputTime(undefined, 1050)===1050 && G.stackInputTime(1200, 1050)===1050 && G.stackInputTime(NaN, 5)===5, "input time: use the event stamp only when recent and not from the future");
+    expect(G.stackStreakFreq(1)===660 && G.stackStreakFreq(0)===660 && G.stackStreakFreq(2)>660 && G.stackStreakFreq(99)===G.stackStreakFreq(8) && G.stackStreakFreq(8)<1300, "streak pitch rises and caps");
+    var C = G.stackConst; expect(G.stackWindowMs(40, C.floor)>=400-1e-9, "the reaction floor is untouched");
+    // the round still draws with touch-action: manipulation and the climber stays on the tower
+    await click("openGamesBtn", 250); await click("gmCard_summitStack", 150); await click("gmStartBtn", 150);
+    expect(getComputedStyle($("gmTap")).touchAction==="manipulation", "tap layer should be touch-action: manipulation");
+    await click("closeGamesBtn", 250);
+  });
+  // ---- end summitStack polish tests ----
 
   // ---- shell polish tests ----
   test("Games shell: menu cards read as best / plays, the sound row is one big target with a spoken state, and the sheet locks the page behind it", async function(){

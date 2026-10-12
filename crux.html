@@ -909,25 +909,38 @@
   .rr-stage.rr-calm .rr-wall.rr-showing .rr-badge{transition-delay:0s;}
   /* summitStack (.ss-) */
   .ss-world{position:absolute;top:0;transform-origin:0 0;pointer-events:none;}
-  .ss-cam{position:absolute;inset:0;transition:transform .28s ease;will-change:transform;}
+  .ss-cam{position:absolute;inset:0;will-change:transform;}
   .ss-blk{position:absolute;display:block;}
-  .ss-slider{position:absolute;left:0;top:0;will-change:transform;transition:opacity .35s ease;}
-  .ss-chunk{opacity:0.9;transition:transform .55s ease-in, opacity .55s ease-in;}
+  .ss-slider{position:absolute;left:0;top:0;will-change:transform,opacity;}
+  .ss-chunk{opacity:0.9;transition:transform .7s cubic-bezier(.5,0,.9,.6), opacity .7s ease-in;}
   .ss-chunk.go{opacity:0;}
-  .ss-bob{animation:ssBob .32s ease-out;}
-  @keyframes ssBob{0%{transform:translateY(-5px);}60%{transform:translateY(2px);}100%{transform:none;}}
-  .ss-climber{width:60px;height:90px;transition:top .16s ease;z-index:2;}
+  .ss-tap{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  .ss-climber{left:0;top:0;width:60px;height:90px;z-index:2;will-change:transform;}
   .ss-climber img.wide, .ss-climber img.outfit-layer.wide{width:141%;max-width:none;margin-left:-20.5%;}
-  .ss-flag{position:absolute;z-index:2;}
+  .ss-flag{position:absolute;z-index:1;width:26px;height:54px;}
+  .ss-pole{position:absolute;left:0;bottom:0;width:3px;height:100%;border-radius:2px;background:var(--text-dim);transform-origin:50% 100%;}
+  .ss-flag .ss-pennant{position:absolute;left:3px;top:0;border-radius:2px 8px 8px 2px;transform-origin:0 50%;}
+  .ss-flag.up .ss-pole{animation:ssPole .42s cubic-bezier(.2,.8,.3,1) both;}
+  .ss-flag.up .ss-pennant{animation:ssPenn .35s .3s cubic-bezier(.2,.9,.3,1.3) both;}
+  @keyframes ssPole{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+  @keyframes ssPenn{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:1;}}
+  .ss-ring{position:absolute;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid var(--send);box-sizing:border-box;pointer-events:none;z-index:3;
+    animation:ssRing .5s ease-out forwards;}
+  .ss-ring.big{width:110px;height:110px;margin:-55px 0 0 -55px;animation-duration:.7s;}
+  @keyframes ssRing{from{transform:scale(0.5);opacity:0.9;}to{transform:scale(1.5);opacity:0;}}
+  .ss-spark{position:absolute;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:2px;background:var(--accent);pointer-events:none;z-index:3;opacity:0;
+    animation:ssSpark 1s ease-out forwards;}
+  .ss-spark:nth-of-type(odd){background:var(--send);border-radius:50%;}
+  @keyframes ssSpark{0%{opacity:0;transform:translate(0,0) rotate(0);}15%{opacity:1;}100%{opacity:0;transform:translate(var(--dx),var(--dy,-70px)) rotate(200deg);}}
   .ss-time{position:absolute;left:0;top:0;right:0;height:4px;z-index:3;background:var(--accent);transform-origin:0 50%;pointer-events:none;}
   .ss-label{position:absolute;left:0;right:0;top:12px;margin:0;z-index:3;display:flex;justify-content:center;align-items:center;gap:6px;opacity:0;pointer-events:none;
     font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.04em;transition:opacity .2s ease;}
   .ss-label.on{opacity:1;}
   .ss-label .gm-art{width:20px !important;height:20px !important;}
   @media (prefers-reduced-motion: reduce){
-    .ss-cam, .ss-climber, .ss-slider{transition:none;}
-    .ss-bob{animation:none;}
     .ss-chunk{transition:opacity .3s linear;}
+    .ss-flag.up .ss-pole, .ss-flag.up .ss-pennant{animation:none;}
+    .ss-ring, .ss-spark{display:none;}
   }
   /* .rt- (Reach Timer) */
   .rt-ladder{position:absolute;left:0;right:0;top:12px;display:flex;justify-content:center;gap:6px;pointer-events:none;}
@@ -7971,7 +7984,8 @@
   // Geometry is in "logical px" of a 360-wide world (a 320 px block is 100%); the world is scaled to the stage.
   var SS_BASE = 320, SS_FLOOR = 0.30*SS_BASE, SS_PERFECT_PX = 6, SS_REGAIN = 0.08*SS_BASE, SS_LEARN_BLOCKS = 4, SS_SUMMIT = 20;
   var SS_WORLD_W = 360, SS_CENTER = SS_WORLD_W/2, SS_TRAVEL = SS_BASE/2;       // the slider's centre sweeps SS_CENTER +- 160
-  var SS_ROUND_MS = 45000, SS_BLOCK_H = 28, SS_DROP_MS = 170, SS_FALL_MS = 420, SS_RISE = 118, SS_CLIMBER_H = 90;
+  var SS_ROUND_MS = 45000, SS_BLOCK_H = 28, SS_DROP_MS = 170, SS_FALL_MS = 380, SS_RISE = 118, SS_CLIMBER_H = 90;
+  var SS_HOP_MS = 240, SS_ENTER_MS = 140, SS_SQUASH_MS = 190, SS_FLAG_H = 54;
   // crossing time (edge to edge of the 320 lane) for block number n (1-based)
   function stackCross(n){ n = Math.max(1, Math.floor(Number(n))||1); return n<=4 ? 2400 : n<=9 ? 2100 : n<=14 ? 1800 : 1500; }
   // what a drop does. n = number of the block being dropped, prev = width of the block below, err = signed centre offset (px).
@@ -7997,6 +8011,24 @@
   // which pose the climber holds, ms after the last stack
   function stackPose(sinceMs, blocks){ return sinceMs<150 ? "jump" : sinceMs<330 ? "land" : sinceMs<600 ? "step" : (blocks>=SS_SUMMIT ? "flag" : "idle"); }
   function stackScore(blocks, perfects){ return blocks+perfects; }
+  // polish helpers (pure). Drop: a small head start so it reacts at once, then accelerates; p and result are 0..1.
+  function stackDropEase(p){ p = Math.max(0, Math.min(1, Number(p)||0)); return 0.2*p + 0.8*p*p; }
+  // a missed block's fall offset (px below the landing line) after d ms: gravity with a small initial push
+  function stackFallY(d){ d = Math.max(0, Number(d)||0); return 0.05*d + 0.0012*d*d; }
+  // squash of the settled block, sinceMs after landing: a quick dip and spring back. null when finished.
+  function stackSquash(sinceMs, amp){
+    sinceMs = Number(sinceMs)||0; amp = amp==null ? 0.14 : amp;
+    if(sinceMs<0 || sinceMs>=SS_SQUASH_MS) return null;
+    var u = sinceMs/SS_SQUASH_MS, w = Math.sin(Math.PI*u)*(1-0.5*u);
+    return { sy:1-amp*w, sx:1+amp*0.4*w };
+  }
+  // the moment the finger came down: the event's own timestamp when it is recent and sane, else now
+  function stackInputTime(evTs, now){
+    evTs = Number(evTs); now = Number(now)||0;
+    return isFinite(evTs) && evTs>0 && evTs<=now+1 && now-evTs<=120 ? Math.min(evTs, now) : now;
+  }
+  // the Perfect tick rises a semitone per consecutive Perfect (up to an octave-ish cap); a non-perfect resets it
+  function stackStreakFreq(streak){ var s = Math.max(1, Math.min(8, Math.floor(Number(streak))||1)); return 660*Math.pow(2, (s-1)/12); }
 
   gmRegister({
     id:"summitStack", title:"Summit Stack", order:3, blurb:"Drop each block on the last to build a tower.",
@@ -8008,7 +8040,7 @@
     rest:{ closeScore:function(){ return summitStackState(); } },
     resume:function(dt){
       if(!gm || gm.id!=="summitStack") return;
-      gm.blockT0 += dt; gm.dropAt += dt; gm.fallAt += dt; gm.poseAt += dt;
+      gm.blockT0 += dt; gm.dropAt += dt; gm.fallAt += dt; gm.poseAt += dt; gm.enterAt += dt; gm.sqAt += dt; gm.lastF += dt; if(gm.hop) gm.hop.at += dt;
       if(gm.frame) gmRaf = requestAnimationFrame(gm.frame);
     },
     art:["ss.ledge", "ss.block", "ss.flag", "ui.perfect", "ui.summit"], frames:["idle", "step", "jump", "hit", "flag", "ledgeSit", "cheer"]
@@ -8028,31 +8060,35 @@
     stage.innerHTML = '<div class="ss-time" id="ssTime" aria-hidden="true"></div>'
       + '<div class="ss-world" id="ssWorld" style="width:'+SS_WORLD_W+'px;height:'+lh+'px;left:'+((sw-SS_WORLD_W*k)/2)+'px;transform:scale('+k+')">'
       + '<div class="ss-cam" id="ssCam"><div id="ssTower"></div>'
-      + '<div class="ss-flag" id="ssFlag" hidden></div>'
+      + '<div class="ss-flag" id="ssFlag" hidden><i class="ss-pole"></i></div>'
       + '<div class="gm-climber ss-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
       + '<div id="ssSlider" class="ss-slider"></div></div></div>'
       + '<p class="ss-label" id="ssLabel" aria-hidden="true"></p>'
-      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap anywhere to drop the block"></button>';
+      + '<button type="button" class="gm-tap ss-tap" id="gmTap" aria-label="Tap anywhere to drop the block"></button>';
     var cam = gmEl("ssCam"), tower = gmEl("ssTower"), slider = gmEl("ssSlider"), label = gmEl("ssLabel"), bar = gmEl("ssTime"), flagEl = gmEl("ssFlag");
     var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber");
     outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
-    flagEl.appendChild(gmArt("ss.flag")); var fa = flagEl.firstChild; fa.style.width = "26px"; fa.style.height = "38px";
+    flagEl.appendChild(gmArt("ss.flag")); var fa = flagEl.lastChild; fa.classList.add("ss-pennant"); fa.style.width = "24px"; fa.style.height = "16px";
     var ledge = gmArt("ss.ledge"); ledge.classList.add("ss-blk"); ledge.style.width = SS_BASE+"px"; ledge.style.height = SS_BLOCK_H+"px";
     ledge.style.left = (SS_CENTER-SS_BASE/2)+"px"; ledge.style.top = ground+"px"; tower.appendChild(ledge);
 
     var g = gmBegin("summitStack", f, { n:0, score:0, perfects:0, taps:0, topC:SS_CENTER, topW:SS_BASE, phase:"slide", blockT0:0, dropAt:0, fallAt:0,
-      poseAt:-1e9, side:1, cross:stackCross(1), ph:0, res:null, dropX:SS_CENTER, shift:0, lastBar:-1, lastSec:-1, flagged:false });
-    g.ph = g.rnd(); g.side = g.rnd()<0.5 ? -1 : 1; g.blockT0 = g.t0;
+      poseAt:-1e9, side:1, cross:stackCross(1), ph:0, res:null, dropX:SS_CENTER, shift:0, lastBar:-1, lastSec:-1, flagged:false,
+      streak:0, enterAt:-1e9, sqAt:-1e9, sqEl:null, sqAmp:0, hop:null, camY:0, laneY:0, dropFromY:0, lastF:0, cx:SS_CENTER-30, cy:0 });
+    g.ph = g.rnd(); g.side = g.rnd()<0.5 ? -1 : 1; g.blockT0 = g.t0; g.lastF = g.t0;
     function topY(){ return ground - g.n*SS_BLOCK_H; }
     function mkBlock(w){ var b = gmArt("ss.block"); b.classList.add("ss-blk"); b.style.width = w+"px"; b.style.height = SS_BLOCK_H+"px"; return b; }
-    function putClimber(){
-      climber.style.left = (g.topC-30)+"px"; climber.style.top = (topY()-SS_CLIMBER_H)+"px";
-      flagEl.style.left = (g.topC+22)+"px"; flagEl.style.top = (topY()-SS_CLIMBER_H-6)+"px";
+    function climberTop(n){ return ground - n*SS_BLOCK_H - SS_CLIMBER_H; }
+    function setClimber(x, y){ g.cx = x; g.cy = y; climber.style.transform = "translate3d("+x+"px,"+y+"px,0)"; }
+    function putFlag(){
+      var fx = g.topC + Math.min(g.topW/2 - 12, 44);
+      flagEl.style.left = fx+"px"; flagEl.style.top = (topY()-SS_FLAG_H)+"px";
     }
-    function setSlider(cx, y){ slider.style.transform = "translate3d("+(cx-g.topW/2)+"px,"+y+"px,0)"; }
-    function newSlider(){
-      g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = performance.now();
-      slider.innerHTML = ""; slider.style.opacity = "1"; slider.appendChild(mkBlock(g.topW));
+    function setSlider(cx, y, rot){ slider.style.transform = "translate3d("+(cx-g.topW/2)+"px,"+y+"px,0)"+(rot ? " rotate("+rot+"deg)" : ""); }
+    function newSlider(now){
+      g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = now; g.enterAt = now;
+      slider.innerHTML = ""; slider.style.opacity = prefersReducedMotion ? "1" : "0"; slider.style.transformOrigin = (g.topW/2)+"px "+(SS_BLOCK_H/2)+"px";
+      slider.appendChild(mkBlock(g.topW));
     }
     function say(text, perfect){
       label.innerHTML = (perfect ? gmArtHtml("ui.perfect") : "")+'<span>'+text+'</span>'; label.classList.add("on");
@@ -8063,45 +8099,67 @@
     function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, 0)); }
     function chunk(left, y, w, dir){
       var c = mkBlock(w); c.classList.add("ss-chunk"); c.style.left = left+"px"; c.style.top = y+"px"; cam.appendChild(c);
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*18)+"px,150px) rotate("+(dir*14)+"deg)"; }); });
-      gmLater(function(){ c.remove(); }, 700);
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*30)+"px,200px) rotate("+(dir*26)+"deg)"; }); });
+      gmLater(function(){ c.remove(); }, 800);
+    }
+    function burst(cx, y, big){
+      if(prefersReducedMotion) return;
+      var r = document.createElement("div"); r.className = "ss-ring"+(big ? " big" : ""); r.style.left = cx+"px"; r.style.top = y+"px"; cam.appendChild(r);
+      gmLater(function(){ r.remove(); }, 650);
+      if(big){
+        for(var i=0;i<7;i++){
+          var s = document.createElement("i"); s.className = "ss-spark"; s.style.left = cx+"px"; s.style.top = (y+(i%2?6:-6))+"px";
+          s.style.setProperty("--dx", ((i-3)*11)+"px"); s.style.setProperty("--dy", (-46-(i*37%5)*10)+"px"); s.style.animationDelay = (i*40)+"ms"; cam.appendChild(s);
+          (function(el){ gmLater(function(){ el.remove(); }, 1300); })(s);
+        }
+      }
     }
     function land(now){
       var r = g.res, ty = topY();
-      if(r.miss){ g.phase = "fall"; g.fallAt = now; slider.style.opacity = "0"; say("Missed. Next block", false); gmSay("Missed the tower. Next block."); return; }
+      if(r.miss){ g.phase = "fall"; g.fallAt = now; g.streak = 0; say("Missed. Next block", false); gmSay("Missed the tower. Next block."); return; }
       var newC = g.topC + r.shift, b = mkBlock(r.width);
-      b.style.left = (newC-r.width/2)+"px"; b.style.top = (ty-SS_BLOCK_H)+"px"; tower.appendChild(b);
-      if(r.perfect && !prefersReducedMotion){ b.classList.add("ss-bob"); }
+      b.style.left = (newC-r.width/2)+"px"; b.style.top = (ty-SS_BLOCK_H)+"px"; b.style.transformOrigin = "50% 100%"; tower.appendChild(b);
+      g.sqEl = b; g.sqAt = now; g.sqAmp = r.perfect ? 0.1 : 0.16;
       if(r.over>0){
         var sign = g.dropX>g.topC ? 1 : -1, edge = g.topC + sign*g.topW/2;
         chunk(sign>0 ? edge : edge-r.over, ty-SS_BLOCK_H, r.over, sign);
       }
-      g.n++; g.topC = newC; g.topW = r.width; g.score += 1 + (r.perfect ? 1 : 0); if(r.perfect) g.perfects++;
-      g.poseAt = now;
-      // the camera: a transform on one element, the top block settles at 60% of the stage
-      var sh = Math.max(0, camLine - topY());
-      if(sh!==g.shift){ g.shift = sh; cam.style.transform = "translate3d(0,"+sh+"px,0)"; }
-      putClimber();
-      gmBeep(110, 70, 0.12);
-      if(r.perfect){ gmLater(function(){ if(gm===g) gmBeep(660, 60, 0.08); }, 75); gmBuzz(8); }
+      g.n++; g.topC = newC; g.topW = r.width; g.score += 1 + (r.perfect ? 1 : 0);
+      if(r.perfect){ g.perfects++; g.streak++; } else g.streak = 0;
       hud();
-      if(r.perfect) say("Perfect", true);
-      else say("Good", false);
-      if(g.n>=SS_SUMMIT && !g.flagged){ g.flagged = true; flagEl.hidden = false; say("Summit", false); }
+      gmBeep(110, 70, 0.12);
+      if(r.perfect){
+        var fq = stackStreakFreq(g.streak);
+        gmLater(function(){ if(gm===g) gmBeep(fq, 60, 0.08); }, 75); gmBuzz(8);
+        burst(newC, ty-SS_BLOCK_H+SS_BLOCK_H/2, false);
+        say(g.streak>=2 ? "Perfect ×"+g.streak : "Perfect", true);
+      } else say("Good", false);
+      if(g.n>=SS_SUMMIT && !g.flagged){
+        g.flagged = true; flagEl.hidden = false; flagEl.classList.add("up"); say("Summit", false);
+        burst(newC, topY()-SS_CLIMBER_H*0.6, true);
+      }
+      putFlag();
       gmSay((r.perfect ? "Perfect. " : "")+g.n+" blocks, score "+g.score+".");
-      newSlider();
+      newSlider(now);
     }
-    function tap(){
+    function tap(e){
       if(gm!==g || g.paused || g.phase!=="slide") return;
       var now = performance.now();
+      // use the moment the finger came down, not the moment this handler got to run
+      var at = Math.max(g.blockT0, stackInputTime(e && e.timeStamp, now));
       g.taps++;
-      var cx = SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side);
+      var cx = SS_CENTER + stackPos(at-g.blockT0, g.cross, g.ph, g.side);
       g.dropX = cx; g.res = stackDrop(g.n+1, g.topW, cx-g.topC);
-      g.phase = "drop"; g.dropAt = now;
+      g.phase = "drop"; g.dropAt = at; g.dropFromY = g.laneY;
+      if(!g.res.miss){      // the climber hops up onto the new block as it lands
+        var hopAt = at + SS_DROP_MS*0.5;
+        g.hop = { at:hopAt, fx:g.cx, fy:g.cy, tx:g.topC+g.res.shift-30, ty:climberTop(g.n+1) };
+        g.poseAt = hopAt + SS_HOP_MS - 150;
+      }
     }
     var tapBtn = gmEl("gmTap");
-    tapBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
-    tapBtn.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
+    tapBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(e); });
+    tapBtn.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(null); } });
     tapBtn.focus({ preventScroll:true });
 
     var lastKey = "";
@@ -8109,20 +8167,45 @@
       if(gm!==g || g.paused) return;
       var now = performance.now(), t = now-g.t0, ty = topY(), restY = ty-SS_BLOCK_H, slideY = restY-SS_RISE;
       if(t>=SS_ROUND_MS){ summitStackFinish(g, f); return; }
+      var dt = Math.min(50, Math.max(0, now-g.lastF)); g.lastF = now;
       var fr = Math.max(0, 1-t/SS_ROUND_MS), q = Math.round(fr*500)/500;
       if(q!==g.lastBar){ g.lastBar = q; bar.style.transform = "scaleX("+q+")"; }
       var sec = Math.ceil((SS_ROUND_MS-t)/1000);
       if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      // smooth camera + lane: the same easing on both keeps the sliding block steady on screen
+      var a = prefersReducedMotion ? 1 : 1-Math.exp(-dt/110);
+      var camT = Math.max(0, camLine - ty);
+      g.camY += (camT-g.camY)*a; if(Math.abs(camT-g.camY)<0.05) g.camY = camT;
+      if(g.camY!==g.shift){ g.shift = g.camY; cam.style.transform = "translate3d(0,"+g.camY+"px,0)"; }
+      if(g.phase!=="drop") g.laneY += (slideY-g.laneY)*a;
       if(g.phase==="slide"){
-        setSlider(SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side), slideY);
+        setSlider(SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side), g.laneY, 0);
+        if(!prefersReducedMotion && now-g.enterAt<SS_ENTER_MS) slider.style.opacity = String(Math.max(0, (now-g.enterAt)/SS_ENTER_MS));
+        else if(slider.style.opacity!=="1") slider.style.opacity = "1";
       } else if(g.phase==="drop"){
-        var p = Math.min(1, (now-g.dropAt)/SS_DROP_MS);
-        setSlider(g.dropX, slideY + (restY-slideY)*p*p);
+        var p = Math.max(0, Math.min(1, (now-g.dropAt)/SS_DROP_MS));
+        setSlider(g.dropX, g.dropFromY + (restY-g.dropFromY)*stackDropEase(p), 0);
         if(p>=1) land(now);
       } else if(g.phase==="fall"){
-        var d = now-g.fallAt;
-        setSlider(g.dropX, restY + d*0.5);
-        if(d>=SS_FALL_MS) newSlider();
+        var d = now-g.fallAt, fy = stackFallY(d), dir = g.dropX>g.topC ? 1 : -1;
+        setSlider(g.dropX, restY + fy, prefersReducedMotion ? 0 : dir*d*0.05);
+        slider.style.opacity = String(Math.max(0, 1-Math.max(0, d-SS_FALL_MS*0.5)/(SS_FALL_MS*0.5)));
+        if(d>=SS_FALL_MS) newSlider(now);
+      }
+      // a tiny squash as the block settles
+      if(g.sqEl){
+        var sq = prefersReducedMotion ? null : stackSquash(now-g.sqAt, g.sqAmp);
+        if(sq){ g.sqEl.style.transform = "scale("+sq.sx+","+sq.sy+")"; }
+        else { g.sqEl.style.transform = ""; g.sqEl = null; }
+      }
+      // the climber hops block to block; between hops it rides the top
+      var hp = g.hop;
+      if(hp){
+        var u = Math.max(0, Math.min(1, (now-hp.at)/SS_HOP_MS)), e = 1-Math.pow(1-u, 3), arc = prefersReducedMotion ? 0 : Math.sin(Math.PI*u)*14;
+        var hx = hp.fx+(hp.tx-hp.fx)*e, hy = hp.fy+(hp.ty-hp.fy)*e-arc;
+        if(prefersReducedMotion && u<1){ hx = hp.fx; hy = hp.fy; }
+        setClimber(hx, hy);
+        if(u>=1) g.hop = null;
       }
       // the climber: step / jump / land on a stack, the summit flag after 20, otherwise idle
       var key = stackPose(now-g.poseAt, g.n), src;
@@ -8132,7 +8215,8 @@
       gmRaf = requestAnimationFrame(frame);
     }
     g.frame = frame;
-    putClimber(); newSlider(); hud();
+    g.laneY = ground - SS_BLOCK_H - SS_BLOCK_H - SS_RISE;
+    setClimber(SS_CENTER-30, climberTop(0)); newSlider(performance.now()); hud();
     gmSay("Go. Tap anywhere to drop the block.");
     gmRaf = requestAnimationFrame(frame);
   }
@@ -8143,6 +8227,7 @@
     if(!(s.actions>=1 && s.score>prevBest)){ var im = gmEl("gmClimberImg"); if(im) gmSetSrc(im, f.ledgeSit); }
   }
   if(window.__cruxTest) Object.assign(window.__cruxGames, { stackCross:stackCross, stackDrop:stackDrop, stackWidth:stackWidth, stackWindowMs:stackWindowMs, stackPos:stackPos, stackPose:stackPose, stackScore:stackScore,
+      stackDropEase:stackDropEase, stackFallY:stackFallY, stackSquash:stackSquash, stackInputTime:stackInputTime, stackStreakFreq:stackStreakFreq,
       stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT } });
   /* ==== summitStack END ==== */
   /* ==== reachTimer BEGIN (T4: reachTimer* functions, .rt- CSS, gmRegister({id:"reachTimer", ...})) ==== */
