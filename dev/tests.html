@@ -1641,8 +1641,8 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(G.menuIds().join()==="chalkRhythm,routeRead,summitStack,reachTimer", "menu order/contents: "+G.menuIds().join());
     await click("openGamesBtn", 250);
     expect(visible("gmCard_chalkRhythm") && !$("gmCard_chalkRhythm").disabled, "Chalk Rhythm card");
-    expect(visible("gmCard_routeRead") && !$("gmCard_routeRead").disabled, "Route Read card should be playable");
-    ["summitStack", "reachTimer"].forEach(function(id){
+    ["routeRead", "summitStack", "reachTimer"].forEach(function(id){
+      if(!G.def(id).soon){ expect(visible("gmCard_"+id) && !$("gmCard_"+id).disabled, id+" card should be playable"); return; }
       var el = $("gmCard_"+id); expect(el && el.disabled && /Coming soon/.test(el.textContent), id+" stub card: "+(el && el.textContent));
     });
     expect(!D.getElementById("gmHopBtn") && !D.getElementById("gmCard_holdHop"), "a Hold Hop card is on the menu");
@@ -2120,6 +2120,183 @@ and the project rules. It runs on its own private copy of the data, never your r
     var missing = calls.filter(function(c){ return !/,\s*"[0-9a-f]{8,}/.test(c); }).map(function(c){ return c.match(/"([^"]+)"/)[1]; });
     if(missing.length) warn(missing.length+" image(s) would be broken if published now (upload them first):\n"+missing.join("\n"));
   });
+
+
+  // ---- summitStack tests ----
+  test("Games: Summit Stack rules are pure (ramp table, width floor, perfect, miss, slider, pose) and fair over 500 seeds", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, C = G.stackConst; expect(G.stackDrop && C, "summit stack hook missing");
+    // ramp table, exactly
+    var tab = { 1:2400, 4:2400, 5:2100, 9:2100, 10:1800, 14:1800, 15:1500, 16:1500, 40:1500 };
+    Object.keys(tab).forEach(function(n){ expect(G.stackCross(+n)===tab[n], "stackCross("+n+")="+G.stackCross(+n)); });
+    expect(C.base===320 && C.floor===96 && C.perfectPx===6 && Math.abs(C.regain-25.6)<1e-9 && C.roundMs===45000 && C.summit===20, "constants");
+    // drops
+    var d = G.stackDrop(1, 320, 0); expect(d.perfect && !d.miss && d.width===320 && d.shift===0, "perfect on full width caps at 100%");
+    d = G.stackDrop(8, 200, 3); expect(d.perfect && Math.abs(d.width-225.6)<1e-9, "perfect regains 8% of base: "+d.width);
+    d = G.stackDrop(8, 300, 5.9); expect(d.perfect && d.width===320, "perfect capped at base");
+    d = G.stackDrop(8, 200, 30); expect(!d.perfect && !d.miss && d.width===170 && d.shift===15 && d.over===30, "trim: "+JSON.stringify(d));
+    d = G.stackDrop(8, 200, -30); expect(d.width===170 && d.shift===-15, "trim to the left");
+    d = G.stackDrop(8, 100, 80); expect(d.width===96 && d.shift===40, "trim snaps to the 30% floor, not below: "+JSON.stringify(d));
+    d = G.stackDrop(8, 200, 200); expect(d.miss && d.width===0 && d.shift===0, "no overlap is a miss (tower unchanged)");
+    d = G.stackDrop(3, 320, 150); expect(!d.miss && d.width===320 && d.shift===0, "learn blocks are forgiven and stay 100%");
+    d = G.stackDrop(3, 320, 330); expect(d.miss, "learn block with no overlap still falls off");
+    expect(G.stackWidth(9, 150, 20)===130 && G.stackScore(7, 3)===10, "stackWidth / stackScore");
+    // slider: a deterministic triangle wave in -160..160, edge to edge in one crossing time
+    expect(Math.abs(G.stackPos(0, 1500, 0, 1)+160)<1e-9 && Math.abs(G.stackPos(1500, 1500, 0, 1)-160)<1e-9 && Math.abs(G.stackPos(3000, 1500, 0, 1)+160)<1e-9, "edge to edge");
+    expect(Math.abs(G.stackPos(0, 1500, 0, -1)-160)<1e-9 && G.stackPos(5, 2400, 0.3, 1)===G.stackPos(5, 2400, 0.3, 1), "side flips, deterministic");
+    // pose map
+    expect(G.stackPose(0, 3)==="jump" && G.stackPose(200, 3)==="land" && G.stackPose(400, 3)==="step" && G.stackPose(900, 3)==="idle" && G.stackPose(900, 20)==="flag", "pose map");
+    // property: 500 seeds of play. Width never below the floor, window >= 400 ms, a perfect is always reachable, no negative height.
+    var worst = 1e9, maxW = 0, minW = 1e9, unreachable = 0, perfectsOk = 0;
+    for(var s=1;s<=500;s++){
+      var rnd = G.mulberry32(s*7919), prevC = C.center, prevW = C.base, blocks = 0;
+      for(var n=1;n<=40;n++){
+        var cross = G.stackCross(n), side = rnd()<0.5 ? -1 : 1, ph = rnd();
+        // a perfect drop must exist inside one full period at 4 ms resolution (any phase)
+        var ok = false, T = 2*cross;
+        for(var t=0;t<T;t+=4){ if(Math.abs(C.center+G.stackPos(t, cross, ph, side)-prevC)<=C.perfectPx){ ok = true; break; } }
+        if(!ok) unreachable++; else perfectsOk++;
+        worst = Math.min(worst, G.stackWindowMs(n, prevW));
+        // the player drops at a random point of the slide (so most are imperfect)
+        var cx = C.center+G.stackPos(rnd()*T, cross, ph, side), r = G.stackDrop(n, prevW, cx-prevC);
+        if(r.miss){ expect(r.width===0, "miss has no width"); continue; }
+        expect(r.width>=C.floor-1e-9 && r.width<=C.base+1e-9, "seed "+s+" n "+n+" width "+r.width);
+        minW = Math.min(minW, r.width); maxW = Math.max(maxW, r.width);
+        prevC += r.shift; prevW = r.width; blocks++;
+        expect(prevC>=C.center-C.travel-1e-9 && prevC<=C.center+C.travel+1e-9, "target centre left the slider's range: "+prevC);
+      }
+    }
+    expect(unreachable===0, unreachable+" blocks had no perfect drop reachable");
+    expect(minW>=96-1e-9 && maxW<=320+1e-9, "width range "+minW+".."+maxW);
+    expect(worst>=400, "reaction window under 400 ms: "+worst);
+    // max difficulty for n in 1..40 at the floor width
+    for(var n2=1;n2<=40;n2++) expect(G.stackWindowMs(n2, C.floor)>=400-1e-9, "window at floor, block "+n2);
+    // a perfect run keeps the width at 100% for 40 blocks
+    var w = C.base; for(var i=0;i<40;i++){ w = G.stackDrop(i+1, w, 0).width; } expect(w===320, "a perfect run drifts: "+w);
+  });
+
+  test("Games: Summit Stack runs a round (tap anywhere, perfect drops score, climber on the tower, nothing else changes)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, xp0 = saved().xp, lv0 = saved().level;
+    await click("openGamesBtn", 250);
+    expect(!$("gmCard_summitStack").disabled && /Summit Stack/.test($("gmCard_summitStack").textContent), "Summit Stack card is still a stub");
+    await click("gmCard_summitStack", 200);
+    expect(/Summit Stack/.test($("gamesTitle").textContent) && visible("gmStartBtn"), "no intro");
+    await click("gmStartBtn", 150);
+    expect(visible("gmTap") && !!$("ssSlider") && qa("#gmClimber img").length>=1, "round didn't draw");
+    var g = G.current();
+    expect(g && g.id==="summitStack" && typeof g.seed==="number" && g.n===0, "round state");
+    // wait until the slider is over the tower centre, then tap anywhere (the whole stage is one button)
+    async function perfectTap(){
+      var C = G.stackConst;
+      for(var k=0;k<400;k++){
+        var gg = G.current(), c = C.center+G.stackPos(W.performance.now()-gg.blockT0, gg.cross, gg.ph, gg.side);
+        if(gg.phase==="slide" && Math.abs(c-gg.topC)<=2.5) break;
+        await wait(5);
+      }
+      $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true }));
+      await wait(260);
+    }
+    await perfectTap(); await perfectTap();
+    g = G.current();
+    expect(g.n===2 && g.perfects===2 && g.score===4, "two perfect drops: n "+g.n+" perfects "+g.perfects+" score "+g.score);
+    expect(+$("gmScore").textContent===4 && /Blocks 2/.test($("gmLine").textContent), "hud: "+$("gmScore").textContent+" / "+$("gmLine").textContent);
+    expect(/Perfect/.test($("ssLabel").textContent), "no Perfect label");
+    expect(qa("#ssTower .ss-blk").length===3, "tower should hold the ledge and 2 blocks: "+qa("#ssTower .ss-blk").length);
+    // a drop far off the tower is a miss: the tower and score stay, the next block comes
+    var C2 = G.stackConst, far = false;
+    for(var k2=0;k2<500;k2++){
+      var gq = G.current(), c2 = C2.center+G.stackPos(W.performance.now()-gq.blockT0, gq.cross, gq.ph, gq.side);
+      if(Math.abs(c2-gq.topC)>=gq.topW){ far = true; break; }
+      await wait(8);
+    }
+    if(far){
+      $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(220);
+      for(var k3=0;k3<40 && G.current().phase!=="slide";k3++) await wait(40);
+      g = G.current();
+      expect(g.n===2 && g.score===4 && g.taps===3 && g.phase==="slide", "a miss changed the tower: n "+g.n+" score "+g.score+" phase "+g.phase);
+    }
+    await click("closeGamesBtn", 250);
+    var s = saved().games.summitStack;
+    expect(s.plays===1 && s.best>=4 && s.tallest===2 && s.perfects===2, "saved: "+JSON.stringify(s));
+    expect(saved().xp===xp0 && saved().level===lv0, "XP or level changed");
+  });
+
+  test("Games: Summit Stack never records an untouched round, and rest hand-off closes it (score once), with no Again button late in rest", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:4 };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250); await click("gmCard_summitStack", 150); await click("gmStartBtn", 150);
+    await click("closeGamesBtn", 250);
+    expect(saved().games.summitStack.plays===0, "an untouched round counted");
+    // rest hand-off: one tap, then the rest ends under the game
+    await click("startSessionBtn", 300);
+    await click("startBtn", 4400);
+    expect(/REST/.test($("phaseLabel").textContent), "not resting");
+    await click("playRestBtn", 300);
+    await click("gmCard_summitStack", 150); await click("gmStartBtn", 150);
+    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(100);
+    var gotBack = false;
+    for(var k=0;k<60 && visible("gamesOverlay");k++){ await wait(100); if(/Back to work/.test($("gamesRestText").textContent)) gotBack = true; }
+    expect(gotBack && !visible("gamesOverlay"), "rest end didn't close the game");
+    expect(!D.getElementById("gmAgainBtn"), "an Again button was left");
+    expect(saved().games.summitStack.plays===1, "round not recorded exactly once: "+JSON.stringify(saved().games.summitStack));
+    await click("startBtn", 150);
+  });
+
+  test("Games: Summit Stack end screen is calm and has no Again button when rest has 10 s or less left", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:8 };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("startSessionBtn", 300); await click("startBtn", 4400);
+    await click("playRestBtn", 300);
+    await click("gmCard_summitStack", 150); await click("gmStartBtn", 150);
+    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(100);
+    G.current().t0 -= 45000; await wait(120);            // the round clock runs out
+    expect(/Nice stack/i.test($("gmStage").textContent), "end copy: "+$("gmStage").textContent.slice(0, 120));
+    expect(!D.getElementById("gmAgainBtn") && /Rest is almost over/.test($("gmStage").textContent), "prompt shown in the last 10 s of rest");
+    expect(!/lost|fail|game over/i.test($("gmStage").textContent), "harsh copy on the end screen");
+    for(var k=0;k<60 && visible("gamesOverlay");k++) await wait(100);
+    await click("startBtn", 150);
+  });
+
+  test("Games: Summit Stack pauses when hidden (clock and slider stand still) and resumes with the clock shifted", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    function hide(on){ Object.defineProperty(D, "hidden", { configurable:true, get:function(){ return on; } }); D.dispatchEvent(new W.Event("visibilitychange")); }
+    await click("openGamesBtn", 250); await click("gmCard_summitStack", 150); await click("gmStartBtn", 150);
+    await wait(700);
+    hide(true); await wait(60);
+    expect(G.paused() && visible("gmPaused"), "didn't pause");
+    var tr = $("ssSlider").style.transform, t0 = G.current().t0, b0 = G.current().blockT0;
+    await wait(500);
+    expect($("ssSlider").style.transform===tr, "the slider moved while paused");
+    hide(false); await click("gmPaused", 150);
+    expect(!G.paused() && G.current().t0>t0+400 && G.current().blockT0>b0+400, "clock not shifted: "+(G.current().t0-t0));
+    await wait(120);
+    expect($("ssSlider").style.transform!==tr, "the slider didn't move after resume");
+    hide(true); await wait(40); await click("closeGamesBtn", 250); hide(false);
+    expect(saved().games.summitStack.plays===0, "a paused, untouched round recorded something");
+  });
+
+  test("Games: Summit Stack sound off means no beeps from a drop", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.settings.gameSound = false;
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, n0 = G.beepCount();
+    await click("openGamesBtn", 250); await click("gmCard_summitStack", 150); await click("gmStartBtn", 150);
+    var C = G.stackConst;
+    for(var k=0;k<400;k++){
+      var gg = G.current(), c = C.center+G.stackPos(W.performance.now()-gg.blockT0, gg.cross, gg.ph, gg.side);
+      if(Math.abs(c-gg.topC)<=2.5) break; await wait(5);
+    }
+    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(320);
+    expect(G.current().n===1 && G.beepCount()===n0, "a beep played with sound off ("+(G.beepCount()-n0)+")");
+    await click("closeGamesBtn", 250);
+  });
+  // ---- end summitStack tests ----
 
   /* ---------- runner ---------- */
   var running = false;
