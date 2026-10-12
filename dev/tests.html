@@ -1903,6 +1903,38 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("startBtn", 150);
   });
   // ---- end routeRead tests ----
+  // ---- routeRead polish tests ----
+  test("Games: Route Read polish helpers are pure (lift, summary, tone, bar)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed);
+    var G = W.__cruxGames; expect(G && G.routeLift && G.routeSummary, "polish hooks missing");
+    expect(G.routeLift(0)===0 && G.routeLift(4)===40 && G.routeLift(99)===40 && G.routeLift(-3)===0 && G.routeLift("x")===0, "lift isn't clamped");
+    expect(G.routeSummary(0, 0).title==="Warm-up done." && G.routeSummary(1, 5).note==="1 route · longest 5" && G.routeSummary(3, 7).note==="3 routes · longest 7" && G.routeSummary(3, 7).title==="Good reading.", "summary wording");
+    expect(G.routeTone(1)<G.routeTone(2) && G.routeTone(8)<=900 && G.routeTone(0)>=500 && G.routeTone(50)===G.routeTone(8), "tick tones should rise gently and stay soft");
+    expect(G.routeBarScale(0, 0, 3000)===1 && G.routeBarScale(1500, 0, 3000)===0.5 && G.routeBarScale(9000, 0, 3000)===0 && G.routeBarScale(5, 0, 0)===0, "show bar scale");
+  });
+
+  test("Games: Route Read answers a real pointerdown (no click needed), fades numbers out, and a late-landing tap isn't lost", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250); await click("gmCard_routeRead", 150); await click("gmStartBtn", 150);
+    var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
+    expect(D.querySelectorAll(".rr-pip").length===5 && getComputedStyle(cell(g.route[0])).touchAction==="manipulation", "pips / touch-action missing");
+    expect(g.route.every(function(h){ return cell(h).classList.contains("rr-lit"); }) && $("rrWall").classList.contains("rr-showing"), "route holds not marked lit");
+    await wait(3050);
+    expect(g.phase==="input" && !$("rrWall").classList.contains("rr-showing"), "didn't enter input");
+    await wait(260);
+    expect(!Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers left behind after the fade");
+    var h = g.route[0], el = cell(h), r = el.getBoundingClientRect();
+    el.dispatchEvent(new W.PointerEvent("pointerdown", { bubbles:true, button:0, clientX:r.left+5, clientY:r.top+5 }));
+    expect(g.step===1 && el.getAttribute("data-state")==="tapped" && D.querySelectorAll(".rr-pip.on").length===1, "pointerdown didn't register straight away");
+    el.click();    // the click that follows a real touch carries detail>0; a bare .click() has detail 0 and is a keyboard-style activation
+    el.dispatchEvent(new W.MouseEvent("click", { bubbles:true, detail:1 }));
+    expect(g.step===1, "the click after a pointerdown was counted twice");
+    await click("closeGamesBtn", 250);
+  });
+  // ---- end routeRead polish tests ----
 
   // ---- chalkRhythm tests ----
   test("Chalk Rhythm: tempo phases, beat grid and the three timing windows (pure rules)", async function(){

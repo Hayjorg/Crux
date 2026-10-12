@@ -869,23 +869,44 @@
   .cr-j-close{width:10px;height:10px;border:2px solid var(--text-dim);margin:0 3px;}
   /* ==== .cr- Chalk Rhythm CSS END ==== */
   /* .rr- Route Read */
-  .rr-stage{position:absolute;inset:0;}
-  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;}
-  .rr-label{position:absolute;left:8px;top:12px;width:88px;margin:0;font-size:12.5px;font-weight:700;line-height:1.3;color:var(--text-dim);}
+  .rr-stage{position:absolute;inset:0;--rr-lift:0;}
+  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;translate:0 calc(var(--rr-lift)*-1px);transition:translate .38s cubic-bezier(.2,.8,.3,1);}
+  .rr-climber.rr-swap{animation:rr-swap .16s ease-out;}
+  @keyframes rr-swap{from{opacity:0.65;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
+  .rr-label{position:absolute;left:8px;top:12px;width:88px;min-height:34px;margin:0;font-size:13px;font-weight:700;line-height:1.3;color:var(--text);}
+  .rr-pips{position:absolute;left:8px;top:62px;width:84px;display:flex;flex-wrap:wrap;gap:5px;}
+  .rr-pip{width:11px;height:11px;box-sizing:border-box;border-radius:50%;border:2px solid var(--text-dim);background:transparent;transition:background .15s ease, border-color .15s ease;}
+  .rr-pip.on{background:var(--send);border-color:var(--send);}
   .rr-wall{position:absolute;right:8px;top:16px;width:192px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:64px;border-radius:14px;background:color-mix(in srgb, var(--text) 5%, transparent);}
-  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);}
+  .rr-bar{position:absolute;right:8px;bottom:6px;width:192px;height:5px;border-radius:3px;background:color-mix(in srgb, var(--text) 10%, transparent);overflow:hidden;opacity:0;transition:opacity .15s ease;}
+  .rr-bar.on{opacity:1;}
+  .rr-bar i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:0 50%;transform:scaleX(1);}
+  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
   .rr-cell:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:12px;}
-  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .12s ease;}
-  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .12s ease;border-color:var(--send);}
+  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .2s ease, transform .2s ease, box-shadow .2s ease;}
+  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .15s ease;border-color:var(--text);}
   .rr-cell[data-state="tapped"] .rr-ring{opacity:1;}
-  .rr-cell.rr-lit .gm-art-circle{box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 40%, transparent);}
-  .rr-badge{grid-area:1/1;z-index:1;min-width:26px;height:26px;border-radius:13px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
-    font-family:"Bebas Neue",sans-serif;font-size:19px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;}
-  .rr-badge:empty{display:none;}
-  .rr-cell[data-state="wrong"] .rr-badge{display:grid;}
+  .rr-cell[data-state="tapped"] .gm-art-circle{opacity:1;}
+  .rr-wall.rr-showing .rr-cell:not(.rr-lit) .gm-art-circle{opacity:0.28;transform:scale(0.86);}
+  .rr-wall.rr-showing .rr-cell.rr-lit .gm-art-circle{opacity:1;transform:scale(1.04);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 38%, transparent);}
+  .rr-badge{grid-area:1/1;z-index:1;min-width:28px;height:28px;border-radius:14px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
+    font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;opacity:0;transform:scale(0.7);transition:opacity .18s ease, transform .18s ease;}
+  .rr-wall.rr-showing .rr-badge{opacity:1;transform:scale(1);transition-delay:calc(var(--i, 0)*55ms);}
+  .rr-cell:not([data-state="wrong"]) .rr-badge:empty{opacity:0;}
+  .rr-cell[data-state="tapped"]::after{content:"\2713";position:absolute;z-index:2;right:10px;top:8px;width:18px;height:18px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;line-height:1;color:var(--bg, #fff);background:var(--send);pointer-events:none;}
+  .rr-cell[data-state="wrong"] .rr-badge{display:grid;opacity:1;transform:scale(1);}
   .rr-cell[data-state="wrong"] .rr-badge::before{content:"\00D7";}
   .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .gm-art{animation:rr-wob .32s ease;}
-  @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+  @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  .rr-spark{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;pointer-events:none;opacity:0;color:var(--accent);
+    box-shadow:0 -25px 0 0 currentColor, 18px -18px 0 0 currentColor, 25px 0 0 0 currentColor, 18px 18px 0 0 currentColor, 0 25px 0 0 currentColor, -18px 18px 0 0 currentColor, -25px 0 0 0 currentColor, -18px -18px 0 0 currentColor;}
+  .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-spark{animation:rr-spark .42s ease-out;}
+  .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-ring{animation:rr-ring .3s ease-out;}
+  @keyframes rr-spark{0%{opacity:0.95;transform:scale(0.35);}100%{opacity:0;transform:scale(1.15);}}
+  @keyframes rr-ring{0%{transform:scale(0.8);}60%{transform:scale(1.18);}100%{transform:scale(1);}}
+  .rr-stage.rr-calm .rr-climber{transition:none;}
+  .rr-stage.rr-calm .rr-cell .gm-art, .rr-stage.rr-calm .rr-badge, .rr-stage.rr-calm .rr-ring{transition-duration:.1s;}
+  .rr-stage.rr-calm .rr-wall.rr-showing .rr-badge{transition-delay:0s;}
   /* summitStack (.ss-) */
   .ss-world{position:absolute;top:0;transform-origin:0 0;pointer-events:none;}
   .ss-cam{position:absolute;inset:0;transition:transform .28s ease;will-change:transform;}
@@ -7769,61 +7790,113 @@
     return route[n-1].row>=3;
   }
 
+  // Pure helpers for the polish pass (tested through __cruxGames).
+  function routeLift(row){ return Math.max(0, Math.min(RR_ROWS-1, Math.floor(Number(row)||0)))*10; }     // px the climber eases up with the last hold
+  function routeSummary(done, longest){
+    done = Math.max(0, Math.floor(Number(done))||0); longest = Math.max(0, Math.floor(Number(longest))||0);
+    if(!done) return { title:"Warm-up done.", note:"No routes yet, they come back easy" };
+    return { title:"Good reading.", note:done+(done===1 ? " route" : " routes")+" · longest "+longest };
+  }
+  function routeTone(step){ return 500+40*Math.max(0, Math.min(RR_MAX, Math.floor(Number(step))||0)); }    // soft rising tick per hold
+  function routeBarScale(t, start, ms){ return ms>0 ? Math.max(0, Math.min(1, 1-(t-start)/ms)) : 0; }
+
   function routeReadStart(){
     var f = gmFrames(); gmPreload(f);
     var stage = gmEl("gmStage");
     stage.innerHTML = '<div class="rr-stage'+(prefersReducedMotion ? ' rr-calm' : '')+'" id="rrStage">'
       + '<div class="gm-climber rr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
-      + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p>'
-      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div></div>';
+      + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p><div class="rr-pips" id="rrPips" aria-hidden="true"></div>'
+      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div>'
+      + '<div class="rr-bar" id="rrBar" aria-hidden="true"><i id="rrBarFill"></i></div></div>';
     var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
-    var wall = gmEl("rrWall"), cells = {};
+    var wall = gmEl("rrWall"), cells = {}, rrStage = gmEl("rrStage"), climber = gmEl("gmClimber"), bar = gmEl("rrBar"), barFill = gmEl("rrBarFill"), pips = gmEl("rrPips");
     for(var r=RR_ROWS-1;r>=0;r--) for(var c=0;c<RR_COLS;c++){
       var b = document.createElement("button"); b.type = "button"; b.className = "rr-cell"; b.id = "rrCell_"+r+"_"+c;
       b.setAttribute("data-row", r); b.setAttribute("data-col", c);
       b.setAttribute("aria-label", "Hold, row "+(r+1)+", column "+(c+1));
       b.appendChild(gmArt("rr.hold"));
       var ring = gmArt("rr.ring"); ring.classList.add("rr-ring"); b.appendChild(ring);
+      var spark = document.createElement("span"); spark.className = "rr-spark"; spark.setAttribute("aria-hidden", "true"); b.appendChild(spark);
       var badge = document.createElement("span"); badge.className = "rr-badge"; badge.setAttribute("aria-hidden", "true"); b.appendChild(badge);
       wall.appendChild(b); cells[r+","+c] = b;
     }
-    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false });
+    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, phaseStart:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false, paintId:0 });
     var bestBefore = state.games.routeRead ? state.games.routeRead.best : 0;
-    function pose(src){ gmSetSrc(img, src); }
+    var firstEver = !(state.games.routeRead && state.games.routeRead.plays>0);
+    function pose(src){
+      if(img.getAttribute("src")===src) return;
+      gmSetSrc(img, src);
+      if(!prefersReducedMotion){ climber.classList.remove("rr-swap"); void climber.offsetWidth; climber.classList.add("rr-swap"); }
+    }
+    function lift(row){ rrStage.style.setProperty("--rr-lift", prefersReducedMotion ? 0 : routeLift(row)); }
     function lineText(){ return "Route of "+g.N+" · Best "+Math.max(bestBefore, g.score); }
     function paint(showNums){
-      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.querySelector(".rr-badge").textContent = ""; el.classList.remove("rr-lit"); }
-      if(!showNums) return;
-      g.route.forEach(function(h, i){ var el = cells[h.row+","+h.col]; el.classList.add("rr-lit"); el.querySelector(".rr-badge").textContent = String(i+1); });
+      var id = ++g.paintId;
+      wall.classList.toggle("rr-showing", !!showNums);
+      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.classList.remove("rr-lit", "rr-pop"); if(showNums) el.querySelector(".rr-badge").textContent = ""; }
+      if(showNums){
+        g.route.forEach(function(h, i){
+          var el = cells[h.row+","+h.col], bd = el.querySelector(".rr-badge");
+          el.classList.add("rr-lit"); bd.style.setProperty("--i", i); bd.textContent = String(i+1);
+        });
+      } else {
+        // numbers fade out (CSS), then the text goes so nothing readable is left behind
+        gmLater(function(){
+          if(gm!==g || g.paintId!==id) return;
+          for(var k2 in cells) cells[k2].querySelector(".rr-badge").textContent = "";
+        }, prefersReducedMotion ? 110 : 190);
+      }
     }
     function label(txt){ gmEl("rrLabel").textContent = txt; }
+    function drawPips(){
+      var h = "", i;
+      for(i=0;i<g.N;i++) h += '<span class="rr-pip'+(i<g.step ? ' on' : '')+'"></span>';
+      pips.innerHTML = h;
+    }
+    function pipsTo(n){ var p = pips.children; for(var i=0;i<p.length;i++) p[i].classList.toggle("on", i<n); }
+    function barOn(on){ bar.classList.toggle("on", !!on); }
     function beginShow(t){
-      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseEnd = t+routeShowMs(g.N);
-      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]);
-      gmHud(g.score, lineText()); gmSay("Memorise the route. "+g.N+" holds, numbered in order.");
+      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseStart = t; g.phaseEnd = t+routeShowMs(g.N);
+      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]); lift(0); drawPips(); barOn(true);
+      gmHud(g.score, lineText());
+      gmSay(firstEver && g.done===0 ? "Watch the numbers. They fade, then tap 1, 2, 3 in order." : "Memorise the route. "+g.N+" holds, numbered in order.");
     }
     function beginInput(){
-      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]);
+      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false);
       gmSay("Your turn. Tap the holds in order, 1 of "+g.N+".");
     }
     function reachFor(h){ return h.col===0 ? g.frames.reachL : h.col===RR_COLS-1 ? g.frames.reachR : g.frames.pull; }
-    function tap(cell){
-      if(gm!==g || g.paused || g.phase!=="input") return;
+    // Phase changes happen here, from the frame loop AND from a tap, so a tap that lands a few ms after a deadline is never lost.
+    function advance(t){
+      if(t<g.phaseEnd) return;
+      if(g.phase==="show") beginInput();
+      else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false); pipsTo(0); gmSay("Try again from the start."); }
+      else if(g.phase==="between") beginShow(t);
+    }
+    function tap(cell, ts){
+      if(gm!==g || g.paused) return;
+      var now = performance.now();
+      if(!(ts>0 && ts<=now+5)) ts = now;                  // pointer timestamps share performance.now()'s clock; fall back if not
+      var t = ts-g.t0;
+      advance(t);
+      if(g.phase!=="input") return;
       var row = +cell.getAttribute("data-row"), col = +cell.getAttribute("data-col");
       if(cell.getAttribute("data-state")==="tapped") return;
       g.actions++;
-      var t = performance.now()-g.t0, want = g.route[g.step];
+      var want = g.route[g.step];
       if(want.row===row && want.col===col){
         cell.setAttribute("data-state", "tapped");
         cell.querySelector(".rr-badge").textContent = "";
-        g.step++;
-        gmBeep(600, 40, 0.06);
+        cell.classList.remove("rr-pop"); void cell.offsetWidth; cell.classList.add("rr-pop");
+        g.step++; pipsTo(g.step);
+        gmBeep(routeTone(g.step), 45, 0.06); gmBuzz(8);
+        lift(row);
         if(g.step>=g.N){
           g.score += g.N; g.done++; if(g.N>g.longest) g.longest = g.N;
           var wasMax = g.N===RR_MAX;
           g.N = routeNextLen(g.N, g.missed); g.missed = false;
           g.phase = "between"; g.phaseEnd = t+(wasMax ? RR_FLAG_MS : RR_BETWEEN_MS); g.flag = wasMax;
-          pose(wasMax ? g.frames.flag[0] : g.frames.pull);
+          pose(wasMax ? g.frames.flag[0] : g.frames.cheer[0]);
           label(wasMax ? "Top of the route." : "Nice. Next route.");
           gmHud(g.score, lineText()); gmSay("Route complete. "+g.score+" points.");
           [440, 554, 659].forEach(function(fq, i){ gmLater(function(){ gmBeep(fq, 80, 0.1); }, i*90); });
@@ -7834,31 +7907,40 @@
       } else {
         cell.setAttribute("data-state", "wrong");
         g.missed = true;
-        g.phase = "reshow"; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
+        g.phase = "reshow"; g.phaseStart = t; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
         gmSay("That was close, here it is.");
-        label("That was close, here it is");
-        pose(g.frames.hit);
+        label("Look again");
+        pose(g.frames.hit); lift(0);
+        gmBeep(262, 90, 0.05);
         // the route re-shows with numbers; the wrong hold keeps its X until then
         var wrong = cell;
-        paint(true); wrong.setAttribute("data-state", "wrong");
+        paint(true); wrong.setAttribute("data-state", "wrong"); pipsTo(0); barOn(true);
       }
     }
-    wall.addEventListener("click", function(e){ var b = e.target.closest ? e.target.closest(".rr-cell") : null; if(b) tap(b); });
+    // pointerdown for an instant response; a click with no pointer (keyboard, assistive tech, .click()) still works.
+    wall.addEventListener("pointerdown", function(e){
+      if(e.button>0) return;
+      var b = e.target.closest ? e.target.closest(".rr-cell") : null;
+      if(b){ g.lastDown = performance.now(); tap(b, e.timeStamp); }
+    });
+    wall.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".rr-cell") : null;
+      if(!b) return;
+      if(e.detail>0 && g.lastDown && performance.now()-g.lastDown<900) return;   // already handled on pointerdown
+      tap(b, performance.now());
+    });
     function frame(){
       if(gm!==g || g.paused) return;
       var t = performance.now()-g.t0;
       if(t>=RR_ROUND_MS){
-        var res = { actions:g.actions, extra:{ longest:g.longest } }, was = g.actions>=1 && g.score>bestBefore, fr = g.frames;
-        gmOver("routeRead", g.score, { title:"Good reading.", note:"Longest route "+g.longest, actions:res.actions, extra:res.extra });
+        var sum = routeSummary(g.done, g.longest), was = g.actions>=1 && g.score>bestBefore, fr = g.frames;
+        gmOver("routeRead", g.score, { title:sum.title, note:sum.note, actions:g.actions, extra:{ longest:g.longest } });
         if(!was){ var ci = gmEl("gmClimberImg"); if(ci) gmSetSrc(ci, fr.ledgeSit); }
         return;
       }
-      if(t>=g.phaseEnd){
-        if(g.phase==="show") beginInput();
-        else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); gmSay("Try again from the start."); }
-        else if(g.phase==="between") beginShow(t);
-      }
+      advance(t);
       if(g.phase==="between" && g.flag) pose(g.frames.flag[Math.floor(t/600)%g.frames.flag.length]);
+      if(g.phase==="show" || g.phase==="reshow") barFill.style.transform = "scaleX("+routeBarScale(t, g.phaseStart, g.phaseEnd-g.phaseStart).toFixed(3)+")";
       var sec = Math.max(0, Math.ceil((RR_ROUND_MS-t)/1000));
       if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
       gmRaf = requestAnimationFrame(frame);
@@ -7872,7 +7954,7 @@
   gmRegister({
     id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>',
-    intro:{ title:"Read, then climb", text:"A route lights up with numbers. They hide. Tap the holds in order from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
+    intro:{ title:"Read, then climb", text:"Numbered holds light up, then fade. Tap them in order, 1, 2, 3, from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
     hud0:function(best){ return "Route of 5 · Best "+best; },
     art:["rr.hold", "rr.ring", "card.routeRead"], frames:["idle", "reachL", "reachR", "pull", "hit", "cheer", "ledgeSit", "flag"],
     start:function(){ routeReadStart(); },
@@ -7881,6 +7963,7 @@
     resume:function(){ if(gm && gm.frame && !gmRaf) gmRaf = requestAnimationFrame(gm.frame); }
   });
   if(window.__cruxTest) Object.assign(window.__cruxGames, { routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
+    routeLift:routeLift, routeSummary:routeSummary, routeTone:routeTone, routeBarScale:routeBarScale,
     routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, reshowMs:RR_RESHOW_MS } });
   /* ==== routeRead END ==== */
   /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
