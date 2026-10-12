@@ -114,6 +114,25 @@ Same neutral-grey delta-layer + `tint:{color}` method as the hats above (`OUTFIT
 - **Art** in `assets/outfit/{bucket,headlamp,beret,shirt,shorts}/` (web copies from `dev/outfit/out/{hats_more,shirt_shorts}_assets`); `build-site.ps1` covers `assets/outfit/**`.
 - **Blob ids** for all five folders are empty in `OUTFIT_BLOB` until Claude uploads them (rule 2).
 
+## Games: Play (2026-10-11)
+
+A small, optional play area for rest times, using the player's own climber. Removable: delete the `GAMES` blocks in `crux.html`
+(CSS, `#gamesOverlay`, the dock's `#openGamesBtn`, the timer card's `#playRestBtn`, the JS block, the `// GAMES hook` line in `renderTimer`,
+`gamesNormalize`/`state.games`) and the "Games:" tests.
+- **Entry points:** "Play" on the Home dock (next to Customize), and "Play while you rest" in the session's timer card, shown only while
+  `timer.phase==="rest"`. The bottom bar stays Home / Train / The Wall.
+- **It is a sheet, not a view:** `#gamesOverlay` sits over whatever is on screen, so the session timer, its beeps and the wake lock keep
+  running untouched. Opened from the rest button, it shows the rest clock, and when rest ends it stops the round (the score still counts),
+  says "Back to work" and closes itself. A hidden page also stops the round.
+- **Games:** Chalk Up (breathing ring, tap on the beat, 15 beats / 45 s, score = best streak) and Hold Hop (tap left/right to reach the next
+  hold, rocks fall down the lanes, 3 grips, 60 s, speed ramps, score = holds).
+- **Art:** existing frames only, always through `climberFrame()` and `outfitFollow()` (so variant, outfit layers and skip lists work);
+  no new images. Holds and rocks are CSS.
+- **Saved data:** only `state.games = { chalkUp:{best,plays}, holdHop:{best,plays} }`, normalised by `gamesNormalize()` in `normalizeState()`.
+  Games never write XP, levels, streaks, holds, sessions or attempts, and give no rewards. Rules are pure functions (`chalk*`, `hop*`,
+  `gamesRecord`), tested through `window.__cruxGames` (only with `window.__cruxTest`).
+- **Reduced motion:** the ring steps in quarters, rocks fall slower and transitions are off. Nothing flashes.
+
 ## Projects (climb tracking)
 
 A project is **one named climb at one gym or crag**, and attempts link to it by `projectId`.
