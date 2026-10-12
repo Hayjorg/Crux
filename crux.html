@@ -802,6 +802,21 @@
   .gm-hold-0{left:calc(27% - 19px);} .gm-hold-1{left:calc(73% - 19px);}
   .gm-rock{position:absolute;top:-10%;width:30px;height:28px;border-radius:46% 54% 50% 50%;background:#6c6760;border:2px solid #38342f;}
   .gm-rock-0{left:calc(27% - 15px);} .gm-rock-1{left:calc(73% - 15px);}
+  .gm-cards{display:grid;gap:10px;}
+  .gm-card[disabled]{opacity:0.55;cursor:default;}
+  .gm-card[disabled]:active{transform:none;}
+  .gm-card-ic img{width:26px;height:26px;object-fit:contain;}
+  .gm-sound{border-bottom:none;padding-bottom:0;}
+  .gm-paused{position:absolute;inset:0;z-index:5;display:grid;place-items:center;border:0;padding:18px;cursor:pointer;
+    font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:0.03em;color:var(--text);background:color-mix(in srgb, var(--surface) 88%, transparent);}
+  .gm-paused:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
+  .gm-art{display:inline-block;box-sizing:border-box;vertical-align:middle;}
+  .gm-art-rect{background:var(--accent);border-radius:var(--radius-sm, 8px);box-shadow:0 2px 0 color-mix(in srgb, var(--accent) 60%, #000);}
+  .gm-art-circle{background:var(--accent);border-radius:50%;}
+  .gm-art-ring{border:3px solid var(--accent);border-radius:50%;background:transparent;}
+  .gm-art-flag{background:var(--send);border-radius:4px 14px 14px 4px;}
+  .gm-art-img{object-fit:contain;}
+  /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
     .gm-card:active{transform:none;}
@@ -1778,14 +1793,11 @@
       <b id="gamesRestClock"></b>
     </div>
     <div class="gm-menu" id="gamesMenu">
-      <button type="button" class="gm-card" id="gmChalkBtn">
-        <span class="gm-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg></span>
-        <span class="gm-card-main"><span class="gm-card-title">Chalk Up</span><span class="gm-card-sub">Breathe with the ring and tap on the beat. Calm, good for rest.</span><span class="gm-card-best" id="gmChalkBest"></span></span>
-      </button>
-      <button type="button" class="gm-card" id="gmHopBtn">
-        <span class="gm-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg></span>
-        <span class="gm-card-main"><span class="gm-card-title">Hold Hop</span><span class="gm-card-sub">Tap left or right to climb up the holds and dodge falling rocks.</span><span class="gm-card-best" id="gmHopBest"></span></span>
-      </button>
+      <div class="gm-cards" id="gmCards"></div>
+      <div class="switch-row gm-sound">
+        <div><div class="switch-label">Game sounds</div><div class="switch-desc">Soft ticks, never over the timer beeps</div></div>
+        <button type="button" class="switch" id="gmSoundSwitch" aria-pressed="true" aria-label="Game sounds"><span class="switch-thumb"></span></button>
+      </div>
       <p class="gm-note">Just for fun. Games never change your XP, level, streak or Wall.</p>
     </div>
     <div class="gm-play" id="gamesPlay" hidden>
@@ -2527,7 +2539,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"" }, // devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true }, // gameSound: soft Play sounds; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -2554,19 +2566,34 @@
       // already watched your climber reach (null until you first open The Wall).
       restDays:[], wallSeen:null,
       // GAMES (Play): only a best score and a play count per game. Never touches XP, levels, streaks or holds.
-      games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 } },
+      games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 }, chalkRhythm:{ best:0, plays:0, perfectBest:0 },
+              routeRead:{ best:0, plays:0, longest:0 }, summitStack:{ best:0, plays:0, tallest:0, perfects:0 }, reachTimer:{ best:0, plays:0, bestStreak:0 },
+              _meta:{ playDays:[], chalkMigrated:false } },
       activeSessionId:null
     };
   }
 
   // Older saves and backups have no `games`; anything malformed becomes zeros. Unknown games/keys are kept.
+  // Per-game extra numeric fields and their caps; best is capped at 9999 and plays at 999999 for every game.
+  var GAMES_FIELDS = {
+    chalkUp:{}, holdHop:{},                     // legacy: preserved (holdHop is no longer on the menu)
+    chalkRhythm:{ perfectBest:9999 }, routeRead:{ longest:9999 },
+    summitStack:{ tallest:9999, perfects:999999 }, reachTimer:{ bestStreak:9999 }
+  };
+  function gamesClamp(v, max){ var n = Math.floor(Number(v)); return isFinite(n) && n>0 ? Math.min(n, max) : 0; }
   function gamesNormalize(g){
     var src = g && typeof g==="object" && !Array.isArray(g) ? g : {}, out = Object.assign({}, src);
-    ["chalkUp", "holdHop"].forEach(function(id){
-      var r = src[id] && typeof src[id]==="object" ? src[id] : {};
-      var b = Math.floor(Number(r.best)), p = Math.floor(Number(r.plays));
-      out[id] = Object.assign({}, r, { best:isFinite(b) && b>0 ? Math.min(b, 9999) : 0, plays:isFinite(p) && p>0 ? Math.min(p, 999999) : 0 });
+    Object.keys(GAMES_FIELDS).forEach(function(id){
+      var r = src[id] && typeof src[id]==="object" && !Array.isArray(src[id]) ? src[id] : {};
+      var o = Object.assign({}, r, { best:gamesClamp(r.best, 9999), plays:gamesClamp(r.plays, 999999) });
+      Object.keys(GAMES_FIELDS[id]).forEach(function(k){ o[k] = gamesClamp(r[k], GAMES_FIELDS[id][k]); });
+      out[id] = o;
     });
+    var meta = src._meta && typeof src._meta==="object" && !Array.isArray(src._meta) ? src._meta : {};
+    var m = Object.assign({}, meta, { playDays:Array.isArray(meta.playDays) ? meta.playDays.slice(0, 400) : [], chalkMigrated:!!meta.chalkMigrated });
+    // Chalk Up's best moves to Chalk Rhythm exactly once (best only, plays reset); the chalkUp key stays.
+    if(!m.chalkMigrated){ out.chalkRhythm.best = Math.max(out.chalkRhythm.best, out.chalkUp.best); m.chalkMigrated = true; }
+    out._meta = m;
     return out;
   }
 
@@ -3288,7 +3315,9 @@
     if(audioCtx && audioCtx.state==="suspended" && audioCtx.resume){ audioCtx.resume().catch(function(){}); }
     return audioCtx;
   }
-  function beep(freq, dur, vol){
+  var lastTimerBeepAt = 0;   // when a non-game beep last started: game sounds stay clear of it (see gmSoundOk)
+  function beep(freq, dur, vol, fromGame){
+    if(!fromGame) lastTimerBeepAt = Date.now();
     var ctx = ensureAudio();
     if(!ctx) return;
     try{
@@ -3782,7 +3811,8 @@
     state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ xp += a.xp; while(xp>=xpForLevel(level)){ xp -= xpForLevel(level); level++; } }); });
     return level; // order doesn't matter for a plain XP total
   }
-  // A short phone vibration for unlock moments only (Android; iPhones ignore it). Never for plain logging.
+  // A short phone vibration (Android; iPhones ignore it): confirms a tap without looking, marks unlock moments.
+  // The one buzz() in the app; it does nothing under reduced motion or where vibration isn't supported.
   function buzz(pattern){ try{ if(navigator.vibrate && !prefersReducedMotion) navigator.vibrate(pattern); }catch(e){} }
   // ---- celebration card: one at a time, queued behind whatever is already open ----
   var celebrations = [], celebrationOpen = false;
@@ -5171,9 +5201,7 @@
 
   function clearToasts(){ var st = document.getElementById("toastStack"); if(st) st.innerHTML = ""; }
 
-  // A short buzz confirms a tap without looking - useful with chalky hands, and when the phone
-  // is on the mat and a timer beep might be muted. Does nothing where vibration isn't supported.
-  function buzz(pattern){ try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){} }
+  // (buzz() lives with the celebrations below: one definition, skipped under reduced motion.)
 
   // Undo the most recent log straight from its confirmation - mis-taps happen between burns.
   function undoAttempt(id){
@@ -7027,11 +7055,35 @@
 
   document.querySelectorAll("img[data-ui]").forEach(function(im){ im.src = IMG.ui[im.dataset.ui]; });
 
-  /* ==== GAMES (Play: Chalk Up + Hold Hop; removable, see AGENTS.md "Games") ==== */
-  // Two tiny offline games for rest times. They draw the player's own climber (variant + outfit) from existing frames
-  // only, and keep just a best score and a play count in state.games. They never touch XP, levels, streaks or holds.
-  var CHALK_CYCLE_MS = 3000, CHALK_BEATS = 15, HOP_LIVES = 3, HOP_TIME_MS = 60000;
-  // -- pure rules (also exposed to dev/tests.html) --
+  /* ==== GAMES (Play: registry shell + games; removable, see AGENTS.md "Games") ==== */
+  // Tiny offline games for rest times. They draw the player's own climber (variant + outfit) from existing frames
+  // only, and keep a best score and a play count per game in state.games. They never touch XP, levels, streaks or holds.
+  // This SHELL (registry, art slots, sound, pause, seeded RNG, recording, menu, rest hand-off) belongs to T0.
+  // Each game lives in its own region further down and registers itself with gmRegister(); see docs/GAMES-DESIGN.md.
+  var CHALK_CYCLE_MS = 3000, CHALK_BEATS = 15;
+
+  /*GAMES-PURE-BEGIN*/
+  // mulberry32: the one seeded RNG for every game (and for tests). Same seed, same sequence.
+  function mulberry32(seed){ var a = seed>>>0; return function(){ a = (a+0x6D2B79F5)>>>0; var t = a; t = Math.imul(t ^ (t>>>15), t|1); t ^= t + Math.imul(t ^ (t>>>7), t|61); return ((t ^ (t>>>14))>>>0)/4294967296; }; }
+  function gmHash(str){ var h = 0x811C9DC5; str = String(str); for(var i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h>>>0; }   // FNV-1a
+  function gmSeedFor(id, now){ return (((now==null ? Date.now() : now) ^ gmHash(id))>>>0); }
+  // Best-score rule (design doc 4.7): a round counts (plays+1, best candidate) only if it had >= 1 player action.
+  // Score 0 with an action counts as a play and leaves best alone. Extras (longest, tallest, ...) merge with Math.max.
+  function recordRound(games, id, res){
+    var g = gamesNormalize(games), r = res || {};
+    var score = Math.max(0, Math.floor(Number(r.score))||0), actions = Math.max(0, Math.floor(Number(r.actions))||0);
+    var c = g[id] || { best:0, plays:0 };
+    if(actions<1) return { games:g, counted:false, newBest:false, best:c.best };
+    var next = Object.assign({}, c, { best:Math.min(Math.max(c.best, score), 9999), plays:Math.min(c.plays+1, 999999) });
+    var ex = r.extra && typeof r.extra==="object" ? r.extra : {};
+    Object.keys(ex).forEach(function(k){
+      var v = Math.floor(Number(ex[k])); if(!isFinite(v) || v<0) return;
+      next[k] = Math.max(Math.floor(Number(c[k]))||0, Math.min(v, 999999));
+    });
+    g[id] = next;
+    return { games:g, counted:true, newBest:score>c.best, best:next.best };
+  }
+  // Legacy Chalk Up rules (T1 replaces these with Chalk Rhythm).
   function chalkBeatMs(k){ return CHALK_CYCLE_MS/2 + k*CHALK_CYCLE_MS; }   // the ring meets its outline at the top of each breath
   function chalkRate(errMs){ var e = Math.abs(errMs); return e<=130 ? "perfect" : e<=260 ? "good" : "miss"; }
   function chalkRun(ratings){
@@ -7042,47 +7094,144 @@
     return { streak:cur, best:best, hits:hits, perfects:perfects };
   }
   function chalkRingScale(tMs){ var p = (((tMs % CHALK_CYCLE_MS)+CHALK_CYCLE_MS) % CHALK_CYCLE_MS)/CHALK_CYCLE_MS; return 0.38 + 0.62*(0.5-0.5*Math.cos(2*Math.PI*p)); }
-  function hopRng(seed){ var a = seed>>>0; return function(){ a = (a+0x6D2B79F5)>>>0; var t = a; t = Math.imul(t ^ (t>>>15), t|1); t ^= t + Math.imul(t ^ (t>>>7), t|61); return ((t ^ (t>>>14))>>>0)/4294967296; }; }
-  // a row is [leftHold, rightHold]; there is always at least one hold, and the first row has both
-  function hopRow(rnd){ var r = rnd(); return r<0.4 ? [true, true] : r<0.7 ? [true, false] : [false, true]; }
-  function hopTap(row, lane){ return row && row[lane] ? "climb" : "slip"; }
-  function hopSpeed(score){ return { fallMs:Math.max(800, 2000-score*40), spawnMs:Math.max(700, 1700-score*30) }; }
-  function hopRockHits(rockLane, progress, climberLane){ return rockLane===climberLane && progress>=0.78 && progress<=1; }
-  function gamesRecord(games, id, score){
-    var g = gamesNormalize(games), s = Math.max(0, Math.floor(Number(score))||0), c = g[id] || { best:0, plays:0 };
-    var newBest = s>c.best;
-    g[id] = Object.assign({}, c, { best:Math.max(c.best, s), plays:c.plays+1 });
-    return { games:g, newBest:newBest, best:g[id].best };
+  /*GAMES-PURE-END*/
+
+  // -- registry (design doc 4.1) --
+  // def: { id, title, blurb, order, icon (svg markup), soon (true = menu card disabled, "Coming soon"), replaces (id this one supersedes),
+  //        intro:{title,text,hint}, hud0(best) -> first HUD line, start(), pause(), resume(dtMs), stop(),
+  //        state() -> {score, actions, extra}   // current round; actions = real player taps (0 = round doesn't count)
+  //        rest:{ closeScore() -> same shape as state() }, art:[slot ids], frames:[gmFrames keys] }
+  var GAMES = {};
+  function gmRegister(def){ GAMES[def.id] = def; return def; }
+  function gmList(menuOnly){
+    return Object.keys(GAMES).map(function(k){ return GAMES[k]; }).filter(function(d){
+      if(!menuOnly) return true;
+      // a "coming soon" stub steps aside while the game it replaces is still playable
+      return !(d.soon && d.replaces && GAMES[d.replaces] && !GAMES[d.replaces].soon);
+    }).sort(function(a, b){ return (a.order||0)-(b.order||0); });
   }
-  if(window.__cruxTest) window.__cruxGames = { normalize:gamesNormalize, record:gamesRecord, chalkBeatMs:chalkBeatMs, chalkRate:chalkRate, chalkRun:chalkRun, chalkRingScale:chalkRingScale, hopRng:hopRng, hopRow:hopRow, hopTap:hopTap, hopSpeed:hopSpeed, hopRockHits:hopRockHits, open:function(o){ openGames(o); }, close:function(){ closeGames(); } };
+
+  // -- art slots (design doc 4.2): every slot works with src:null (a drawn default); a file swaps in via gmArtRegister --
+  var GAME_ART = {
+    "ss.ledge":{ src:null, w:320, h:72, shape:"rect" }, "ss.block":{ src:null, w:320, h:72, shape:"rect" }, "ss.flag":{ src:null, w:96, h:144, shape:"flag" },
+    "rr.hold":{ src:null, w:56, h:56, shape:"circle" }, "rr.ring":{ src:null, w:64, h:64, shape:"ring" },
+    "cr.puff":{ src:null, w:64, h:64, shape:"circle", frames:4 }, "cr.ring":{ src:null, w:230, h:230, shape:"ring" },
+    "rt.hold":{ src:null, w:64, h:64, shape:"circle" }, "rt.ghost":{ src:null, w:64, h:64, shape:"ring" },
+    "ui.perfect":{ src:null, w:28, h:28, shape:"ring" }, "ui.good":{ src:null, w:28, h:28, shape:"circle" }, "ui.best":{ src:null, w:28, h:28, shape:"rect" }, "ui.summit":{ src:null, w:28, h:28, shape:"flag" },
+    "card.chalkRhythm":{ src:null, w:44, h:44, shape:"ring" }, "card.routeRead":{ src:null, w:44, h:44, shape:"circle" },
+    "card.summitStack":{ src:null, w:44, h:44, shape:"rect" }, "card.reachTimer":{ src:null, w:44, h:44, shape:"circle" }
+  };
+  // The override hook. file is relative to assets/ (e.g. "games/ss-block.png"); blobId is its upload id (see asset()).
+  // New PNGs need this (or an IMG entry) so the Artifact build can serve them; no art files ship with the shell.
+  function gmArtRegister(slot, file, blobId){
+    if(!GAME_ART[slot] || !file) return false;
+    GAME_ART[slot].src = asset(String(file).replace(/^assets\//, ""), blobId);
+    return true;
+  }
+  function gmArt(slot){
+    var a = GAME_ART[slot] || { src:null, w:48, h:48, shape:"rect" }, el;
+    if(a.src){ el = document.createElement("img"); el.src = a.src; el.alt = ""; el.className = "gm-art gm-art-img"; }
+    else { el = document.createElement("span"); el.className = "gm-art gm-art-"+(a.shape||"rect"); }
+    if(a.w) el.style.width = a.w+"px";
+    if(a.h) el.style.height = a.h+"px";
+    el.setAttribute("data-slot", slot); el.setAttribute("aria-hidden", "true");
+    return el;
+  }
+  function gmArtHtml(slot){ var d = document.createElement("div"); d.appendChild(gmArt(slot)); return d.innerHTML; }
 
   // -- the player's climber, drawn through the one resolver + outfit layers --
   var gmWall = IMG.wall || {}, gmMoves = gmWall.moves || {};
   function gmFrames(){
     var r = function(a){ return a || IMG.mascot.idle[0]; };
+    var list = function(a){ return (a && a.length ? a : [IMG.mascot.idle[0]]).map(climberFrame); };
     return {
       idle: IMG.mascot.idle.map(climberFrame),
       chalk: climberFrame(r(gmWall.cl_chalk)),
       reachL: climberFrame(r(gmWall.cl_reach_l)), reachR: climberFrame(r(gmWall.cl_reach_r)), pull: climberFrame(r(gmWall.cl_pull)),
       clap: (gmMoves.chalk_clap || IMG.mascot.idle).map(climberFrame),
-      hit: climberFrame(IMG.mascot.land[0]), cheer: IMG.ui.cheer.map(climberFrame)
+      hit: climberFrame(IMG.mascot.land[0]), cheer: IMG.ui.cheer.map(climberFrame),
+      step: list(IMG.mascot.step), jump: list(IMG.mascot.jump),
+      ledgeSit: climberFrame(r(gmWall.cl_sit)), ledgeLook: climberFrame(r(gmWall.cl_sit_look)),
+      flag: list(gmWall.summitFlag)
     };
   }
-  var gm = null;          // the running game {id, ...}; null when the menu is showing
+  var gm = null;          // the running round {id, seed, rnd, frames, t0, paused, ...}; null when the menu is showing
   var gmKey = null, gmWatchId = null, gmOpener = null, gmFromRest = false, gmClosing = false;
   function gmEl(id){ return document.getElementById(id); }
   function gmSay(msg){ var h = gmEl("gmHint"); if(h) h.textContent = msg; }
   function gmSetSrc(img, src){ if(img && img.getAttribute("src")!==src) img.src = src; }
   function gmPreload(f){
-    [].concat(f.idle, f.chalk, f.reachL, f.reachR, f.pull, f.clap, f.hit, f.cheer).forEach(function(s){ try{ var i = new Image(); i.src = s; }catch(e){} });
+    [].concat(f.idle, f.chalk, f.reachL, f.reachR, f.pull, f.clap, f.hit, f.cheer, f.step, f.jump, f.ledgeSit, f.ledgeLook, f.flag).forEach(function(s){ try{ var i = new Image(); i.src = s; }catch(e){} });
   }
+  // Every game starts its round through this: gm gets the seeded RNG (gm.seed replays a round), t0 and an action count.
+  function gmBegin(id, frames, props, seed){
+    var s = seed==null ? gmSeedFor(id) : seed>>>0;
+    gm = Object.assign({ id:id, frames:frames, t0:performance.now(), seed:s, rnd:mulberry32(s), actions:0, paused:false, pausedAt:0 }, props || {});
+    return gm;
+  }
+  function gmRoundState(){
+    var d = gm && GAMES[gm.id], s = d && d.state ? d.state() : { score:gm ? gm.score : 0, actions:gm ? gm.actions : 0, extra:{} };
+    return { score:Math.max(0, Math.floor(Number(s.score))||0), actions:Math.max(0, Math.floor(Number(s.actions))||0), extra:s.extra || {} };
+  }
+  // The single place a score is written (design doc 4.7).
+  function gamesRecordRound(id, res){
+    var r = recordRound(state.games, id, res);
+    if(r.counted){ state.games = r.games; saveState(); }
+    return r;
+  }
+
+  // -- sound (design doc 4.3): soft, below the timer beeps, never over them, silent when the timer is about to beep --
+  var gmBeeps = 0;
+  function gmSoundOk(){
+    if(!state.settings.gameSound) return false;
+    var now = Date.now();
+    if(now-lastTimerBeepAt<350) return false;                                   // a timer beep just played or is still ringing
+    if(getActiveSession() && timer.running && timerRemainingMs(now)<=3500) return false;   // last seconds: the 3-2-1 and end beeps own the air
+    return true;
+  }
+  function gmBeep(freq, dur, vol){
+    if(!gmSoundOk()) return false;
+    beep(freq, Math.min(dur||60, 120), Math.min(vol||0.08, 0.12), true); gmBeeps++;
+    return true;
+  }
+  function gmBuzz(pattern){ if(state.settings.gameSound) buzz(pattern); }       // buzz() already skips reduced motion
+
+  // -- pause on hidden (design doc 4.4): the round waits; a tap resumes it with the clock shifted --
+  function gmPause(){
+    if(!gm || gm.paused) return;
+    var d = GAMES[gm.id];
+    gm.paused = true; gm.pausedAt = performance.now();
+    if(gmRaf){ cancelAnimationFrame(gmRaf); gmRaf = null; }
+    if(d && d.pause) d.pause();
+    var stage = gmEl("gmStage"); if(!stage || gmEl("gmPaused")) return;
+    var b = document.createElement("button"); b.type = "button"; b.className = "gm-paused"; b.id = "gmPaused";
+    b.textContent = "Paused. Tap to resume";
+    b.addEventListener("click", gmResume);
+    stage.appendChild(b); gmSay("Paused. Tap to resume.");
+    try{ b.focus({ preventScroll:true }); }catch(e){}
+  }
+  function gmResume(){
+    if(!gm || !gm.paused) return;
+    var d = GAMES[gm.id], dt = Math.max(0, performance.now()-gm.pausedAt);
+    gm.paused = false; gm.pausedAt = 0; gm.t0 += dt;
+    var p = gmEl("gmPaused"); if(p) p.remove();
+    if(d && d.resume) d.resume(dt);
+    gmSay("Back in.");
+  }
+
   function gamesBestLine(id){ var g = state.games && state.games[id] || { best:0, plays:0 }; return g.plays ? "Best "+g.best+" · played "+g.plays : "Not played yet"; }
   function renderGamesMenu(){
     gm = null; stopGameLoop();
     gmEl("gamesMenu").hidden = false; gmEl("gamesPlay").hidden = true;
     gmEl("gamesTitle").textContent = "Play";
-    gmEl("gmChalkBest").textContent = gamesBestLine("chalkUp");
-    gmEl("gmHopBest").textContent = gamesBestLine("holdHop");
+    gmEl("gmCards").innerHTML = gmList(true).map(function(d){
+      var art = GAME_ART["card."+d.id], ic = art && art.src ? '<img src="'+art.src+'" alt="">' : (d.icon || "");
+      return '<button type="button" class="gm-card'+(d.soon ? ' gm-soon' : '')+'" id="gmCard_'+d.id+'" data-game="'+d.id+'"'+(d.soon ? ' disabled aria-disabled="true"' : '')+'>'
+        + '<span class="gm-card-ic" aria-hidden="true">'+ic+'</span>'
+        + '<span class="gm-card-main"><span class="gm-card-title">'+d.title+'</span><span class="gm-card-sub">'+d.blurb+'</span>'
+        + '<span class="gm-card-best">'+(d.soon ? "Coming soon" : gamesBestLine(d.id))+'</span></span></button>';
+    }).join("");
+    var sw = gmEl("gmSoundSwitch"); if(sw) sw.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
   }
   var gmRaf = null, gmTimeouts = [];
   function stopGameLoop(){
@@ -7095,39 +7244,41 @@
 
   // -- intro / over panels --
   function gmIntro(id){
-    var chalk = id==="chalkUp";
-    gmEl("gamesTitle").textContent = chalk ? "Chalk Up" : "Hold Hop";
+    var d = GAMES[id]; if(!d || d.soon) return;
+    var intro = d.intro || {};
+    gmEl("gamesTitle").textContent = d.title;
     gmEl("gamesMenu").hidden = true; gmEl("gamesPlay").hidden = false;
-    var best = state.games[id].best;
-    gmHud(0, chalk ? "Streak 0 · Best "+best : "Grips 3 · Best "+best);
-    gmEl("gmStage").innerHTML = '<div class="gm-panel"><p class="gm-panel-title">'+(chalk ? "Breathe and tap" : "Climb and dodge")+'</p>'
-      + '<p class="gm-panel-text">'+(chalk
-          ? "Breathe in as the ring grows. Tap just as it meets the outline. Keep your streak going for 45 seconds."
-          : "Tap the left or right side to reach that hold. Rocks fall down the lanes, so move out of the way. 3 grips, 60 seconds.")+'</p>'
+    var best = state.games[id] ? state.games[id].best : 0;
+    gmHud(0, d.hud0 ? d.hud0(best) : "Best "+best);
+    gmEl("gmStage").innerHTML = '<div class="gm-panel"><p class="gm-panel-title">'+(intro.title || d.title)+'</p>'
+      + '<p class="gm-panel-text">'+(intro.text || d.blurb)+'</p>'
       + '<button type="button" class="btn btn-primary" id="gmStartBtn">Start</button></div>';
-    gmSay(chalk ? "Calm, one tap per breath." : "No XP, just for fun.");
-    gmEl("gmStartBtn").addEventListener("click", function(){ chalk ? chalkStart() : hopStart(); });
+    gmSay(intro.hint || "No XP, just for fun.");
+    gmEl("gmStartBtn").addEventListener("click", function(){ d.start(); });
     gmEl("gmStartBtn").focus({ preventScroll:true });
   }
+  // extra: { title, note, noButtons, actions, extra }. actions < 1 means the round isn't recorded (design doc 4.7).
   function gmOver(id, score, extra){
     stopGameLoop();
-    var rec = { newBest:false, best:state.games[id].best };
-    if(score>0 || extra.force){
-      var r = gamesRecord(state.games, id, score); state.games = r.games; saveState(); rec = r;
-    }
+    extra = extra || {};
+    var rec = recordRound(state.games, id, { score:score, actions:extra.actions, extra:extra.extra });
+    if(rec.counted){ state.games = rec.games; saveState(); }
     var f = gm && gm.frames;
     gm = null;
+    var low = gmFromRest && gamesRestState().resting && gamesRestState().ms<=10000;   // no "Play again" in the last 10 s of rest
+    var noButtons = !!extra.noButtons || low;
+    var note = low && !extra.noButtons ? "Rest is almost over." : extra.note;
     gmEl("gmStage").innerHTML = '<div class="gm-panel"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
       + '<p class="gm-panel-title">'+(extra.title||"Round over")+'</p>'
       + '<p class="gm-big" aria-live="polite">'+score+'</p>'
-      + '<p class="gm-panel-text">'+(rec.newBest ? "New personal best!" : "Best "+rec.best)+(extra.note ? " · "+extra.note : "")+'</p>'
-      + (extra.noButtons ? '' : '<div class="gm-actions"><button type="button" class="btn btn-primary" id="gmAgainBtn">Play again</button><button type="button" class="btn btn-ghost" id="gmMenuBtn">Games</button></div>')
+      + '<p class="gm-panel-text">'+(rec.newBest ? "New personal best!" : "Best "+rec.best)+(note ? " · "+note : "")+'</p>'
+      + (noButtons ? '' : '<div class="gm-actions"><button type="button" class="btn btn-primary" id="gmAgainBtn">Play again</button><button type="button" class="btn btn-ghost" id="gmMenuBtn">Games</button></div>')
       + '</div>';
     var fr = f || gmFrames();
     outfitFollow(gmEl("gmClimberImg"), gmEl("gmClimber"));
     gmSetSrc(gmEl("gmClimberImg"), rec.newBest ? fr.cheer[0] : fr.idle[0]);
     gmHud(score, rec.newBest ? "New best" : "Best "+rec.best);
-    if(!extra.noButtons){
+    if(!noButtons){
       gmEl("gmAgainBtn").addEventListener("click", function(){ gmIntro(id); });
       gmEl("gmMenuBtn").addEventListener("click", renderGamesMenu);
       gmEl("gmAgainBtn").focus({ preventScroll:true });
@@ -7135,7 +7286,16 @@
     gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
   }
 
-  /* ---- Chalk Up ---- */
+  /* ==== chalkUp BEGIN (legacy Chalk Up, keeps working until T1 replaces it with chalkRhythm; T1 may delete this region) ==== */
+  gmRegister({
+    id:"chalkUp", title:"Chalk Up", order:1, blurb:"Breathe with the ring and tap on the beat. Calm, good for rest.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>',
+    intro:{ title:"Breathe and tap", text:"Breathe in as the ring grows. Tap just as it meets the outline. Keep your streak going for 45 seconds.", hint:"Calm, one tap per breath." },
+    hud0:function(best){ return "Streak 0 · Best "+best; },
+    start:function(){ chalkStart(); },
+    state:function(){ return { score:chalkRun(gm.ratings).best, actions:gm.taps||0, extra:{} }; },
+    resume:function(dt){ gm.holdUntil += dt; if(gm.frame) gmRaf = requestAnimationFrame(gm.frame); }
+  });
   function chalkStart(){
     var f = gmFrames(); gmPreload(f);
     gmEl("gmStage").innerHTML = '<div class="gm-ring gm-ring-target" aria-hidden="true"></div><div class="gm-ring gm-ring-live" id="gmRing" aria-hidden="true"></div>'
@@ -7143,17 +7303,19 @@
       + '<p class="gm-phase" id="gmPhase" aria-hidden="true">Breathe in</p>'
       + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap when the ring meets the outline"></button>';
     var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
-    var g = gm = { id:"chalkUp", frames:f, t0:performance.now(), ratings:[], tapped:{}, judged:-1, idleN:0, clapN:0, holdUntil:0, lastScale:0 };
+    var g = gmBegin("chalkUp", f, { ratings:[], tapped:{}, judged:-1, idleN:0, clapN:0, holdUntil:0, lastScale:0, taps:0 });
     gmHud(0, "Streak 0 · Best "+state.games.chalkUp.best);
     gmSay("Go. Tap as the ring meets the outline.");
     function tap(){
-      if(gm!==g) return;
+      if(gm!==g || g.paused) return;
+      g.taps++;
       var t = performance.now()-g.t0;
       var k = Math.max(0, Math.min(CHALK_BEATS-1, Math.round((t-CHALK_CYCLE_MS/2)/CHALK_CYCLE_MS)));
       var err = t-chalkBeatMs(k), rating = chalkRate(err);
       if(g.tapped[k] || rating==="miss"){ g.ratings.push("miss"); chalkShow("Off the beat", g); gmSetSrc(img, g.frames.idle[0]); return; }
       g.tapped[k] = true; g.ratings.push(rating);
       chalkShow(rating==="perfect" ? "Perfect" : "Good", g);
+      gmBeep(200, 60, 0.08); if(rating==="perfect") gmBuzz(8);
       gmSetSrc(img, g.frames.clap[g.clapN++ % g.frames.clap.length]); g.holdUntil = t+260;
     }
     gmEl("gmTap").addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
@@ -7161,7 +7323,7 @@
     gmEl("gmTap").focus({ preventScroll:true });
     var ring = gmEl("gmRing"), phase = gmEl("gmPhase");
     function frame(){
-      if(gm!==g) return;
+      if(gm!==g || g.paused) return;
       var t = performance.now()-g.t0, p = (t % CHALK_CYCLE_MS)/CHALK_CYCLE_MS;
       var s = chalkRingScale(t);
       if(prefersReducedMotion) s = Math.round(s*4)/4;   // simplified: the ring steps instead of gliding
@@ -7177,9 +7339,10 @@
         gmSetSrc(img, want);
       }
       gmEl("gmTime").textContent = Math.max(0, Math.ceil((CHALK_BEATS*CHALK_CYCLE_MS-t)/1000))+"s";
-      if(t>=CHALK_BEATS*CHALK_CYCLE_MS){ var run = chalkRun(g.ratings); gmOver("chalkUp", run.best, { note:run.hits+" of "+CHALK_BEATS+" in time", force:true }); return; }
+      if(t>=CHALK_BEATS*CHALK_CYCLE_MS){ var run = chalkRun(g.ratings); gmOver("chalkUp", run.best, { note:run.hits+" of "+CHALK_BEATS+" in time", actions:g.taps }); return; }
       gmRaf = requestAnimationFrame(frame);
     }
+    g.frame = frame;
     gmRaf = requestAnimationFrame(frame);
   }
   function chalkShow(word, g){
@@ -7187,109 +7350,61 @@
     gmHud(run.best, "Streak "+run.streak+" · Best "+state.games.chalkUp.best);
     gmSay(word+". Streak "+run.streak+".");
   }
+  /* ==== chalkUp END ==== */
 
-  /* ---- Hold Hop ---- */
-  var HOP_ROW0 = 66, HOP_ROW_GAP = 60, HOP_VISIBLE = 5;
-  function hopStart(){
-    var f = gmFrames(); gmPreload(f);
-    gmEl("gmStage").innerHTML = '<div class="gm-lane gm-lane-0" aria-hidden="true"></div><div class="gm-lane gm-lane-1" aria-hidden="true"></div>'
-      + '<div class="gm-rows" id="gmRows" aria-hidden="true"></div><div class="gm-rocks" id="gmRocks" aria-hidden="true"></div>'
-      + '<div class="gm-climber gm-climber-hop" id="gmClimber" data-lane="0"><img id="gmClimberImg" alt="Your climber"></div>'
-      + '<button type="button" class="gm-half gm-half-0" id="gmLeft" aria-label="Reach the left hold"></button>'
-      + '<button type="button" class="gm-half gm-half-1" id="gmRight" aria-label="Reach the right hold"></button>';
-    var img = gmEl("gmClimberImg"), body = gmEl("gmClimber"), rowsEl = gmEl("gmRows"), rocksEl = gmEl("gmRocks");
-    outfitFollow(img, body); gmSetSrc(img, f.idle[0]);
-    var rnd = hopRng((Date.now() ^ 0x9E3779B9)>>>0);
-    var g = gm = { id:"holdHop", frames:f, t0:performance.now(), rnd:rnd, rows:[[true, true]], cur:0, lane:0, score:0, lives:HOP_LIVES,
-                   rocks:[], nextRock:performance.now()+1200, invulnUntil:0, busy:0, rowEls:{}, last:performance.now() };
-    function rowAt(i){ while(g.rows.length<=i) g.rows.push(hopRow(rnd)); return g.rows[i]; }
-    function renderRows(){
-      for(var i=g.cur;i<g.cur+HOP_VISIBLE;i++){
-        var row = rowAt(i), el = g.rowEls[i];
-        if(!el){
-          el = g.rowEls[i] = document.createElement("div"); el.className = "gm-row";
-          el.innerHTML = '<span class="gm-hold gm-hold-0"></span><span class="gm-hold gm-hold-1"></span>';
-          el.children[0].hidden = !row[0]; el.children[1].hidden = !row[1];
-          rowsEl.appendChild(el);
-        }
-        el.style.bottom = (HOP_ROW0+(i-g.cur)*HOP_ROW_GAP)+"px";
-      }
-      Object.keys(g.rowEls).forEach(function(k){ if(+k<g.cur){ g.rowEls[k].remove(); delete g.rowEls[k]; } });
-    }
-    function hud(){ gmHud(g.score, "Grips "+g.lives+" · Best "+state.games.holdHop.best); }
-    function setFrame(src, ms){ gmSetSrc(img, src); g.busy++; var n = g.busy; gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.idle[0]); }, ms); }
-    function loseGrip(msg, now){
-      g.lives--; g.invulnUntil = now+900; setFrame(g.frames.hit, 420); hud(); gmSay(msg+" "+g.lives+" grip"+(g.lives===1?"":"s")+" left.");
-      if(g.lives<=0) hopEnd("Out of grips");
-    }
-    function hopEnd(title){
-      if(gm!==g) return;
-      gmOver("holdHop", g.score, { title:title, note:g.score+" hold"+(g.score===1?"":"s"), force:true });
-    }
-    function reach(lane){
-      if(gm!==g || g.lives<=0) return;
-      var now = performance.now(), next = rowAt(g.cur+1);
-      if(hopTap(next, lane)==="climb"){
-        g.cur++; g.lane = lane; g.score++; body.dataset.lane = String(lane);
-        renderRows(); hud();
-        gmSetSrc(img, lane===0 ? g.frames.reachL : g.frames.reachR); g.busy++; var n = g.busy;
-        gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.pull); }, 90);
-        gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.idle[0]); }, 200);
-        gmSay("Hold "+g.score+".");
-      } else {
-        loseGrip("Slipped, no hold there.", now);
-      }
-    }
-    gmEl("gmLeft").addEventListener("pointerdown", function(e){ e.preventDefault(); reach(0); });
-    gmEl("gmRight").addEventListener("pointerdown", function(e){ e.preventDefault(); reach(1); });
-    ["gmLeft", "gmRight"].forEach(function(id, lane){
-      gmEl(id).addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) reach(lane); } });
-    });
-    gmKey = function(e){ if(e.key==="ArrowLeft"){ e.preventDefault(); reach(0); } else if(e.key==="ArrowRight"){ e.preventDefault(); reach(1); } };
-    document.addEventListener("keydown", gmKey);
-    renderRows(); hud(); gmSay("Climb. Tap left or right, and dodge the rocks.");
-    function frame(){
-      if(gm!==g) return;
-      var now = performance.now(), el = now-g.t0, sp = hopSpeed(g.score);
-      var fall = sp.fallMs*(prefersReducedMotion ? 1.3 : 1), spawn = sp.spawnMs*(prefersReducedMotion ? 1.3 : 1);
-      if(now>=g.nextRock){
-        var lane = rnd()<0.5 ? 0 : 1, node = document.createElement("span");
-        node.className = "gm-rock gm-rock-"+lane; rocksEl.appendChild(node);
-        g.rocks.push({ lane:lane, born:now, fall:fall, node:node });
-        g.nextRock = now+spawn*(0.8+rnd()*0.5);
-      }
-      g.rocks = g.rocks.filter(function(r){
-        var p = (now-r.born)/r.fall;
-        if(p>1.02){ r.node.remove(); return false; }
-        r.node.style.top = (-10+p*95)+"%";
-        if(now>=g.invulnUntil && hopRockHits(r.lane, p, g.lane)){ r.node.remove(); loseGrip("A rock hit you.", now); return false; }
-        return true;
-      });
-      if(gm!==g) return;
-      var left = Math.max(0, HOP_TIME_MS-el);
-      gmEl("gmTime").textContent = Math.ceil(left/1000)+"s";
-      if(left<=0){ hopEnd("Time"); return; }
-      gmRaf = requestAnimationFrame(frame);
-    }
-    gmRaf = requestAnimationFrame(frame);
-  }
+  // Stubs for the games still to come. A game's region replaces its stub by calling gmRegister() with the same id
+  // (and no `soon`). Order matters: stubs first, regions after.
+  [
+    { id:"chalkRhythm", title:"Chalk Rhythm", order:1, replaces:"chalkUp", blurb:"A slow beat, a ring, a tap. Calm and forgiving.",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>' },
+    { id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>' },
+    { id:"summitStack", title:"Summit Stack", order:3, blurb:"Drop each block on the last to build a tower.",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="16" width="16" height="4" rx="1"/><rect x="6" y="10" width="12" height="4" rx="1"/><rect x="9" y="4" width="7" height="4" rx="1"/></svg>' },
+    { id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>' }
+  ].forEach(function(d){ d.soon = true; d.intro = { title:d.title, text:d.blurb }; d.state = function(){ return { score:0, actions:0, extra:{} }; }; gmRegister(d); });
+
+  /* ==== chalkRhythm BEGIN (T1: chalkRhythm* functions, .cr- CSS, gmRegister({id:"chalkRhythm", ...}), migrate nothing: gamesNormalize already copied the legacy best) ==== */
+  /* ==== chalkRhythm END ==== */
+  /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
+  /* ==== routeRead END ==== */
+  /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
+  /* ==== summitStack END ==== */
+  /* ==== reachTimer BEGIN (T4: reachTimer* functions, .rt- CSS, gmRegister({id:"reachTimer", ...})) ==== */
+  /* ==== reachTimer END ==== */
+
+  // Test hook (dev/tests.html). A game's region extends it with Object.assign(window.__cruxGames, {...}) inside `if(window.__cruxTest)`.
+  if(window.__cruxTest) window.__cruxGames = {
+    normalize:gamesNormalize, recordRound:recordRound, mulberry32:mulberry32, seedFor:gmSeedFor,
+    chalkBeatMs:chalkBeatMs, chalkRate:chalkRate, chalkRun:chalkRun, chalkRingScale:chalkRingScale,
+    ids:function(){ return Object.keys(GAMES); }, def:function(id){ return GAMES[id]; }, menuIds:function(){ return gmList(true).map(function(d){ return d.id; }); },
+    art:GAME_ART, gmArt:gmArt, gmArtRegister:gmArtRegister, frames:gmFrames,
+    soundOk:gmSoundOk, beep:gmBeep, beepCount:function(){ return gmBeeps; },
+    paused:function(){ return !!(gm && gm.paused); }, current:function(){ return gm; },
+    open:function(o){ openGames(o); }, close:function(){ closeGames(); }
+  };
 
   /* ---- the overlay: open, close, rest strip ---- */
   function gamesRestState(){
     var s = getActiveSession();
     var resting = !!s && timer.phase==="rest";
-    return { resting:resting, clock:resting ? fmtClock(Math.max(0, Math.ceil(timerRemainingMs(Date.now())/1000))) : "", running:!!timer.running };
+    var ms = resting ? Math.max(0, timerRemainingMs(Date.now())) : 0;
+    return { resting:resting, ms:ms, clock:resting ? fmtClock(Math.ceil(ms/1000)) : "", running:!!timer.running };
   }
   function gamesWatch(){
     var st = gamesRestState(), strip = gmEl("gamesRest");
     if(gmClosing) return;
     if(gmFromRest && !st.resting){
-      // Rest is over: end the round (the score still counts) and head back to the timer.
+      // Rest is over: the round closes itself (it still counts if it had an action) and we head back to the timer.
       gmClosing = true;
       strip.hidden = false; strip.classList.add("back");
       gmEl("gamesRestText").textContent = "Rest is over. Back to work!";
       gmEl("gamesRestClock").textContent = "";
-      if(gm) gmOver(gm.id, gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score, { title:"Back to work", noButtons:true, force:false });
+      if(gm){
+        var d = GAMES[gm.id], rs = d && d.rest && d.rest.closeScore ? d.rest.closeScore() : gmRoundState();
+        gmOver(gm.id, rs.score, { title:"Back to work", noButtons:true, actions:rs.actions, extra:rs.extra });
+      }
       gmLater(closeGames, 1800);
       return;
     }
@@ -7310,12 +7425,14 @@
     if(!gmWatchId) gmWatchId = setInterval(gamesWatch, 250);
     gmEl("closeGamesBtn").focus({ preventScroll:true });
   }
+  // Leaving a round by hand keeps what you scored, unless it is paused and never resumed (that records nothing).
+  function gmBankRound(){
+    if(!gm || gm.paused) return;
+    var s = gmRoundState(); gamesRecordRound(gm.id, s);
+  }
   function closeGames(){
     var o = gmEl("gamesOverlay"); if(!o || o.hidden) return;
-    if(gm){ // closing mid-round keeps what you scored
-      var s = gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score;
-      if(s>0){ var r = gamesRecord(state.games, gm.id, s); state.games = r.games; saveState(); }
-    }
+    gmBankRound();
     stopGameLoop(); gm = null; gmClosing = false;
     if(gmWatchId){ clearInterval(gmWatchId); gmWatchId = null; }
     o.hidden = true;
@@ -7327,17 +7444,19 @@
   document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
   document.getElementById("closeGamesBtn").addEventListener("click", closeGames);
   document.getElementById("gamesOverlay").addEventListener("click", function(e){ if(e.target.id==="gamesOverlay") closeGames(); });
-  document.getElementById("gmChalkBtn").addEventListener("click", function(){ gmIntro("chalkUp"); });
-  document.getElementById("gmHopBtn").addEventListener("click", function(){ gmIntro("holdHop"); });
+  document.getElementById("gmCards").addEventListener("click", function(e){
+    var b = e.target.closest(".gm-card"); if(!b || b.disabled) return;
+    gmIntro(b.dataset.game);
+  });
+  document.getElementById("gmSoundSwitch").addEventListener("click", function(){
+    state.settings.gameSound = !state.settings.gameSound; saveState();
+    this.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
+  });
   document.getElementById("gmBackBtn").addEventListener("click", function(){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(); });
-  function closeRoundToMenu(){
-    var s = gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score;
-    if(s>0){ var r = gamesRecord(state.games, gm.id, s); state.games = r.games; saveState(); }
-    renderGamesMenu();
-  }
+  function closeRoundToMenu(){ gmBankRound(); renderGamesMenu(); }
   document.addEventListener("keydown", function(e){ if(e.key==="Escape" && !document.getElementById("gamesOverlay").hidden) closeGames(); });
-  // A hidden page can't keep a fair rhythm: stop the round quietly (the timer carries on by itself).
-  document.addEventListener("visibilitychange", function(){ if(document.hidden && gm && !document.getElementById("gamesOverlay").hidden){ stopGameLoop(); closeRoundToMenu(); } });
+  // A hidden page can't keep a fair clock: the round pauses (the timer carries on by itself) and a tap resumes it.
+  document.addEventListener("visibilitychange", function(){ if(document.hidden && gm && !document.getElementById("gamesOverlay").hidden) gmPause(); });
   /* ==== END GAMES ==== */
 
   /* ---------------- view switching ---------------- */

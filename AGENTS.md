@@ -122,15 +122,21 @@ A small, optional play area for rest times, using the player's own climber. Remo
 - **Entry points:** "Play" on the Home dock (next to Customize), and "Play while you rest" in the session's timer card, shown only while
   `timer.phase==="rest"`. The bottom bar stays Home / Train / The Wall.
 - **It is a sheet, not a view:** `#gamesOverlay` sits over whatever is on screen, so the session timer, its beeps and the wake lock keep
-  running untouched. Opened from the rest button, it shows the rest clock, and when rest ends it stops the round (the score still counts),
-  says "Back to work" and closes itself. A hidden page also stops the round.
-- **Games:** Chalk Up (breathing ring, tap on the beat, 15 beats / 45 s, score = best streak) and Hold Hop (tap left/right to reach the next
-  hold, rocks fall down the lanes, 3 grips, 60 s, speed ramps, score = holds).
+  running untouched. Opened from the rest button, it shows the rest clock, and when rest ends it stops the round (the score still counts
+  if it had an action), says "Back to work" and closes itself. A hidden page pauses the round ("Paused. Tap to resume"); a paused round
+  that is never resumed records nothing.
+- **Games:** a registry (`GAMES`, `gmRegister(def)`) drives the menu. Playable now: Chalk Up (breathing ring, tap on the beat, 15 beats /
+  45 s, score = best streak). Disabled "Coming soon" stubs: Chalk Rhythm, Route Read, Summit Stack, Reach Timer. Each game lives in its own
+  region inside the GAMES block (`chalkRhythm*`, `routeRead*`, `summitStack*`, `reachTimer*`, CSS `.cr-` `.rr-` `.ss-` `.rt-`); see
+  `docs/GAMES-DESIGN.md`. Hold Hop is retired from the menu (its saved data is kept).
+- **Shell:** `gmBegin` (seeded RNG, `gm.seed`), `gamesRecordRound`/`recordRound` (a round counts only with >= 1 action), `gmBeep`/`gmBuzz`
+  (sound setting `settings.gameSound`, silent near timer beeps), `gmPause`/`gmResume`, `GAME_ART` slots with `gmArt`/`gmArtRegister`.
 - **Art:** existing frames only, always through `climberFrame()` and `outfitFollow()` (so variant, outfit layers and skip lists work);
-  no new images. Holds and rocks are CSS.
-- **Saved data:** only `state.games = { chalkUp:{best,plays}, holdHop:{best,plays} }`, normalised by `gamesNormalize()` in `normalizeState()`.
-  Games never write XP, levels, streaks, holds, sessions or attempts, and give no rewards. Rules are pure functions (`chalk*`, `hop*`,
-  `gamesRecord`), tested through `window.__cruxGames` (only with `window.__cruxTest`).
+  no shipped game art. Holds, blocks and rings are drawn defaults that a `GAME_ART` file can override.
+- **Saved data:** only `state.games` (`chalkUp`, `holdHop` legacy; `chalkRhythm`, `routeRead`, `summitStack`, `reachTimer`; `_meta`) and
+  `settings.gameSound`, normalised by `gamesNormalize()` in `normalizeState()` (legacy Chalk Up best is copied to Chalk Rhythm once).
+  Games never write XP, levels, streaks, holds, sessions or attempts, and give no rewards. Rules are pure functions (`chalk*`, `mulberry32`,
+  `recordRound`), tested through `window.__cruxGames` (only with `window.__cruxTest`).
 - **Reduced motion:** the ring steps in quarters, rocks fall slower and transitions are off. Nothing flashes.
 
 ## Projects (climb tracking)
