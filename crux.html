@@ -763,7 +763,7 @@
   .gm-card-best{font-size:11.5px;font-weight:700;color:var(--text-dim);letter-spacing:0.04em;text-transform:uppercase;}
   .gm-note{margin:2px 2px 0;font-size:12px;color:var(--text-dim);text-align:center;}
   .gm-hud{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
-  .gm-back{min-height:36px;padding:0 4px;}
+  .gm-back{min-height:44px;padding:0 8px;}
   .gm-score{font-family:"Bebas Neue",sans-serif;font-size:30px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums;}
   .gm-line{font-size:12px;font-weight:700;color:var(--text-dim);}
   .gm-time{font-size:12px;font-weight:700;color:var(--text-dim);min-width:26px;text-align:right;font-variant-numeric:tabular-nums;}
@@ -776,7 +776,10 @@
   .gm-panel-text{margin:0;font-size:13.5px;line-height:1.45;color:var(--text-dim);max-width:280px;}
   .gm-big{margin:0;font-family:"Bebas Neue",sans-serif;font-size:64px;line-height:1;}
   .gm-actions{display:flex;gap:8px;width:100%;max-width:280px;}
-  .gm-actions .btn{flex:1;}
+  .gm-actions .btn{flex:1;white-space:nowrap;padding-left:10px;padding-right:10px;}
+  .gm-panel .btn{min-height:44px;}
+  .games-overlay .icon-btn{width:44px;height:44px;}
+  .gm-sound .switch::after{content:"";position:absolute;inset:-9px -6px;}
   .gm-climber{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 5px rgba(0,0,0,0.3));}
   .gm-climber img{display:block;width:100%;height:100%;}
   .gm-climber img.outfit-layer{position:absolute;left:0;top:0;filter:none;pointer-events:none;}
@@ -802,6 +805,122 @@
   .gm-hold-0{left:calc(27% - 19px);} .gm-hold-1{left:calc(73% - 19px);}
   .gm-rock{position:absolute;top:-10%;width:30px;height:28px;border-radius:46% 54% 50% 50%;background:#6c6760;border:2px solid #38342f;}
   .gm-rock-0{left:calc(27% - 15px);} .gm-rock-1{left:calc(73% - 15px);}
+  .gm-cards{display:grid;gap:10px;}
+  .gm-card[disabled]{opacity:0.55;cursor:default;}
+  .gm-card[disabled]:active{transform:none;}
+  .gm-card-ic img{width:26px;height:26px;object-fit:contain;}
+  .gm-sound{border-bottom:none;padding-bottom:0;}
+  .gm-paused{position:absolute;inset:0;z-index:5;display:grid;place-items:center;border:0;padding:18px;cursor:pointer;
+    font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:0.03em;color:var(--text);background:color-mix(in srgb, var(--surface) 88%, transparent);}
+  .gm-paused:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
+  .gm-art{display:inline-block;box-sizing:border-box;vertical-align:middle;}
+  .gm-art-rect{background:var(--accent);border-radius:var(--radius-sm, 8px);box-shadow:0 2px 0 color-mix(in srgb, var(--accent) 60%, #000);}
+  .gm-art-circle{background:var(--accent);border-radius:50%;}
+  .gm-art-ring{border:3px solid var(--accent);border-radius:50%;background:transparent;}
+  .gm-art-flag{background:var(--send);border-radius:4px 14px 14px 4px;}
+  .gm-art-img{object-fit:contain;}
+  /* ==== .cr- Chalk Rhythm CSS BEGIN ==== */
+  .cr-field{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .cr-outline, .cr-live{position:absolute;left:50%;top:44%;margin:-115px 0 0 -115px;}
+  .cr-outline.gm-art-ring{border:3px solid color-mix(in srgb, var(--accent) 80%, transparent);}
+  .cr-live.gm-art-ring{border:6px solid color-mix(in srgb, var(--send) 70%, transparent);background:color-mix(in srgb, var(--send) 10%, transparent);transform:scale(0.35);will-change:transform;}
+  .cr-live.cr-dim{opacity:0.35 !important;}
+  .cr-puff{position:absolute;left:50%;top:44%;margin:-52px 0 0 34px;opacity:0;pointer-events:none;
+    background:color-mix(in srgb, var(--text) 16%, transparent);box-shadow:none;}
+  .cr-puff.go{animation:cr-puff .3s ease-out forwards;}
+  @keyframes cr-puff{from{transform:scale(0.4);opacity:0.9;}to{transform:scale(1.25);opacity:0;}}
+  .cr-bar{position:absolute;left:24px;right:24px;bottom:54px;height:14px;display:none;border-radius:7px;
+    background:color-mix(in srgb, var(--text) 8%, transparent);border:1px solid var(--border);}
+  .cr-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:color-mix(in srgb, var(--send) 75%, transparent);}
+  .cr-bar::after{content:"";position:absolute;right:-1px;top:-8px;bottom:-8px;width:3px;border-radius:2px;background:var(--accent);}
+  .cr-rm .cr-bar{display:block;}
+  .cr-rm .cr-live, .cr-rm .cr-outline, .cr-rm .cr-puff{display:none;}
+  .cr-label{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:8px;min-height:24px;
+    font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);opacity:0;transition:opacity .12s ease;pointer-events:none;}
+  .cr-label.on{opacity:1;}
+  .cr-rm .cr-label{transition:none;}
+  .cr-j{display:inline-block;box-sizing:border-box;width:16px;height:16px;border-radius:50%;flex-shrink:0;}
+  .cr-j-perfect{border:2px solid var(--send);box-shadow:0 0 0 3px var(--surface-2), 0 0 0 5px var(--send);margin:0 5px;}
+  .cr-j-good{border:3px solid var(--send);}
+  .cr-j-close{width:10px;height:10px;border:2px solid var(--text-dim);margin:0 3px;}
+  /* ==== .cr- Chalk Rhythm CSS END ==== */
+  /* .rr- Route Read */
+  .rr-stage{position:absolute;inset:0;}
+  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;}
+  .rr-label{position:absolute;left:8px;top:12px;width:88px;margin:0;font-size:12.5px;font-weight:700;line-height:1.3;color:var(--text-dim);}
+  .rr-wall{position:absolute;right:8px;top:16px;width:192px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:64px;border-radius:14px;background:color-mix(in srgb, var(--text) 5%, transparent);}
+  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);}
+  .rr-cell:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:12px;}
+  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .12s ease;}
+  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .12s ease;border-color:var(--send);}
+  .rr-cell[data-state="tapped"] .rr-ring{opacity:1;}
+  .rr-cell.rr-lit .gm-art-circle{box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 40%, transparent);}
+  .rr-badge{grid-area:1/1;z-index:1;min-width:26px;height:26px;border-radius:13px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
+    font-family:"Bebas Neue",sans-serif;font-size:19px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;}
+  .rr-badge:empty{display:none;}
+  .rr-cell[data-state="wrong"] .rr-badge{display:grid;}
+  .rr-cell[data-state="wrong"] .rr-badge::before{content:"\00D7";}
+  .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .gm-art{animation:rr-wob .32s ease;}
+  @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+  /* summitStack (.ss-) */
+  .ss-world{position:absolute;top:0;transform-origin:0 0;pointer-events:none;}
+  .ss-cam{position:absolute;inset:0;transition:transform .28s ease;will-change:transform;}
+  .ss-blk{position:absolute;display:block;}
+  .ss-slider{position:absolute;left:0;top:0;will-change:transform;transition:opacity .35s ease;}
+  .ss-chunk{opacity:0.9;transition:transform .55s ease-in, opacity .55s ease-in;}
+  .ss-chunk.go{opacity:0;}
+  .ss-bob{animation:ssBob .32s ease-out;}
+  @keyframes ssBob{0%{transform:translateY(-5px);}60%{transform:translateY(2px);}100%{transform:none;}}
+  .ss-climber{width:60px;height:90px;transition:top .16s ease;z-index:2;}
+  .ss-climber img.wide, .ss-climber img.outfit-layer.wide{width:141%;max-width:none;margin-left:-20.5%;}
+  .ss-flag{position:absolute;z-index:2;}
+  .ss-time{position:absolute;left:0;top:0;right:0;height:4px;z-index:3;background:var(--accent);transform-origin:0 50%;pointer-events:none;}
+  .ss-label{position:absolute;left:0;right:0;top:12px;margin:0;z-index:3;display:flex;justify-content:center;align-items:center;gap:6px;opacity:0;pointer-events:none;
+    font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.04em;transition:opacity .2s ease;}
+  .ss-label.on{opacity:1;}
+  .ss-label .gm-art{width:20px !important;height:20px !important;}
+  @media (prefers-reduced-motion: reduce){
+    .ss-cam, .ss-climber, .ss-slider{transition:none;}
+    .ss-bob{animation:none;}
+    .ss-chunk{transition:opacity .3s linear;}
+  }
+  /* .rt- (Reach Timer) */
+  .rt-ladder{position:absolute;left:0;right:0;top:12px;display:flex;justify-content:center;gap:6px;pointer-events:none;}
+  .rt-mark{width:10px;height:10px;border-radius:3px;border:2px solid color-mix(in srgb, var(--text) 35%, transparent);box-sizing:border-box;}
+  .rt-mark[data-on="1"]{background:var(--accent);border-color:var(--accent);}
+  .rt-wall{position:absolute;inset:0;pointer-events:none;}
+  .rt-slot{position:absolute;width:64px;height:64px;margin-left:-32px;transition:opacity .15s ease;}
+  .rt-slot[data-side="L"]{left:25%;} .rt-slot[data-side="R"]{left:75%;}
+  .rt-slot[data-k="0"]{top:176px;} .rt-slot[data-k="1"]{top:104px;} .rt-slot[data-k="2"]{top:34px;}
+  .rt-slot[data-kind="off"]{opacity:0;}
+  .rt-slot[data-kind="ghost"]{opacity:0.5;}
+  .rt-slot > .gm-art{position:absolute;left:0;top:0;}
+  .rt-slot[data-kind="ghost"] .rt-art-hold, .rt-slot[data-kind="live"] .rt-art-ghost, .rt-slot[data-kind="off"] .rt-art-hold{display:none;}
+  .rt-slot[data-kind="ghost"] .rt-art-ghost{border-style:dashed;}
+  .rt-letter{position:absolute;inset:0;display:grid;place-items:center;font-family:"Bebas Neue",sans-serif;font-size:26px;color:var(--accent-contrast, #fff);}
+  .rt-slot[data-kind="ghost"] .rt-letter{color:var(--text);font-size:20px;}
+  .rt-fuse{position:absolute;left:6px;right:6px;bottom:-12px;height:4px;border-radius:2px;background:var(--text-dim);transform-origin:left center;display:none;}
+  .rt-slot[data-k="0"][data-kind="live"] .rt-fuse{display:block;}
+  .rt-pop{animation:rt-pop .15s ease-out;}
+  @keyframes rt-pop{from{transform:scale(0.82);}to{transform:scale(1);}}
+  .rt-climber{width:84px;height:126px;left:50%;margin-left:-42px;bottom:8px;transition:transform .22s ease;}
+  .rt-half{z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:var(--text);}
+  .rt-half:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
+  .rt-half:active .rt-pad{transform:scale(0.96);}
+  .rt-pad{display:flex;align-items:center;gap:6px;min-width:76px;min-height:56px;padding:0 14px;box-sizing:border-box;justify-content:center;border-radius:28px;
+    border:2px solid color-mix(in srgb, var(--text) 30%, transparent);background:color-mix(in srgb, var(--surface) 70%, transparent);}
+  .rt-half-R .rt-pad{flex-direction:row-reverse;}
+  .rt-pad b{font-family:"Bebas Neue",sans-serif;font-size:26px;font-weight:400;line-height:1;}
+  .rt-burst{position:absolute;top:176px;width:64px;height:64px;margin-left:-32px;border-radius:50%;box-sizing:border-box;animation:rt-burst .42s ease-out forwards;}
+  .rt-burst[data-side="L"]{left:25%;} .rt-burst[data-side="R"]{left:75%;}
+  .rt-burst-hit{border:5px solid var(--send);}
+  .rt-burst-slip{border:3px dashed var(--text-dim);}
+  @keyframes rt-burst{from{transform:scale(1);opacity:0.9;}to{transform:scale(1.5);opacity:0;}}
+  @media (prefers-reduced-motion: reduce){
+    .rt-pop, .rt-burst{animation:none;} .rt-burst{opacity:0.7;}
+    .rt-climber, .rt-slot{transition:none;}
+  }
+  /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
     .gm-card:active{transform:none;}
@@ -1778,14 +1897,11 @@
       <b id="gamesRestClock"></b>
     </div>
     <div class="gm-menu" id="gamesMenu">
-      <button type="button" class="gm-card" id="gmChalkBtn">
-        <span class="gm-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg></span>
-        <span class="gm-card-main"><span class="gm-card-title">Chalk Up</span><span class="gm-card-sub">Breathe with the ring and tap on the beat. Calm, good for rest.</span><span class="gm-card-best" id="gmChalkBest"></span></span>
-      </button>
-      <button type="button" class="gm-card" id="gmHopBtn">
-        <span class="gm-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg></span>
-        <span class="gm-card-main"><span class="gm-card-title">Hold Hop</span><span class="gm-card-sub">Tap left or right to climb up the holds and dodge falling rocks.</span><span class="gm-card-best" id="gmHopBest"></span></span>
-      </button>
+      <div class="gm-cards" id="gmCards"></div>
+      <div class="switch-row gm-sound">
+        <div><div class="switch-label">Game sounds</div><div class="switch-desc">Soft ticks, never over the timer beeps</div></div>
+        <button type="button" class="switch" id="gmSoundSwitch" aria-pressed="true" aria-label="Game sounds"><span class="switch-thumb"></span></button>
+      </div>
       <p class="gm-note">Just for fun. Games never change your XP, level, streak or Wall.</p>
     </div>
     <div class="gm-play" id="gamesPlay" hidden>
@@ -2503,7 +2619,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"" }, // devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true }, // gameSound: soft Play sounds; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -2530,19 +2646,34 @@
       // already watched your climber reach (null until you first open The Wall).
       restDays:[], wallSeen:null,
       // GAMES (Play): only a best score and a play count per game. Never touches XP, levels, streaks or holds.
-      games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 } },
+      games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 }, chalkRhythm:{ best:0, plays:0, perfectBest:0 },
+              routeRead:{ best:0, plays:0, longest:0 }, summitStack:{ best:0, plays:0, tallest:0, perfects:0 }, reachTimer:{ best:0, plays:0, bestStreak:0 },
+              _meta:{ playDays:[], chalkMigrated:false } },
       activeSessionId:null
     };
   }
 
   // Older saves and backups have no `games`; anything malformed becomes zeros. Unknown games/keys are kept.
+  // Per-game extra numeric fields and their caps; best is capped at 9999 and plays at 999999 for every game.
+  var GAMES_FIELDS = {
+    chalkUp:{}, holdHop:{},                     // legacy: preserved (holdHop is no longer on the menu)
+    chalkRhythm:{ perfectBest:9999 }, routeRead:{ longest:9999 },
+    summitStack:{ tallest:9999, perfects:999999 }, reachTimer:{ bestStreak:9999 }
+  };
+  function gamesClamp(v, max){ var n = Math.floor(Number(v)); return isFinite(n) && n>0 ? Math.min(n, max) : 0; }
   function gamesNormalize(g){
     var src = g && typeof g==="object" && !Array.isArray(g) ? g : {}, out = Object.assign({}, src);
-    ["chalkUp", "holdHop"].forEach(function(id){
-      var r = src[id] && typeof src[id]==="object" ? src[id] : {};
-      var b = Math.floor(Number(r.best)), p = Math.floor(Number(r.plays));
-      out[id] = Object.assign({}, r, { best:isFinite(b) && b>0 ? Math.min(b, 9999) : 0, plays:isFinite(p) && p>0 ? Math.min(p, 999999) : 0 });
+    Object.keys(GAMES_FIELDS).forEach(function(id){
+      var r = src[id] && typeof src[id]==="object" && !Array.isArray(src[id]) ? src[id] : {};
+      var o = Object.assign({}, r, { best:gamesClamp(r.best, 9999), plays:gamesClamp(r.plays, 999999) });
+      Object.keys(GAMES_FIELDS[id]).forEach(function(k){ o[k] = gamesClamp(r[k], GAMES_FIELDS[id][k]); });
+      out[id] = o;
     });
+    var meta = src._meta && typeof src._meta==="object" && !Array.isArray(src._meta) ? src._meta : {};
+    var m = Object.assign({}, meta, { playDays:Array.isArray(meta.playDays) ? meta.playDays.slice(0, 400) : [], chalkMigrated:!!meta.chalkMigrated });
+    // Chalk Up's best moves to Chalk Rhythm exactly once (best only, plays reset); the chalkUp key stays.
+    if(!m.chalkMigrated){ out.chalkRhythm.best = Math.max(out.chalkRhythm.best, out.chalkUp.best); m.chalkMigrated = true; }
+    out._meta = m;
     return out;
   }
 
@@ -3264,7 +3395,9 @@
     if(audioCtx && audioCtx.state==="suspended" && audioCtx.resume){ audioCtx.resume().catch(function(){}); }
     return audioCtx;
   }
-  function beep(freq, dur, vol){
+  var lastTimerBeepAt = 0;   // when a non-game beep last started: game sounds stay clear of it (see gmSoundOk)
+  function beep(freq, dur, vol, fromGame){
+    if(!fromGame) lastTimerBeepAt = Date.now();
     var ctx = ensureAudio();
     if(!ctx) return;
     try{
@@ -3758,7 +3891,8 @@
     state.sessions.forEach(function(s){ s.attempts.forEach(function(a){ xp += a.xp; while(xp>=xpForLevel(level)){ xp -= xpForLevel(level); level++; } }); });
     return level; // order doesn't matter for a plain XP total
   }
-  // A short phone vibration for unlock moments only (Android; iPhones ignore it). Never for plain logging.
+  // A short phone vibration (Android; iPhones ignore it): confirms a tap without looking, marks unlock moments.
+  // The one buzz() in the app; it does nothing under reduced motion or where vibration isn't supported.
   function buzz(pattern){ try{ if(navigator.vibrate && !prefersReducedMotion) navigator.vibrate(pattern); }catch(e){} }
   // ---- celebration card: one at a time, queued behind whatever is already open ----
   var celebrations = [], celebrationOpen = false;
@@ -5147,9 +5281,7 @@
 
   function clearToasts(){ var st = document.getElementById("toastStack"); if(st) st.innerHTML = ""; }
 
-  // A short buzz confirms a tap without looking - useful with chalky hands, and when the phone
-  // is on the mat and a timer beep might be muted. Does nothing where vibration isn't supported.
-  function buzz(pattern){ try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){} }
+  // (buzz() lives with the celebrations below: one definition, skipped under reduced motion.)
 
   // Undo the most recent log straight from its confirmation - mis-taps happen between burns.
   function undoAttempt(id){
@@ -7003,62 +7135,171 @@
 
   document.querySelectorAll("img[data-ui]").forEach(function(im){ im.src = IMG.ui[im.dataset.ui]; });
 
-  /* ==== GAMES (Play: Chalk Up + Hold Hop; removable, see AGENTS.md "Games") ==== */
-  // Two tiny offline games for rest times. They draw the player's own climber (variant + outfit) from existing frames
-  // only, and keep just a best score and a play count in state.games. They never touch XP, levels, streaks or holds.
-  var CHALK_CYCLE_MS = 3000, CHALK_BEATS = 15, HOP_LIVES = 3, HOP_TIME_MS = 60000;
-  // -- pure rules (also exposed to dev/tests.html) --
-  function chalkBeatMs(k){ return CHALK_CYCLE_MS/2 + k*CHALK_CYCLE_MS; }   // the ring meets its outline at the top of each breath
-  function chalkRate(errMs){ var e = Math.abs(errMs); return e<=130 ? "perfect" : e<=260 ? "good" : "miss"; }
-  function chalkRun(ratings){
-    var cur = 0, best = 0, hits = 0, perfects = 0;
-    ratings.forEach(function(r){
-      if(r==="perfect" || r==="good"){ cur++; hits++; if(r==="perfect") perfects++; if(cur>best) best = cur; } else cur = 0;
+  /* ==== GAMES (Play: registry shell + games; removable, see AGENTS.md "Games") ==== */
+  // Tiny offline games for rest times. They draw the player's own climber (variant + outfit) from existing frames
+  // only, and keep a best score and a play count per game in state.games. They never touch XP, levels, streaks or holds.
+  // This SHELL (registry, art slots, sound, pause, seeded RNG, recording, menu, rest hand-off) belongs to T0.
+  // Each game lives in its own region further down and registers itself with gmRegister(); see docs/GAMES-DESIGN.md.
+
+  /*GAMES-PURE-BEGIN*/
+  // mulberry32: the one seeded RNG for every game (and for tests). Same seed, same sequence.
+  function mulberry32(seed){ var a = seed>>>0; return function(){ a = (a+0x6D2B79F5)>>>0; var t = a; t = Math.imul(t ^ (t>>>15), t|1); t ^= t + Math.imul(t ^ (t>>>7), t|61); return ((t ^ (t>>>14))>>>0)/4294967296; }; }
+  function gmHash(str){ var h = 0x811C9DC5; str = String(str); for(var i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h>>>0; }   // FNV-1a
+  function gmSeedFor(id, now){ return (((now==null ? Date.now() : now) ^ gmHash(id))>>>0); }
+  // Best-score rule (design doc 4.7): a round counts (plays+1, best candidate) only if it had >= 1 player action.
+  // Score 0 with an action counts as a play and leaves best alone. Extras (longest, tallest, ...) merge with Math.max.
+  function recordRound(games, id, res){
+    var g = gamesNormalize(games), r = res || {};
+    var score = Math.max(0, Math.floor(Number(r.score))||0), actions = Math.max(0, Math.floor(Number(r.actions))||0);
+    var c = g[id] || { best:0, plays:0 };
+    if(actions<1) return { games:g, counted:false, newBest:false, best:c.best };
+    var next = Object.assign({}, c, { best:Math.min(Math.max(c.best, score), 9999), plays:Math.min(c.plays+1, 999999) });
+    var ex = r.extra && typeof r.extra==="object" ? r.extra : {};
+    Object.keys(ex).forEach(function(k){
+      var v = Math.floor(Number(ex[k])); if(!isFinite(v) || v<0) return;
+      next[k] = Math.max(Math.floor(Number(c[k]))||0, Math.min(v, 999999));
     });
-    return { streak:cur, best:best, hits:hits, perfects:perfects };
+    g[id] = next;
+    return { games:g, counted:true, newBest:score>c.best, best:next.best };
   }
-  function chalkRingScale(tMs){ var p = (((tMs % CHALK_CYCLE_MS)+CHALK_CYCLE_MS) % CHALK_CYCLE_MS)/CHALK_CYCLE_MS; return 0.38 + 0.62*(0.5-0.5*Math.cos(2*Math.PI*p)); }
-  function hopRng(seed){ var a = seed>>>0; return function(){ a = (a+0x6D2B79F5)>>>0; var t = a; t = Math.imul(t ^ (t>>>15), t|1); t ^= t + Math.imul(t ^ (t>>>7), t|61); return ((t ^ (t>>>14))>>>0)/4294967296; }; }
-  // a row is [leftHold, rightHold]; there is always at least one hold, and the first row has both
-  function hopRow(rnd){ var r = rnd(); return r<0.4 ? [true, true] : r<0.7 ? [true, false] : [false, true]; }
-  function hopTap(row, lane){ return row && row[lane] ? "climb" : "slip"; }
-  function hopSpeed(score){ return { fallMs:Math.max(800, 2000-score*40), spawnMs:Math.max(700, 1700-score*30) }; }
-  function hopRockHits(rockLane, progress, climberLane){ return rockLane===climberLane && progress>=0.78 && progress<=1; }
-  function gamesRecord(games, id, score){
-    var g = gamesNormalize(games), s = Math.max(0, Math.floor(Number(score))||0), c = g[id] || { best:0, plays:0 };
-    var newBest = s>c.best;
-    g[id] = Object.assign({}, c, { best:Math.max(c.best, s), plays:c.plays+1 });
-    return { games:g, newBest:newBest, best:g[id].best };
+  /*GAMES-PURE-END*/
+
+  // -- registry (design doc 4.1) --
+  // def: { id, title, blurb, order, icon (svg markup), soon (true = menu card disabled, "Coming soon"), replaces (id this one supersedes),
+  //        intro:{title,text,hint}, hud0(best) -> first HUD line, start(), pause(), resume(dtMs), stop(),
+  //        state() -> {score, actions, extra}   // current round; actions = real player taps (0 = round doesn't count)
+  //        rest:{ closeScore() -> same shape as state() }, art:[slot ids], frames:[gmFrames keys] }
+  var GAMES = {};
+  function gmRegister(def){ GAMES[def.id] = def; return def; }
+  function gmList(menuOnly){
+    return Object.keys(GAMES).map(function(k){ return GAMES[k]; }).filter(function(d){
+      if(!menuOnly) return true;
+      // a "coming soon" stub steps aside while the game it replaces is still playable
+      return !(d.soon && d.replaces && GAMES[d.replaces] && !GAMES[d.replaces].soon);
+    }).sort(function(a, b){ return (a.order||0)-(b.order||0); });
   }
-  if(window.__cruxTest) window.__cruxGames = { normalize:gamesNormalize, record:gamesRecord, chalkBeatMs:chalkBeatMs, chalkRate:chalkRate, chalkRun:chalkRun, chalkRingScale:chalkRingScale, hopRng:hopRng, hopRow:hopRow, hopTap:hopTap, hopSpeed:hopSpeed, hopRockHits:hopRockHits, open:function(o){ openGames(o); }, close:function(){ closeGames(); } };
+
+  // -- art slots (design doc 4.2): every slot works with src:null (a drawn default); a file swaps in via gmArtRegister --
+  var GAME_ART = {
+    "ss.ledge":{ src:null, w:320, h:72, shape:"rect" }, "ss.block":{ src:null, w:320, h:72, shape:"rect" }, "ss.flag":{ src:null, w:96, h:144, shape:"flag" },
+    "rr.hold":{ src:null, w:56, h:56, shape:"circle" }, "rr.ring":{ src:null, w:64, h:64, shape:"ring" },
+    "cr.puff":{ src:null, w:64, h:64, shape:"circle", frames:4 }, "cr.ring":{ src:null, w:230, h:230, shape:"ring" },
+    "rt.hold":{ src:null, w:64, h:64, shape:"circle" }, "rt.ghost":{ src:null, w:64, h:64, shape:"ring" },
+    "ui.perfect":{ src:null, w:28, h:28, shape:"ring" }, "ui.good":{ src:null, w:28, h:28, shape:"circle" }, "ui.best":{ src:null, w:28, h:28, shape:"rect" }, "ui.summit":{ src:null, w:28, h:28, shape:"flag" },
+    "card.chalkRhythm":{ src:null, w:44, h:44, shape:"ring" }, "card.routeRead":{ src:null, w:44, h:44, shape:"circle" },
+    "card.summitStack":{ src:null, w:44, h:44, shape:"rect" }, "card.reachTimer":{ src:null, w:44, h:44, shape:"circle" }
+  };
+  // The override hook. file is relative to assets/ (e.g. "games/ss-block.png"); blobId is its upload id (see asset()).
+  // New PNGs need this (or an IMG entry) so the Artifact build can serve them; no art files ship with the shell.
+  function gmArtRegister(slot, file, blobId){
+    if(!GAME_ART[slot] || !file) return false;
+    GAME_ART[slot].src = asset(String(file).replace(/^assets\//, ""), blobId);
+    return true;
+  }
+  function gmArt(slot){
+    var a = GAME_ART[slot] || { src:null, w:48, h:48, shape:"rect" }, el;
+    if(a.src){ el = document.createElement("img"); el.src = a.src; el.alt = ""; el.className = "gm-art gm-art-img"; }
+    else { el = document.createElement("span"); el.className = "gm-art gm-art-"+(a.shape||"rect"); }
+    if(a.w) el.style.width = a.w+"px";
+    if(a.h) el.style.height = a.h+"px";
+    el.setAttribute("data-slot", slot); el.setAttribute("aria-hidden", "true");
+    return el;
+  }
+  function gmArtHtml(slot){ var d = document.createElement("div"); d.appendChild(gmArt(slot)); return d.innerHTML; }
 
   // -- the player's climber, drawn through the one resolver + outfit layers --
   var gmWall = IMG.wall || {}, gmMoves = gmWall.moves || {};
   function gmFrames(){
     var r = function(a){ return a || IMG.mascot.idle[0]; };
+    var list = function(a){ return (a && a.length ? a : [IMG.mascot.idle[0]]).map(climberFrame); };
     return {
       idle: IMG.mascot.idle.map(climberFrame),
       chalk: climberFrame(r(gmWall.cl_chalk)),
       reachL: climberFrame(r(gmWall.cl_reach_l)), reachR: climberFrame(r(gmWall.cl_reach_r)), pull: climberFrame(r(gmWall.cl_pull)),
       clap: (gmMoves.chalk_clap || IMG.mascot.idle).map(climberFrame),
-      hit: climberFrame(IMG.mascot.land[0]), cheer: IMG.ui.cheer.map(climberFrame)
+      hit: climberFrame(IMG.mascot.land[0]), cheer: IMG.ui.cheer.map(climberFrame),
+      step: list(IMG.mascot.step), jump: list(IMG.mascot.jump),
+      ledgeSit: climberFrame(r(gmWall.cl_sit)), ledgeLook: climberFrame(r(gmWall.cl_sit_look)),
+      flag: list(gmWall.summitFlag)
     };
   }
-  var gm = null;          // the running game {id, ...}; null when the menu is showing
+  var gm = null;          // the running round {id, seed, rnd, frames, t0, paused, ...}; null when the menu is showing
   var gmKey = null, gmWatchId = null, gmOpener = null, gmFromRest = false, gmClosing = false;
   function gmEl(id){ return document.getElementById(id); }
   function gmSay(msg){ var h = gmEl("gmHint"); if(h) h.textContent = msg; }
   function gmSetSrc(img, src){ if(img && img.getAttribute("src")!==src) img.src = src; }
   function gmPreload(f){
-    [].concat(f.idle, f.chalk, f.reachL, f.reachR, f.pull, f.clap, f.hit, f.cheer).forEach(function(s){ try{ var i = new Image(); i.src = s; }catch(e){} });
+    [].concat(f.idle, f.chalk, f.reachL, f.reachR, f.pull, f.clap, f.hit, f.cheer, f.step, f.jump, f.ledgeSit, f.ledgeLook, f.flag).forEach(function(s){ try{ var i = new Image(); i.src = s; }catch(e){} });
   }
+  // Every game starts its round through this: gm gets the seeded RNG (gm.seed replays a round), t0 and an action count.
+  function gmBegin(id, frames, props, seed){
+    var s = seed==null ? gmSeedFor(id) : seed>>>0;
+    gm = Object.assign({ id:id, frames:frames, t0:performance.now(), seed:s, rnd:mulberry32(s), actions:0, paused:false, pausedAt:0 }, props || {});
+    return gm;
+  }
+  function gmRoundState(){
+    var d = gm && GAMES[gm.id], s = d && d.state ? d.state() : { score:gm ? gm.score : 0, actions:gm ? gm.actions : 0, extra:{} };
+    return { score:Math.max(0, Math.floor(Number(s.score))||0), actions:Math.max(0, Math.floor(Number(s.actions))||0), extra:s.extra || {} };
+  }
+  // The single place a score is written (design doc 4.7).
+  function gamesRecordRound(id, res){
+    var r = recordRound(state.games, id, res);
+    if(r.counted){ state.games = r.games; saveState(); }
+    return r;
+  }
+
+  // -- sound (design doc 4.3): soft, below the timer beeps, never over them, silent when the timer is about to beep --
+  var gmBeeps = 0;
+  function gmSoundOk(){
+    if(!state.settings.gameSound) return false;
+    var now = Date.now();
+    if(now-lastTimerBeepAt<350) return false;                                   // a timer beep just played or is still ringing
+    if(getActiveSession() && timer.running && timerRemainingMs(now)<=3500) return false;   // last seconds: the 3-2-1 and end beeps own the air
+    return true;
+  }
+  function gmBeep(freq, dur, vol){
+    if(!gmSoundOk()) return false;
+    beep(freq, Math.min(dur||60, 120), Math.min(vol||0.08, 0.12), true); gmBeeps++;
+    return true;
+  }
+  function gmBuzz(pattern){ if(state.settings.gameSound) buzz(pattern); }       // buzz() already skips reduced motion
+
+  // -- pause on hidden (design doc 4.4): the round waits; a tap resumes it with the clock shifted --
+  function gmPause(){
+    if(!gm || gm.paused) return;
+    var d = GAMES[gm.id];
+    gm.paused = true; gm.pausedAt = performance.now();
+    if(gmRaf){ cancelAnimationFrame(gmRaf); gmRaf = null; }
+    if(d && d.pause) d.pause();
+    var stage = gmEl("gmStage"); if(!stage || gmEl("gmPaused")) return;
+    var b = document.createElement("button"); b.type = "button"; b.className = "gm-paused"; b.id = "gmPaused";
+    b.textContent = "Paused. Tap to resume";
+    b.addEventListener("click", gmResume);
+    stage.appendChild(b); gmSay("Paused. Tap to resume.");
+    try{ b.focus({ preventScroll:true }); }catch(e){}
+  }
+  function gmResume(){
+    if(!gm || !gm.paused) return;
+    var d = GAMES[gm.id], dt = Math.max(0, performance.now()-gm.pausedAt);
+    gm.paused = false; gm.pausedAt = 0; gm.t0 += dt;
+    var p = gmEl("gmPaused"); if(p) p.remove();
+    if(d && d.resume) d.resume(dt);
+    gmSay("Back in.");
+  }
+
   function gamesBestLine(id){ var g = state.games && state.games[id] || { best:0, plays:0 }; return g.plays ? "Best "+g.best+" · played "+g.plays : "Not played yet"; }
   function renderGamesMenu(){
     gm = null; stopGameLoop();
     gmEl("gamesMenu").hidden = false; gmEl("gamesPlay").hidden = true;
     gmEl("gamesTitle").textContent = "Play";
-    gmEl("gmChalkBest").textContent = gamesBestLine("chalkUp");
-    gmEl("gmHopBest").textContent = gamesBestLine("holdHop");
+    gmEl("gmCards").innerHTML = gmList(true).map(function(d){
+      var art = GAME_ART["card."+d.id], ic = art && art.src ? '<img src="'+art.src+'" alt="">' : (d.icon || "");
+      return '<button type="button" class="gm-card'+(d.soon ? ' gm-soon' : '')+'" id="gmCard_'+d.id+'" data-game="'+d.id+'"'+(d.soon ? ' disabled aria-disabled="true"' : '')+'>'
+        + '<span class="gm-card-ic" aria-hidden="true">'+ic+'</span>'
+        + '<span class="gm-card-main"><span class="gm-card-title">'+d.title+'</span><span class="gm-card-sub">'+d.blurb+'</span>'
+        + '<span class="gm-card-best">'+(d.soon ? "Coming soon" : gamesBestLine(d.id))+'</span></span></button>';
+    }).join("");
+    var sw = gmEl("gmSoundSwitch"); if(sw) sw.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
   }
   var gmRaf = null, gmTimeouts = [];
   function stopGameLoop(){
@@ -7070,40 +7311,44 @@
   function gmHud(score, line){ gmEl("gmScore").textContent = score; gmEl("gmLine").textContent = line; gmEl("gmTime").textContent = ""; }
 
   // -- intro / over panels --
+  // In the last 10 s of a rest no "Play again" / "Games" prompt is offered; the round that is running finishes by itself.
+  function gmRestLow(){ if(!gmFromRest) return false; var r = gamesRestState(); return r.resting && r.ms<=10000; }
   function gmIntro(id){
-    var chalk = id==="chalkUp";
-    gmEl("gamesTitle").textContent = chalk ? "Chalk Up" : "Hold Hop";
+    var d = GAMES[id]; if(!d || d.soon) return;
+    var intro = d.intro || {};
+    gmEl("gamesTitle").textContent = d.title;
     gmEl("gamesMenu").hidden = true; gmEl("gamesPlay").hidden = false;
-    var best = state.games[id].best;
-    gmHud(0, chalk ? "Streak 0 · Best "+best : "Grips 3 · Best "+best);
-    gmEl("gmStage").innerHTML = '<div class="gm-panel"><p class="gm-panel-title">'+(chalk ? "Breathe and tap" : "Climb and dodge")+'</p>'
-      + '<p class="gm-panel-text">'+(chalk
-          ? "Breathe in as the ring grows. Tap just as it meets the outline. Keep your streak going for 45 seconds."
-          : "Tap the left or right side to reach that hold. Rocks fall down the lanes, so move out of the way. 3 grips, 60 seconds.")+'</p>'
+    var best = state.games[id] ? state.games[id].best : 0;
+    gmHud(0, d.hud0 ? d.hud0(best) : "Best "+best);
+    gmEl("gmStage").innerHTML = '<div class="gm-panel"><p class="gm-panel-title">'+(intro.title || d.title)+'</p>'
+      + '<p class="gm-panel-text">'+(intro.text || d.blurb)+'</p>'
       + '<button type="button" class="btn btn-primary" id="gmStartBtn">Start</button></div>';
-    gmSay(chalk ? "Calm, one tap per breath." : "No XP, just for fun.");
-    gmEl("gmStartBtn").addEventListener("click", function(){ chalk ? chalkStart() : hopStart(); });
+    gmSay(intro.hint || "No XP, just for fun.");
+    gmEl("gmStartBtn").addEventListener("click", function(){ d.start(); });
     gmEl("gmStartBtn").focus({ preventScroll:true });
   }
+  // extra: { title, note, noButtons, actions, extra }. actions < 1 means the round isn't recorded (design doc 4.7).
   function gmOver(id, score, extra){
     stopGameLoop();
-    var rec = { newBest:false, best:state.games[id].best };
-    if(score>0 || extra.force){
-      var r = gamesRecord(state.games, id, score); state.games = r.games; saveState(); rec = r;
-    }
+    extra = extra || {};
+    var rec = recordRound(state.games, id, { score:score, actions:extra.actions, extra:extra.extra });
+    if(rec.counted){ state.games = rec.games; saveState(); }
     var f = gm && gm.frames;
     gm = null;
+    var low = gmRestLow();   // no "Play again" in the last 10 s of rest
+    var noButtons = !!extra.noButtons || low;
+    var note = low && !extra.noButtons ? (extra.note ? extra.note+" · " : "")+"Rest is almost over." : extra.note;
     gmEl("gmStage").innerHTML = '<div class="gm-panel"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
       + '<p class="gm-panel-title">'+(extra.title||"Round over")+'</p>'
       + '<p class="gm-big" aria-live="polite">'+score+'</p>'
-      + '<p class="gm-panel-text">'+(rec.newBest ? "New personal best!" : "Best "+rec.best)+(extra.note ? " · "+extra.note : "")+'</p>'
-      + (extra.noButtons ? '' : '<div class="gm-actions"><button type="button" class="btn btn-primary" id="gmAgainBtn">Play again</button><button type="button" class="btn btn-ghost" id="gmMenuBtn">Games</button></div>')
+      + '<p class="gm-panel-text">'+(rec.newBest ? "New personal best!" : "Best "+rec.best)+(note ? " · "+note : "")+'</p>'
+      + (noButtons ? '' : '<div class="gm-actions"><button type="button" class="btn btn-primary" id="gmAgainBtn">Play again</button><button type="button" class="btn btn-ghost" id="gmMenuBtn">Games</button></div>')
       + '</div>';
     var fr = f || gmFrames();
     outfitFollow(gmEl("gmClimberImg"), gmEl("gmClimber"));
     gmSetSrc(gmEl("gmClimberImg"), rec.newBest ? fr.cheer[0] : fr.idle[0]);
     gmHud(score, rec.newBest ? "New best" : "Best "+rec.best);
-    if(!extra.noButtons){
+    if(!noButtons){
       gmEl("gmAgainBtn").addEventListener("click", function(){ gmIntro(id); });
       gmEl("gmMenuBtn").addEventListener("click", renderGamesMenu);
       gmEl("gmAgainBtn").focus({ preventScroll:true });
@@ -7111,165 +7356,711 @@
     gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
   }
 
-  /* ---- Chalk Up ---- */
-  function chalkStart(){
+  // Test hook (dev/tests.html). Created before the game regions; each region extends it with Object.assign(window.__cruxGames, {...}) inside `if(window.__cruxTest)`.
+  if(window.__cruxTest) window.__cruxGames = {
+    normalize:gamesNormalize, recordRound:recordRound, mulberry32:mulberry32, seedFor:gmSeedFor,
+    ids:function(){ return Object.keys(GAMES); }, def:function(id){ return GAMES[id]; }, menuIds:function(){ return gmList(true).map(function(d){ return d.id; }); },
+    art:GAME_ART, gmArt:gmArt, gmArtRegister:gmArtRegister, frames:gmFrames,
+    soundOk:gmSoundOk, beep:gmBeep, beepCount:function(){ return gmBeeps; },
+    paused:function(){ return !!(gm && gm.paused); }, current:function(){ return gm; },
+    open:function(o){ openGames(o); }, close:function(){ closeGames(); }
+  };
+
+  /* ==== chalkRhythm BEGIN (T1: replaces the legacy Chalk Up; the saved chalkUp data stays, its best was copied by gamesNormalize) ==== */
+  // Rules: a ring grows toward a fixed outline once per beat; tap when it meets the outline. Fixed grid from round start,
+  // no hidden beats, no fail. Tempo 60 -> 64 -> 70 bpm; windows +-80 / +-160 / +-280 ms (design doc 2.1).
+  /*CHALKRHYTHM-PURE-BEGIN*/
+  var CR_ROUND_MS = 45000, CR_WIN = { perfect:80, good:160, close:280 };
+  var CR_PHASES = [ { to:15000, bpm:60, beat:1000 }, { to:30000, bpm:64, beat:937 }, { to:45000, bpm:70, beat:857 } ];
+  function chalkPhase(tMs){ for(var i=0;i<CR_PHASES.length;i++){ if(tMs<CR_PHASES[i].to) return CR_PHASES[i]; } return CR_PHASES[CR_PHASES.length-1]; }
+  function chalkBpm(tMs){ return chalkPhase(tMs).bpm; }
+  function chalkBeatLen(tMs){ return chalkPhase(tMs).beat; }
+  var crBeatsCache = null;
+  // The fixed beat grid, in ms from round start. Each beat's length is set by the phase its ring starts in.
+  function chalkBeats(){
+    if(crBeatsCache) return crBeatsCache;
+    var out = [], t = 0;
+    for(;;){ var b = t+chalkBeatLen(t); if(b>CR_ROUND_MS) break; out.push(b); t = b; }
+    return (crBeatsCache = out);
+  }
+  function chalkWindow(deltaMs){ var d = Math.abs(deltaMs); return d<=CR_WIN.perfect ? "perfect" : d<=CR_WIN.good ? "good" : d<=CR_WIN.close ? "close" : "miss"; }
+  function chalkPoints(label){ return label==="perfect" ? 3 : label==="good" ? 2 : label==="close" ? 1 : 0; }
+  // A tap goes to the nearest UNCLAIMED beat within the Close window; a claimed beat can never be claimed again.
+  function chalkAttribute(tMs, claimed){
+    var beats = chalkBeats(), best = -1, bd = Infinity;
+    for(var k=0;k<beats.length;k++){
+      if(claimed && claimed[k]) continue;
+      var d = Math.abs(tMs-beats[k]);
+      if(d<=CR_WIN.close && d<bd){ best = k; bd = d; }
+    }
+    if(best<0) return null;
+    var delta = tMs-beats[best];
+    return { k:best, delta:delta, label:chalkWindow(delta) };
+  }
+  // Which beat's ring is growing at tMs: { k, p } with p 0..1 (1 = the ring meets the outline).
+  function chalkRingAt(tMs){
+    var beats = chalkBeats(), n = beats.length;
+    for(var k=0;k<n;k++){
+      if(tMs<=beats[k]){ var s = k ? beats[k-1] : 0; return { k:k, p:Math.max(0, Math.min(1, (tMs-s)/(beats[k]-s))) }; }
+    }
+    return { k:n-1, p:1 };
+  }
+  function chalkRingScale(p){ return 0.35+0.65*Math.max(0, Math.min(1, p)); }
+  function chalkRingOpacity(p){ return Math.min(1, 0.3+Math.max(0, p)*5); }   // fades in over the first ~14% of the beat, then stays full
+  // Replays a list of tap times (ms from round start) through the same rules the game uses.
+  function chalkSimulate(taps){
+    var claimed = {}, score = 0, perfects = 0, hits = 0, labels = [];
+    taps.slice().sort(function(a, b){ return a-b; }).forEach(function(t){
+      var r = chalkAttribute(t, claimed);
+      if(!r){ labels.push(null); return; }
+      claimed[r.k] = true; hits++; score += chalkPoints(r.label); if(r.label==="perfect") perfects++; labels.push(r);
+    });
+    return { score:score, perfects:perfects, hits:hits, claimed:claimed, labels:labels };
+  }
+  /*CHALKRHYTHM-PURE-END*/
+
+  var crRMOverride = null;   // tests only
+  function crReduced(){ return crRMOverride===null ? !!prefersReducedMotion : crRMOverride; }
+  var CR_LABEL = { perfect:"Perfect", good:"Good", close:"Close" };
+  gmRegister({
+    id:"chalkRhythm", title:"Chalk Rhythm", order:1, blurb:"A slow beat, a ring, a tap. Calm and forgiving.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>',
+    intro:{ title:"Breathe and tap", text:"Breathe in as the ring grows. Tap when it meets the outline. A missed beat just scores 0, the next one comes.", hint:"Tap anywhere. 45 seconds, no fail." },
+    hud0:function(best){ return "Best "+best; },
+    start:function(){ chalkRhythmStart(); },
+    state:function(){ var g = gm && gm.id==="chalkRhythm" ? gm : null; return { score:g ? g.score : 0, actions:g ? g.taps : 0, extra:{ perfectBest:g ? g.perfects : 0 } }; },
+    rest:{ closeScore:function(){ var g = gm && gm.id==="chalkRhythm" ? gm : null; return { score:g ? g.score : 0, actions:g ? g.taps : 0, extra:{ perfectBest:g ? g.perfects : 0 } }; } },
+    resume:function(){ if(gm && gm.frame) gmRaf = requestAnimationFrame(gm.frame); },
+    art:["cr.ring", "cr.puff"], frames:["idle", "chalk", "clap", "cheer"]
+  });
+  function chalkRhythmStart(){
     var f = gmFrames(); gmPreload(f);
-    gmEl("gmStage").innerHTML = '<div class="gm-ring gm-ring-target" aria-hidden="true"></div><div class="gm-ring gm-ring-live" id="gmRing" aria-hidden="true"></div>'
+    var rm = crReduced(), outline = gmArt("cr.ring"), live = gmArt("cr.ring"), puff = gmArt("cr.puff");
+    outline.classList.add("cr-outline"); live.classList.add("cr-live"); live.id = "crRing"; puff.classList.add("cr-puff");
+    var stage = gmEl("gmStage");
+    stage.innerHTML = '<div class="cr-field'+(rm ? ' cr-rm' : '')+'" id="crField" aria-hidden="true"></div>'
       + '<div class="gm-climber gm-climber-big" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
-      + '<p class="gm-phase" id="gmPhase" aria-hidden="true">Breathe in</p>'
+      + '<div class="cr-label" id="crLabel" aria-hidden="true"></div>'
       + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap when the ring meets the outline"></button>';
+    var field = gmEl("crField");
+    field.appendChild(outline); field.appendChild(live); field.appendChild(puff);
+    field.insertAdjacentHTML("beforeend", '<div class="cr-bar"><i id="crBarFill"></i></div>');
     var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
-    var g = gm = { id:"chalkUp", frames:f, t0:performance.now(), ratings:[], tapped:{}, judged:-1, idleN:0, clapN:0, holdUntil:0, lastScale:0 };
-    gmHud(0, "Streak 0 · Best "+state.games.chalkUp.best);
+    var beats = chalkBeats();
+    var g = gmBegin("chalkRhythm", f, { claimed:{}, judged:-1, score:0, perfects:0, taps:0, streak:0, chalkUntil:0, clapFrom:0, clapUntil:0,
+      puffUntil:0, labelUntil:0, dimUntil:0, lastScale:-1, lastOp:-1, lastSec:-1 });
+    gmHud(0, "Best "+state.games.chalkRhythm.best);
     gmSay("Go. Tap as the ring meets the outline.");
+    var label = gmEl("crLabel"), bar = gmEl("crBarFill");
     function tap(){
-      if(gm!==g) return;
+      if(gm!==g || g.paused) return;
       var t = performance.now()-g.t0;
-      var k = Math.max(0, Math.min(CHALK_BEATS-1, Math.round((t-CHALK_CYCLE_MS/2)/CHALK_CYCLE_MS)));
-      var err = t-chalkBeatMs(k), rating = chalkRate(err);
-      if(g.tapped[k] || rating==="miss"){ g.ratings.push("miss"); chalkShow("Off the beat", g); gmSetSrc(img, g.frames.idle[0]); return; }
-      g.tapped[k] = true; g.ratings.push(rating);
-      chalkShow(rating==="perfect" ? "Perfect" : "Good", g);
-      gmSetSrc(img, g.frames.clap[g.clapN++ % g.frames.clap.length]); g.holdUntil = t+260;
+      g.taps++;
+      var r = chalkAttribute(t, g.claimed);
+      if(!r) return;                                   // between beats, or that beat is taken: nothing happens, nothing is lost
+      g.claimed[r.k] = true; g.score += chalkPoints(r.label);
+      g.streak++;
+      if(r.label==="perfect"){
+        g.perfects++; g.chalkUntil = t+300; g.puffUntil = t+300;
+        if(!rm){ puff.classList.remove("go"); void puff.offsetWidth; puff.classList.add("go"); }
+        gmBuzz(8);
+      }
+      if(r.label==="perfect" || r.label==="good") gmBeep(200, 60, 0.15);
+      if(g.streak%8===0){ g.clapFrom = t; g.clapUntil = t+900; }
+      label.innerHTML = '<span class="cr-j cr-j-'+r.label+'" aria-hidden="true"></span><span>'+CR_LABEL[r.label]+'</span>';
+      label.classList.add("on"); g.labelUntil = t+650;
+      gmHud(g.score, "Best "+state.games.chalkRhythm.best);
+      gmSay(CR_LABEL[r.label]+". "+g.score+" points.");
     }
     gmEl("gmTap").addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
     gmEl("gmTap").addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
     gmEl("gmTap").focus({ preventScroll:true });
-    var ring = gmEl("gmRing"), phase = gmEl("gmPhase");
     function frame(){
-      if(gm!==g) return;
-      var t = performance.now()-g.t0, p = (t % CHALK_CYCLE_MS)/CHALK_CYCLE_MS;
-      var s = chalkRingScale(t);
-      if(prefersReducedMotion) s = Math.round(s*4)/4;   // simplified: the ring steps instead of gliding
-      if(s!==g.lastScale){ ring.style.transform = "scale("+s.toFixed(3)+")"; g.lastScale = s; }
-      var label = p<0.5 ? "Breathe in" : "Breathe out";
-      if(phase.textContent!==label) phase.textContent = label;
-      // a beat nobody tapped within its window is a miss
-      while(g.judged+1<CHALK_BEATS && t>chalkBeatMs(g.judged+1)+260){
-        g.judged++; if(!g.tapped[g.judged]){ g.ratings.push("miss"); chalkShow("Missed", g); }
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      // a beat nobody claimed within its Close window is simply a 0
+      while(g.judged+1<beats.length && t>beats[g.judged+1]+CR_WIN.close){
+        g.judged++;
+        if(!g.claimed[g.judged]){ g.streak = 0; g.dimUntil = t+250; }
       }
-      if(t>=g.holdUntil){
-        var want = (p>0.38 && p<0.62) ? g.frames.chalk : g.frames.idle[Math.floor(t/700)%g.frames.idle.length];
-        gmSetSrc(img, want);
+      var ring = chalkRingAt(t);
+      if(rm){
+        var w = (ring.p*100).toFixed(1)+"%"; if(bar.style.width!==w) bar.style.width = w;
+      } else {
+        var s = chalkRingScale(ring.p), op = chalkRingOpacity(ring.p);
+        if(s!==g.lastScale){ live.style.transform = "scale("+s.toFixed(3)+")"; g.lastScale = s; }
+        if(op!==g.lastOp){ live.style.opacity = op.toFixed(2); g.lastOp = op; }
+        live.classList.toggle("cr-dim", t<g.dimUntil);
       }
-      gmEl("gmTime").textContent = Math.max(0, Math.ceil((CHALK_BEATS*CHALK_CYCLE_MS-t)/1000))+"s";
-      if(t>=CHALK_BEATS*CHALK_CYCLE_MS){ var run = chalkRun(g.ratings); gmOver("chalkUp", run.best, { note:run.hits+" of "+CHALK_BEATS+" in time", force:true }); return; }
+      if(label.classList.contains("on") && t>=g.labelUntil) label.classList.remove("on");
+      var want = t<g.chalkUntil ? f.chalk : t<g.clapUntil ? f.clap[Math.floor((t-g.clapFrom)/300)%f.clap.length] : f.idle[0];
+      gmSetSrc(img, want);
+      var sec = Math.max(0, Math.ceil((CR_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ gmEl("gmTime").textContent = sec+"s"; g.lastSec = sec; }
+      if(t>=CR_ROUND_MS){
+        gmOver("chalkRhythm", g.score, { title:"Nice breathing.", note:g.perfects+" perfect", actions:g.taps, extra:{ perfectBest:g.perfects } });
+        return;
+      }
       gmRaf = requestAnimationFrame(frame);
     }
+    g.frame = frame;
     gmRaf = requestAnimationFrame(frame);
   }
-  function chalkShow(word, g){
-    var run = chalkRun(g.ratings);
-    gmHud(run.best, "Streak "+run.streak+" · Best "+state.games.chalkUp.best);
-    gmSay(word+". Streak "+run.streak+".");
+  if(window.__cruxTest){
+    Object.assign(window.__cruxGames, {
+      chalkBpm:chalkBpm, chalkBeatLen:chalkBeatLen, chalkBeats:chalkBeats, chalkWindow:chalkWindow, chalkPoints:chalkPoints,
+      chalkAttribute:chalkAttribute, chalkRingAt:chalkRingAt, chalkRingScale:chalkRingScale, chalkRingOpacity:chalkRingOpacity,
+      chalkSimulate:chalkSimulate, chalkReduced:function(v){ crRMOverride = v; }
+    });
+  }
+  /* ==== chalkRhythm END ==== */
+  /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
+  // Route Read (design doc 2.2): a 3 x 5 wall, a route lights up with numbers, then hides; tap the holds in order from memory.
+  // Rule functions are pure (rows count up from the bottom, row 0 = bottom). Cells are {row, col}.
+  var RR_COLS = 3, RR_ROWS = 5, RR_START = 5, RR_MIN = 4, RR_MAX = 8, RR_ROUND_MS = 60000, RR_BETWEEN_MS = 800, RR_RESHOW_MS = 1500, RR_FLAG_MS = 1200;
+  function routeLen(n){ n = Math.floor(Number(n)); if(!isFinite(n)) n = RR_START; return Math.max(RR_MIN, Math.min(RR_MAX, n)); }
+  function routeShowMs(n){ return [2600, 3000, 3400, 3800, 4200][routeLen(n)-RR_MIN]; }
+  function routeNextLen(n, missed){ n = routeLen(n); return routeLen(missed ? n-1 : n+1); }
+  function routeGen(seed, n){
+    n = routeLen(n);
+    var rnd = mulberry32(seed), counts = [1, 1, 1, 1, 1], r, i;
+    if(n>RR_ROWS){
+      var rows = [0, 1, 2, 3, 4];
+      for(i=rows.length-1;i>0;i--){ var j = Math.floor(rnd()*(i+1)), t = rows[i]; rows[i] = rows[j]; rows[j] = t; }
+      for(i=0;i<n-RR_ROWS;i++) counts[rows[i]] = 2;
+    } else if(n<RR_ROWS){
+      counts[1+Math.floor(rnd()*4)] = 0;     // skip one row above the bottom: never a gap wider than one row
+    }
+    var route = [], prev = -1;
+    for(r=0;r<RR_ROWS;r++){
+      for(i=0;i<counts[r];i++){
+        var opts = [];
+        for(var c=0;c<RR_COLS;c++){
+          if(prev>=0 && (Math.abs(c-prev)>1 || (i>0 && c===prev))) continue;
+          opts.push(c);
+        }
+        var col = opts[Math.floor(rnd()*opts.length)];
+        route.push({ row:r, col:col }); prev = col;
+      }
+    }
+    return route;
+  }
+  // The rules a route must satisfy; also the property-test oracle.
+  function routeCheck(route, n){
+    n = routeLen(n);
+    if(!Array.isArray(route) || route.length!==n) return false;
+    var seen = {}, perRow = {};
+    for(var i=0;i<n;i++){
+      var h = route[i];
+      if(!h || h.row<0 || h.row>=RR_ROWS || h.col<0 || h.col>=RR_COLS || h.row!==Math.floor(h.row) || h.col!==Math.floor(h.col)) return false;
+      var k = h.row+","+h.col; if(seen[k]) return false; seen[k] = 1;
+      perRow[h.row] = (perRow[h.row]||0)+1;
+      if(i===0){ if(h.row!==0) return false; continue; }
+      var p = route[i-1], dr = h.row-p.row, dc = Math.abs(h.col-p.col);
+      if(dr<0 || dr>2 || dc>1) return false;
+      if(dr===0 && dc===0) return false;
+      if(n<=RR_ROWS && dr<1) return false;                 // up to 5 holds: strictly ascending
+    }
+    for(var rr in perRow) if(perRow[rr]>2) return false;
+    return route[n-1].row>=3;
   }
 
-  /* ---- Hold Hop ---- */
-  var HOP_ROW0 = 66, HOP_ROW_GAP = 60, HOP_VISIBLE = 5;
-  function hopStart(){
+  function routeReadStart(){
     var f = gmFrames(); gmPreload(f);
-    gmEl("gmStage").innerHTML = '<div class="gm-lane gm-lane-0" aria-hidden="true"></div><div class="gm-lane gm-lane-1" aria-hidden="true"></div>'
-      + '<div class="gm-rows" id="gmRows" aria-hidden="true"></div><div class="gm-rocks" id="gmRocks" aria-hidden="true"></div>'
-      + '<div class="gm-climber gm-climber-hop" id="gmClimber" data-lane="0"><img id="gmClimberImg" alt="Your climber"></div>'
-      + '<button type="button" class="gm-half gm-half-0" id="gmLeft" aria-label="Reach the left hold"></button>'
-      + '<button type="button" class="gm-half gm-half-1" id="gmRight" aria-label="Reach the right hold"></button>';
-    var img = gmEl("gmClimberImg"), body = gmEl("gmClimber"), rowsEl = gmEl("gmRows"), rocksEl = gmEl("gmRocks");
-    outfitFollow(img, body); gmSetSrc(img, f.idle[0]);
-    var rnd = hopRng((Date.now() ^ 0x9E3779B9)>>>0);
-    var g = gm = { id:"holdHop", frames:f, t0:performance.now(), rnd:rnd, rows:[[true, true]], cur:0, lane:0, score:0, lives:HOP_LIVES,
-                   rocks:[], nextRock:performance.now()+1200, invulnUntil:0, busy:0, rowEls:{}, last:performance.now() };
-    function rowAt(i){ while(g.rows.length<=i) g.rows.push(hopRow(rnd)); return g.rows[i]; }
-    function renderRows(){
-      for(var i=g.cur;i<g.cur+HOP_VISIBLE;i++){
-        var row = rowAt(i), el = g.rowEls[i];
-        if(!el){
-          el = g.rowEls[i] = document.createElement("div"); el.className = "gm-row";
-          el.innerHTML = '<span class="gm-hold gm-hold-0"></span><span class="gm-hold gm-hold-1"></span>';
-          el.children[0].hidden = !row[0]; el.children[1].hidden = !row[1];
-          rowsEl.appendChild(el);
+    var stage = gmEl("gmStage");
+    stage.innerHTML = '<div class="rr-stage'+(prefersReducedMotion ? ' rr-calm' : '')+'" id="rrStage">'
+      + '<div class="gm-climber rr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p>'
+      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div></div>';
+    var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
+    var wall = gmEl("rrWall"), cells = {};
+    for(var r=RR_ROWS-1;r>=0;r--) for(var c=0;c<RR_COLS;c++){
+      var b = document.createElement("button"); b.type = "button"; b.className = "rr-cell"; b.id = "rrCell_"+r+"_"+c;
+      b.setAttribute("data-row", r); b.setAttribute("data-col", c);
+      b.setAttribute("aria-label", "Hold, row "+(r+1)+", column "+(c+1));
+      b.appendChild(gmArt("rr.hold"));
+      var ring = gmArt("rr.ring"); ring.classList.add("rr-ring"); b.appendChild(ring);
+      var badge = document.createElement("span"); badge.className = "rr-badge"; badge.setAttribute("aria-hidden", "true"); b.appendChild(badge);
+      wall.appendChild(b); cells[r+","+c] = b;
+    }
+    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false });
+    var bestBefore = state.games.routeRead ? state.games.routeRead.best : 0;
+    function pose(src){ gmSetSrc(img, src); }
+    function lineText(){ return "Route of "+g.N+" · Best "+Math.max(bestBefore, g.score); }
+    function paint(showNums){
+      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.querySelector(".rr-badge").textContent = ""; el.classList.remove("rr-lit"); }
+      if(!showNums) return;
+      g.route.forEach(function(h, i){ var el = cells[h.row+","+h.col]; el.classList.add("rr-lit"); el.querySelector(".rr-badge").textContent = String(i+1); });
+    }
+    function label(txt){ gmEl("rrLabel").textContent = txt; }
+    function beginShow(t){
+      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseEnd = t+routeShowMs(g.N);
+      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]);
+      gmHud(g.score, lineText()); gmSay("Memorise the route. "+g.N+" holds, numbered in order.");
+    }
+    function beginInput(){
+      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]);
+      gmSay("Your turn. Tap the holds in order, 1 of "+g.N+".");
+    }
+    function reachFor(h){ return h.col===0 ? g.frames.reachL : h.col===RR_COLS-1 ? g.frames.reachR : g.frames.pull; }
+    function tap(cell){
+      if(gm!==g || g.paused || g.phase!=="input") return;
+      var row = +cell.getAttribute("data-row"), col = +cell.getAttribute("data-col");
+      if(cell.getAttribute("data-state")==="tapped") return;
+      g.actions++;
+      var t = performance.now()-g.t0, want = g.route[g.step];
+      if(want.row===row && want.col===col){
+        cell.setAttribute("data-state", "tapped");
+        cell.querySelector(".rr-badge").textContent = "";
+        g.step++;
+        gmBeep(600, 40, 0.06);
+        if(g.step>=g.N){
+          g.score += g.N; g.done++; if(g.N>g.longest) g.longest = g.N;
+          var wasMax = g.N===RR_MAX;
+          g.N = routeNextLen(g.N, g.missed); g.missed = false;
+          g.phase = "between"; g.phaseEnd = t+(wasMax ? RR_FLAG_MS : RR_BETWEEN_MS); g.flag = wasMax;
+          pose(wasMax ? g.frames.flag[0] : g.frames.pull);
+          label(wasMax ? "Top of the route." : "Nice. Next route.");
+          gmHud(g.score, lineText()); gmSay("Route complete. "+g.score+" points.");
+          [440, 554, 659].forEach(function(fq, i){ gmLater(function(){ gmBeep(fq, 80, 0.1); }, i*90); });
+        } else {
+          label("Tap hold "+(g.step+1)+" of "+g.N); pose(reachFor(g.route[g.step]));
+          gmSay("Good. "+g.step+" of "+g.N+".");
         }
-        el.style.bottom = (HOP_ROW0+(i-g.cur)*HOP_ROW_GAP)+"px";
-      }
-      Object.keys(g.rowEls).forEach(function(k){ if(+k<g.cur){ g.rowEls[k].remove(); delete g.rowEls[k]; } });
-    }
-    function hud(){ gmHud(g.score, "Grips "+g.lives+" · Best "+state.games.holdHop.best); }
-    function setFrame(src, ms){ gmSetSrc(img, src); g.busy++; var n = g.busy; gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.idle[0]); }, ms); }
-    function loseGrip(msg, now){
-      g.lives--; g.invulnUntil = now+900; setFrame(g.frames.hit, 420); hud(); gmSay(msg+" "+g.lives+" grip"+(g.lives===1?"":"s")+" left.");
-      if(g.lives<=0) hopEnd("Out of grips");
-    }
-    function hopEnd(title){
-      if(gm!==g) return;
-      gmOver("holdHop", g.score, { title:title, note:g.score+" hold"+(g.score===1?"":"s"), force:true });
-    }
-    function reach(lane){
-      if(gm!==g || g.lives<=0) return;
-      var now = performance.now(), next = rowAt(g.cur+1);
-      if(hopTap(next, lane)==="climb"){
-        g.cur++; g.lane = lane; g.score++; body.dataset.lane = String(lane);
-        renderRows(); hud();
-        gmSetSrc(img, lane===0 ? g.frames.reachL : g.frames.reachR); g.busy++; var n = g.busy;
-        gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.pull); }, 90);
-        gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.idle[0]); }, 200);
-        gmSay("Hold "+g.score+".");
       } else {
-        loseGrip("Slipped, no hold there.", now);
+        cell.setAttribute("data-state", "wrong");
+        g.missed = true;
+        g.phase = "reshow"; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
+        gmSay("That was close, here it is.");
+        label("That was close, here it is");
+        pose(g.frames.hit);
+        // the route re-shows with numbers; the wrong hold keeps its X until then
+        var wrong = cell;
+        paint(true); wrong.setAttribute("data-state", "wrong");
       }
     }
-    gmEl("gmLeft").addEventListener("pointerdown", function(e){ e.preventDefault(); reach(0); });
-    gmEl("gmRight").addEventListener("pointerdown", function(e){ e.preventDefault(); reach(1); });
-    ["gmLeft", "gmRight"].forEach(function(id, lane){
-      gmEl(id).addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) reach(lane); } });
-    });
-    gmKey = function(e){ if(e.key==="ArrowLeft"){ e.preventDefault(); reach(0); } else if(e.key==="ArrowRight"){ e.preventDefault(); reach(1); } };
-    document.addEventListener("keydown", gmKey);
-    renderRows(); hud(); gmSay("Climb. Tap left or right, and dodge the rocks.");
+    wall.addEventListener("click", function(e){ var b = e.target.closest ? e.target.closest(".rr-cell") : null; if(b) tap(b); });
     function frame(){
-      if(gm!==g) return;
-      var now = performance.now(), el = now-g.t0, sp = hopSpeed(g.score);
-      var fall = sp.fallMs*(prefersReducedMotion ? 1.3 : 1), spawn = sp.spawnMs*(prefersReducedMotion ? 1.3 : 1);
-      if(now>=g.nextRock){
-        var lane = rnd()<0.5 ? 0 : 1, node = document.createElement("span");
-        node.className = "gm-rock gm-rock-"+lane; rocksEl.appendChild(node);
-        g.rocks.push({ lane:lane, born:now, fall:fall, node:node });
-        g.nextRock = now+spawn*(0.8+rnd()*0.5);
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      if(t>=RR_ROUND_MS){
+        var res = { actions:g.actions, extra:{ longest:g.longest } }, was = g.actions>=1 && g.score>bestBefore, fr = g.frames;
+        gmOver("routeRead", g.score, { title:"Good reading.", note:"Longest route "+g.longest, actions:res.actions, extra:res.extra });
+        if(!was){ var ci = gmEl("gmClimberImg"); if(ci) gmSetSrc(ci, fr.ledgeSit); }
+        return;
       }
-      g.rocks = g.rocks.filter(function(r){
-        var p = (now-r.born)/r.fall;
-        if(p>1.02){ r.node.remove(); return false; }
-        r.node.style.top = (-10+p*95)+"%";
-        if(now>=g.invulnUntil && hopRockHits(r.lane, p, g.lane)){ r.node.remove(); loseGrip("A rock hit you.", now); return false; }
-        return true;
-      });
-      if(gm!==g) return;
-      var left = Math.max(0, HOP_TIME_MS-el);
-      gmEl("gmTime").textContent = Math.ceil(left/1000)+"s";
-      if(left<=0){ hopEnd("Time"); return; }
+      if(t>=g.phaseEnd){
+        if(g.phase==="show") beginInput();
+        else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); gmSay("Try again from the start."); }
+        else if(g.phase==="between") beginShow(t);
+      }
+      if(g.phase==="between" && g.flag) pose(g.frames.flag[Math.floor(t/600)%g.frames.flag.length]);
+      var sec = Math.max(0, Math.ceil((RR_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
       gmRaf = requestAnimationFrame(frame);
     }
+    g.frame = frame;
+    gmHud(0, lineText());
+    beginShow(0);
     gmRaf = requestAnimationFrame(frame);
   }
+  function routeReadState(){ return { score:gm ? gm.score : 0, actions:gm ? gm.actions : 0, extra:{ longest:gm ? gm.longest : 0 } }; }
+  gmRegister({
+    id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>',
+    intro:{ title:"Read, then climb", text:"A route lights up with numbers. They hide. Tap the holds in order from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
+    hud0:function(best){ return "Route of 5 · Best "+best; },
+    art:["rr.hold", "rr.ring", "card.routeRead"], frames:["idle", "reachL", "reachR", "pull", "hit", "cheer", "ledgeSit", "flag"],
+    start:function(){ routeReadStart(); },
+    state:routeReadState,
+    rest:{ closeScore:routeReadState },
+    resume:function(){ if(gm && gm.frame && !gmRaf) gmRaf = requestAnimationFrame(gm.frame); }
+  });
+  if(window.__cruxTest) Object.assign(window.__cruxGames, { routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
+    routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, reshowMs:RR_RESHOW_MS } });
+  /* ==== routeRead END ==== */
+  /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
+  // Summit Stack (design doc 2.3). A block slides over the tower, tap drops it, the overlap stays. No fail state.
+  // Geometry is in "logical px" of a 360-wide world (a 320 px block is 100%); the world is scaled to the stage.
+  var SS_BASE = 320, SS_FLOOR = 0.30*SS_BASE, SS_PERFECT_PX = 6, SS_REGAIN = 0.08*SS_BASE, SS_LEARN_BLOCKS = 4, SS_SUMMIT = 20;
+  var SS_WORLD_W = 360, SS_CENTER = SS_WORLD_W/2, SS_TRAVEL = SS_BASE/2;       // the slider's centre sweeps SS_CENTER +- 160
+  var SS_ROUND_MS = 45000, SS_BLOCK_H = 28, SS_DROP_MS = 170, SS_FALL_MS = 420, SS_RISE = 118, SS_CLIMBER_H = 90;
+  // crossing time (edge to edge of the 320 lane) for block number n (1-based)
+  function stackCross(n){ n = Math.max(1, Math.floor(Number(n))||1); return n<=4 ? 2400 : n<=9 ? 2100 : n<=14 ? 1800 : 1500; }
+  // what a drop does. n = number of the block being dropped, prev = width of the block below, err = signed centre offset (px).
+  // Returns { miss, perfect, width, shift, over }: shift = new centre minus the block below's centre; over = trimmed overhang px.
+  function stackDrop(n, prev, err){
+    n = Math.max(1, Math.floor(Number(n))||1);
+    prev = Math.max(SS_FLOOR, Math.min(SS_BASE, Number(prev)||SS_BASE)); err = Number(err)||0;
+    var a = Math.abs(err);
+    if(a>=prev) return { miss:true, perfect:false, width:0, shift:0, over:0 };       // no overlap at all: it falls off, tower unchanged
+    if(a<=SS_PERFECT_PX) return { miss:false, perfect:true, width:Math.min(SS_BASE, prev+SS_REGAIN), shift:0, over:0 };
+    if(n<=SS_LEARN_BLOCKS) return { miss:false, perfect:false, width:prev, shift:0, over:0 };   // learn blocks: forgiven, snapped on
+    return { miss:false, perfect:false, width:Math.max(prev-a, SS_FLOOR), shift:err/2, over:a };
+  }
+  function stackWidth(n, prev, err){ return stackDrop(n, prev, err).width; }
+  // time the whole block takes to cross its own width (the reaction window), in ms
+  function stackWindowMs(n, width){ return width*stackCross(n)/SS_BASE; }
+  // slider centre offset (-160..160) at tMs since the block appeared: a triangle wave, deterministic. phase 0..1, side +1/-1.
+  function stackPos(tMs, crossMs, phase, side){
+    var u = ((tMs/(2*crossMs) + (phase||0)) % 1 + 1) % 1;
+    var tri = u<0.5 ? u*4-1 : 3-u*4;
+    return (side<0 ? -1 : 1)*tri*SS_TRAVEL;
+  }
+  // which pose the climber holds, ms after the last stack
+  function stackPose(sinceMs, blocks){ return sinceMs<150 ? "jump" : sinceMs<330 ? "land" : sinceMs<600 ? "step" : (blocks>=SS_SUMMIT ? "flag" : "idle"); }
+  function stackScore(blocks, perfects){ return blocks+perfects; }
+
+  gmRegister({
+    id:"summitStack", title:"Summit Stack", order:3, blurb:"Drop each block on the last to build a tower.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="16" width="16" height="4" rx="1"/><rect x="6" y="10" width="12" height="4" rx="1"/><rect x="9" y="4" width="7" height="4" rx="1"/></svg>',
+    intro:{ title:"Stack to the summit", text:"A block slides over the tower. Tap anywhere to drop it. What overlaps stays, the overhang falls off. Line it up for a Perfect and it grows back. 45 seconds.", hint:"No XP, just for fun. A miss costs nothing." },
+    hud0:function(best){ return "Blocks 0 · Best "+best; },
+    start:function(){ summitStackStart(); },
+    state:function(){ return summitStackState(); },
+    rest:{ closeScore:function(){ return summitStackState(); } },
+    resume:function(dt){
+      if(!gm || gm.id!=="summitStack") return;
+      gm.blockT0 += dt; gm.dropAt += dt; gm.fallAt += dt; gm.poseAt += dt;
+      if(gm.frame) gmRaf = requestAnimationFrame(gm.frame);
+    },
+    art:["ss.ledge", "ss.block", "ss.flag", "ui.perfect", "ui.summit"], frames:["idle", "step", "jump", "hit", "flag", "ledgeSit", "cheer"]
+  });
+  function summitStackState(){
+    var g = gm && gm.id==="summitStack" ? gm : null;
+    if(!g) return { score:0, actions:0, extra:{} };
+    return { score:g.score, actions:g.taps, extra:{ tallest:g.n, perfects:g.perfects } };
+  }
+  function summitStackStart(){
+    var f = gmFrames(); gmPreload(f);
+    var stage = gmEl("gmStage");
+    var sw = stage.clientWidth || 340, sh = stage.clientHeight || 352;
+    var k = Math.min(1, sw/SS_WORLD_W), lh = sh/k;
+    var ground = lh - 46;                       // top of the starting ledge, in world px
+    var camLine = lh*0.6;                       // the top block settles 60% of the way down
+    stage.innerHTML = '<div class="ss-time" id="ssTime" aria-hidden="true"></div>'
+      + '<div class="ss-world" id="ssWorld" style="width:'+SS_WORLD_W+'px;height:'+lh+'px;left:'+((sw-SS_WORLD_W*k)/2)+'px;transform:scale('+k+')">'
+      + '<div class="ss-cam" id="ssCam"><div id="ssTower"></div>'
+      + '<div class="ss-flag" id="ssFlag" hidden></div>'
+      + '<div class="gm-climber ss-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<div id="ssSlider" class="ss-slider"></div></div></div>'
+      + '<p class="ss-label" id="ssLabel" aria-hidden="true"></p>'
+      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap anywhere to drop the block"></button>';
+    var cam = gmEl("ssCam"), tower = gmEl("ssTower"), slider = gmEl("ssSlider"), label = gmEl("ssLabel"), bar = gmEl("ssTime"), flagEl = gmEl("ssFlag");
+    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber");
+    outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
+    flagEl.appendChild(gmArt("ss.flag")); var fa = flagEl.firstChild; fa.style.width = "26px"; fa.style.height = "38px";
+    var ledge = gmArt("ss.ledge"); ledge.classList.add("ss-blk"); ledge.style.width = SS_BASE+"px"; ledge.style.height = SS_BLOCK_H+"px";
+    ledge.style.left = (SS_CENTER-SS_BASE/2)+"px"; ledge.style.top = ground+"px"; tower.appendChild(ledge);
+
+    var g = gmBegin("summitStack", f, { n:0, score:0, perfects:0, taps:0, topC:SS_CENTER, topW:SS_BASE, phase:"slide", blockT0:0, dropAt:0, fallAt:0,
+      poseAt:-1e9, side:1, cross:stackCross(1), ph:0, res:null, dropX:SS_CENTER, shift:0, lastBar:-1, lastSec:-1, flagged:false });
+    g.ph = g.rnd(); g.side = g.rnd()<0.5 ? -1 : 1; g.blockT0 = g.t0;
+    function topY(){ return ground - g.n*SS_BLOCK_H; }
+    function mkBlock(w){ var b = gmArt("ss.block"); b.classList.add("ss-blk"); b.style.width = w+"px"; b.style.height = SS_BLOCK_H+"px"; return b; }
+    function putClimber(){
+      climber.style.left = (g.topC-30)+"px"; climber.style.top = (topY()-SS_CLIMBER_H)+"px";
+      flagEl.style.left = (g.topC+22)+"px"; flagEl.style.top = (topY()-SS_CLIMBER_H-6)+"px";
+    }
+    function setSlider(cx, y){ slider.style.transform = "translate3d("+(cx-g.topW/2)+"px,"+y+"px,0)"; }
+    function newSlider(){
+      g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = performance.now();
+      slider.innerHTML = ""; slider.style.opacity = "1"; slider.appendChild(mkBlock(g.topW));
+    }
+    function say(text, perfect){
+      label.innerHTML = (perfect ? gmArtHtml("ui.perfect") : "")+'<span>'+text+'</span>'; label.classList.add("on");
+      var stamp = ++g.labelN; g.labelN = stamp;
+      gmLater(function(){ if(g.labelN===stamp) label.classList.remove("on"); }, 900);
+    }
+    g.labelN = 0;
+    function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, 0)); }
+    function chunk(left, y, w, dir){
+      var c = mkBlock(w); c.classList.add("ss-chunk"); c.style.left = left+"px"; c.style.top = y+"px"; cam.appendChild(c);
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*18)+"px,150px) rotate("+(dir*14)+"deg)"; }); });
+      gmLater(function(){ c.remove(); }, 700);
+    }
+    function land(now){
+      var r = g.res, ty = topY();
+      if(r.miss){ g.phase = "fall"; g.fallAt = now; slider.style.opacity = "0"; say("Missed. Next block", false); gmSay("Missed the tower. Next block."); return; }
+      var newC = g.topC + r.shift, b = mkBlock(r.width);
+      b.style.left = (newC-r.width/2)+"px"; b.style.top = (ty-SS_BLOCK_H)+"px"; tower.appendChild(b);
+      if(r.perfect && !prefersReducedMotion){ b.classList.add("ss-bob"); }
+      if(r.over>0){
+        var sign = g.dropX>g.topC ? 1 : -1, edge = g.topC + sign*g.topW/2;
+        chunk(sign>0 ? edge : edge-r.over, ty-SS_BLOCK_H, r.over, sign);
+      }
+      g.n++; g.topC = newC; g.topW = r.width; g.score += 1 + (r.perfect ? 1 : 0); if(r.perfect) g.perfects++;
+      g.poseAt = now;
+      // the camera: a transform on one element, the top block settles at 60% of the stage
+      var sh = Math.max(0, camLine - topY());
+      if(sh!==g.shift){ g.shift = sh; cam.style.transform = "translate3d(0,"+sh+"px,0)"; }
+      putClimber();
+      gmBeep(110, 70, 0.12);
+      if(r.perfect){ gmLater(function(){ if(gm===g) gmBeep(660, 60, 0.08); }, 75); gmBuzz(8); }
+      hud();
+      if(r.perfect) say("Perfect", true);
+      else say("Good", false);
+      if(g.n>=SS_SUMMIT && !g.flagged){ g.flagged = true; flagEl.hidden = false; say("Summit", false); }
+      gmSay((r.perfect ? "Perfect. " : "")+g.n+" blocks, score "+g.score+".");
+      newSlider();
+    }
+    function tap(){
+      if(gm!==g || g.paused || g.phase!=="slide") return;
+      var now = performance.now();
+      g.taps++;
+      var cx = SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side);
+      g.dropX = cx; g.res = stackDrop(g.n+1, g.topW, cx-g.topC);
+      g.phase = "drop"; g.dropAt = now;
+    }
+    var tapBtn = gmEl("gmTap");
+    tapBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
+    tapBtn.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
+    tapBtn.focus({ preventScroll:true });
+
+    var lastKey = "";
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var now = performance.now(), t = now-g.t0, ty = topY(), restY = ty-SS_BLOCK_H, slideY = restY-SS_RISE;
+      if(t>=SS_ROUND_MS){ summitStackFinish(g, f); return; }
+      var fr = Math.max(0, 1-t/SS_ROUND_MS), q = Math.round(fr*500)/500;
+      if(q!==g.lastBar){ g.lastBar = q; bar.style.transform = "scaleX("+q+")"; }
+      var sec = Math.ceil((SS_ROUND_MS-t)/1000);
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      if(g.phase==="slide"){
+        setSlider(SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side), slideY);
+      } else if(g.phase==="drop"){
+        var p = Math.min(1, (now-g.dropAt)/SS_DROP_MS);
+        setSlider(g.dropX, slideY + (restY-slideY)*p*p);
+        if(p>=1) land(now);
+      } else if(g.phase==="fall"){
+        var d = now-g.fallAt;
+        setSlider(g.dropX, restY + d*0.5);
+        if(d>=SS_FALL_MS) newSlider();
+      }
+      // the climber: step / jump / land on a stack, the summit flag after 20, otherwise idle
+      var key = stackPose(now-g.poseAt, g.n), src;
+      if(key==="jump") src = f.jump[0]; else if(key==="land") src = f.hit; else if(key==="step") src = f.step[g.n % f.step.length];
+      else if(key==="flag") src = f.flag[Math.floor(now/600) % f.flag.length]; else src = f.idle[0];
+      if(src!==lastKey){ lastKey = src; img.classList.toggle("wide", key==="flag" && f.flag.indexOf(src)>=0); gmSetSrc(img, src); }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    putClimber(); newSlider(); hud();
+    gmSay("Go. Tap anywhere to drop the block.");
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function summitStackFinish(g, f){
+    var s = summitStackState(), prevBest = state.games.summitStack.best;
+    gmOver("summitStack", s.score, { title:"Nice stack.", note:"Tallest "+s.extra.tallest, actions:s.actions, extra:s.extra });
+    // not a new best: sit on the ledge (the shell shows idle/cheer by default)
+    if(!(s.actions>=1 && s.score>prevBest)){ var im = gmEl("gmClimberImg"); if(im) gmSetSrc(im, f.ledgeSit); }
+  }
+  if(window.__cruxTest) Object.assign(window.__cruxGames, { stackCross:stackCross, stackDrop:stackDrop, stackWidth:stackWidth, stackWindowMs:stackWindowMs, stackPos:stackPos, stackPose:stackPose, stackScore:stackScore,
+      stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT } });
+  /* ==== summitStack END ==== */
+  /* ==== reachTimer BEGIN (T4: reachTimer* functions, .rt- CSS, gmRegister({id:"reachTimer", ...})) ==== */
+  // Reach Timer (design doc 2.4): one telegraphed target at a time on the left or right half; tap that half before it times out.
+  // Hit = up one step, wrong half or timeout = down one step (floor 0). Score = peak height. Every time below is on the round clock
+  // (performance.now() minus gm.t0), so pausing and resuming shifts it for free.
+  var RT_ROUND_MS = 45000, RT_FADE_MS = 150, RT_FIRST_MS = 600, RT_LADDER = 10, RT_MAX_SAME = 3;
+  // Pure rules. The dwell never drops below 1000 ms (design floor is 400 ms); the dwell timer starts once the target is fully visible.
+  function reachPhase(t){
+    t = Math.max(0, Number(t)||0);
+    return t<10000 ? { name:"learn", dwell:1800, gap:500, ahead:1 }
+         : t<25000 ? { name:"build", dwell:1400, gap:400, ahead:1 }
+         :           { name:"hold",  dwell:1000, gap:350, ahead:2 };
+  }
+  function reachDwell(t){ return reachPhase(t).dwell; }
+  function reachGap(t){ return reachPhase(t).gap; }
+  function reachGhosts(t){ return reachPhase(t).ahead; }
+  // Seeded side sequence ("L"/"R"); the same side never comes more than RT_MAX_SAME times in a row.
+  function reachSeq(seed, n){
+    var rnd = mulberry32(seed), out = [];
+    for(var i=0;i<n;i++){
+      var s = rnd()<0.5 ? "L" : "R";
+      if(i>=RT_MAX_SAME){ var p = out[i-1]; var same = true; for(var k=1;k<=RT_MAX_SAME;k++) if(out[i-k]!==p) same = false; if(same && s===p) s = p==="L" ? "R" : "L"; }
+      out.push(s);
+    }
+    return out;
+  }
+  // When a target that is armed to appear at appearT becomes live and times out.
+  function reachTimes(appearT){
+    var live = appearT+RT_FADE_MS, ph = reachPhase(live);
+    return { appearAt:appearT, liveAt:live, deadline:live+ph.dwell, dwell:ph.dwell, ahead:ph.ahead };
+  }
+  // The timeline for a player who answers every target `react` ms after it is fully visible (a timeout is react >= dwell).
+  function reachSchedule(seq, react){
+    var out = [], t = RT_FIRST_MS;
+    for(var i=0;i<seq.length;i++){
+      var tm = reachTimes(t);
+      if(tm.liveAt>=RT_ROUND_MS) break;
+      var done = tm.liveAt+Math.min(Math.max(0, react), tm.dwell);
+      out.push({ i:i, side:seq[i], appearAt:tm.appearAt, liveAt:tm.liveAt, deadline:tm.deadline, window:tm.deadline-tm.liveAt, ghosts:tm.ahead, doneAt:done });
+      t = done+reachGap(done);
+    }
+    return out;
+  }
+  // One answer. kind: "hit" | "slip". Returns the new {height, peak, streak, bestStreak}.
+  function reachApply(st, kind){
+    var h = st.height||0, peak = st.peak||0, streak = st.streak||0, best = st.bestStreak||0;
+    if(kind==="hit"){ h++; streak++; if(h>peak) peak = h; if(streak>best) best = streak; }
+    else { h = Math.max(0, h-1); streak = 0; }
+    return { height:h, peak:peak, streak:streak, bestStreak:best };
+  }
+  gmRegister({
+    id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>',
+    intro:{ title:"Reach for it", text:"A hold appears on the left or right. Tap that side to climb a step. A faint ring shows what comes next. Climb as high as you can in 45 seconds.", hint:"Calm, no pressure." },
+    hud0:function(best){ return "Height 0 · Best "+best; },
+    start:function(){ reachStart(); },
+    state:function(){ return { score:gm.peak||0, actions:gm.taps||0, extra:{ bestStreak:gm.bestStreak||0 } }; },
+    pause:function(){},
+    resume:function(){ if(gm && gm.frame) gmRaf = requestAnimationFrame(gm.frame); }
+  });
+  function reachStart(){
+    var f = gmFrames(); gmPreload(f);
+    var slots = "", ladder = "", k;
+    for(k=0;k<3;k++) slots += '<span class="rt-slot" data-k="'+k+'" data-kind="off" data-side="L" aria-hidden="true">'
+      + gmArtHtml("rt.hold").replace('class="gm-art ', 'class="rt-art-hold gm-art ') + gmArtHtml("rt.ghost").replace('class="gm-art ', 'class="rt-art-ghost gm-art ')
+      + '<span class="rt-letter">L</span><span class="rt-fuse"></span></span>';
+    for(k=0;k<RT_LADDER;k++) ladder += '<span class="rt-mark"></span>';
+    var pad = function(side, label, arrow){ return '<button type="button" class="gm-half rt-half rt-half-'+side+' gm-half-'+(side==="L" ? 0 : 1)+'" id="rt'+side+'" aria-label="'+label+'">'
+      + '<span class="rt-pad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+arrow+'"/></svg><b>'+side+'</b></span></button>'; };
+    gmEl("gmStage").innerHTML = '<div class="rt-ladder" aria-hidden="true">'+ladder+'</div><div class="rt-wall" id="rtWall">'+slots+'</div>'
+      + '<div class="gm-climber rt-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + pad("L", "Left hold", "M15 5l-7 7 7 7") + pad("R", "Right hold", "M9 5l7 7-7 7");
+    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber"); outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
+    var g = gmBegin("reachTimer", f, { seq:null, i:0, st:"gap", appearAt:0, liveAt:0, deadline:0, dwell:0, ahead:1, h:0, peak:0, streak:0, bestStreak:0, taps:0, pose:0, lastSec:-1 });
+    g.seq = reachSeq(g.seed, 90);
+    var slotEls = [].slice.call(gmEl("rtWall").children), marks = [].slice.call(document.querySelectorAll(".rt-mark"));
+    function arm(appearT){ var tm = reachTimes(appearT); g.appearAt = tm.appearAt; g.liveAt = tm.liveAt; g.deadline = tm.deadline; g.dwell = tm.dwell; g.ahead = tm.ahead; g.st = "gap"; }
+    function setSlot(el, kind, side){
+      if(el.getAttribute("data-kind")!==kind) el.setAttribute("data-kind", kind);
+      if(side){ if(el.getAttribute("data-side")!==side){ el.setAttribute("data-side", side); el.querySelector(".rt-letter").textContent = side; } }
+    }
+    function paint(){
+      var live = g.st!=="gap";
+      for(var k=0;k<3;k++){
+        var s = g.seq[g.i+k];
+        if(live) setSlot(slotEls[k], k===0 ? "live" : (k<=g.ahead ? "ghost" : "off"), s);
+        else setSlot(slotEls[k], k<=g.ahead ? "ghost" : "off", s);
+      }
+    }
+    function pose(src, ms){
+      var tok = ++g.pose; gmSetSrc(img, src);
+      if(ms) gmLater(function(){ if(gm===g && g.pose===tok) gmSetSrc(img, g.frames.idle[0]); }, ms);
+    }
+    function burst(side, kind){
+      var b = document.createElement("span"); b.className = "rt-burst rt-burst-"+kind; b.setAttribute("data-side", side); b.setAttribute("aria-hidden", "true");
+      gmEl("rtWall").appendChild(b); gmLater(function(){ b.remove(); }, 460);
+    }
+    function paintHeight(){
+      var n = Math.min(g.h, RT_LADDER);
+      marks.forEach(function(m, idx){ m.setAttribute("data-on", idx<n ? "1" : "0"); });
+      climber.style.transform = "translateY("+(-n*8)+"px)";
+      gmHud(g.peak, "Height "+g.h+" · Best "+state.games.reachTimer.best);
+      g.lastSec = -1;
+    }
+    function resolve(kind, side, t){
+      var next = reachApply({ height:g.h, peak:g.peak, streak:g.streak, bestStreak:g.bestStreak }, kind);
+      g.h = next.height; g.peak = next.peak; g.streak = next.streak; g.bestStreak = next.bestStreak;
+      burst(side, kind);
+      if(kind==="hit"){
+        gmBeep(520, 50, 0.08);
+        pose(side==="L" ? g.frames.reachL : g.frames.reachR, 140);
+        gmLater(function(){ if(gm===g) pose(g.h%5===0 ? g.frames.jump[0] : g.frames.pull, 260); }, 140);
+        gmSay("Up. Height "+g.h+".");
+      } else { pose(g.frames.hit, 420); gmSay("Slipped a step. Height "+g.h+"."); }
+      g.i++; arm(t+reachGap(t)); paint(); paintHeight();
+    }
+    function tap(side){
+      if(gm!==g || g.paused) return;
+      g.taps++;
+      var t = performance.now()-g.t0;
+      if(g.st==="gap") return;                         // between targets nothing is judged
+      var want = g.seq[g.i];
+      if(side===want) resolve("hit", side, t);
+      else if(g.st==="live") resolve("slip", want, t); // the wrong half only counts once the target is fully visible
+    }
+    ["L", "R"].forEach(function(s){
+      var b = gmEl("rt"+s);
+      b.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(s); });
+      b.addEventListener("click", function(e){ if(e.detail===0) tap(s); });   // keyboard Space/Enter
+    });
+    gmKey = function(e){
+      if(e.repeat) return;
+      if(e.key==="ArrowLeft"){ e.preventDefault(); tap("L"); } else if(e.key==="ArrowRight"){ e.preventDefault(); tap("R"); }
+    };
+    document.addEventListener("keydown", gmKey);
+    gmEl("rtL").focus({ preventScroll:true });
+    arm(RT_FIRST_MS); paint(); paintHeight();
+    gmSay("Go. Tap the side of the hold.");
+    var fuse = slotEls[0].querySelector(".rt-fuse");
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      if(t>=RT_ROUND_MS){ reachFinish(g); return; }
+      if(g.st==="gap" && t>=g.appearAt){
+        g.st = "in"; paint();
+        slotEls[0].classList.remove("rt-pop"); void slotEls[0].offsetWidth; slotEls[0].classList.add("rt-pop");
+        gmSay("Reach "+(g.seq[g.i]==="L" ? "left" : "right")+".");
+      }
+      if(g.st==="in" && t>=g.liveAt) g.st = "live";
+      if(g.st==="live"){
+        fuse.style.transform = "scaleX("+Math.max(0, Math.min(1, (g.deadline-t)/g.dwell)).toFixed(3)+")";
+        if(t>=g.deadline) resolve("slip", g.seq[g.i], t);   // timed out: down one step, the same sequence goes on
+      }
+      var sec = Math.max(0, Math.ceil((RT_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function reachFinish(g){
+    var note = g.bestStreak>1 ? "Longest run "+g.bestStreak : "";
+    gmOver("reachTimer", g.peak, { title:"Good reach.", note:note, actions:g.taps, extra:{ bestStreak:g.bestStreak } });
+  }
+  if(window.__cruxTest){
+    Object.assign(window.__cruxGames, { reachPhase:reachPhase, reachDwell:reachDwell, reachGap:reachGap, reachGhosts:reachGhosts, reachSeq:reachSeq,
+      reachTimes:reachTimes, reachSchedule:reachSchedule, reachApply:reachApply, RT_ROUND_MS:RT_ROUND_MS, RT_FADE_MS:RT_FADE_MS });
+  }
+  /* ==== reachTimer END ==== */
+
 
   /* ---- the overlay: open, close, rest strip ---- */
   function gamesRestState(){
     var s = getActiveSession();
     var resting = !!s && timer.phase==="rest";
-    return { resting:resting, clock:resting ? fmtClock(Math.max(0, Math.ceil(timerRemainingMs(Date.now())/1000))) : "", running:!!timer.running };
+    var ms = resting ? Math.max(0, timerRemainingMs(Date.now())) : 0;
+    return { resting:resting, ms:ms, clock:resting ? fmtClock(Math.ceil(ms/1000)) : "", running:!!timer.running };
   }
   function gamesWatch(){
     var st = gamesRestState(), strip = gmEl("gamesRest");
     if(gmClosing) return;
     if(gmFromRest && !st.resting){
-      // Rest is over: end the round (the score still counts) and head back to the timer.
+      // Rest is over: the round closes itself (it still counts if it had an action) and we head back to the timer.
       gmClosing = true;
       strip.hidden = false; strip.classList.add("back");
       gmEl("gamesRestText").textContent = "Rest is over. Back to work!";
       gmEl("gamesRestClock").textContent = "";
-      if(gm) gmOver(gm.id, gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score, { title:"Back to work", noButtons:true, force:false });
+      if(gm){
+        var d = GAMES[gm.id], rs = d && d.rest && d.rest.closeScore ? d.rest.closeScore() : gmRoundState();
+        gmOver(gm.id, rs.score, { title:"Back to work", noButtons:true, actions:rs.actions, extra:rs.extra });
+      }
       gmLater(closeGames, 1800);
       return;
     }
     strip.hidden = !st.resting;
+    if(gmFromRest && st.resting && st.ms<=10000){
+      // the clock crossed 10 s while a prompt was on screen: take the buttons away
+      var btns = document.querySelectorAll("#gmAgainBtn, #gmMenuBtn");
+      if(btns.length){
+        var panel = btns[0].closest(".gm-panel");
+        btns.forEach(function(b){ var a = b.closest(".gm-actions"); (a || b).remove(); });
+        if(panel && !panel.querySelector(".gm-rest-low")){ var p = document.createElement("p"); p.className = "gm-panel-text gm-rest-low"; p.textContent = "Rest is almost over."; panel.appendChild(p); }
+      }
+    }
     if(st.resting){
       gmEl("gamesRestClock").textContent = st.clock;
       gmEl("gamesRestText").textContent = st.running ? "Rest, timer still running" : "Rest, timer paused";
@@ -7286,12 +8077,14 @@
     if(!gmWatchId) gmWatchId = setInterval(gamesWatch, 250);
     gmEl("closeGamesBtn").focus({ preventScroll:true });
   }
+  // Leaving a round by hand keeps what you scored, unless it is paused and never resumed (that records nothing).
+  function gmBankRound(){
+    if(!gm || gm.paused) return;
+    var s = gmRoundState(); gamesRecordRound(gm.id, s);
+  }
   function closeGames(){
     var o = gmEl("gamesOverlay"); if(!o || o.hidden) return;
-    if(gm){ // closing mid-round keeps what you scored
-      var s = gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score;
-      if(s>0){ var r = gamesRecord(state.games, gm.id, s); state.games = r.games; saveState(); }
-    }
+    gmBankRound();
     stopGameLoop(); gm = null; gmClosing = false;
     if(gmWatchId){ clearInterval(gmWatchId); gmWatchId = null; }
     o.hidden = true;
@@ -7303,17 +8096,19 @@
   document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
   document.getElementById("closeGamesBtn").addEventListener("click", closeGames);
   document.getElementById("gamesOverlay").addEventListener("click", function(e){ if(e.target.id==="gamesOverlay") closeGames(); });
-  document.getElementById("gmChalkBtn").addEventListener("click", function(){ gmIntro("chalkUp"); });
-  document.getElementById("gmHopBtn").addEventListener("click", function(){ gmIntro("holdHop"); });
+  document.getElementById("gmCards").addEventListener("click", function(e){
+    var b = e.target.closest(".gm-card"); if(!b || b.disabled) return;
+    gmIntro(b.dataset.game);
+  });
+  document.getElementById("gmSoundSwitch").addEventListener("click", function(){
+    state.settings.gameSound = !state.settings.gameSound; saveState();
+    this.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
+  });
   document.getElementById("gmBackBtn").addEventListener("click", function(){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(); });
-  function closeRoundToMenu(){
-    var s = gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score;
-    if(s>0){ var r = gamesRecord(state.games, gm.id, s); state.games = r.games; saveState(); }
-    renderGamesMenu();
-  }
+  function closeRoundToMenu(){ gmBankRound(); renderGamesMenu(); }
   document.addEventListener("keydown", function(e){ if(e.key==="Escape" && !document.getElementById("gamesOverlay").hidden) closeGames(); });
-  // A hidden page can't keep a fair rhythm: stop the round quietly (the timer carries on by itself).
-  document.addEventListener("visibilitychange", function(){ if(document.hidden && gm && !document.getElementById("gamesOverlay").hidden){ stopGameLoop(); closeRoundToMenu(); } });
+  // A hidden page can't keep a fair clock: the round pauses (the timer carries on by itself) and a tap resumes it.
+  document.addEventListener("visibilitychange", function(){ if(document.hidden && gm && !document.getElementById("gamesOverlay").hidden) gmPause(); });
   /* ==== END GAMES ==== */
 
   /* ---------------- view switching ---------------- */

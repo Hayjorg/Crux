@@ -147,20 +147,48 @@ Same neutral-grey delta-layer + `tint:{color}` method as the hats above (`OUTFIT
 
 A small, optional play area for rest times, using the player's own climber. Removable: delete the `GAMES` blocks in `crux.html`
 (CSS, `#gamesOverlay`, the dock's `#openGamesBtn`, the timer card's `#playRestBtn`, the JS block, the `// GAMES hook` line in `renderTimer`,
-`gamesNormalize`/`state.games`) and the "Games:" tests.
+`gamesNormalize`/`state.games`) and the "Games:" tests. Design and research notes: `docs/GAMES-DESIGN.md`.
 - **Entry points:** "Play" on the Home dock (next to Customize), and "Play while you rest" in the session's timer card, shown only while
   `timer.phase==="rest"`. The bottom bar stays Home / Train / The Wall.
 - **It is a sheet, not a view:** `#gamesOverlay` sits over whatever is on screen, so the session timer, its beeps and the wake lock keep
-  running untouched. Opened from the rest button, it shows the rest clock, and when rest ends it stops the round (the score still counts),
-  says "Back to work" and closes itself. A hidden page also stops the round.
-- **Games:** Chalk Up (breathing ring, tap on the beat, 15 beats / 45 s, score = best streak) and Hold Hop (tap left/right to reach the next
-  hold, rocks fall down the lanes, 3 grips, 60 s, speed ramps, score = holds).
-- **Art:** existing frames only, always through `climberFrame()` and `outfitFollow()` (so variant, outfit layers and skip lists work);
-  no new images. Holds and rocks are CSS.
-- **Saved data:** only `state.games = { chalkUp:{best,plays}, holdHop:{best,plays} }`, normalised by `gamesNormalize()` in `normalizeState()`.
-  Games never write XP, levels, streaks, holds, sessions or attempts, and give no rewards. Rules are pure functions (`chalk*`, `hop*`,
-  `gamesRecord`), tested through `window.__cruxGames` (only with `window.__cruxTest`).
-- **Reduced motion:** the ring steps in quarters, rocks fall slower and transitions are off. Nothing flashes.
+  running untouched. Opened from the rest button, it shows the rest clock; when rest ends the round closes itself (the score still counts
+  if it had an action), says "Back to work" with no buttons and closes after 1.8 s. In the last 10 s of a rest an end screen has no "Play again" / "Games"
+  ("Rest is almost over."), and buttons already on screen are removed when the clock crosses 10 s. A hidden page pauses the round ("Paused. Tap to resume"); a paused round never resumed records nothing.
+- **The four games** (menu order; all calm, best score only, no XP/streaks/rewards, no fail state, hardest reaction window >= 400 ms):
+  1. **Chalk Rhythm** `chalkRhythm`, 45 s. A ring grows to a fixed outline once per beat (60 -> 64 -> 70 bpm); tap on the beat. Windows
+     Perfect +-80 / Good +-160 / Close +-280 ms = 3/2/1 points; a miss is 0. Reduced motion: a bar fills instead of a ring scaling.
+     `games.chalkRhythm = {best, plays, perfectBest}`.
+  2. **Route Read** `routeRead`, 60 s. 3 x 5 hold wall; a route of N holds (5 to 8, 4 after a miss) is numbered, then hidden; tap it from
+     memory. +N per route. A wrong tap re-shows the route for 1.5 s. `{best, plays, longest}`.
+  3. **Summit Stack** `summitStack`, 45 s. A block slides over the tower; tap to drop; overhang is trimmed (never below 30 % width);
+     Perfect (<= 6 px) gives +1 and regains width; a total miss just drops the block. Flag at 20 blocks. `{best, plays, tallest, perfects}`.
+  4. **Reach Timer** `reachTimer`, 45 s. One target on the left or right half, ghost of the next shown; tap that half before it fades
+     (dwell 1.8 -> 1.4 -> 1.0 s). A wrong half or timeout slips one step. Score = peak height. `{best, plays, bestStreak}`.
+  Hold Hop is retired from the menu; its saved `holdHop` data is kept. Legacy Chalk Up is removed; its best is copied to Chalk Rhythm
+  once (`_meta.chalkMigrated`) and the `chalkUp` key is kept.
+- **Registry:** `GAMES` / `gmRegister(def)`; the menu (`renderGamesMenu`) is built from it, sorted by `order`. A def is
+  `{ id, title, blurb, order, icon, intro:{title,text}, start(), stop?, pause?, resume?, state(), rest:{closeScore()}, hud0? }`.
+  A game ends with `gmOver(id, score, {title, note, actions, extra})`, which records through `recordRound` and draws the end screen.
+- **Shell:** `gmBegin` (seeded RNG, `gm.seed`), `gamesRecordRound`/`recordRound` (a round counts only with >= 1 action; extras merge with
+  Math.max), `gmBeep`/`gmBuzz` (setting `settings.gameSound`, silent in the last 3 s of a rest), `gmPause`/`gmResume`, `gamesWatch` (rest
+  hand-off), `GAME_ART` slots with `gmArt`/`gmArtRegister`.
+- **GAME_ART slots** (each draws as a plain shape with `src:null`; set `src` through `gmArtRegister(slot, file, blobId)` to swap in a PNG
+  without touching game logic): `ss.ledge ss.block ss.flag`, `rr.hold rr.ring`, `cr.puff cr.ring`, `rt.hold rt.ghost`,
+  `ui.perfect ui.good ui.best ui.summit`, `card.chalkRhythm card.routeRead card.summitStack card.reachTimer`.
+- **Adding a game:** (1) add a region `/* ==== myGame BEGIN/END ==== */` after the last one inside the GAMES block, with its pure rules
+  between `/*MYGAME-PURE-BEGIN*/` and `-END*/`; (2) CSS under its own prefix after `.gm-art-img`; (3) `gmRegister({...})` with a fresh
+  `order`; (4) extend the hook with `if(window.__cruxTest) Object.assign(window.__cruxGames, {...})` (the object is created before the
+  regions); (5) add its slots to `GAME_ART` and its id to `gamesNormalize` and the default `state.games`; (6) always end through
+  `gmOver`, make the intro/end screens obey the last-10-s rule, honour `prefers-reduced-motion`, keep every target >= 56 px; (7) tests below.
+- **Art:** existing frames only, always through `climberFrame()` and `outfitFollow()` (variant, outfit layers and skip lists work);
+  no shipped game art. Holds, blocks and rings are drawn defaults that a `GAME_ART` file can override.
+- **Saved data:** only `state.games` (`chalkUp`, `holdHop` legacy; the four ids; `_meta`) and `settings.gameSound`, normalised by
+  `gamesNormalize()` in `normalizeState()`. Games never write XP, levels, streaks, holds, sessions or attempts.
+- **Tests** (`dev/tests.html`, "Games:" and per-game blocks `// ---- chalkRhythm tests ----` etc.): pure rules through
+  `window.__cruxGames` (only with `window.__cruxTest`; `chalk*`, `route*`, `stack*`, `reach*`, `mulberry32`, `recordRound`, `normalize`),
+  each with a 500-seed property test (routes solvable, no side repeated > 3, stack window >= 400 ms, chalk windows), plus browser runs
+  for the rest hand-off, hidden-page pause, sound off, reduced motion and the registry/menu.
+- **Reduced motion:** every game has a still variant (bar instead of ring scale, no wobble, no scroll, crossfades <= 120 ms).
 
 ## Projects (climb tracking)
 
