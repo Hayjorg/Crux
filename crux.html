@@ -816,6 +816,24 @@
   .gm-art-ring{border:3px solid var(--accent);border-radius:50%;background:transparent;}
   .gm-art-flag{background:var(--send);border-radius:4px 14px 14px 4px;}
   .gm-art-img{object-fit:contain;}
+  /* .rr- Route Read */
+  .rr-stage{position:absolute;inset:0;}
+  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;}
+  .rr-label{position:absolute;left:8px;top:12px;width:88px;margin:0;font-size:12.5px;font-weight:700;line-height:1.3;color:var(--text-dim);}
+  .rr-wall{position:absolute;right:8px;top:16px;width:192px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:64px;border-radius:14px;background:color-mix(in srgb, var(--text) 5%, transparent);}
+  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);}
+  .rr-cell:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:12px;}
+  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .12s ease;}
+  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .12s ease;border-color:var(--send);}
+  .rr-cell[data-state="tapped"] .rr-ring{opacity:1;}
+  .rr-cell.rr-lit .gm-art-circle{box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 40%, transparent);}
+  .rr-badge{grid-area:1/1;z-index:1;min-width:26px;height:26px;border-radius:13px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
+    font-family:"Bebas Neue",sans-serif;font-size:19px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;}
+  .rr-badge:empty{display:none;}
+  .rr-cell[data-state="wrong"] .rr-badge{display:grid;}
+  .rr-cell[data-state="wrong"] .rr-badge::before{content:"\00D7";}
+  .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .gm-art{animation:rr-wob .32s ease;}
+  @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
   /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
@@ -7368,6 +7386,177 @@
   /* ==== chalkRhythm BEGIN (T1: chalkRhythm* functions, .cr- CSS, gmRegister({id:"chalkRhythm", ...}), migrate nothing: gamesNormalize already copied the legacy best) ==== */
   /* ==== chalkRhythm END ==== */
   /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
+  // Route Read (design doc 2.2): a 3 x 5 wall, a route lights up with numbers, then hides; tap the holds in order from memory.
+  // Rule functions are pure (rows count up from the bottom, row 0 = bottom). Cells are {row, col}.
+  var RR_COLS = 3, RR_ROWS = 5, RR_START = 5, RR_MIN = 4, RR_MAX = 8, RR_ROUND_MS = 60000, RR_BETWEEN_MS = 800, RR_RESHOW_MS = 1500, RR_FLAG_MS = 1200;
+  function routeLen(n){ n = Math.floor(Number(n)); if(!isFinite(n)) n = RR_START; return Math.max(RR_MIN, Math.min(RR_MAX, n)); }
+  function routeShowMs(n){ return [2600, 3000, 3400, 3800, 4200][routeLen(n)-RR_MIN]; }
+  function routeNextLen(n, missed){ n = routeLen(n); return routeLen(missed ? n-1 : n+1); }
+  function routeGen(seed, n){
+    n = routeLen(n);
+    var rnd = mulberry32(seed), counts = [1, 1, 1, 1, 1], r, i;
+    if(n>RR_ROWS){
+      var rows = [0, 1, 2, 3, 4];
+      for(i=rows.length-1;i>0;i--){ var j = Math.floor(rnd()*(i+1)), t = rows[i]; rows[i] = rows[j]; rows[j] = t; }
+      for(i=0;i<n-RR_ROWS;i++) counts[rows[i]] = 2;
+    } else if(n<RR_ROWS){
+      counts[1+Math.floor(rnd()*4)] = 0;     // skip one row above the bottom: never a gap wider than one row
+    }
+    var route = [], prev = -1;
+    for(r=0;r<RR_ROWS;r++){
+      for(i=0;i<counts[r];i++){
+        var opts = [];
+        for(var c=0;c<RR_COLS;c++){
+          if(prev>=0 && (Math.abs(c-prev)>1 || (i>0 && c===prev))) continue;
+          opts.push(c);
+        }
+        var col = opts[Math.floor(rnd()*opts.length)];
+        route.push({ row:r, col:col }); prev = col;
+      }
+    }
+    return route;
+  }
+  // The rules a route must satisfy; also the property-test oracle.
+  function routeCheck(route, n){
+    n = routeLen(n);
+    if(!Array.isArray(route) || route.length!==n) return false;
+    var seen = {}, perRow = {};
+    for(var i=0;i<n;i++){
+      var h = route[i];
+      if(!h || h.row<0 || h.row>=RR_ROWS || h.col<0 || h.col>=RR_COLS || h.row!==Math.floor(h.row) || h.col!==Math.floor(h.col)) return false;
+      var k = h.row+","+h.col; if(seen[k]) return false; seen[k] = 1;
+      perRow[h.row] = (perRow[h.row]||0)+1;
+      if(i===0){ if(h.row!==0) return false; continue; }
+      var p = route[i-1], dr = h.row-p.row, dc = Math.abs(h.col-p.col);
+      if(dr<0 || dr>2 || dc>1) return false;
+      if(dr===0 && dc===0) return false;
+      if(n<=RR_ROWS && dr<1) return false;                 // up to 5 holds: strictly ascending
+    }
+    for(var rr in perRow) if(perRow[rr]>2) return false;
+    return route[n-1].row>=3;
+  }
+
+  function routeReadStart(){
+    var f = gmFrames(); gmPreload(f);
+    var stage = gmEl("gmStage");
+    stage.innerHTML = '<div class="rr-stage'+(prefersReducedMotion ? ' rr-calm' : '')+'" id="rrStage">'
+      + '<div class="gm-climber rr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p>'
+      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div></div>';
+    var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
+    var wall = gmEl("rrWall"), cells = {};
+    for(var r=RR_ROWS-1;r>=0;r--) for(var c=0;c<RR_COLS;c++){
+      var b = document.createElement("button"); b.type = "button"; b.className = "rr-cell"; b.id = "rrCell_"+r+"_"+c;
+      b.setAttribute("data-row", r); b.setAttribute("data-col", c);
+      b.setAttribute("aria-label", "Hold, row "+(r+1)+", column "+(c+1));
+      b.appendChild(gmArt("rr.hold"));
+      var ring = gmArt("rr.ring"); ring.classList.add("rr-ring"); b.appendChild(ring);
+      var badge = document.createElement("span"); badge.className = "rr-badge"; badge.setAttribute("aria-hidden", "true"); b.appendChild(badge);
+      wall.appendChild(b); cells[r+","+c] = b;
+    }
+    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false });
+    var bestBefore = state.games.routeRead ? state.games.routeRead.best : 0;
+    function pose(src){ gmSetSrc(img, src); }
+    function lineText(){ return "Route of "+g.N+" · Best "+Math.max(bestBefore, g.score); }
+    function paint(showNums){
+      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.querySelector(".rr-badge").textContent = ""; el.classList.remove("rr-lit"); }
+      if(!showNums) return;
+      g.route.forEach(function(h, i){ var el = cells[h.row+","+h.col]; el.classList.add("rr-lit"); el.querySelector(".rr-badge").textContent = String(i+1); });
+    }
+    function label(txt){ gmEl("rrLabel").textContent = txt; }
+    function beginShow(t){
+      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseEnd = t+routeShowMs(g.N);
+      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]);
+      gmHud(g.score, lineText()); gmSay("Memorise the route. "+g.N+" holds, numbered in order.");
+    }
+    function beginInput(){
+      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]);
+      gmSay("Your turn. Tap the holds in order, 1 of "+g.N+".");
+    }
+    function reachFor(h){ return h.col===0 ? g.frames.reachL : h.col===RR_COLS-1 ? g.frames.reachR : g.frames.pull; }
+    function tap(cell){
+      if(gm!==g || g.paused || g.phase!=="input") return;
+      var row = +cell.getAttribute("data-row"), col = +cell.getAttribute("data-col");
+      if(cell.getAttribute("data-state")==="tapped") return;
+      g.actions++;
+      var t = performance.now()-g.t0, want = g.route[g.step];
+      if(want.row===row && want.col===col){
+        cell.setAttribute("data-state", "tapped");
+        cell.querySelector(".rr-badge").textContent = "";
+        g.step++;
+        gmBeep(600, 40, 0.06);
+        if(g.step>=g.N){
+          g.score += g.N; g.done++; if(g.N>g.longest) g.longest = g.N;
+          var wasMax = g.N===RR_MAX;
+          g.N = routeNextLen(g.N, g.missed); g.missed = false;
+          g.phase = "between"; g.phaseEnd = t+(wasMax ? RR_FLAG_MS : RR_BETWEEN_MS); g.flag = wasMax;
+          pose(wasMax ? g.frames.flag[0] : g.frames.pull);
+          label(wasMax ? "Top of the route." : "Nice. Next route.");
+          gmHud(g.score, lineText()); gmSay("Route complete. "+g.score+" points.");
+          [440, 554, 659].forEach(function(fq, i){ gmLater(function(){ gmBeep(fq, 80, 0.1); }, i*90); });
+        } else {
+          label("Tap hold "+(g.step+1)+" of "+g.N); pose(reachFor(g.route[g.step]));
+          gmSay("Good. "+g.step+" of "+g.N+".");
+        }
+      } else {
+        cell.setAttribute("data-state", "wrong");
+        g.missed = true;
+        g.phase = "reshow"; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
+        gmSay("That was close, here it is.");
+        label("That was close, here it is");
+        pose(g.frames.hit);
+        // the route re-shows with numbers; the wrong hold keeps its X until then
+        var wrong = cell;
+        paint(true); wrong.setAttribute("data-state", "wrong");
+      }
+    }
+    wall.addEventListener("click", function(e){ var b = e.target.closest ? e.target.closest(".rr-cell") : null; if(b) tap(b); });
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      if(t>=RR_ROUND_MS){
+        var res = { actions:g.actions, extra:{ longest:g.longest } }, was = g.actions>=1 && g.score>bestBefore, fr = g.frames;
+        gmOver("routeRead", g.score, { title:"Good reading.", note:"Longest route "+g.longest, actions:res.actions, extra:res.extra });
+        if(!was){ var ci = gmEl("gmClimberImg"); if(ci) gmSetSrc(ci, fr.ledgeSit); }
+        return;
+      }
+      if(t>=g.phaseEnd){
+        if(g.phase==="show") beginInput();
+        else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); gmSay("Try again from the start."); }
+        else if(g.phase==="between") beginShow(t);
+      }
+      if(g.phase==="between" && g.flag) pose(g.frames.flag[Math.floor(t/600)%g.frames.flag.length]);
+      var sec = Math.max(0, Math.ceil((RR_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    gmHud(0, lineText());
+    beginShow(0);
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function routeReadState(){ return { score:gm ? gm.score : 0, actions:gm ? gm.actions : 0, extra:{ longest:gm ? gm.longest : 0 } }; }
+  gmRegister({
+    id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>',
+    intro:{ title:"Read, then climb", text:"A route lights up with numbers. They hide. Tap the holds in order from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
+    hud0:function(best){ return "Route of 5 · Best "+best; },
+    art:["rr.hold", "rr.ring", "card.routeRead"], frames:["idle", "reachL", "reachR", "pull", "hit", "cheer", "ledgeSit", "flag"],
+    start:function(){ routeReadStart(); },
+    state:routeReadState,
+    rest:{ closeScore:routeReadState },
+    resume:function(){ if(gm && gm.frame && !gmRaf) gmRaf = requestAnimationFrame(gm.frame); }
+  });
+  // The shell defines window.__cruxGames after the regions, so merge now if it exists, else when it is assigned (chains with other regions).
+  if(window.__cruxTest) (function(extra){
+    var d = Object.getOwnPropertyDescriptor(window, "__cruxGames"), cur = window.__cruxGames;
+    if(cur){ Object.assign(cur, extra); return; }
+    var pget = d && d.get, pset = d && d.set;
+    Object.defineProperty(window, "__cruxGames", { configurable:true,
+      get:function(){ return pget ? pget() : cur; },
+      set:function(v){ if(v) Object.assign(v, extra); if(pset) pset(v); else cur = v; } });
+  })({ routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
+    routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, reshowMs:RR_RESHOW_MS } });
   /* ==== routeRead END ==== */
   /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
   /* ==== summitStack END ==== */
