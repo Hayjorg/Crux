@@ -1642,12 +1642,9 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("openGamesBtn", 250);
     expect(visible("gmCard_chalkRhythm") && !$("gmCard_chalkRhythm").disabled, "Chalk Rhythm card");
     ["routeRead", "summitStack", "reachTimer"].forEach(function(id){
-      if(!G.def(id).soon){ expect(visible("gmCard_"+id) && !$("gmCard_"+id).disabled, id+" card should be playable"); return; }
-      var el = $("gmCard_"+id); expect(el && el.disabled && /Coming soon/.test(el.textContent), id+" stub card: "+(el && el.textContent));
+      expect(visible("gmCard_"+id) && !$("gmCard_"+id).disabled && !G.def(id).soon, id+" card should be playable: "+$("gmCard_"+id).textContent);
     });
     expect(!D.getElementById("gmHopBtn") && !D.getElementById("gmCard_holdHop"), "a Hold Hop card is on the menu");
-    await click("gmCard_summitStack", 150);
-    expect(visible("gamesMenu") && !visible("gamesPlay"), "a coming-soon card opened something");
     // art slots: every slot draws without a file, and a registered file swaps in
     var slots = Object.keys(G.art);
     ["ss.ledge", "ss.block", "ss.flag", "rr.hold", "rr.ring", "cr.puff", "cr.ring", "rt.hold", "rt.ghost", "ui.perfect", "ui.good", "ui.best", "ui.summit", "card.chalkRhythm", "card.routeRead", "card.summitStack", "card.reachTimer"].forEach(function(sl){
@@ -2107,6 +2104,118 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(visible("view-session") && !!saved().activeSessionId, "the session was lost");
     await click("startBtn", 150);                        // pause so it doesn't tick on
   });
+
+  // ---- reachTimer tests ----
+  test("Games: Reach Timer rules (phases, dwell floor, side sequence, hit and slip)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    expect(typeof G.reachPhase==="function" && typeof G.reachSeq==="function", "reach rule functions missing from the test hook");
+    [[0, 1800, 500, 1], [9999, 1800, 500, 1], [10000, 1400, 400, 1], [24999, 1400, 400, 1], [25000, 1000, 350, 2], [44999, 1000, 350, 2], [90000, 1000, 350, 2]].forEach(function(r){
+      expect(G.reachDwell(r[0])===r[1] && G.reachGap(r[0])===r[2] && G.reachGhosts(r[0])===r[3], "phase at "+r[0]+": "+JSON.stringify(G.reachPhase(r[0])));
+    });
+    expect(G.reachSeq(7, 30).join("")===G.reachSeq(7, 30).join("") && G.reachSeq(7, 30).join("")!==G.reachSeq(8, 30).join(""), "sequence isn't seeded");
+    var t = G.reachTimes(600);
+    expect(t.liveAt===600+G.RT_FADE_MS && t.deadline===t.liveAt+1800, "the dwell must start once the target is fully visible: "+JSON.stringify(t));
+    var s = G.reachApply({}, "hit"); s = G.reachApply(s, "hit"); s = G.reachApply(s, "hit");
+    expect(s.height===3 && s.peak===3 && s.streak===3 && s.bestStreak===3, "three hits: "+JSON.stringify(s));
+    s = G.reachApply(s, "slip");
+    expect(s.height===2 && s.peak===3 && s.streak===0 && s.bestStreak===3, "slip drops one, keeps the peak: "+JSON.stringify(s));
+    s = G.reachApply(G.reachApply(G.reachApply(s, "slip"), "slip"), "slip");
+    expect(s.height===0 && s.peak===3, "height floors at 0: "+JSON.stringify(s));
+    s = G.reachApply(s, "hit"); expect(s.height===1 && s.peak===3 && s.streak===1, "climbing again: "+JSON.stringify(s));
+  });
+
+  test("Games: Reach Timer property, 500 seeds always solvable with a reaction window of at least 400 ms at max difficulty", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, minWin = Infinity, maxRun = 0;
+    for(var t=0;t<=60000;t+=50) minWin = Math.min(minWin, G.reachDwell(t));
+    expect(minWin>=1000, "dwell dips below 1000 ms: "+minWin);
+    for(var sd=1;sd<=500;sd++){
+      var q = G.reachSeq(sd*7919, 90), run = 1;
+      expect(q.length===90 && q.every(function(x){ return x==="L" || x==="R"; }), "bad sides, seed "+sd);
+      for(var i=1;i<q.length;i++){ run = q[i]===q[i-1] ? run+1 : 1; if(run>maxRun) maxRun = run; }
+      // the slowest fair player (answers with 400 ms to spare before the dwell ends) and one that never answers
+      [0, 400, 100000].forEach(function(react){
+        var sch = G.reachSchedule(q, react), prevDone = 0;
+        expect(sch.length>=15, "round too short: "+sch.length);
+        sch.forEach(function(x, k){
+          expect(x.window>=400 && x.window>=1000, "window "+x.window+" seed "+sd+" target "+k);
+          expect(x.liveAt>=x.appearAt+G.RT_FADE_MS, "live before fully visible, seed "+sd);
+          expect(x.appearAt>=prevDone && x.doneAt<=x.deadline && x.doneAt>=x.liveAt, "targets overlap or unanswerable, seed "+sd+" target "+k);
+          prevDone = x.doneAt;
+        });
+      });
+    }
+    expect(maxRun<=3, "a side repeated "+maxRun+" times in a row");
+  });
+
+  test("Games: Reach Timer round (hit climbs, wrong half slips and floors at 0, score is the peak, saved once)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250);
+    expect(visible("gmCard_reachTimer") && !$("gmCard_reachTimer").disabled && /Not played/.test($("gmCard_reachTimer").textContent), "Reach Timer card");
+    await click("gmCard_reachTimer", 150);
+    expect(/Reach Timer/.test($("gamesTitle").textContent) && visible("gmStartBtn"), "intro");
+    await click("gmStartBtn", 120);
+    expect(visible("rtL") && visible("rtR") && $("rtL").offsetHeight>=56 && $("rtR").offsetWidth>=56, "halves missing or too small");
+    expect(/^L/.test($("rtL").textContent.trim()) && /^R|R$/.test($("rtR").textContent.trim()), "L and R labels");
+    var g = G.current();
+    expect(g.st==="gap" && qa(".rt-slot[data-kind='ghost']").length===2, "the first target should be telegraphed as a ghost: "+g.st);
+    function press(side){ $("rt"+side).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); }
+    async function untilLive(){ for(var k=0;k<40 && g.st!=="live";k++) await wait(50); expect(g.st==="live", "target never went live"); }
+    var other = function(s){ return s==="L" ? "R" : "L"; };
+    await wait(150);
+    // a wrong half in the gap is ignored; wrong half on a live target at height 0 stays at 0
+    await untilLive();
+    var want = g.seq[g.i];
+    press(other(want)); await wait(40);
+    expect(g.h===0 && g.peak===0 && g.i===1, "wrong half at 0: h="+g.h+" i="+g.i);
+    for(var n=0;n<2;n++){
+      await untilLive(); want = g.seq[g.i];
+      press(want); await wait(40);
+    }
+    expect(g.h===2 && g.peak===2 && +$("gmScore").textContent===2, "two hits: h="+g.h+" score "+$("gmScore").textContent);
+    expect(qa(".rt-mark[data-on='1']").length===2, "ladder marks");
+    await untilLive(); press(other(g.seq[g.i])); await wait(40);
+    expect(g.h===1 && g.peak===2 && +$("gmScore").textContent===2, "slip: h="+g.h+" peak "+g.peak);
+    await untilLive();                                   // a timeout slips too, without any tap
+    for(var k=0;k<60 && g.h===1;k++) await wait(50);
+    expect(g.h===0 && g.peak===2, "timeout: h="+g.h+" peak "+g.peak);
+    await click("closeGamesBtn", 250);
+    var sv = saved().games.reachTimer;
+    expect(sv.plays===1 && sv.best===2 && sv.bestStreak===2, "saved: "+JSON.stringify(sv));
+  });
+
+  test("Games: Reach Timer in rest closes itself at rest end (score kept once), never offers Again, and hiding the page pauses it", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:6 };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    function hide(on){ Object.defineProperty(D, "hidden", { configurable:true, get:function(){ return on; } }); D.dispatchEvent(new W.Event("visibilitychange")); }
+    await click("startSessionBtn", 300); await click("startBtn", 4300);
+    expect(/REST/.test($("phaseLabel").textContent), "not resting");
+    await click("playRestBtn", 250); await click("gmCard_reachTimer", 150); await click("gmStartBtn", 120);
+    var g = G.current();
+    for(var k=0;k<40 && g.st!=="live";k++) await wait(50);
+    $("rt"+g.seq[g.i]).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(40);
+    expect(g.h===1, "no hit");
+    var t0 = g.t0; hide(true); await wait(60);
+    expect(G.paused() && visible("gmPaused"), "didn't pause");
+    var i0 = g.i; await wait(700);
+    expect(g.i===i0, "the round moved while paused");
+    hide(false); await click("gmPaused", 100);
+    expect(!G.paused() && g.t0>t0+500, "resume didn't shift the clock");
+    var sawAgain = false;
+    for(var j=0;j<60 && visible("gamesOverlay");j++){ await wait(100); if(D.getElementById("gmAgainBtn")) sawAgain = true; }
+    expect(!visible("gamesOverlay") && !sawAgain, "rest end: overlay "+visible("gamesOverlay")+" again "+sawAgain);
+    var sv = saved().games.reachTimer;
+    expect(sv.plays===1 && sv.best>=1, "round not recorded once: "+JSON.stringify(sv));
+    expect(/WORK/.test($("phaseLabel").textContent), "timer didn't carry on");
+    await click("startBtn", 150);
+  });
+  // ---- end reachTimer tests ----
 
   test("Only the climber mascot is used (old pebble art stays retired)", async function(){
     var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });

@@ -880,6 +880,41 @@
     .ss-cam, .ss-climber, .ss-slider{transition:none;}
     .ss-bob{animation:none;}
     .ss-chunk{transition:opacity .3s linear;}
+  /* .rt- (Reach Timer) */
+  .rt-ladder{position:absolute;left:0;right:0;top:12px;display:flex;justify-content:center;gap:6px;pointer-events:none;}
+  .rt-mark{width:10px;height:10px;border-radius:3px;border:2px solid color-mix(in srgb, var(--text) 35%, transparent);box-sizing:border-box;}
+  .rt-mark[data-on="1"]{background:var(--accent);border-color:var(--accent);}
+  .rt-wall{position:absolute;inset:0;pointer-events:none;}
+  .rt-slot{position:absolute;width:64px;height:64px;margin-left:-32px;transition:opacity .15s ease;}
+  .rt-slot[data-side="L"]{left:25%;} .rt-slot[data-side="R"]{left:75%;}
+  .rt-slot[data-k="0"]{top:176px;} .rt-slot[data-k="1"]{top:104px;} .rt-slot[data-k="2"]{top:34px;}
+  .rt-slot[data-kind="off"]{opacity:0;}
+  .rt-slot[data-kind="ghost"]{opacity:0.5;}
+  .rt-slot > .gm-art{position:absolute;left:0;top:0;}
+  .rt-slot[data-kind="ghost"] .rt-art-hold, .rt-slot[data-kind="live"] .rt-art-ghost, .rt-slot[data-kind="off"] .rt-art-hold{display:none;}
+  .rt-slot[data-kind="ghost"] .rt-art-ghost{border-style:dashed;}
+  .rt-letter{position:absolute;inset:0;display:grid;place-items:center;font-family:"Bebas Neue",sans-serif;font-size:26px;color:var(--accent-contrast, #fff);}
+  .rt-slot[data-kind="ghost"] .rt-letter{color:var(--text);font-size:20px;}
+  .rt-fuse{position:absolute;left:6px;right:6px;bottom:-12px;height:4px;border-radius:2px;background:var(--text-dim);transform-origin:left center;display:none;}
+  .rt-slot[data-k="0"][data-kind="live"] .rt-fuse{display:block;}
+  .rt-pop{animation:rt-pop .15s ease-out;}
+  @keyframes rt-pop{from{transform:scale(0.82);}to{transform:scale(1);}}
+  .rt-climber{width:84px;height:126px;left:50%;margin-left:-42px;bottom:8px;transition:transform .22s ease;}
+  .rt-half{z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:var(--text);}
+  .rt-half:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
+  .rt-half:active .rt-pad{transform:scale(0.96);}
+  .rt-pad{display:flex;align-items:center;gap:6px;min-width:76px;min-height:56px;padding:0 14px;box-sizing:border-box;justify-content:center;border-radius:28px;
+    border:2px solid color-mix(in srgb, var(--text) 30%, transparent);background:color-mix(in srgb, var(--surface) 70%, transparent);}
+  .rt-half-R .rt-pad{flex-direction:row-reverse;}
+  .rt-pad b{font-family:"Bebas Neue",sans-serif;font-size:26px;font-weight:400;line-height:1;}
+  .rt-burst{position:absolute;top:176px;width:64px;height:64px;margin-left:-32px;border-radius:50%;box-sizing:border-box;animation:rt-burst .42s ease-out forwards;}
+  .rt-burst[data-side="L"]{left:25%;} .rt-burst[data-side="R"]{left:75%;}
+  .rt-burst-hit{border:5px solid var(--send);}
+  .rt-burst-slip{border:3px dashed var(--text-dim);}
+  @keyframes rt-burst{from{transform:scale(1);opacity:0.9;}to{transform:scale(1.5);opacity:0;}}
+  @media (prefers-reduced-motion: reduce){
+    .rt-pop, .rt-burst{animation:none;} .rt-burst{opacity:0.7;}
+    .rt-climber, .rt-slot{transition:none;}
   }
   /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
   @media (prefers-reduced-motion: reduce){
@@ -7339,18 +7374,15 @@
     gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
   }
 
-  // Stubs for the games still to come. A game's region replaces its stub by calling gmRegister() with the same id
-  // (and no `soon`). Order matters: stubs first, regions after.
-  [
-    { id:"chalkRhythm", title:"Chalk Rhythm", order:1, replaces:"chalkUp", blurb:"A slow beat, a ring, a tap. Calm and forgiving.",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>' },
-    { id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>' },
-    { id:"summitStack", title:"Summit Stack", order:3, blurb:"Drop each block on the last to build a tower.",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="16" width="16" height="4" rx="1"/><rect x="6" y="10" width="12" height="4" rx="1"/><rect x="9" y="4" width="7" height="4" rx="1"/></svg>' },
-    { id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>' }
-  ].forEach(function(d){ d.soon = true; d.intro = { title:d.title, text:d.blurb }; d.state = function(){ return { score:0, actions:0, extra:{} }; }; gmRegister(d); });
+  // Test hook (dev/tests.html). Created before the game regions; each region extends it with Object.assign(window.__cruxGames, {...}) inside `if(window.__cruxTest)`.
+  if(window.__cruxTest) window.__cruxGames = {
+    normalize:gamesNormalize, recordRound:recordRound, mulberry32:mulberry32, seedFor:gmSeedFor,
+    ids:function(){ return Object.keys(GAMES); }, def:function(id){ return GAMES[id]; }, menuIds:function(){ return gmList(true).map(function(d){ return d.id; }); },
+    art:GAME_ART, gmArt:gmArt, gmArtRegister:gmArtRegister, frames:gmFrames,
+    soundOk:gmSoundOk, beep:gmBeep, beepCount:function(){ return gmBeeps; },
+    paused:function(){ return !!(gm && gm.paused); }, current:function(){ return gm; },
+    open:function(o){ openGames(o); }, close:function(){ closeGames(); }
+  };
 
   /* ==== chalkRhythm BEGIN (T1: replaces the legacy Chalk Up; the saved chalkUp data stays, its best was copied by gamesNormalize) ==== */
   // Rules: a ring grows toward a fixed outline once per beat; tap when it meets the outline. Fixed grid from round start,
@@ -7492,14 +7524,13 @@
     g.frame = frame;
     gmRaf = requestAnimationFrame(frame);
   }
-  // Test API. This region runs before the shell creates window.__cruxGames, so it extends it a tick later (after the script ends).
-  if(window.__cruxTest) Promise.resolve().then(function(){
+  if(window.__cruxTest){
     Object.assign(window.__cruxGames, {
       chalkBpm:chalkBpm, chalkBeatLen:chalkBeatLen, chalkBeats:chalkBeats, chalkWindow:chalkWindow, chalkPoints:chalkPoints,
       chalkAttribute:chalkAttribute, chalkRingAt:chalkRingAt, chalkRingScale:chalkRingScale, chalkRingOpacity:chalkRingOpacity,
       chalkSimulate:chalkSimulate, chalkReduced:function(v){ crRMOverride = v; }
     });
-  });
+  }
   /* ==== chalkRhythm END ==== */
   /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
   // Route Read (design doc 2.2): a 3 x 5 wall, a route lights up with numbers, then hides; tap the holds in order from memory.
@@ -7663,15 +7694,7 @@
     rest:{ closeScore:routeReadState },
     resume:function(){ if(gm && gm.frame && !gmRaf) gmRaf = requestAnimationFrame(gm.frame); }
   });
-  // The shell defines window.__cruxGames after the regions, so merge now if it exists, else when it is assigned (chains with other regions).
-  if(window.__cruxTest) (function(extra){
-    var d = Object.getOwnPropertyDescriptor(window, "__cruxGames"), cur = window.__cruxGames;
-    if(cur){ Object.assign(cur, extra); return; }
-    var pget = d && d.get, pset = d && d.set;
-    Object.defineProperty(window, "__cruxGames", { configurable:true,
-      get:function(){ return pget ? pget() : cur; },
-      set:function(v){ if(v) Object.assign(v, extra); if(pset) pset(v); else cur = v; } });
-  })({ routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
+  if(window.__cruxTest) Object.assign(window.__cruxGames, { routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
     routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, reshowMs:RR_RESHOW_MS } });
   /* ==== routeRead END ==== */
   /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
@@ -7850,35 +7873,178 @@
     // not a new best: sit on the ledge (the shell shows idle/cheer by default)
     if(!(s.actions>=1 && s.score>prevBest)){ var im = gmEl("gmClimberImg"); if(im) gmSetSrc(im, f.ledgeSit); }
   }
-  // test hook: the shell assigns window.__cruxGames after the regions run, so extras are queued and merged by a setter
-  if(window.__cruxTest){
-    var ssExt = { stackCross:stackCross, stackDrop:stackDrop, stackWidth:stackWidth, stackWindowMs:stackWindowMs, stackPos:stackPos, stackPose:stackPose, stackScore:stackScore,
-      stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT } };
-    if(window.__cruxGames && typeof window.__cruxGames==="object") Object.assign(window.__cruxGames, ssExt);
-    else {
-      (window.__cruxGamesExt = window.__cruxGamesExt || []).push(ssExt);
-      if(!window.__cruxGamesExtHooked){
-        window.__cruxGamesExtHooked = true;
-        var ssHeld;
-        Object.defineProperty(window, "__cruxGames", { configurable:true, enumerable:true,
-          get:function(){ return ssHeld; },
-          set:function(v){ ssHeld = v; (window.__cruxGamesExt||[]).forEach(function(e){ Object.assign(v, e); }); } });
-      }
-    }
-  }
+  if(window.__cruxTest) Object.assign(window.__cruxGames, { stackCross:stackCross, stackDrop:stackDrop, stackWidth:stackWidth, stackWindowMs:stackWindowMs, stackPos:stackPos, stackPose:stackPose, stackScore:stackScore,
+      stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT } });
   /* ==== summitStack END ==== */
   /* ==== reachTimer BEGIN (T4: reachTimer* functions, .rt- CSS, gmRegister({id:"reachTimer", ...})) ==== */
+  // Reach Timer (design doc 2.4): one telegraphed target at a time on the left or right half; tap that half before it times out.
+  // Hit = up one step, wrong half or timeout = down one step (floor 0). Score = peak height. Every time below is on the round clock
+  // (performance.now() minus gm.t0), so pausing and resuming shifts it for free.
+  var RT_ROUND_MS = 45000, RT_FADE_MS = 150, RT_FIRST_MS = 600, RT_LADDER = 10, RT_MAX_SAME = 3;
+  // Pure rules. The dwell never drops below 1000 ms (design floor is 400 ms); the dwell timer starts once the target is fully visible.
+  function reachPhase(t){
+    t = Math.max(0, Number(t)||0);
+    return t<10000 ? { name:"learn", dwell:1800, gap:500, ahead:1 }
+         : t<25000 ? { name:"build", dwell:1400, gap:400, ahead:1 }
+         :           { name:"hold",  dwell:1000, gap:350, ahead:2 };
+  }
+  function reachDwell(t){ return reachPhase(t).dwell; }
+  function reachGap(t){ return reachPhase(t).gap; }
+  function reachGhosts(t){ return reachPhase(t).ahead; }
+  // Seeded side sequence ("L"/"R"); the same side never comes more than RT_MAX_SAME times in a row.
+  function reachSeq(seed, n){
+    var rnd = mulberry32(seed), out = [];
+    for(var i=0;i<n;i++){
+      var s = rnd()<0.5 ? "L" : "R";
+      if(i>=RT_MAX_SAME){ var p = out[i-1]; var same = true; for(var k=1;k<=RT_MAX_SAME;k++) if(out[i-k]!==p) same = false; if(same && s===p) s = p==="L" ? "R" : "L"; }
+      out.push(s);
+    }
+    return out;
+  }
+  // When a target that is armed to appear at appearT becomes live and times out.
+  function reachTimes(appearT){
+    var live = appearT+RT_FADE_MS, ph = reachPhase(live);
+    return { appearAt:appearT, liveAt:live, deadline:live+ph.dwell, dwell:ph.dwell, ahead:ph.ahead };
+  }
+  // The timeline for a player who answers every target `react` ms after it is fully visible (a timeout is react >= dwell).
+  function reachSchedule(seq, react){
+    var out = [], t = RT_FIRST_MS;
+    for(var i=0;i<seq.length;i++){
+      var tm = reachTimes(t);
+      if(tm.liveAt>=RT_ROUND_MS) break;
+      var done = tm.liveAt+Math.min(Math.max(0, react), tm.dwell);
+      out.push({ i:i, side:seq[i], appearAt:tm.appearAt, liveAt:tm.liveAt, deadline:tm.deadline, window:tm.deadline-tm.liveAt, ghosts:tm.ahead, doneAt:done });
+      t = done+reachGap(done);
+    }
+    return out;
+  }
+  // One answer. kind: "hit" | "slip". Returns the new {height, peak, streak, bestStreak}.
+  function reachApply(st, kind){
+    var h = st.height||0, peak = st.peak||0, streak = st.streak||0, best = st.bestStreak||0;
+    if(kind==="hit"){ h++; streak++; if(h>peak) peak = h; if(streak>best) best = streak; }
+    else { h = Math.max(0, h-1); streak = 0; }
+    return { height:h, peak:peak, streak:streak, bestStreak:best };
+  }
+  gmRegister({
+    id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>',
+    intro:{ title:"Reach for it", text:"A hold appears on the left or right. Tap that side to climb a step. A faint ring shows what comes next. Climb as high as you can in 45 seconds.", hint:"Calm, no pressure." },
+    hud0:function(best){ return "Height 0 · Best "+best; },
+    start:function(){ reachStart(); },
+    state:function(){ return { score:gm.peak||0, actions:gm.taps||0, extra:{ bestStreak:gm.bestStreak||0 } }; },
+    pause:function(){},
+    resume:function(){ if(gm && gm.frame) gmRaf = requestAnimationFrame(gm.frame); }
+  });
+  function reachStart(){
+    var f = gmFrames(); gmPreload(f);
+    var slots = "", ladder = "", k;
+    for(k=0;k<3;k++) slots += '<span class="rt-slot" data-k="'+k+'" data-kind="off" data-side="L" aria-hidden="true">'
+      + gmArtHtml("rt.hold").replace('class="gm-art ', 'class="rt-art-hold gm-art ') + gmArtHtml("rt.ghost").replace('class="gm-art ', 'class="rt-art-ghost gm-art ')
+      + '<span class="rt-letter">L</span><span class="rt-fuse"></span></span>';
+    for(k=0;k<RT_LADDER;k++) ladder += '<span class="rt-mark"></span>';
+    var pad = function(side, label, arrow){ return '<button type="button" class="gm-half rt-half rt-half-'+side+' gm-half-'+(side==="L" ? 0 : 1)+'" id="rt'+side+'" aria-label="'+label+'">'
+      + '<span class="rt-pad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+arrow+'"/></svg><b>'+side+'</b></span></button>'; };
+    gmEl("gmStage").innerHTML = '<div class="rt-ladder" aria-hidden="true">'+ladder+'</div><div class="rt-wall" id="rtWall">'+slots+'</div>'
+      + '<div class="gm-climber rt-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + pad("L", "Left hold", "M15 5l-7 7 7 7") + pad("R", "Right hold", "M9 5l7 7-7 7");
+    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber"); outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
+    var g = gmBegin("reachTimer", f, { seq:null, i:0, st:"gap", appearAt:0, liveAt:0, deadline:0, dwell:0, ahead:1, h:0, peak:0, streak:0, bestStreak:0, taps:0, pose:0, lastSec:-1 });
+    g.seq = reachSeq(g.seed, 90);
+    var slotEls = [].slice.call(gmEl("rtWall").children), marks = [].slice.call(document.querySelectorAll(".rt-mark"));
+    function arm(appearT){ var tm = reachTimes(appearT); g.appearAt = tm.appearAt; g.liveAt = tm.liveAt; g.deadline = tm.deadline; g.dwell = tm.dwell; g.ahead = tm.ahead; g.st = "gap"; }
+    function setSlot(el, kind, side){
+      if(el.getAttribute("data-kind")!==kind) el.setAttribute("data-kind", kind);
+      if(side){ if(el.getAttribute("data-side")!==side){ el.setAttribute("data-side", side); el.querySelector(".rt-letter").textContent = side; } }
+    }
+    function paint(){
+      var live = g.st!=="gap";
+      for(var k=0;k<3;k++){
+        var s = g.seq[g.i+k];
+        if(live) setSlot(slotEls[k], k===0 ? "live" : (k<=g.ahead ? "ghost" : "off"), s);
+        else setSlot(slotEls[k], k<=g.ahead ? "ghost" : "off", s);
+      }
+    }
+    function pose(src, ms){
+      var tok = ++g.pose; gmSetSrc(img, src);
+      if(ms) gmLater(function(){ if(gm===g && g.pose===tok) gmSetSrc(img, g.frames.idle[0]); }, ms);
+    }
+    function burst(side, kind){
+      var b = document.createElement("span"); b.className = "rt-burst rt-burst-"+kind; b.setAttribute("data-side", side); b.setAttribute("aria-hidden", "true");
+      gmEl("rtWall").appendChild(b); gmLater(function(){ b.remove(); }, 460);
+    }
+    function paintHeight(){
+      var n = Math.min(g.h, RT_LADDER);
+      marks.forEach(function(m, idx){ m.setAttribute("data-on", idx<n ? "1" : "0"); });
+      climber.style.transform = "translateY("+(-n*8)+"px)";
+      gmHud(g.peak, "Height "+g.h+" · Best "+state.games.reachTimer.best);
+      g.lastSec = -1;
+    }
+    function resolve(kind, side, t){
+      var next = reachApply({ height:g.h, peak:g.peak, streak:g.streak, bestStreak:g.bestStreak }, kind);
+      g.h = next.height; g.peak = next.peak; g.streak = next.streak; g.bestStreak = next.bestStreak;
+      burst(side, kind);
+      if(kind==="hit"){
+        gmBeep(520, 50, 0.08);
+        pose(side==="L" ? g.frames.reachL : g.frames.reachR, 140);
+        gmLater(function(){ if(gm===g) pose(g.h%5===0 ? g.frames.jump[0] : g.frames.pull, 260); }, 140);
+        gmSay("Up. Height "+g.h+".");
+      } else { pose(g.frames.hit, 420); gmSay("Slipped a step. Height "+g.h+"."); }
+      g.i++; arm(t+reachGap(t)); paint(); paintHeight();
+    }
+    function tap(side){
+      if(gm!==g || g.paused) return;
+      g.taps++;
+      var t = performance.now()-g.t0;
+      if(g.st==="gap") return;                         // between targets nothing is judged
+      var want = g.seq[g.i];
+      if(side===want) resolve("hit", side, t);
+      else if(g.st==="live") resolve("slip", want, t); // the wrong half only counts once the target is fully visible
+    }
+    ["L", "R"].forEach(function(s){
+      var b = gmEl("rt"+s);
+      b.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(s); });
+      b.addEventListener("click", function(e){ if(e.detail===0) tap(s); });   // keyboard Space/Enter
+    });
+    gmKey = function(e){
+      if(e.repeat) return;
+      if(e.key==="ArrowLeft"){ e.preventDefault(); tap("L"); } else if(e.key==="ArrowRight"){ e.preventDefault(); tap("R"); }
+    };
+    document.addEventListener("keydown", gmKey);
+    gmEl("rtL").focus({ preventScroll:true });
+    arm(RT_FIRST_MS); paint(); paintHeight();
+    gmSay("Go. Tap the side of the hold.");
+    var fuse = slotEls[0].querySelector(".rt-fuse");
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      if(t>=RT_ROUND_MS){ reachFinish(g); return; }
+      if(g.st==="gap" && t>=g.appearAt){
+        g.st = "in"; paint();
+        slotEls[0].classList.remove("rt-pop"); void slotEls[0].offsetWidth; slotEls[0].classList.add("rt-pop");
+        gmSay("Reach "+(g.seq[g.i]==="L" ? "left" : "right")+".");
+      }
+      if(g.st==="in" && t>=g.liveAt) g.st = "live";
+      if(g.st==="live"){
+        fuse.style.transform = "scaleX("+Math.max(0, Math.min(1, (g.deadline-t)/g.dwell)).toFixed(3)+")";
+        if(t>=g.deadline) resolve("slip", g.seq[g.i], t);   // timed out: down one step, the same sequence goes on
+      }
+      var sec = Math.max(0, Math.ceil((RT_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function reachFinish(g){
+    var note = g.bestStreak>1 ? "Longest run "+g.bestStreak : "";
+    gmOver("reachTimer", g.peak, { title:"Good reach.", note:note, actions:g.taps, extra:{ bestStreak:g.bestStreak } });
+  }
+  if(window.__cruxTest){
+    Object.assign(window.__cruxGames, { reachPhase:reachPhase, reachDwell:reachDwell, reachGap:reachGap, reachGhosts:reachGhosts, reachSeq:reachSeq,
+      reachTimes:reachTimes, reachSchedule:reachSchedule, reachApply:reachApply, RT_ROUND_MS:RT_ROUND_MS, RT_FADE_MS:RT_FADE_MS });
+  }
   /* ==== reachTimer END ==== */
 
-  // Test hook (dev/tests.html). A game's region extends it with Object.assign(window.__cruxGames, {...}) inside `if(window.__cruxTest)`.
-  if(window.__cruxTest) window.__cruxGames = {
-    normalize:gamesNormalize, recordRound:recordRound, mulberry32:mulberry32, seedFor:gmSeedFor,
-    ids:function(){ return Object.keys(GAMES); }, def:function(id){ return GAMES[id]; }, menuIds:function(){ return gmList(true).map(function(d){ return d.id; }); },
-    art:GAME_ART, gmArt:gmArt, gmArtRegister:gmArtRegister, frames:gmFrames,
-    soundOk:gmSoundOk, beep:gmBeep, beepCount:function(){ return gmBeeps; },
-    paused:function(){ return !!(gm && gm.paused); }, current:function(){ return gm; },
-    open:function(o){ openGames(o); }, close:function(){ closeGames(); }
-  };
 
   /* ---- the overlay: open, close, rest strip ---- */
   function gamesRestState(){
