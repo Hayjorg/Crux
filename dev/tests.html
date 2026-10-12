@@ -1613,6 +1613,116 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(!hits.length, "'Crimpet' appears in crux.html:\n"+hits.slice(0, 5).join("\n"));
   });
 
+  /* ---------- Play (games) ---------- */
+  test("Games: scoring and rules are pure functions (Chalk Up rating and streaks, Hold Hop rows, taps, speed, rocks, records)", async function(){
+    await boot(TEMPLATE); await goHome();
+    var G = W.__cruxGames; expect(G, "games test hook missing");
+    expect(G.chalkRate(0)==="perfect" && G.chalkRate(-120)==="perfect" && G.chalkRate(200)==="good" && G.chalkRate(-259)==="good" && G.chalkRate(400)==="miss", "chalkRate bands");
+    var r = G.chalkRun(["perfect", "good", "good", "miss", "perfect", "perfect"]);
+    expect(r.best===3 && r.streak===2 && r.hits===5 && r.perfects===3, "chalkRun "+JSON.stringify(r));
+    expect(G.chalkRun([]).best===0 && G.chalkRun(["miss", "miss"]).best===0, "chalkRun empty/miss");
+    expect(G.chalkBeatMs(0)===1500 && G.chalkBeatMs(1)===4500, "beat times");
+    expect(Math.abs(G.chalkRingScale(1500)-1)<1e-9 && Math.abs(G.chalkRingScale(0)-0.38)<1e-9 && Math.abs(G.chalkRingScale(3000)-0.38)<1e-9, "ring scale peaks at the beat");
+    var a = G.hopRng(7), b = G.hopRng(7), same = true, anyL = false, anyR = false;
+    for(var i=0;i<40;i++){ var ra = G.hopRow(a), rb = G.hopRow(b); if(JSON.stringify(ra)!==JSON.stringify(rb)) same = false; expect(ra[0]||ra[1], "a row with no hold"); if(ra[0]) anyL = true; if(ra[1]) anyR = true; }
+    expect(same && anyL && anyR, "hop rows aren't repeatable from a seed or never use both lanes");
+    expect(G.hopTap([true, false], 0)==="climb" && G.hopTap([true, false], 1)==="slip" && G.hopTap([false, true], 1)==="climb", "hopTap");
+    expect(G.hopSpeed(0).fallMs>G.hopSpeed(30).fallMs && G.hopSpeed(500).fallMs===800 && G.hopSpeed(500).spawnMs===700, "speed ramps and floors");
+    expect(G.hopRockHits(0, 0.9, 0) && !G.hopRockHits(1, 0.9, 0) && !G.hopRockHits(0, 0.5, 0) && !G.hopRockHits(0, 1.2, 0), "rock hit zone");
+    var g0 = { chalkUp:{ best:4, plays:2 }, holdHop:{ best:0, plays:0 } };
+    var rec = G.record(g0, "chalkUp", 9);
+    expect(rec.newBest && rec.games.chalkUp.best===9 && rec.games.chalkUp.plays===3 && g0.chalkUp.best===4, "record a new best (and don't mutate the input)");
+    var rec2 = G.record(rec.games, "chalkUp", 3);
+    expect(!rec2.newBest && rec2.games.chalkUp.best===9 && rec2.games.chalkUp.plays===4, "a lower score keeps the best, counts the play");
+    var n = G.normalize({ chalkUp:{ best:"12", plays:-3 }, holdHop:"x", other:{ best:1 } });
+    expect(n.chalkUp.best===12 && n.chalkUp.plays===0 && n.holdHop.best===0 && n.holdHop.plays===0 && n.other.best===1, "normalize "+JSON.stringify(n));
+    expect(G.normalize(null).chalkUp.best===0 && G.normalize([]).holdHop.plays===0, "normalize junk");
+  });
+
+  test("Games: older saves and backups get state.games without any other data changing; bad values become zeros", async function(){
+    var old = oldFormatSave(); delete old.games;
+    var before = clone(old);
+    await boot(old); await goHome();
+    var s = saved();
+    expect(s.games && s.games.chalkUp.best===0 && s.games.chalkUp.plays===0 && s.games.holdHop.best===0 && s.games.holdHop.plays===0, "no games block: "+JSON.stringify(s.games));
+    var bAtt = allAttempts(before), sAtt = allAttempts(s);   // (older projects migration may add projectId, nothing else)
+    expect(sAtt.length===bAtt.length && bAtt.every(function(x, i){ return sameExceptProject(x, sAtt[i]); }) && s.sessions.length===before.sessions.length, "sessions / attempts changed");
+    expect(Array.isArray(s.restDays) && s.restDays.length===0 && s.lastLocation===before.lastLocation, "rest days / location changed");
+    var bad = clone(TEMPLATE); bad.games = { chalkUp:{ best:"nope", plays:null }, holdHop:{ best:7.9, plays:3 } };
+    await boot(bad); await goHome();
+    s = saved();
+    expect(s.games.chalkUp.best===0 && s.games.chalkUp.plays===0 && s.games.holdHop.best===7 && s.games.holdHop.plays===3, "bad values: "+JSON.stringify(s.games));
+    // an old backup (no games) imports cleanly into a save that has scores: scores come from the backup (zeros), nothing breaks
+    var backup = JSON.stringify(old);
+    await boot(TEMPLATE); await importText(backup, true);
+    s = saved();
+    expect(s.games && s.games.holdHop.plays===0 && s.sessions.length===before.sessions.length, "old backup import: "+JSON.stringify(s.games));
+  });
+
+  test("Games: Play is on the Home dock, opens the menu, a round saves best and plays, and XP / level / streak are untouched", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    expect(visible("openGamesBtn") && !!$("openGamesBtn").closest("#homeDock"), "Play isn't on the Home dock");
+    expect(visible("navHomeBtn") && visible("navTrainBtn") && qa("#appNav .nav-tab").length===3, "the bottom bar changed");
+    var xp0 = saved().xp, lv0 = saved().level, sess0 = saved().sessions.length;
+    await click("openGamesBtn", 250);
+    expect(visible("gamesOverlay") && visible("gmChalkBtn") && visible("gmHopBtn") && !visible("gamesRest"), "menu didn't open (or showed a rest strip with no session)");
+    expect(W.getComputedStyle($("appNav")).display==="none", "the bar shows under the games sheet");
+    expect(/Not played/.test($("gmHopBest").textContent), "best line: "+$("gmHopBest").textContent);
+    await click("gmHopBtn", 200);
+    expect(visible("gmStartBtn") && /Hold Hop/.test($("gamesTitle").textContent), "no intro for Hold Hop");
+    await click("gmStartBtn", 300);
+    expect(qa("#gmClimber img").length>=1 && $("gmClimberImg").getAttribute("src")===W.__cruxOutfit.variantFrame(W.__cruxOutfit.idle[0], W.__cruxOutfit.variantId()), "the climber isn't drawn from a climber frame: "+$("gmClimberImg").getAttribute("src"));
+    // alternate sides: on a fresh row one side always has a hold, so the first two taps always climb
+    for(var i=0;i<4;i++){ $(i%2 ? "gmRight" : "gmLeft").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(260); }
+    var shown = +$("gmScore").textContent;
+    expect(shown>=2, "taps didn't climb: score "+shown);
+    await click("closeGamesBtn", 250);
+    expect(!visible("gamesOverlay"), "the games sheet didn't close");
+    var s = saved();
+    expect(s.games.holdHop.plays===1 && s.games.holdHop.best>=2 && s.games.chalkUp.plays===0, "scores not saved: "+JSON.stringify(s.games));
+    expect(s.xp===xp0 && s.level===lv0 && s.sessions.length===sess0, "a game changed XP, level or sessions");
+    await boot(undefined); await goHome();
+    await click("openGamesBtn", 250);
+    expect(/Best \d+ · played 1/.test($("gmHopBest").textContent), "best line after reload: "+$("gmHopBest").textContent);
+    await click("closeGamesBtn", 150);
+  });
+
+  test("Games: Chalk Up runs a round on the ring, and a perfectly timed tap makes a streak", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    await click("openGamesBtn", 250); await click("gmChalkBtn", 200); await click("gmStartBtn", 100);
+    expect(visible("gmTap") && !!$("gmRing").style.transform, "the ring isn't moving");
+    // the first beat is at 1.5s: tap right on it
+    await wait(1450);
+    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(100);
+    expect(/Perfect|Good/.test($("gmHint").textContent) && +$("gmScore").textContent===1, "tap on the beat: "+$("gmHint").textContent+" score "+$("gmScore").textContent);
+    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(100);
+    expect(/Off the beat/.test($("gmHint").textContent) && +$("gmScore").textContent===1, "a second tap in the same beat should be off the beat: "+$("gmHint").textContent);
+    await click("closeGamesBtn", 250);
+    var s = saved();
+    expect(s.games.chalkUp.best===1 && s.games.chalkUp.plays===1, "chalk score not saved: "+JSON.stringify(s.games.chalkUp));
+  });
+
+  test("Games: Play while you rest keeps the timer running, shows the rest clock, and returns to work when rest ends", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:4 };
+    await boot(seed); await goHome();
+    await click("startSessionBtn", 300);
+    expect(visible("view-session") && !visible("playRestBtn"), "the rest button shows before any rest");
+    await click("startBtn", 4400);                       // 4s of work, now resting
+    expect(/REST/.test($("phaseLabel").textContent) && visible("playRestBtn") && /Play while you rest/.test($("playRestBtn").textContent), "no Play while you rest button: "+$("phaseLabel").textContent);
+    await click("playRestBtn", 300);
+    expect(visible("gamesOverlay") && visible("gamesRest") && /\d\d:\d\d/.test($("gamesRestClock").textContent) && /timer still running/.test($("gamesRestText").textContent), "no rest strip: "+$("gamesRestText").textContent);
+    await click("gmChalkBtn", 150); await click("gmStartBtn", 100);
+    var sawCue = false;                                  // rest ends while the game is open
+    for(var k=0;k<60 && visible("gamesOverlay");k++){ await wait(100); if(/Back to work/.test($("gamesRestText").textContent)) sawCue = true; }
+    expect(sawCue, "no back-to-work cue");
+    expect(!visible("gamesOverlay"), "the game didn't close itself when rest ended");
+    expect(/WORK/.test($("phaseLabel").textContent) && $("startBtn").textContent==="Pause", "the timer didn't carry on: "+$("phaseLabel").textContent+" / "+$("startBtn").textContent);
+    expect(visible("view-session") && !!saved().activeSessionId, "the session was lost");
+    await click("startBtn", 150);                        // pause so it doesn't tick on
+  });
+
   test("Only the climber mascot is used (old pebble art stays retired)", async function(){
     var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });
     var old = paths.filter(function(p){ return !/^mascot\/climber\//.test(p); });

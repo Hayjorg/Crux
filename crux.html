@@ -735,6 +735,79 @@
   .detail-header{padding:18px 18px 16px;margin-bottom:14px;}
   .detail-header h2{font-family:"Bebas Neue",sans-serif;font-size:30px;margin:0 0 4px;}
 
+
+  /* ================= GAMES (Play) ================= */
+  .dock-btn svg{width:28px;height:28px;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));}
+  .play-rest-btn{margin:10px auto 8px;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-size:13px;}
+  .play-rest-btn svg{width:18px;height:18px;flex-shrink:0;}
+  .play-rest-btn[hidden]{display:none;}
+  .games-card{max-width:400px;padding:20px 18px;}
+  .gm-rest{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:-6px 0 12px;border-radius:var(--radius-md);
+    background:color-mix(in srgb, var(--send) 14%, var(--surface-2));border:1px solid color-mix(in srgb, var(--send) 45%, var(--border));font-size:13px;font-weight:600;}
+  .gm-rest[hidden]{display:none;}
+  .gm-rest b{margin-left:auto;font-variant-numeric:tabular-nums;font-size:15px;}
+  .gm-rest-dot{width:8px;height:8px;border-radius:50%;background:var(--send);flex-shrink:0;}
+  .gm-rest.back{background:color-mix(in srgb, var(--accent) 16%, var(--surface-2));border-color:color-mix(in srgb, var(--accent) 50%, var(--border));}
+  .gm-rest.back .gm-rest-dot{background:var(--accent);}
+  .gm-menu{display:grid;gap:10px;}
+  .gm-card{display:flex;align-items:center;gap:12px;width:100%;min-height:72px;padding:12px 14px;text-align:left;color:var(--text);
+    background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);transition:transform .15s ease, border-color .15s ease;}
+  .gm-card:hover{border-color:var(--text-dim);}
+  .gm-card:active{transform:scale(0.98);}
+  .gm-card:focus-visible, .gm-tap:focus-visible, .gm-half:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:12px;}
+  .gm-card-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;background:color-mix(in srgb, var(--accent) 16%, var(--surface));color:var(--accent);}
+  .gm-card-ic svg{width:26px;height:26px;}
+  .gm-card-main{display:grid;gap:2px;min-width:0;}
+  .gm-card-title{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:0.02em;line-height:1.05;}
+  .gm-card-sub{font-size:12.5px;color:var(--text-dim);line-height:1.35;}
+  .gm-card-best{font-size:11.5px;font-weight:700;color:var(--text-dim);letter-spacing:0.04em;text-transform:uppercase;}
+  .gm-note{margin:2px 2px 0;font-size:12px;color:var(--text-dim);text-align:center;}
+  .gm-hud{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
+  .gm-back{min-height:36px;padding:0 4px;}
+  .gm-score{font-family:"Bebas Neue",sans-serif;font-size:30px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums;}
+  .gm-line{font-size:12px;font-weight:700;color:var(--text-dim);}
+  .gm-time{font-size:12px;font-weight:700;color:var(--text-dim);min-width:26px;text-align:right;font-variant-numeric:tabular-nums;}
+  .gm-stage{position:relative;height:352px;overflow:hidden;border-radius:var(--radius-md);border:1px solid var(--border);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, var(--surface-2)), var(--surface-2));
+    touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
+  .gm-hint{margin:8px 0 0;min-height:18px;text-align:center;font-size:12.5px;color:var(--text-dim);}
+  .gm-panel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:18px;text-align:center;}
+  .gm-panel-title{margin:0;font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:0.02em;}
+  .gm-panel-text{margin:0;font-size:13.5px;line-height:1.45;color:var(--text-dim);max-width:280px;}
+  .gm-big{margin:0;font-family:"Bebas Neue",sans-serif;font-size:64px;line-height:1;}
+  .gm-actions{display:flex;gap:8px;width:100%;max-width:280px;}
+  .gm-actions .btn{flex:1;}
+  .gm-climber{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 5px rgba(0,0,0,0.3));}
+  .gm-climber img{display:block;width:100%;height:100%;}
+  .gm-climber img.outfit-layer{position:absolute;left:0;top:0;filter:none;pointer-events:none;}
+  .gm-climber-mid{position:relative;width:96px;height:144px;}
+  .gm-climber-big{width:116px;height:174px;left:50%;top:44%;margin:-87px 0 0 -58px;}
+  .gm-climber-hop{width:84px;height:126px;bottom:8px;transition:left .16s ease;}
+  .gm-climber-hop[data-lane="0"]{left:calc(27% - 42px);}
+  .gm-climber-hop[data-lane="1"]{left:calc(73% - 42px);}
+  .gm-ring{position:absolute;left:50%;top:44%;width:230px;height:230px;margin:-115px 0 0 -115px;border-radius:50%;box-sizing:border-box;pointer-events:none;}
+  .gm-ring-target{border:3px solid color-mix(in srgb, var(--accent) 80%, transparent);}
+  .gm-ring-live{border:6px solid color-mix(in srgb, var(--send) 70%, transparent);background:color-mix(in srgb, var(--send) 10%, transparent);transform:scale(0.38);}
+  .gm-phase{position:absolute;left:0;right:0;bottom:12px;margin:0;text-align:center;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);pointer-events:none;}
+  .gm-tap, .gm-half{position:absolute;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .gm-tap{inset:0;}
+  .gm-half{top:0;bottom:0;width:50%;}
+  .gm-half-0{left:0;} .gm-half-1{right:0;}
+  .gm-lane{position:absolute;top:0;bottom:0;width:22%;border-radius:12px;background:color-mix(in srgb, var(--text) 5%, transparent);}
+  .gm-lane-0{left:calc(27% - 11%);} .gm-lane-1{left:calc(73% - 11%);}
+  .gm-rows, .gm-rocks{position:absolute;inset:0;pointer-events:none;}
+  .gm-row{position:absolute;left:0;right:0;height:18px;transition:bottom .16s ease;}
+  .gm-hold{position:absolute;bottom:0;width:38px;height:18px;border-radius:9px 9px 6px 6px;background:var(--accent);box-shadow:0 2px 0 color-mix(in srgb, var(--accent) 55%, #000);}
+  .gm-hold[hidden]{display:none;}
+  .gm-hold-0{left:calc(27% - 19px);} .gm-hold-1{left:calc(73% - 19px);}
+  .gm-rock{position:absolute;top:-10%;width:30px;height:28px;border-radius:46% 54% 50% 50%;background:#6c6760;border:2px solid #38342f;}
+  .gm-rock-0{left:calc(27% - 15px);} .gm-rock-1{left:calc(73% - 15px);}
+  @media (prefers-reduced-motion: reduce){
+    .gm-climber-hop, .gm-row, .gm-card{transition:none;}
+    .gm-card:active{transform:none;}
+    .modal-card.games-card{animation:none;}
+  }
+
   /* ================= FINISH SESSION ================= */
   .finish-cta{background:var(--send);color:var(--send-contrast);margin-top:4px;margin-bottom:0;}
 
@@ -1308,6 +1381,10 @@
             <img data-ui="customize" alt="">
             <span class="dock-label">Customize</span>
           </button>
+          <button type="button" class="dock-btn" id="openGamesBtn" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
+            <span class="dock-label">Play</span>
+          </button>
         </div>
         <button type="button" class="dock-more" id="homeMoreBtn" aria-label="Show your progress and history">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1441,6 +1518,10 @@
       </div>
       <div class="countdown" id="countdown">00:45</div>
       <div class="progress-track"><div class="progress-fill" id="timerFill" style="width:100%"></div></div>
+      <button type="button" class="link-btn play-rest-btn" id="playRestBtn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
+        <span>Play while you rest</span>
+      </button>
       <div class="timer-controls">
         <button class="btn btn-primary" id="startBtn">Start</button>
         <button class="btn btn-ghost" id="resetBtn">Reset</button>
@@ -1681,6 +1762,45 @@
   </button>
   <!-- ==== END THE WALL ==== -->
 </nav>
+
+<!-- ==== GAMES (removable; see AGENTS.md "Games") ==== -->
+<div class="modal-overlay games-overlay" id="gamesOverlay" hidden>
+  <div class="modal-card games-card" role="dialog" aria-modal="true" aria-labelledby="gamesTitle">
+    <div class="modal-head">
+      <h2 id="gamesTitle">Play</h2>
+      <button type="button" class="icon-btn" id="closeGamesBtn" aria-label="Close games">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="gm-rest" id="gamesRest" role="status" hidden>
+      <span class="gm-rest-dot" aria-hidden="true"></span>
+      <span id="gamesRestText">Rest, timer still running</span>
+      <b id="gamesRestClock"></b>
+    </div>
+    <div class="gm-menu" id="gamesMenu">
+      <button type="button" class="gm-card" id="gmChalkBtn">
+        <span class="gm-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg></span>
+        <span class="gm-card-main"><span class="gm-card-title">Chalk Up</span><span class="gm-card-sub">Breathe with the ring and tap on the beat. Calm, good for rest.</span><span class="gm-card-best" id="gmChalkBest"></span></span>
+      </button>
+      <button type="button" class="gm-card" id="gmHopBtn">
+        <span class="gm-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg></span>
+        <span class="gm-card-main"><span class="gm-card-title">Hold Hop</span><span class="gm-card-sub">Tap left or right to climb up the holds and dodge falling rocks.</span><span class="gm-card-best" id="gmHopBest"></span></span>
+      </button>
+      <p class="gm-note">Just for fun. Games never change your XP, level, streak or Wall.</p>
+    </div>
+    <div class="gm-play" id="gamesPlay" hidden>
+      <div class="gm-hud">
+        <button type="button" class="link-btn gm-back" id="gmBackBtn">Games</button>
+        <span class="gm-score" id="gmScore" aria-label="Score">0</span>
+        <span class="gm-line" id="gmLine"></span>
+        <span class="gm-time" id="gmTime"></span>
+      </div>
+      <div class="gm-stage" id="gmStage"></div>
+      <p class="gm-hint" id="gmHint" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+<!-- ==== END GAMES ==== -->
 
 <div class="modal-overlay" id="settingsOverlay" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-label="Settings">
@@ -2433,8 +2553,21 @@
       // THE WALL (removable): rest days you logged (local day numbers), and how many holds you have
       // already watched your climber reach (null until you first open The Wall).
       restDays:[], wallSeen:null,
+      // GAMES (Play): only a best score and a play count per game. Never touches XP, levels, streaks or holds.
+      games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 } },
       activeSessionId:null
     };
+  }
+
+  // Older saves and backups have no `games`; anything malformed becomes zeros. Unknown games/keys are kept.
+  function gamesNormalize(g){
+    var src = g && typeof g==="object" && !Array.isArray(g) ? g : {}, out = Object.assign({}, src);
+    ["chalkUp", "holdHop"].forEach(function(id){
+      var r = src[id] && typeof src[id]==="object" ? src[id] : {};
+      var b = Math.floor(Number(r.best)), p = Math.floor(Number(r.plays));
+      out[id] = Object.assign({}, r, { best:isFinite(b) && b>0 ? Math.min(b, 9999) : 0, plays:isFinite(p) && p>0 ? Math.min(p, 999999) : 0 });
+    });
+    return out;
   }
 
   function migrateIfNeeded(parsed){
@@ -2513,7 +2646,8 @@
       sessions: Array.isArray(migrated.sessions)?migrated.sessions:[],
       projects: Array.isArray(migrated.projects)?migrated.projects:[],
       workouts: Array.isArray(migrated.workouts)?migrated.workouts.filter(function(w){ return w && typeof w==="object"; }):[],
-      restDays: Array.isArray(migrated.restDays)?migrated.restDays.filter(function(d){ return typeof d==="number" && isFinite(d); }):[]
+      restDays: Array.isArray(migrated.restDays)?migrated.restDays.filter(function(d){ return typeof d==="number" && isFinite(d); }):[],
+      games: gamesNormalize(migrated.games)
     });
     // One-time upgrades, each gated on its own settingsVersion so a person's later choice
     // always wins and these never re-fire.
@@ -3304,6 +3438,7 @@
     document.getElementById("timerFill").style.width = pct+"%";
     document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : timer.phase==="done" ? "Done" : "Resume");
     document.getElementById("startBtn").disabled = timer.phase==="done";
+    document.getElementById("playRestBtn").hidden = timer.phase!=="rest"; // GAMES hook
     // A workout step's program owns the timer; the free work/rest settings wait until it's unloaded.
     var idle = timer.phase==="idle" && !timer.program;
     document.getElementById("workInput").disabled = !idle;
@@ -6891,6 +7026,319 @@
   /* ==== END THE WALL ==== */
 
   document.querySelectorAll("img[data-ui]").forEach(function(im){ im.src = IMG.ui[im.dataset.ui]; });
+
+  /* ==== GAMES (Play: Chalk Up + Hold Hop; removable, see AGENTS.md "Games") ==== */
+  // Two tiny offline games for rest times. They draw the player's own climber (variant + outfit) from existing frames
+  // only, and keep just a best score and a play count in state.games. They never touch XP, levels, streaks or holds.
+  var CHALK_CYCLE_MS = 3000, CHALK_BEATS = 15, HOP_LIVES = 3, HOP_TIME_MS = 60000;
+  // -- pure rules (also exposed to dev/tests.html) --
+  function chalkBeatMs(k){ return CHALK_CYCLE_MS/2 + k*CHALK_CYCLE_MS; }   // the ring meets its outline at the top of each breath
+  function chalkRate(errMs){ var e = Math.abs(errMs); return e<=130 ? "perfect" : e<=260 ? "good" : "miss"; }
+  function chalkRun(ratings){
+    var cur = 0, best = 0, hits = 0, perfects = 0;
+    ratings.forEach(function(r){
+      if(r==="perfect" || r==="good"){ cur++; hits++; if(r==="perfect") perfects++; if(cur>best) best = cur; } else cur = 0;
+    });
+    return { streak:cur, best:best, hits:hits, perfects:perfects };
+  }
+  function chalkRingScale(tMs){ var p = (((tMs % CHALK_CYCLE_MS)+CHALK_CYCLE_MS) % CHALK_CYCLE_MS)/CHALK_CYCLE_MS; return 0.38 + 0.62*(0.5-0.5*Math.cos(2*Math.PI*p)); }
+  function hopRng(seed){ var a = seed>>>0; return function(){ a = (a+0x6D2B79F5)>>>0; var t = a; t = Math.imul(t ^ (t>>>15), t|1); t ^= t + Math.imul(t ^ (t>>>7), t|61); return ((t ^ (t>>>14))>>>0)/4294967296; }; }
+  // a row is [leftHold, rightHold]; there is always at least one hold, and the first row has both
+  function hopRow(rnd){ var r = rnd(); return r<0.4 ? [true, true] : r<0.7 ? [true, false] : [false, true]; }
+  function hopTap(row, lane){ return row && row[lane] ? "climb" : "slip"; }
+  function hopSpeed(score){ return { fallMs:Math.max(800, 2000-score*40), spawnMs:Math.max(700, 1700-score*30) }; }
+  function hopRockHits(rockLane, progress, climberLane){ return rockLane===climberLane && progress>=0.78 && progress<=1; }
+  function gamesRecord(games, id, score){
+    var g = gamesNormalize(games), s = Math.max(0, Math.floor(Number(score))||0), c = g[id] || { best:0, plays:0 };
+    var newBest = s>c.best;
+    g[id] = Object.assign({}, c, { best:Math.max(c.best, s), plays:c.plays+1 });
+    return { games:g, newBest:newBest, best:g[id].best };
+  }
+  if(window.__cruxTest) window.__cruxGames = { normalize:gamesNormalize, record:gamesRecord, chalkBeatMs:chalkBeatMs, chalkRate:chalkRate, chalkRun:chalkRun, chalkRingScale:chalkRingScale, hopRng:hopRng, hopRow:hopRow, hopTap:hopTap, hopSpeed:hopSpeed, hopRockHits:hopRockHits, open:function(o){ openGames(o); }, close:function(){ closeGames(); } };
+
+  // -- the player's climber, drawn through the one resolver + outfit layers --
+  var gmWall = IMG.wall || {}, gmMoves = gmWall.moves || {};
+  function gmFrames(){
+    var r = function(a){ return a || IMG.mascot.idle[0]; };
+    return {
+      idle: IMG.mascot.idle.map(climberFrame),
+      chalk: climberFrame(r(gmWall.cl_chalk)),
+      reachL: climberFrame(r(gmWall.cl_reach_l)), reachR: climberFrame(r(gmWall.cl_reach_r)), pull: climberFrame(r(gmWall.cl_pull)),
+      clap: (gmMoves.chalk_clap || IMG.mascot.idle).map(climberFrame),
+      hit: climberFrame(IMG.mascot.land[0]), cheer: IMG.ui.cheer.map(climberFrame)
+    };
+  }
+  var gm = null;          // the running game {id, ...}; null when the menu is showing
+  var gmKey = null, gmWatchId = null, gmOpener = null, gmFromRest = false, gmClosing = false;
+  function gmEl(id){ return document.getElementById(id); }
+  function gmSay(msg){ var h = gmEl("gmHint"); if(h) h.textContent = msg; }
+  function gmSetSrc(img, src){ if(img && img.getAttribute("src")!==src) img.src = src; }
+  function gmPreload(f){
+    [].concat(f.idle, f.chalk, f.reachL, f.reachR, f.pull, f.clap, f.hit, f.cheer).forEach(function(s){ try{ var i = new Image(); i.src = s; }catch(e){} });
+  }
+  function gamesBestLine(id){ var g = state.games && state.games[id] || { best:0, plays:0 }; return g.plays ? "Best "+g.best+" · played "+g.plays : "Not played yet"; }
+  function renderGamesMenu(){
+    gm = null; stopGameLoop();
+    gmEl("gamesMenu").hidden = false; gmEl("gamesPlay").hidden = true;
+    gmEl("gamesTitle").textContent = "Play";
+    gmEl("gmChalkBest").textContent = gamesBestLine("chalkUp");
+    gmEl("gmHopBest").textContent = gamesBestLine("holdHop");
+  }
+  var gmRaf = null, gmTimeouts = [];
+  function stopGameLoop(){
+    if(gmKey){ document.removeEventListener("keydown", gmKey); gmKey = null; }
+    if(gmRaf){ cancelAnimationFrame(gmRaf); gmRaf = null; }
+    gmTimeouts.forEach(clearTimeout); gmTimeouts = [];
+  }
+  function gmLater(fn, ms){ var id = setTimeout(function(){ gmTimeouts = gmTimeouts.filter(function(x){ return x!==id; }); fn(); }, ms); gmTimeouts.push(id); }
+  function gmHud(score, line){ gmEl("gmScore").textContent = score; gmEl("gmLine").textContent = line; gmEl("gmTime").textContent = ""; }
+
+  // -- intro / over panels --
+  function gmIntro(id){
+    var chalk = id==="chalkUp";
+    gmEl("gamesTitle").textContent = chalk ? "Chalk Up" : "Hold Hop";
+    gmEl("gamesMenu").hidden = true; gmEl("gamesPlay").hidden = false;
+    var best = state.games[id].best;
+    gmHud(0, chalk ? "Streak 0 · Best "+best : "Grips 3 · Best "+best);
+    gmEl("gmStage").innerHTML = '<div class="gm-panel"><p class="gm-panel-title">'+(chalk ? "Breathe and tap" : "Climb and dodge")+'</p>'
+      + '<p class="gm-panel-text">'+(chalk
+          ? "Breathe in as the ring grows. Tap just as it meets the outline. Keep your streak going for 45 seconds."
+          : "Tap the left or right side to reach that hold. Rocks fall down the lanes, so move out of the way. 3 grips, 60 seconds.")+'</p>'
+      + '<button type="button" class="btn btn-primary" id="gmStartBtn">Start</button></div>';
+    gmSay(chalk ? "Calm, one tap per breath." : "No XP, just for fun.");
+    gmEl("gmStartBtn").addEventListener("click", function(){ chalk ? chalkStart() : hopStart(); });
+    gmEl("gmStartBtn").focus({ preventScroll:true });
+  }
+  function gmOver(id, score, extra){
+    stopGameLoop();
+    var rec = { newBest:false, best:state.games[id].best };
+    if(score>0 || extra.force){
+      var r = gamesRecord(state.games, id, score); state.games = r.games; saveState(); rec = r;
+    }
+    var f = gm && gm.frames;
+    gm = null;
+    gmEl("gmStage").innerHTML = '<div class="gm-panel"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
+      + '<p class="gm-panel-title">'+(extra.title||"Round over")+'</p>'
+      + '<p class="gm-big" aria-live="polite">'+score+'</p>'
+      + '<p class="gm-panel-text">'+(rec.newBest ? "New personal best!" : "Best "+rec.best)+(extra.note ? " · "+extra.note : "")+'</p>'
+      + (extra.noButtons ? '' : '<div class="gm-actions"><button type="button" class="btn btn-primary" id="gmAgainBtn">Play again</button><button type="button" class="btn btn-ghost" id="gmMenuBtn">Games</button></div>')
+      + '</div>';
+    var fr = f || gmFrames();
+    outfitFollow(gmEl("gmClimberImg"), gmEl("gmClimber"));
+    gmSetSrc(gmEl("gmClimberImg"), rec.newBest ? fr.cheer[0] : fr.idle[0]);
+    gmHud(score, rec.newBest ? "New best" : "Best "+rec.best);
+    if(!extra.noButtons){
+      gmEl("gmAgainBtn").addEventListener("click", function(){ gmIntro(id); });
+      gmEl("gmMenuBtn").addEventListener("click", renderGamesMenu);
+      gmEl("gmAgainBtn").focus({ preventScroll:true });
+    }
+    gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
+  }
+
+  /* ---- Chalk Up ---- */
+  function chalkStart(){
+    var f = gmFrames(); gmPreload(f);
+    gmEl("gmStage").innerHTML = '<div class="gm-ring gm-ring-target" aria-hidden="true"></div><div class="gm-ring gm-ring-live" id="gmRing" aria-hidden="true"></div>'
+      + '<div class="gm-climber gm-climber-big" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<p class="gm-phase" id="gmPhase" aria-hidden="true">Breathe in</p>'
+      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap when the ring meets the outline"></button>';
+    var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
+    var g = gm = { id:"chalkUp", frames:f, t0:performance.now(), ratings:[], tapped:{}, judged:-1, idleN:0, clapN:0, holdUntil:0, lastScale:0 };
+    gmHud(0, "Streak 0 · Best "+state.games.chalkUp.best);
+    gmSay("Go. Tap as the ring meets the outline.");
+    function tap(){
+      if(gm!==g) return;
+      var t = performance.now()-g.t0;
+      var k = Math.max(0, Math.min(CHALK_BEATS-1, Math.round((t-CHALK_CYCLE_MS/2)/CHALK_CYCLE_MS)));
+      var err = t-chalkBeatMs(k), rating = chalkRate(err);
+      if(g.tapped[k] || rating==="miss"){ g.ratings.push("miss"); chalkShow("Off the beat", g); gmSetSrc(img, g.frames.idle[0]); return; }
+      g.tapped[k] = true; g.ratings.push(rating);
+      chalkShow(rating==="perfect" ? "Perfect" : "Good", g);
+      gmSetSrc(img, g.frames.clap[g.clapN++ % g.frames.clap.length]); g.holdUntil = t+260;
+    }
+    gmEl("gmTap").addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
+    gmEl("gmTap").addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
+    gmEl("gmTap").focus({ preventScroll:true });
+    var ring = gmEl("gmRing"), phase = gmEl("gmPhase");
+    function frame(){
+      if(gm!==g) return;
+      var t = performance.now()-g.t0, p = (t % CHALK_CYCLE_MS)/CHALK_CYCLE_MS;
+      var s = chalkRingScale(t);
+      if(prefersReducedMotion) s = Math.round(s*4)/4;   // simplified: the ring steps instead of gliding
+      if(s!==g.lastScale){ ring.style.transform = "scale("+s.toFixed(3)+")"; g.lastScale = s; }
+      var label = p<0.5 ? "Breathe in" : "Breathe out";
+      if(phase.textContent!==label) phase.textContent = label;
+      // a beat nobody tapped within its window is a miss
+      while(g.judged+1<CHALK_BEATS && t>chalkBeatMs(g.judged+1)+260){
+        g.judged++; if(!g.tapped[g.judged]){ g.ratings.push("miss"); chalkShow("Missed", g); }
+      }
+      if(t>=g.holdUntil){
+        var want = (p>0.38 && p<0.62) ? g.frames.chalk : g.frames.idle[Math.floor(t/700)%g.frames.idle.length];
+        gmSetSrc(img, want);
+      }
+      gmEl("gmTime").textContent = Math.max(0, Math.ceil((CHALK_BEATS*CHALK_CYCLE_MS-t)/1000))+"s";
+      if(t>=CHALK_BEATS*CHALK_CYCLE_MS){ var run = chalkRun(g.ratings); gmOver("chalkUp", run.best, { note:run.hits+" of "+CHALK_BEATS+" in time", force:true }); return; }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function chalkShow(word, g){
+    var run = chalkRun(g.ratings);
+    gmHud(run.best, "Streak "+run.streak+" · Best "+state.games.chalkUp.best);
+    gmSay(word+". Streak "+run.streak+".");
+  }
+
+  /* ---- Hold Hop ---- */
+  var HOP_ROW0 = 66, HOP_ROW_GAP = 60, HOP_VISIBLE = 5;
+  function hopStart(){
+    var f = gmFrames(); gmPreload(f);
+    gmEl("gmStage").innerHTML = '<div class="gm-lane gm-lane-0" aria-hidden="true"></div><div class="gm-lane gm-lane-1" aria-hidden="true"></div>'
+      + '<div class="gm-rows" id="gmRows" aria-hidden="true"></div><div class="gm-rocks" id="gmRocks" aria-hidden="true"></div>'
+      + '<div class="gm-climber gm-climber-hop" id="gmClimber" data-lane="0"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<button type="button" class="gm-half gm-half-0" id="gmLeft" aria-label="Reach the left hold"></button>'
+      + '<button type="button" class="gm-half gm-half-1" id="gmRight" aria-label="Reach the right hold"></button>';
+    var img = gmEl("gmClimberImg"), body = gmEl("gmClimber"), rowsEl = gmEl("gmRows"), rocksEl = gmEl("gmRocks");
+    outfitFollow(img, body); gmSetSrc(img, f.idle[0]);
+    var rnd = hopRng((Date.now() ^ 0x9E3779B9)>>>0);
+    var g = gm = { id:"holdHop", frames:f, t0:performance.now(), rnd:rnd, rows:[[true, true]], cur:0, lane:0, score:0, lives:HOP_LIVES,
+                   rocks:[], nextRock:performance.now()+1200, invulnUntil:0, busy:0, rowEls:{}, last:performance.now() };
+    function rowAt(i){ while(g.rows.length<=i) g.rows.push(hopRow(rnd)); return g.rows[i]; }
+    function renderRows(){
+      for(var i=g.cur;i<g.cur+HOP_VISIBLE;i++){
+        var row = rowAt(i), el = g.rowEls[i];
+        if(!el){
+          el = g.rowEls[i] = document.createElement("div"); el.className = "gm-row";
+          el.innerHTML = '<span class="gm-hold gm-hold-0"></span><span class="gm-hold gm-hold-1"></span>';
+          el.children[0].hidden = !row[0]; el.children[1].hidden = !row[1];
+          rowsEl.appendChild(el);
+        }
+        el.style.bottom = (HOP_ROW0+(i-g.cur)*HOP_ROW_GAP)+"px";
+      }
+      Object.keys(g.rowEls).forEach(function(k){ if(+k<g.cur){ g.rowEls[k].remove(); delete g.rowEls[k]; } });
+    }
+    function hud(){ gmHud(g.score, "Grips "+g.lives+" · Best "+state.games.holdHop.best); }
+    function setFrame(src, ms){ gmSetSrc(img, src); g.busy++; var n = g.busy; gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.idle[0]); }, ms); }
+    function loseGrip(msg, now){
+      g.lives--; g.invulnUntil = now+900; setFrame(g.frames.hit, 420); hud(); gmSay(msg+" "+g.lives+" grip"+(g.lives===1?"":"s")+" left.");
+      if(g.lives<=0) hopEnd("Out of grips");
+    }
+    function hopEnd(title){
+      if(gm!==g) return;
+      gmOver("holdHop", g.score, { title:title, note:g.score+" hold"+(g.score===1?"":"s"), force:true });
+    }
+    function reach(lane){
+      if(gm!==g || g.lives<=0) return;
+      var now = performance.now(), next = rowAt(g.cur+1);
+      if(hopTap(next, lane)==="climb"){
+        g.cur++; g.lane = lane; g.score++; body.dataset.lane = String(lane);
+        renderRows(); hud();
+        gmSetSrc(img, lane===0 ? g.frames.reachL : g.frames.reachR); g.busy++; var n = g.busy;
+        gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.pull); }, 90);
+        gmLater(function(){ if(gm===g && g.busy===n) gmSetSrc(img, g.frames.idle[0]); }, 200);
+        gmSay("Hold "+g.score+".");
+      } else {
+        loseGrip("Slipped, no hold there.", now);
+      }
+    }
+    gmEl("gmLeft").addEventListener("pointerdown", function(e){ e.preventDefault(); reach(0); });
+    gmEl("gmRight").addEventListener("pointerdown", function(e){ e.preventDefault(); reach(1); });
+    ["gmLeft", "gmRight"].forEach(function(id, lane){
+      gmEl(id).addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) reach(lane); } });
+    });
+    gmKey = function(e){ if(e.key==="ArrowLeft"){ e.preventDefault(); reach(0); } else if(e.key==="ArrowRight"){ e.preventDefault(); reach(1); } };
+    document.addEventListener("keydown", gmKey);
+    renderRows(); hud(); gmSay("Climb. Tap left or right, and dodge the rocks.");
+    function frame(){
+      if(gm!==g) return;
+      var now = performance.now(), el = now-g.t0, sp = hopSpeed(g.score);
+      var fall = sp.fallMs*(prefersReducedMotion ? 1.3 : 1), spawn = sp.spawnMs*(prefersReducedMotion ? 1.3 : 1);
+      if(now>=g.nextRock){
+        var lane = rnd()<0.5 ? 0 : 1, node = document.createElement("span");
+        node.className = "gm-rock gm-rock-"+lane; rocksEl.appendChild(node);
+        g.rocks.push({ lane:lane, born:now, fall:fall, node:node });
+        g.nextRock = now+spawn*(0.8+rnd()*0.5);
+      }
+      g.rocks = g.rocks.filter(function(r){
+        var p = (now-r.born)/r.fall;
+        if(p>1.02){ r.node.remove(); return false; }
+        r.node.style.top = (-10+p*95)+"%";
+        if(now>=g.invulnUntil && hopRockHits(r.lane, p, g.lane)){ r.node.remove(); loseGrip("A rock hit you.", now); return false; }
+        return true;
+      });
+      if(gm!==g) return;
+      var left = Math.max(0, HOP_TIME_MS-el);
+      gmEl("gmTime").textContent = Math.ceil(left/1000)+"s";
+      if(left<=0){ hopEnd("Time"); return; }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    gmRaf = requestAnimationFrame(frame);
+  }
+
+  /* ---- the overlay: open, close, rest strip ---- */
+  function gamesRestState(){
+    var s = getActiveSession();
+    var resting = !!s && timer.phase==="rest";
+    return { resting:resting, clock:resting ? fmtClock(Math.max(0, Math.ceil(timerRemainingMs(Date.now())/1000))) : "", running:!!timer.running };
+  }
+  function gamesWatch(){
+    var st = gamesRestState(), strip = gmEl("gamesRest");
+    if(gmClosing) return;
+    if(gmFromRest && !st.resting){
+      // Rest is over: end the round (the score still counts) and head back to the timer.
+      gmClosing = true;
+      strip.hidden = false; strip.classList.add("back");
+      gmEl("gamesRestText").textContent = "Rest is over. Back to work!";
+      gmEl("gamesRestClock").textContent = "";
+      if(gm) gmOver(gm.id, gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score, { title:"Back to work", noButtons:true, force:false });
+      gmLater(closeGames, 1800);
+      return;
+    }
+    strip.hidden = !st.resting;
+    if(st.resting){
+      gmEl("gamesRestClock").textContent = st.clock;
+      gmEl("gamesRestText").textContent = st.running ? "Rest, timer still running" : "Rest, timer paused";
+    }
+  }
+  function openGames(opts){
+    var o = gmEl("gamesOverlay"); if(!o) return;
+    gmClosing = false; gmFromRest = !!(opts && opts.fromRest);
+    gmOpener = document.activeElement;
+    gmEl("gamesRest").classList.remove("back");
+    renderGamesMenu();
+    o.hidden = false;
+    gamesWatch();
+    if(!gmWatchId) gmWatchId = setInterval(gamesWatch, 250);
+    gmEl("closeGamesBtn").focus({ preventScroll:true });
+  }
+  function closeGames(){
+    var o = gmEl("gamesOverlay"); if(!o || o.hidden) return;
+    if(gm){ // closing mid-round keeps what you scored
+      var s = gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score;
+      if(s>0){ var r = gamesRecord(state.games, gm.id, s); state.games = r.games; saveState(); }
+    }
+    stopGameLoop(); gm = null; gmClosing = false;
+    if(gmWatchId){ clearInterval(gmWatchId); gmWatchId = null; }
+    o.hidden = true;
+    gmEl("gmStage").innerHTML = "";
+    if(gmOpener && gmOpener.focus && gmOpener.isConnected && !gmOpener.hidden){ try{ gmOpener.focus({ preventScroll:true }); }catch(e){} }
+    gmOpener = null; gmFromRest = false;
+  }
+  document.getElementById("openGamesBtn").addEventListener("click", function(){ openGames({ fromRest:false }); });
+  document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
+  document.getElementById("closeGamesBtn").addEventListener("click", closeGames);
+  document.getElementById("gamesOverlay").addEventListener("click", function(e){ if(e.target.id==="gamesOverlay") closeGames(); });
+  document.getElementById("gmChalkBtn").addEventListener("click", function(){ gmIntro("chalkUp"); });
+  document.getElementById("gmHopBtn").addEventListener("click", function(){ gmIntro("holdHop"); });
+  document.getElementById("gmBackBtn").addEventListener("click", function(){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(); });
+  function closeRoundToMenu(){
+    var s = gm.id==="chalkUp" ? chalkRun(gm.ratings).best : gm.score;
+    if(s>0){ var r = gamesRecord(state.games, gm.id, s); state.games = r.games; saveState(); }
+    renderGamesMenu();
+  }
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape" && !document.getElementById("gamesOverlay").hidden) closeGames(); });
+  // A hidden page can't keep a fair rhythm: stop the round quietly (the timer carries on by itself).
+  document.addEventListener("visibilitychange", function(){ if(document.hidden && gm && !document.getElementById("gamesOverlay").hidden){ stopGameLoop(); closeRoundToMenu(); } });
+  /* ==== END GAMES ==== */
 
   /* ---------------- view switching ---------------- */
   // The bottom bar: Home / Train / Wall. It is hidden on the session view (which has its own Home button)
