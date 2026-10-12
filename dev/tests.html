@@ -1809,6 +1809,17 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("closeGamesBtn", 150);
   });
 
+  test("Games: the stylesheet's braces balance and the games sheet is a fixed overlay (a missing } once swallowed the modal CSS)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var css = Array.prototype.map.call(D.querySelectorAll("style"), function(s){ return s.textContent; }).join("\n").replace(/\/\*[\s\S]*?\*\//g, "");
+    var depth = 0, min = 0; for(var i=0;i<css.length;i++){ if(css[i]==="{") depth++; else if(css[i]==="}"){ depth--; if(depth<min) min = depth; } }
+    expect(depth===0 && min===0, "unbalanced braces in the app CSS: depth "+depth+", min "+min);
+    await click("openGamesBtn", 250);
+    expect(W.getComputedStyle($("gamesOverlay")).position==="fixed", "the games sheet is not a fixed overlay: "+W.getComputedStyle($("gamesOverlay")).position);
+    await click("closeGamesBtn", 150);
+  });
+
   // ---- routeRead tests ----
   test("Games: Route Read rules are pure (ramp table, next length, 500 seeds of valid distinct solvable routes)", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
@@ -2082,6 +2093,19 @@ and the project rules. It runs on its own private copy of the data, never your r
     for(var k=0;k<60 && visible("gamesOverlay");k++) await wait(100);
     expect(!visible("gamesOverlay") && saved().games.chalkRhythm.plays===1 && saved().games.chalkRhythm.best>=3, "mid-round rest end: "+JSON.stringify(saved().games.chalkRhythm));
     expect(/WORK/.test($("phaseLabel").textContent) && $("startBtn").textContent==="Pause", "timer was altered");
+    await click("startBtn", 150);
+  });
+  test("Games: prompts on screen are taken away when a rest drops under 10 s, and the Start prompt is not offered late", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:3, restSec:14 };
+    await boot(seed); await goHome();
+    await click("startSessionBtn", 300); await click("startBtn", 3400);
+    await click("playRestBtn", 300); await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    var G = W.__cruxGames; G.current().t0 -= 45000; await wait(300);   // round over with ~10-11 s of rest left
+    var early = !!D.getElementById("gmAgainBtn");
+    for(var k=0;k<40 && D.getElementById("gmAgainBtn");k++) await wait(100);
+    expect(early, "the end screen should show Play again while rest > 10 s (timing: rest left "+$("gamesRestClock").textContent+")");
+    expect(!D.getElementById("gmAgainBtn") && !D.getElementById("gmMenuBtn") && /Rest is almost over/.test($("gmStage").textContent), "prompt stayed after 10 s: "+$("gmStage").textContent);
+    for(var j=0;j<80 && visible("gamesOverlay");j++) await wait(100);
     await click("startBtn", 150);
   });
   // ---- end chalkRhythm tests ----

@@ -763,7 +763,7 @@
   .gm-card-best{font-size:11.5px;font-weight:700;color:var(--text-dim);letter-spacing:0.04em;text-transform:uppercase;}
   .gm-note{margin:2px 2px 0;font-size:12px;color:var(--text-dim);text-align:center;}
   .gm-hud{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
-  .gm-back{min-height:36px;padding:0 4px;}
+  .gm-back{min-height:44px;padding:0 8px;}
   .gm-score{font-family:"Bebas Neue",sans-serif;font-size:30px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums;}
   .gm-line{font-size:12px;font-weight:700;color:var(--text-dim);}
   .gm-time{font-size:12px;font-weight:700;color:var(--text-dim);min-width:26px;text-align:right;font-variant-numeric:tabular-nums;}
@@ -776,7 +776,10 @@
   .gm-panel-text{margin:0;font-size:13.5px;line-height:1.45;color:var(--text-dim);max-width:280px;}
   .gm-big{margin:0;font-family:"Bebas Neue",sans-serif;font-size:64px;line-height:1;}
   .gm-actions{display:flex;gap:8px;width:100%;max-width:280px;}
-  .gm-actions .btn{flex:1;}
+  .gm-actions .btn{flex:1;white-space:nowrap;padding-left:10px;padding-right:10px;}
+  .gm-panel .btn{min-height:44px;}
+  .games-overlay .icon-btn{width:44px;height:44px;}
+  .gm-sound .switch::after{content:"";position:absolute;inset:-9px -6px;}
   .gm-climber{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 5px rgba(0,0,0,0.3));}
   .gm-climber img{display:block;width:100%;height:100%;}
   .gm-climber img.outfit-layer{position:absolute;left:0;top:0;filter:none;pointer-events:none;}
@@ -880,6 +883,7 @@
     .ss-cam, .ss-climber, .ss-slider{transition:none;}
     .ss-bob{animation:none;}
     .ss-chunk{transition:opacity .3s linear;}
+  }
   /* .rt- (Reach Timer) */
   .rt-ladder{position:absolute;left:0;right:0;top:12px;display:flex;justify-content:center;gap:6px;pointer-events:none;}
   .rt-mark{width:10px;height:10px;border-radius:3px;border:2px solid color-mix(in srgb, var(--text) 35%, transparent);box-sizing:border-box;}
@@ -7331,6 +7335,8 @@
   function gmHud(score, line){ gmEl("gmScore").textContent = score; gmEl("gmLine").textContent = line; gmEl("gmTime").textContent = ""; }
 
   // -- intro / over panels --
+  // In the last 10 s of a rest no "Play again" / "Games" prompt is offered; the round that is running finishes by itself.
+  function gmRestLow(){ if(!gmFromRest) return false; var r = gamesRestState(); return r.resting && r.ms<=10000; }
   function gmIntro(id){
     var d = GAMES[id]; if(!d || d.soon) return;
     var intro = d.intro || {};
@@ -7353,9 +7359,9 @@
     if(rec.counted){ state.games = rec.games; saveState(); }
     var f = gm && gm.frames;
     gm = null;
-    var low = gmFromRest && gamesRestState().resting && gamesRestState().ms<=10000;   // no "Play again" in the last 10 s of rest
+    var low = gmRestLow();   // no "Play again" in the last 10 s of rest
     var noButtons = !!extra.noButtons || low;
-    var note = low && !extra.noButtons ? "Rest is almost over." : extra.note;
+    var note = low && !extra.noButtons ? (extra.note ? extra.note+" · " : "")+"Rest is almost over." : extra.note;
     gmEl("gmStage").innerHTML = '<div class="gm-panel"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
       + '<p class="gm-panel-title">'+(extra.title||"Round over")+'</p>'
       + '<p class="gm-big" aria-live="polite">'+score+'</p>'
@@ -8070,6 +8076,15 @@
       return;
     }
     strip.hidden = !st.resting;
+    if(gmFromRest && st.resting && st.ms<=10000){
+      // the clock crossed 10 s while a prompt was on screen: take the buttons away
+      var btns = document.querySelectorAll("#gmAgainBtn, #gmMenuBtn");
+      if(btns.length){
+        var panel = btns[0].closest(".gm-panel");
+        btns.forEach(function(b){ var a = b.closest(".gm-actions"); (a || b).remove(); });
+        if(panel && !panel.querySelector(".gm-rest-low")){ var p = document.createElement("p"); p.className = "gm-panel-text gm-rest-low"; p.textContent = "Rest is almost over."; panel.appendChild(p); }
+      }
+    }
     if(st.resting){
       gmEl("gamesRestClock").textContent = st.clock;
       gmEl("gamesRestText").textContent = st.running ? "Rest, timer still running" : "Rest, timer paused";
