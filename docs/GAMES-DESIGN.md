@@ -77,7 +77,8 @@ Fairness property: the show time per hold >= 500 ms (min is 3.0 s / 5 = 600 ms);
 Feedback: correct tap = hold gets a ring + soft tick; wrong tap = hold wobbles, route re-shows. Final route completed with N=8: climber `flag` frame 1.2 s.
 Frame map: idle while memorising; `reachL`/`reachR` (climb-reach-left/right) for the next hold by column (left col = reachL, right col = reachR, middle = pull); `pull` on route complete; `land` on re-show; end: cheer if new best else `ledgeSit`.
 Reduced motion: no wobble; wrong hold shows an X badge; transitions are crossfades <= 120 ms.
-Sound: soft rising 3-note chime on route complete (440/554/659 Hz, 80 ms each, 0.1 vol). Wrong: nothing (visual only).
+Sound: soft rising tick per correct hold (500 + 40 Hz per step, 45 ms, 0.06 vol), soft 3-note chime on route complete (440/554/659 Hz, 80 ms each, 0.1 vol). Wrong: one low soft tone (262 Hz, 90 ms, 0.05 vol) plus the visual.
+Polish (2026-10): pointerdown input with event timestamps; non-route holds dim and numbers pop in/fade out during show/hide; a draining bar and progress pips; CSS sparkle + check on a correct hold; climber eases up with the last hold and cheers on complete; end screen shows routes read.
 End: "Good reading." score, "Longest route N". Buttons as above.
 Schema: `games.routeRead = { best, plays, longest }`.
 
