@@ -816,6 +816,28 @@
   .gm-art-ring{border:3px solid var(--accent);border-radius:50%;background:transparent;}
   .gm-art-flag{background:var(--send);border-radius:4px 14px 14px 4px;}
   .gm-art-img{object-fit:contain;}
+  /* summitStack (.ss-) */
+  .ss-world{position:absolute;top:0;transform-origin:0 0;pointer-events:none;}
+  .ss-cam{position:absolute;inset:0;transition:transform .28s ease;will-change:transform;}
+  .ss-blk{position:absolute;display:block;}
+  .ss-slider{position:absolute;left:0;top:0;will-change:transform;transition:opacity .35s ease;}
+  .ss-chunk{opacity:0.9;transition:transform .55s ease-in, opacity .55s ease-in;}
+  .ss-chunk.go{opacity:0;}
+  .ss-bob{animation:ssBob .32s ease-out;}
+  @keyframes ssBob{0%{transform:translateY(-5px);}60%{transform:translateY(2px);}100%{transform:none;}}
+  .ss-climber{width:60px;height:90px;transition:top .16s ease;z-index:2;}
+  .ss-climber img.wide, .ss-climber img.outfit-layer.wide{width:141%;max-width:none;margin-left:-20.5%;}
+  .ss-flag{position:absolute;z-index:2;}
+  .ss-time{position:absolute;left:0;top:0;right:0;height:4px;z-index:3;background:var(--accent);transform-origin:0 50%;pointer-events:none;}
+  .ss-label{position:absolute;left:0;right:0;top:12px;margin:0;z-index:3;display:flex;justify-content:center;align-items:center;gap:6px;opacity:0;pointer-events:none;
+    font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.04em;transition:opacity .2s ease;}
+  .ss-label.on{opacity:1;}
+  .ss-label .gm-art{width:20px !important;height:20px !important;}
+  @media (prefers-reduced-motion: reduce){
+    .ss-cam, .ss-climber, .ss-slider{transition:none;}
+    .ss-bob{animation:none;}
+    .ss-chunk{transition:opacity .3s linear;}
+  }
   /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
@@ -7370,6 +7392,197 @@
   /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
   /* ==== routeRead END ==== */
   /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
+  // Summit Stack (design doc 2.3). A block slides over the tower, tap drops it, the overlap stays. No fail state.
+  // Geometry is in "logical px" of a 360-wide world (a 320 px block is 100%); the world is scaled to the stage.
+  var SS_BASE = 320, SS_FLOOR = 0.30*SS_BASE, SS_PERFECT_PX = 6, SS_REGAIN = 0.08*SS_BASE, SS_LEARN_BLOCKS = 4, SS_SUMMIT = 20;
+  var SS_WORLD_W = 360, SS_CENTER = SS_WORLD_W/2, SS_TRAVEL = SS_BASE/2;       // the slider's centre sweeps SS_CENTER +- 160
+  var SS_ROUND_MS = 45000, SS_BLOCK_H = 28, SS_DROP_MS = 170, SS_FALL_MS = 420, SS_RISE = 118, SS_CLIMBER_H = 90;
+  // crossing time (edge to edge of the 320 lane) for block number n (1-based)
+  function stackCross(n){ n = Math.max(1, Math.floor(Number(n))||1); return n<=4 ? 2400 : n<=9 ? 2100 : n<=14 ? 1800 : 1500; }
+  // what a drop does. n = number of the block being dropped, prev = width of the block below, err = signed centre offset (px).
+  // Returns { miss, perfect, width, shift, over }: shift = new centre minus the block below's centre; over = trimmed overhang px.
+  function stackDrop(n, prev, err){
+    n = Math.max(1, Math.floor(Number(n))||1);
+    prev = Math.max(SS_FLOOR, Math.min(SS_BASE, Number(prev)||SS_BASE)); err = Number(err)||0;
+    var a = Math.abs(err);
+    if(a>=prev) return { miss:true, perfect:false, width:0, shift:0, over:0 };       // no overlap at all: it falls off, tower unchanged
+    if(a<=SS_PERFECT_PX) return { miss:false, perfect:true, width:Math.min(SS_BASE, prev+SS_REGAIN), shift:0, over:0 };
+    if(n<=SS_LEARN_BLOCKS) return { miss:false, perfect:false, width:prev, shift:0, over:0 };   // learn blocks: forgiven, snapped on
+    return { miss:false, perfect:false, width:Math.max(prev-a, SS_FLOOR), shift:err/2, over:a };
+  }
+  function stackWidth(n, prev, err){ return stackDrop(n, prev, err).width; }
+  // time the whole block takes to cross its own width (the reaction window), in ms
+  function stackWindowMs(n, width){ return width*stackCross(n)/SS_BASE; }
+  // slider centre offset (-160..160) at tMs since the block appeared: a triangle wave, deterministic. phase 0..1, side +1/-1.
+  function stackPos(tMs, crossMs, phase, side){
+    var u = ((tMs/(2*crossMs) + (phase||0)) % 1 + 1) % 1;
+    var tri = u<0.5 ? u*4-1 : 3-u*4;
+    return (side<0 ? -1 : 1)*tri*SS_TRAVEL;
+  }
+  // which pose the climber holds, ms after the last stack
+  function stackPose(sinceMs, blocks){ return sinceMs<150 ? "jump" : sinceMs<330 ? "land" : sinceMs<600 ? "step" : (blocks>=SS_SUMMIT ? "flag" : "idle"); }
+  function stackScore(blocks, perfects){ return blocks+perfects; }
+
+  gmRegister({
+    id:"summitStack", title:"Summit Stack", order:3, blurb:"Drop each block on the last to build a tower.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="16" width="16" height="4" rx="1"/><rect x="6" y="10" width="12" height="4" rx="1"/><rect x="9" y="4" width="7" height="4" rx="1"/></svg>',
+    intro:{ title:"Stack to the summit", text:"A block slides over the tower. Tap anywhere to drop it. What overlaps stays, the overhang falls off. Line it up for a Perfect and it grows back. 45 seconds.", hint:"No XP, just for fun. A miss costs nothing." },
+    hud0:function(best){ return "Blocks 0 · Best "+best; },
+    start:function(){ summitStackStart(); },
+    state:function(){ return summitStackState(); },
+    rest:{ closeScore:function(){ return summitStackState(); } },
+    resume:function(dt){
+      if(!gm || gm.id!=="summitStack") return;
+      gm.blockT0 += dt; gm.dropAt += dt; gm.fallAt += dt; gm.poseAt += dt;
+      if(gm.frame) gmRaf = requestAnimationFrame(gm.frame);
+    },
+    art:["ss.ledge", "ss.block", "ss.flag", "ui.perfect", "ui.summit"], frames:["idle", "step", "jump", "hit", "flag", "ledgeSit", "cheer"]
+  });
+  function summitStackState(){
+    var g = gm && gm.id==="summitStack" ? gm : null;
+    if(!g) return { score:0, actions:0, extra:{} };
+    return { score:g.score, actions:g.taps, extra:{ tallest:g.n, perfects:g.perfects } };
+  }
+  function summitStackStart(){
+    var f = gmFrames(); gmPreload(f);
+    var stage = gmEl("gmStage");
+    var sw = stage.clientWidth || 340, sh = stage.clientHeight || 352;
+    var k = Math.min(1, sw/SS_WORLD_W), lh = sh/k;
+    var ground = lh - 46;                       // top of the starting ledge, in world px
+    var camLine = lh*0.6;                       // the top block settles 60% of the way down
+    stage.innerHTML = '<div class="ss-time" id="ssTime" aria-hidden="true"></div>'
+      + '<div class="ss-world" id="ssWorld" style="width:'+SS_WORLD_W+'px;height:'+lh+'px;left:'+((sw-SS_WORLD_W*k)/2)+'px;transform:scale('+k+')">'
+      + '<div class="ss-cam" id="ssCam"><div id="ssTower"></div>'
+      + '<div class="ss-flag" id="ssFlag" hidden></div>'
+      + '<div class="gm-climber ss-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<div id="ssSlider" class="ss-slider"></div></div></div>'
+      + '<p class="ss-label" id="ssLabel" aria-hidden="true"></p>'
+      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap anywhere to drop the block"></button>';
+    var cam = gmEl("ssCam"), tower = gmEl("ssTower"), slider = gmEl("ssSlider"), label = gmEl("ssLabel"), bar = gmEl("ssTime"), flagEl = gmEl("ssFlag");
+    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber");
+    outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
+    flagEl.appendChild(gmArt("ss.flag")); var fa = flagEl.firstChild; fa.style.width = "26px"; fa.style.height = "38px";
+    var ledge = gmArt("ss.ledge"); ledge.classList.add("ss-blk"); ledge.style.width = SS_BASE+"px"; ledge.style.height = SS_BLOCK_H+"px";
+    ledge.style.left = (SS_CENTER-SS_BASE/2)+"px"; ledge.style.top = ground+"px"; tower.appendChild(ledge);
+
+    var g = gmBegin("summitStack", f, { n:0, score:0, perfects:0, taps:0, topC:SS_CENTER, topW:SS_BASE, phase:"slide", blockT0:0, dropAt:0, fallAt:0,
+      poseAt:-1e9, side:1, cross:stackCross(1), ph:0, res:null, dropX:SS_CENTER, shift:0, lastBar:-1, lastSec:-1, flagged:false });
+    g.ph = g.rnd(); g.side = g.rnd()<0.5 ? -1 : 1; g.blockT0 = g.t0;
+    function topY(){ return ground - g.n*SS_BLOCK_H; }
+    function mkBlock(w){ var b = gmArt("ss.block"); b.classList.add("ss-blk"); b.style.width = w+"px"; b.style.height = SS_BLOCK_H+"px"; return b; }
+    function putClimber(){
+      climber.style.left = (g.topC-30)+"px"; climber.style.top = (topY()-SS_CLIMBER_H)+"px";
+      flagEl.style.left = (g.topC+22)+"px"; flagEl.style.top = (topY()-SS_CLIMBER_H-6)+"px";
+    }
+    function setSlider(cx, y){ slider.style.transform = "translate3d("+(cx-g.topW/2)+"px,"+y+"px,0)"; }
+    function newSlider(){
+      g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = performance.now();
+      slider.innerHTML = ""; slider.style.opacity = "1"; slider.appendChild(mkBlock(g.topW));
+    }
+    function say(text, perfect){
+      label.innerHTML = (perfect ? gmArtHtml("ui.perfect") : "")+'<span>'+text+'</span>'; label.classList.add("on");
+      var stamp = ++g.labelN; g.labelN = stamp;
+      gmLater(function(){ if(g.labelN===stamp) label.classList.remove("on"); }, 900);
+    }
+    g.labelN = 0;
+    function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, 0)); }
+    function chunk(left, y, w, dir){
+      var c = mkBlock(w); c.classList.add("ss-chunk"); c.style.left = left+"px"; c.style.top = y+"px"; cam.appendChild(c);
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*18)+"px,150px) rotate("+(dir*14)+"deg)"; }); });
+      gmLater(function(){ c.remove(); }, 700);
+    }
+    function land(now){
+      var r = g.res, ty = topY();
+      if(r.miss){ g.phase = "fall"; g.fallAt = now; slider.style.opacity = "0"; say("Missed. Next block", false); gmSay("Missed the tower. Next block."); return; }
+      var newC = g.topC + r.shift, b = mkBlock(r.width);
+      b.style.left = (newC-r.width/2)+"px"; b.style.top = (ty-SS_BLOCK_H)+"px"; tower.appendChild(b);
+      if(r.perfect && !prefersReducedMotion){ b.classList.add("ss-bob"); }
+      if(r.over>0){
+        var sign = g.dropX>g.topC ? 1 : -1, edge = g.topC + sign*g.topW/2;
+        chunk(sign>0 ? edge : edge-r.over, ty-SS_BLOCK_H, r.over, sign);
+      }
+      g.n++; g.topC = newC; g.topW = r.width; g.score += 1 + (r.perfect ? 1 : 0); if(r.perfect) g.perfects++;
+      g.poseAt = now;
+      // the camera: a transform on one element, the top block settles at 60% of the stage
+      var sh = Math.max(0, camLine - topY());
+      if(sh!==g.shift){ g.shift = sh; cam.style.transform = "translate3d(0,"+sh+"px,0)"; }
+      putClimber();
+      gmBeep(110, 70, 0.12);
+      if(r.perfect){ gmLater(function(){ if(gm===g) gmBeep(660, 60, 0.08); }, 75); gmBuzz(8); }
+      hud();
+      if(r.perfect) say("Perfect", true);
+      else say("Good", false);
+      if(g.n>=SS_SUMMIT && !g.flagged){ g.flagged = true; flagEl.hidden = false; say("Summit", false); }
+      gmSay((r.perfect ? "Perfect. " : "")+g.n+" blocks, score "+g.score+".");
+      newSlider();
+    }
+    function tap(){
+      if(gm!==g || g.paused || g.phase!=="slide") return;
+      var now = performance.now();
+      g.taps++;
+      var cx = SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side);
+      g.dropX = cx; g.res = stackDrop(g.n+1, g.topW, cx-g.topC);
+      g.phase = "drop"; g.dropAt = now;
+    }
+    var tapBtn = gmEl("gmTap");
+    tapBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
+    tapBtn.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
+    tapBtn.focus({ preventScroll:true });
+
+    var lastKey = "";
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var now = performance.now(), t = now-g.t0, ty = topY(), restY = ty-SS_BLOCK_H, slideY = restY-SS_RISE;
+      if(t>=SS_ROUND_MS){ summitStackFinish(g, f); return; }
+      var fr = Math.max(0, 1-t/SS_ROUND_MS), q = Math.round(fr*500)/500;
+      if(q!==g.lastBar){ g.lastBar = q; bar.style.transform = "scaleX("+q+")"; }
+      var sec = Math.ceil((SS_ROUND_MS-t)/1000);
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      if(g.phase==="slide"){
+        setSlider(SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side), slideY);
+      } else if(g.phase==="drop"){
+        var p = Math.min(1, (now-g.dropAt)/SS_DROP_MS);
+        setSlider(g.dropX, slideY + (restY-slideY)*p*p);
+        if(p>=1) land(now);
+      } else if(g.phase==="fall"){
+        var d = now-g.fallAt;
+        setSlider(g.dropX, restY + d*0.5);
+        if(d>=SS_FALL_MS) newSlider();
+      }
+      // the climber: step / jump / land on a stack, the summit flag after 20, otherwise idle
+      var key = stackPose(now-g.poseAt, g.n), src;
+      if(key==="jump") src = f.jump[0]; else if(key==="land") src = f.hit; else if(key==="step") src = f.step[g.n % f.step.length];
+      else if(key==="flag") src = f.flag[Math.floor(now/600) % f.flag.length]; else src = f.idle[0];
+      if(src!==lastKey){ lastKey = src; img.classList.toggle("wide", key==="flag" && f.flag.indexOf(src)>=0); gmSetSrc(img, src); }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    putClimber(); newSlider(); hud();
+    gmSay("Go. Tap anywhere to drop the block.");
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function summitStackFinish(g, f){
+    var s = summitStackState(), prevBest = state.games.summitStack.best;
+    gmOver("summitStack", s.score, { title:"Nice stack.", note:"Tallest "+s.extra.tallest, actions:s.actions, extra:s.extra });
+    // not a new best: sit on the ledge (the shell shows idle/cheer by default)
+    if(!(s.actions>=1 && s.score>prevBest)){ var im = gmEl("gmClimberImg"); if(im) gmSetSrc(im, f.ledgeSit); }
+  }
+  // test hook: the shell assigns window.__cruxGames after the regions run, so extras are queued and merged by a setter
+  if(window.__cruxTest){
+    var ssExt = { stackCross:stackCross, stackDrop:stackDrop, stackWidth:stackWidth, stackWindowMs:stackWindowMs, stackPos:stackPos, stackPose:stackPose, stackScore:stackScore,
+      stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT } };
+    if(window.__cruxGames && typeof window.__cruxGames==="object") Object.assign(window.__cruxGames, ssExt);
+    else {
+      (window.__cruxGamesExt = window.__cruxGamesExt || []).push(ssExt);
+      if(!window.__cruxGamesExtHooked){
+        window.__cruxGamesExtHooked = true;
+        var ssHeld;
+        Object.defineProperty(window, "__cruxGames", { configurable:true, enumerable:true,
+          get:function(){ return ssHeld; },
+          set:function(v){ ssHeld = v; (window.__cruxGamesExt||[]).forEach(function(e){ Object.assign(v, e); }); } });
+      }
+    }
+  }
   /* ==== summitStack END ==== */
   /* ==== reachTimer BEGIN (T4: reachTimer* functions, .rt- CSS, gmRegister({id:"reachTimer", ...})) ==== */
   /* ==== reachTimer END ==== */
