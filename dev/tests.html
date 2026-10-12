@@ -1641,11 +1641,12 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(G.menuIds().join()==="chalkRhythm,routeRead,summitStack,reachTimer", "menu order/contents: "+G.menuIds().join());
     await click("openGamesBtn", 250);
     expect(visible("gmCard_chalkRhythm") && !$("gmCard_chalkRhythm").disabled, "Chalk Rhythm card");
-    ["routeRead", "summitStack", "reachTimer"].forEach(function(id){
+    expect(visible("gmCard_routeRead") && !$("gmCard_routeRead").disabled, "Route Read card should be playable");
+    ["summitStack", "reachTimer"].forEach(function(id){
       var el = $("gmCard_"+id); expect(el && el.disabled && /Coming soon/.test(el.textContent), id+" stub card: "+(el && el.textContent));
     });
     expect(!D.getElementById("gmHopBtn") && !D.getElementById("gmCard_holdHop"), "a Hold Hop card is on the menu");
-    await click("gmCard_routeRead", 150);
+    await click("gmCard_summitStack", 150);
     expect(visible("gamesMenu") && !visible("gamesPlay"), "a coming-soon card opened something");
     // art slots: every slot draws without a file, and a registered file swaps in
     var slots = Object.keys(G.art);
@@ -1810,6 +1811,90 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(/Best \d+ · played 1/.test($("gmCard_chalkRhythm").textContent), "best line after reload: "+$("gmCard_chalkRhythm").textContent);
     await click("closeGamesBtn", 150);
   });
+
+  // ---- routeRead tests ----
+  test("Games: Route Read rules are pure (ramp table, next length, 500 seeds of valid distinct solvable routes)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed);
+    var G = W.__cruxGames; expect(G && G.routeGen, "route read hooks missing");
+    var show = { 4:2600, 5:3000, 6:3400, 7:3800, 8:4200 };
+    Object.keys(show).forEach(function(n){ expect(G.routeShowMs(+n)===show[n], "show time for "+n+": "+G.routeShowMs(+n)); });
+    expect(G.routeShowMs(2)===2600 && G.routeShowMs(20)===4200, "show time isn't clamped");
+    expect(G.routeNextLen(5, false)===6 && G.routeNextLen(5, true)===4 && G.routeNextLen(4, true)===4 && G.routeNextLen(8, false)===8 && G.routeNextLen(8, true)===7, "next route length rule");
+    var C = G.routeConst; expect(C.start===5 && C.min===4 && C.max===8 && C.betweenMs===800 && C.reshowMs===1500 && C.roundMs===60000, "constants");
+    var bad = null;
+    for(var s=1;s<=500 && !bad;s++) for(var n=4;n<=8;n++){
+      var r = G.routeGen(s*7919, n), again = G.routeGen(s*7919, n);
+      if(JSON.stringify(r)!==JSON.stringify(again)){ bad = "not deterministic seed "+s; break; }
+      if(!G.routeCheck(r, n)){ bad = "invalid route seed "+s+" n "+n+": "+JSON.stringify(r); break; }
+      var keys = {}; r.forEach(function(h){ keys[h.row+","+h.col] = 1; });
+      if(Object.keys(keys).length!==n){ bad = "holds not distinct seed "+s; break; }
+      if(G.routeShowMs(n)/n<500){ bad = "show time per hold under 500 ms for "+n; break; }
+    }
+    expect(!bad, bad);
+    expect(!G.routeCheck([{row:0,col:0},{row:1,col:2},{row:2,col:2},{row:3,col:2}], 4), "check accepted a column jump");
+  });
+
+  test("Games: Route Read shows numbers, hides them, scores a route, and a wrong tap re-shows it then eases off", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250);
+    expect(!$("gmCard_routeRead").disabled && G.menuIds().indexOf("routeRead")>=0, "Route Read isn't playable");
+    await click("gmCard_routeRead", 150); await click("gmStartBtn", 150);
+    var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
+    expect(g.route.length===5 && g.phase==="show", "round didn't start on a 5-hold route");
+    expect(g.route.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent===String(i+1); }), "numbers not shown on the route");
+    expect(Array.prototype.every.call(D.querySelectorAll(".rr-cell"), function(b){ var r = b.getBoundingClientRect(); return r.width>=64 && r.height>=64; }), "a hold's hit area is under 64 px");
+    cell(g.route[0]).click(); await wait(50);
+    expect(g.actions===0 && g.score===0, "a tap during the show counted");
+    await wait(3150);
+    expect(g.phase==="input" && !Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers didn't hide after 3 s");
+    var first = g.route.slice();
+    first.forEach(function(h){ cell(h).click(); });
+    await wait(60);
+    expect(g.score===5 && g.longest===5 && +$("gmScore").textContent===5 && g.N===6, "route not scored / not stepping up: "+g.score+" N "+g.N);
+    await wait(900);
+    expect(g.phase==="show" && g.route.length===6, "next route (6) didn't start");
+    await wait(3500);
+    // wrong tap: pick a cell that isn't route[0]
+    var h0 = g.route[0], wrong = null;
+    for(var r=0;r<5 && !wrong;r++) for(var c=0;c<3;c++) if(!(r===h0.row && c===h0.col)){ wrong = $("rrCell_"+r+"_"+c); break; }
+    wrong.click(); await wait(60);
+    expect(g.phase==="reshow" && /close, here it is/.test($("gmHint").textContent), "wrong tap didn't re-show: "+g.phase);
+    expect(g.route.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent.indexOf(String(i+1))>=0; }), "route not re-shown with numbers");
+    expect(wrong.getAttribute("data-state")==="wrong" && !!getComputedStyle(wrong.querySelector(".rr-badge"), "::before").content, "no X on the wrong hold");
+    await wait(1600);
+    expect(g.phase==="input" && g.step===0 && g.route.length===6, "retry didn't restart the same route");
+    g.route.forEach(function(h){ cell(h).click(); }); await wait(60);
+    expect(g.score===11 && g.N===5, "after a miss the next route should be 5: score "+g.score+" N "+g.N);
+    await click("closeGamesBtn", 250);
+    var s = saved().games.routeRead;
+    expect(s.best===11 && s.plays===1 && s.longest===6, "route read save wrong: "+JSON.stringify(s));
+  });
+
+  test("Games: Route Read closes itself when rest ends, records once, no Play again, and hiding pauses it", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:5 };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("startSessionBtn", 300); await click("startBtn", 4400);
+    await click("playRestBtn", 300); await click("gmCard_routeRead", 150); await click("gmStartBtn", 100);
+    var g = G.current();
+    function hide(on){ Object.defineProperty(D, "hidden", { configurable:true, get:function(){ return on; } }); D.dispatchEvent(new W.Event("visibilitychange")); }
+    hide(true); await wait(60);
+    expect(G.paused() && visible("gmPaused"), "round didn't pause");
+    var ph = g.phaseEnd, t0 = g.t0; await wait(300);
+    hide(false); await click("gmPaused", 80);
+    expect(!G.paused() && g.t0>t0+200, "resume didn't shift the clock");
+    var tries = 0; while(g.phase!=="input" && tries++<60) await wait(100);
+    $("rrCell_"+g.route[0].row+"_"+g.route[0].col).click();
+    var closed = false; for(var k=0;k<80 && visible("gamesOverlay");k++){ await wait(100); if(!!D.getElementById("gmAgainBtn")) throw new Error("Play again shown near the end of rest"); }
+    expect(!visible("gamesOverlay") && /WORK/.test($("phaseLabel").textContent), "didn't hand back to the timer");
+    var s = saved().games.routeRead;
+    expect(s.plays===1 && s.best===0, "round not recorded exactly once: "+JSON.stringify(s));
+    await click("startBtn", 150);
+  });
+  // ---- end routeRead tests ----
 
   // ---- chalkRhythm tests ----
   test("Chalk Rhythm: tempo phases, beat grid and the three timing windows (pure rules)", async function(){
