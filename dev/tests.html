@@ -2443,27 +2443,39 @@ and the project rules. It runs on its own private copy of the data, never your r
     await boot(seed); await goHome();
     var G = W.__cruxGames, C = G.stackConst; expect(G.stackDrop && C, "summit stack hook missing");
     // ramp table, exactly
-    var tab = { 1:2400, 4:2400, 5:2100, 9:2100, 10:1800, 14:1800, 15:1500, 16:1500, 40:1500 };
+    var tab = { 1:2400, 2:2350, 5:2200, 10:1950, 15:1700, 20:1450, 22:1350, 23:1350, 40:1350 };
     Object.keys(tab).forEach(function(n){ expect(G.stackCross(+n)===tab[n], "stackCross("+n+")="+G.stackCross(+n)); });
-    expect(C.base===320 && C.floor===96 && C.perfectPx===6 && Math.abs(C.regain-25.6)<1e-9 && C.roundMs===45000 && C.summit===20, "constants");
+    var pc = 1e9, ramp = true; for(var q=1;q<=60;q++){ var cc = G.stackCross(q); if(cc>pc) ramp = false; pc = cc; }
+    expect(ramp && G.stackCross(1)>G.stackCross(22) && G.stackCross(0)===2400 && G.stackCross(NaN)===2400 && G.stackCross(Infinity)===1350 && G.stackCross(-5)===2400, "ramp is monotone, plateaus, and bad input is safe");
+    expect(C.base===320 && C.floor===96 && C.perfectPx===6 && Math.abs(C.regain-25.6)<1e-9 && C.roundMs===45000 && C.summit===30 && C.learn===3 && C.crossEnd===1350, "constants");
     // drops
     var d = G.stackDrop(1, 320, 0); expect(d.perfect && !d.miss && d.width===320 && d.shift===0, "perfect on full width caps at 100%");
     d = G.stackDrop(8, 200, 3); expect(d.perfect && Math.abs(d.width-225.6)<1e-9, "perfect regains 8% of base: "+d.width);
     d = G.stackDrop(8, 300, 5.9); expect(d.perfect && d.width===320, "perfect capped at base");
     d = G.stackDrop(8, 200, 30); expect(!d.perfect && !d.miss && d.width===170 && d.shift===15 && d.over===30, "trim: "+JSON.stringify(d));
     d = G.stackDrop(8, 200, -30); expect(d.width===170 && d.shift===-15, "trim to the left");
-    d = G.stackDrop(8, 100, 80); expect(d.width===96 && d.shift===40, "trim snaps to the 30% floor, not below: "+JSON.stringify(d));
-    d = G.stackDrop(8, 200, 200); expect(d.miss && d.width===0 && d.shift===0, "no overlap is a miss (tower unchanged)");
+    d = G.stackDrop(8, 100, 30); expect(!d.miss && d.width===96 && d.over===4 && d.shift===28, "trim stops at the 30% floor and the picture agrees (4 px chunk, inner edge kept): "+JSON.stringify(d));
+    d = G.stackDrop(8, 96, 40); expect(!d.miss && d.width===96 && d.over===0 && d.shift===40, "at the floor nothing is trimmed, the block sits where it was dropped: "+JSON.stringify(d));
+    d = G.stackDrop(8, 96, -47.9); expect(!d.miss && d.width===96 && d.shift===-47.9, "just inside half a width still holds");
+    d = G.stackDrop(8, 96, 48); expect(d.miss && d.width===0 && d.shift===0 && d.over===0, "centre half a width off: it topples");
+    d = G.stackDrop(8, 200, 100); expect(d.miss, "centre off the edge topples even with overlap left");
+    d = G.stackDrop(8, 200, 99.9); expect(!d.miss && Math.abs(d.width-100.1)<1e-9, "just inside holds with a thin block: "+JSON.stringify(d));
     d = G.stackDrop(3, 320, 150); expect(!d.miss && d.width===320 && d.shift===0, "learn blocks are forgiven and stay 100%");
-    d = G.stackDrop(3, 320, 330); expect(d.miss, "learn block with no overlap still falls off");
+    d = G.stackDrop(3, 320, 330); expect(d.miss, "learn block far off the tower still falls");
+    // bad input never makes NaN, a zero or negative width, or throws
+    [[NaN,NaN,NaN],[0,0,0],[1,0,5],[1,-50,5],[1,1e9,1e9],[1,Infinity,0],[NaN,200,-1e9],[8,96,undefined],[8,null,"x"],[8,5,3]].forEach(function(a){
+      var r = G.stackDrop(a[0], a[1], a[2]);
+      expect(isFinite(r.width) && isFinite(r.shift) && isFinite(r.over) && r.width>=0 && (r.miss ? r.width===0 : r.width>=C.floor-1e-9 && r.width<=C.base+1e-9), "stackDrop"+JSON.stringify(a)+" -> "+JSON.stringify(r));
+    });
+    expect(isFinite(G.stackPos(0, 0, 0, 1)) && isFinite(G.stackPos(NaN, NaN, NaN, 0)) && G.stackWindowMs(5, NaN)===0 && G.stackWindowMs(5, -4)===0, "slider and window helpers are safe at zero/NaN");
     expect(G.stackWidth(9, 150, 20)===130 && G.stackScore(7, 3)===10, "stackWidth / stackScore");
     // slider: a deterministic triangle wave in -160..160, edge to edge in one crossing time
     expect(Math.abs(G.stackPos(0, 1500, 0, 1)+160)<1e-9 && Math.abs(G.stackPos(1500, 1500, 0, 1)-160)<1e-9 && Math.abs(G.stackPos(3000, 1500, 0, 1)+160)<1e-9, "edge to edge");
     expect(Math.abs(G.stackPos(0, 1500, 0, -1)-160)<1e-9 && G.stackPos(5, 2400, 0.3, 1)===G.stackPos(5, 2400, 0.3, 1), "side flips, deterministic");
     // pose map
-    expect(G.stackPose(0, 3)==="jump" && G.stackPose(200, 3)==="land" && G.stackPose(400, 3)==="step" && G.stackPose(900, 3)==="idle" && G.stackPose(900, 20)==="flag", "pose map");
+    expect(G.stackPose(0, 3)==="jump" && G.stackPose(200, 3)==="land" && G.stackPose(400, 3)==="step" && G.stackPose(900, 3)==="idle" && G.stackPose(900, 30)==="flag" && G.stackPose(900, 29)==="idle", "pose map");
     // property: 500 seeds of play. Width never below the floor, window >= 400 ms, a perfect is always reachable, no negative height.
-    var worst = 1e9, maxW = 0, minW = 1e9, unreachable = 0, perfectsOk = 0;
+    var worst = 1e9, maxW = 0, minW = 1e9, unreachable = 0, perfectsOk = 0, misses = 0;
     for(var s=1;s<=500;s++){
       var rnd = G.mulberry32(s*7919), prevC = C.center, prevW = C.base, blocks = 0;
       for(var n=1;n<=40;n++){
@@ -2475,20 +2487,61 @@ and the project rules. It runs on its own private copy of the data, never your r
         worst = Math.min(worst, G.stackWindowMs(n, prevW));
         // the player drops at a random point of the slide (so most are imperfect)
         var cx = C.center+G.stackPos(rnd()*T, cross, ph, side), r = G.stackDrop(n, prevW, cx-prevC);
-        if(r.miss){ expect(r.width===0, "miss has no width"); continue; }
+        if(r.miss){ expect(r.width===0 && Math.abs(cx-prevC)>=prevW/2-1e-9, "miss has no width and only when the centre is off"); misses++; continue; }
         expect(r.width>=C.floor-1e-9 && r.width<=C.base+1e-9, "seed "+s+" n "+n+" width "+r.width);
+        // numbers and picture agree: kept + fallen = the dropped block, and the kept block sits inside the dropped one
+        if(!r.perfect && n>C.learn){
+          expect(Math.abs(r.width+r.over-prevW)<1e-9, "width+over != prev: "+JSON.stringify(r));
+          var dl = cx-prevW/2, dr = cx+prevW/2, nl = prevC+r.shift-r.width/2, nr = prevC+r.shift+r.width/2;
+          expect(nl>=dl-1e-6 && nr<=dr+1e-6, "kept block not inside the dropped block: "+JSON.stringify(r));
+        }
         minW = Math.min(minW, r.width); maxW = Math.max(maxW, r.width);
         prevC += r.shift; prevW = r.width; blocks++;
         expect(prevC>=C.center-C.travel-1e-9 && prevC<=C.center+C.travel+1e-9, "target centre left the slider's range: "+prevC);
       }
     }
     expect(unreachable===0, unreachable+" blocks had no perfect drop reachable");
+    expect(misses>0, "random drops never missed: the game would be unfailable");
     expect(minW>=96-1e-9 && maxW<=320+1e-9, "width range "+minW+".."+maxW);
     expect(worst>=400, "reaction window under 400 ms: "+worst);
     // max difficulty for n in 1..40 at the floor width
     for(var n2=1;n2<=40;n2++) expect(G.stackWindowMs(n2, C.floor)>=400-1e-9, "window at floor, block "+n2);
     // a perfect run keeps the width at 100% for 40 blocks
     var w = C.base; for(var i=0;i<40;i++){ w = G.stackDrop(i+1, w, 0).width; } expect(w===320, "a perfect run drifts: "+w);
+  });
+
+  // Human-like bot on the pure rules (same model as dev/stack-bot.js): beginner / average / strong over 200 seeds each.
+  test("Games: Summit Stack is failable for an average player and still winnable for a strong one (noisy bot bands)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, C = G.stackConst;
+    function gauss(r){ var u = 1-r(), v = r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+    var BANDS = { beginner:{sigma:140,bias:60,lapse:0.08}, average:{sigma:90,bias:25,lapse:0.05}, strong:{sigma:50,bias:0,lapse:0.03} };
+    function play(B, sd){
+      var r = G.mulberry32(sd*7919+13), t = 0, n = 0, topC = C.center, topW = C.base, tiers = [], score = 0, peak = 0, drops = 0, miss = 0, summit = false, side = r()<0.5 ? -1 : 1;
+      while(t<C.roundMs){
+        var cross = G.stackCross(n+1); side = -side; var ph = r()*0.5, t0 = t, ideal = t0+C.enterMs;
+        for(var x=ideal;x<t0+4*cross;x+=4){ if(Math.abs(C.center+G.stackPos(x-t0, cross, ph, side)-topC)<2) { ideal = x; break; } }
+        var tap = r()<B.lapse ? t0+C.enterMs+r()*2*cross : ideal+B.bias+gauss(r)*B.sigma*(1+0.15*t/C.roundMs);
+        tap = Math.max(t0+C.enterMs, tap); if(tap>=C.roundMs) break;
+        var cx = C.center+G.stackPos(tap-t0, cross, ph, side), res = G.stackDrop(n+1, topW, cx-topC); drops++;
+        if(res.miss){ miss++; if(n>0){ var tr = tiers.pop(); n--; score -= tr.pts; var p = tiers[tiers.length-1]; topC = p ? p.c : C.center; topW = p ? p.w : C.base; } t = tap+C.dropMs+C.fallMs; }
+        else { var pts = res.perfect ? 2 : 1; tiers.push({ c:topC+res.shift, w:res.width, pts:pts }); topC += res.shift; topW = res.width; n++; score += pts; peak = Math.max(peak, score); if(n>=C.summit) summit = true; t = tap+C.dropMs; }
+      }
+      return { drops:drops, miss:miss, peak:peak, summit:summit };
+    }
+    var out = {};
+    Object.keys(BANDS).forEach(function(k){
+      var d = 0, m = 0, pk = 0, sm = 0, withMiss = 0;
+      for(var sd=1;sd<=200;sd++){ var r = play(BANDS[k], sd); d += r.drops; m += r.miss; pk += r.peak; if(r.summit) sm++; if(r.miss>0) withMiss++; }
+      out[k] = { keep:1-m/d, peak:pk/200, summit:sm/200, withMiss:withMiss/200, missPerRound:m/200 };
+    });
+    var info = JSON.stringify(out);
+    expect(out.average.missPerRound>=0.5 && out.average.withMiss>=0.4, "the average bot should miss drops: "+info);
+    expect(out.beginner.missPerRound>out.average.missPerRound && out.average.missPerRound>out.strong.missPerRound, "misses should fall with skill: "+info);
+    expect(out.strong.peak>out.average.peak && out.average.peak>out.beginner.peak, "score should rise with skill: "+info);
+    expect(out.strong.summit>=0.8 && out.average.summit>=0.4 && out.average.summit<=0.95 && out.beginner.summit<=0.5, "summit rate ladder: "+info);
+    expect(out.beginner.keep>=0.8 && out.average.keep>=0.9, "even the beginner mostly keeps the tower (calm): "+info);
   });
 
   test("Games: Summit Stack runs a round (tap anywhere, perfect drops score, climber on the tower, nothing else changes)", async function(){
@@ -2524,14 +2577,15 @@ and the project rules. It runs on its own private copy of the data, never your r
     var C2 = G.stackConst, far = false;
     for(var k2=0;k2<500;k2++){
       var gq = G.current(), c2 = C2.center+G.stackPos(W.performance.now()-gq.blockT0, gq.cross, gq.ph, gq.side);
-      if(Math.abs(c2-gq.topC)>=gq.topW){ far = true; break; }
+      if(Math.abs(c2-gq.topC)>=gq.topW/2+20){ far = true; break; }
       await wait(8);
     }
     if(far){
       $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(220);
       for(var k3=0;k3<40 && G.current().phase!=="slide";k3++) await wait(40);
       g = G.current();
-      expect(g.n===2 && g.score===4 && g.taps===3 && g.phase==="slide", "a miss changed the tower: n "+g.n+" score "+g.score+" phase "+g.phase);
+      expect(g.n===1 && g.score===2 && g.peak===4 && g.peakN===2 && g.taps===3 && g.phase==="slide", "a topple should cost exactly the top tier and keep the peak: n "+g.n+" score "+g.score+" peak "+g.peak+" phase "+g.phase);
+      expect(qa("#ssTower .ss-blk").length===2 && +$("gmScore").textContent===4, "tower/hud after a topple: "+qa("#ssTower .ss-blk").length+" / "+$("gmScore").textContent);
     }
     await click("closeGamesBtn", 250);
     var s = saved().games.summitStack;
