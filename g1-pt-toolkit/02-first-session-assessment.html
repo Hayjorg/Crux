@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>G1 First-Session Assessment</title>
+<link rel="stylesheet" href="assets/toolkit.css">
+</head>
+<body data-doc="assess">
+
+<nav class="toolbar no-print" aria-label="Document tools">
+  <a class="btn" href="index.html">&larr; Toolkit</a>
+  <span class="grow"></span>
+  <a class="btn" data-sample-toggle href="?sample">View sample</a>
+  <button class="btn primary" type="button" data-print>Print / Save PDF</button>
+</nav>
+
+<main class="wrap">
+<p class="notice only-blank">Draft template for trainers. Nothing typed here is saved or sent, and it clears when you reload. Please don't enter real client health information until G1 approves how it is stored.</p>
+<p class="notice only-sample">Sample with a <b>fictional</b> client. Every name, number and note is invented.</p>
+
+<!-- ============ PAGE 1: before we start ============ -->
+<section class="sheet">
+  <header class="dh">
+    <div>
+      <div class="org">G1 Climbing + Fitness &middot; Personal Training</div>
+      <h1>First-Session Assessment</h1>
+      <p class="sub">Trainer use. A NASM-informed starting point for programming, not a medical exam or diagnosis.</p>
+    </div>
+    <div class="tag"><b>Draft v0.1</b>Pending G1 management review</div>
+  </header>
+
+  <div class="g c4">
+    <label class="f span2"><span class="lbl">Client</span><input data-k="client"></label>
+    <label class="f"><span class="lbl">Date</span><input data-k="date"></label>
+    <label class="f"><span class="lbl">Session length (min)</span><input data-k="length"></label>
+    <label class="f span2"><span class="lbl">Trainer</span><input data-k="trainer"></label>
+  </div>
+
+  <p class="note mt"><b>Scope.</b> Personal trainers observe movement to plan exercise. We don't diagnose, treat or rehabilitate injuries. Describe what you see in plain words (for example "left shoulder sits higher"), and refer out when something is outside our scope.</p>
+
+  <div class="sec">
+    <h2 class="sec-h">1 &middot; Before we start</h2>
+    <div class="opts cols2">
+      <label class="ck"><input type="checkbox" data-k="pre.intake"> Intake reviewed with the client</label>
+      <label class="ck"><input type="checkbox" data-k="pre.goals"> Goals confirmed in the client's own words</label>
+      <label class="ck"><input type="checkbox" data-k="pre.waiver"> Waiver and policies on file (per G1 process)</label>
+      <label class="ck"><input type="checkbox" data-k="pre.explained"> Explained what today is, and isn't</label>
+      <label class="ck"><input type="checkbox" data-k="pre.stop"> Client knows they can skip or stop anything</label>
+      <label class="ck"><input type="checkbox" data-k="pre.touch"> Hands-on adjustment preference checked</label>
+    </div>
+    <p class="ph mt"><b>Placeholder:</b> G1 process for waiver on file, incident reporting and medical-clearance requirements. Pending management approval.</p>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">2 &middot; Today's check-in</h2>
+    <div class="g c4">
+      <label class="f"><span class="lbl">Energy today (1-5)</span><input data-k="energy"></label>
+      <label class="f"><span class="lbl">Sleep last night (hrs)</span><input data-k="sleep"></label>
+      <label class="f"><span class="lbl">Pain right now (0-10)</span><input data-k="pain"></label>
+      <label class="f"><span class="lbl">Where?</span><input data-k="painwhere"></label>
+    </div>
+    <label class="f"><span class="lbl">Anything changed since the intake form?</span><input data-k="changes"></label>
+    <div class="f"><span class="lbl">Decision</span>
+      <div class="opts">
+        <label class="ck"><input type="radio" name="decision" value="go" data-k="decision"> Proceed as planned</label>
+        <label class="ck"><input type="radio" name="decision" value="mod" data-k="decision"> Proceed with modifications</label>
+        <label class="ck"><input type="radio" name="decision" value="pause" data-k="decision"> Pause and suggest a healthcare check-in</label>
+      </div></div>
+  </div>
+
+  <p class="stop mt"><b>Stop and refer.</b> Pause the session if the client reports chest pain or pressure, fainting or severe dizziness, unusual shortness of breath, sudden sharp or radiating pain, new numbness or tingling, or a joint that feels unstable after an injury. Don't diagnose or guess. Suggest they see a licensed healthcare professional, note what happened, and follow G1's incident process <span class="ph-inline">[placeholder: pending management]</span>.</p>
+
+  <div class="sec">
+    <h2 class="sec-h">3 &middot; Resting measures <small>(optional; record only what helps the client's goals)</small></h2>
+    <div class="g c4">
+      <label class="f"><span class="lbl">Resting heart rate (bpm)</span><input data-k="hr"></label>
+      <label class="f"><span class="lbl">Blood pressure (if G1 policy allows)</span><input data-k="bp"></label>
+      <label class="f"><span class="lbl">Height</span><input data-k="height"></label>
+      <label class="f"><span class="lbl">Weight (only if the client wants it)</span><input data-k="weight"></label>
+    </div>
+    <p class="ph mt"><b>Placeholder:</b> G1 policy on blood pressure and body measurements: who may take them, any thresholds, and how results are recorded.</p>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">4 &middot; Posture snapshot <small>(optional, standing; describe, don't label)</small></h2>
+    <table class="tbl stack">
+      <thead><tr><th style="width:1.5in">Checkpoint</th><th>What I see (front, side, back)</th></tr></thead>
+      <tbody>
+        <tr><td class="rowhead" data-label="Checkpoint">Feet and ankles</td><td data-label="What I see"><div class="ta cell" data-k="post.feet" aria-label="Feet and ankles"></div></td></tr>
+        <tr><td class="rowhead" data-label="Checkpoint">Knees</td><td data-label="What I see"><div class="ta cell" data-k="post.knees" aria-label="Knees"></div></td></tr>
+        <tr><td class="rowhead" data-label="Checkpoint">Hips and low back</td><td data-label="What I see"><div class="ta cell" data-k="post.lphc" aria-label="Hips and low back"></div></td></tr>
+        <tr><td class="rowhead" data-label="Checkpoint">Shoulders</td><td data-label="What I see"><div class="ta cell" data-k="post.shoulders" aria-label="Shoulders"></div></td></tr>
+        <tr><td class="rowhead" data-label="Checkpoint">Head and neck</td><td data-label="What I see"><div class="ta cell" data-k="post.head" aria-label="Head and neck"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; First-Session Assessment &middot; Draft v0.1</span><span>Page 1 of 3</span></footer>
+</section>
+
+<!-- ============ PAGE 2: movement observation ============ -->
+<section class="sheet">
+  <header class="dh mini">
+    <div><span class="org">G1 Climbing + Fitness</span> <span class="mini-title">&middot; First-Session Assessment</span></div>
+    <label class="f"><span class="lbl">Client</span><input data-mirror="client" aria-label="Client name"></label>
+  </header>
+
+  <p class="note"><b>Observe, don't diagnose.</b> These screens show how the client moved today, in these shoes, with these instructions. Use them to choose a starting point and to re-check later. Stop any test that causes pain.</p>
+
+  <div class="test">
+    <h3>A &middot; Overhead squat <span>5 slow reps, feet shoulder-width, toes forward, arms overhead. Watch from the front, side and back.</span></h3>
+    <div class="cp"><div class="k">Front: feet and knees</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="ohs.feetout"> Feet turn out</label>
+      <label class="ck"><input type="checkbox" data-k="ohs.kneein"> Knees move inward</label>
+      <label class="ck"><input type="checkbox" data-k="ohs.kneeout"> Knees move outward</label></div></div>
+    <div class="cp"><div class="k">Side: hips and low back</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="ohs.lean"> Excessive forward lean</label>
+      <label class="ck"><input type="checkbox" data-k="ohs.arch"> Low back arches</label>
+      <label class="ck"><input type="checkbox" data-k="ohs.round"> Low back rounds</label></div></div>
+    <div class="cp"><div class="k">Side: shoulders</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="ohs.armsfwd"> Arms fall forward</label></div></div>
+    <div class="cp"><div class="k">Back: feet and hips</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="ohs.flat"> Feet flatten</label>
+      <label class="ck"><input type="checkbox" data-k="ohs.heels"> Heels rise</label>
+      <label class="ck"><input type="checkbox" data-k="ohs.shift"> Weight shifts to one side</label></div></div>
+    <div class="cp"><div class="k">Overall</div><div class="opts">
+      <label class="ck"><input type="radio" name="ohs.overall" value="smooth" data-k="ohs.overall"> Smooth</label>
+      <label class="ck"><input type="radio" name="ohs.overall" value="minor" data-k="ohs.overall"> Minor compensation</label>
+      <label class="ck"><input type="radio" name="ohs.overall" value="clear" data-k="ohs.overall"> Clear compensation</label>
+      <label class="ck"><input type="radio" name="ohs.overall" value="stopped" data-k="ohs.overall"> Stopped (pain or limit)</label></div></div>
+    <div class="cp"><div class="k">Depth</div><div class="opts">
+      <label class="ck"><input type="radio" name="ohs.depth" value="parallel" data-k="ohs.depth"> Thighs about parallel</label>
+      <label class="ck"><input type="radio" name="ohs.depth" value="limited" data-k="ohs.depth"> Limited</label></div></div>
+    <div class="cp"><div class="k">Pain during the squat</div><div class="opts" style="align-items:center">
+      <label class="ck"><input type="radio" name="ohs.pain" value="none" data-k="ohs.pain"> None</label>
+      <label class="ck"><input type="radio" name="ohs.pain" value="yes" data-k="ohs.pain"> Yes, where:</label>
+      <input data-k="ohs.painwhere" aria-label="Where" style="width:2.2in"></div></div>
+  </div>
+
+  <div class="test">
+    <h3>B &middot; Single-leg squat <span>Hands on hips, squat to a comfortable depth, 5 reps each side. Tick what you see.</span></h3>
+    <div class="lr head"><span>Observation</span><span class="c">Left</span><span class="c">Right</span></div>
+    <div class="lr"><span class="t">Knee moves inward</span><span class="c"><input type="checkbox" data-k="sls.kneein.l" aria-label="Left knee inward"></span><span class="c"><input type="checkbox" data-k="sls.kneein.r" aria-label="Right knee inward"></span></div>
+    <div class="lr"><span class="t">Knee moves outward</span><span class="c"><input type="checkbox" data-k="sls.kneeout.l" aria-label="Left knee outward"></span><span class="c"><input type="checkbox" data-k="sls.kneeout.r" aria-label="Right knee outward"></span></div>
+    <div class="lr"><span class="t">Hip hikes or drops</span><span class="c"><input type="checkbox" data-k="sls.hip.l" aria-label="Left hip"></span><span class="c"><input type="checkbox" data-k="sls.hip.r" aria-label="Right hip"></span></div>
+    <div class="lr"><span class="t">Trunk leans or low back arches</span><span class="c"><input type="checkbox" data-k="sls.trunk.l" aria-label="Left trunk"></span><span class="c"><input type="checkbox" data-k="sls.trunk.r" aria-label="Right trunk"></span></div>
+    <div class="lr"><span class="t">Loses balance</span><span class="c"><input type="checkbox" data-k="sls.balance.l" aria-label="Left balance"></span><span class="c"><input type="checkbox" data-k="sls.balance.r" aria-label="Right balance"></span></div>
+    <div class="lr"><span class="t">Pain or discomfort (note where below)</span><span class="c"><input type="checkbox" data-k="sls.pain.l" aria-label="Left pain"></span><span class="c"><input type="checkbox" data-k="sls.pain.r" aria-label="Right pain"></span></div>
+  </div>
+
+  <div class="test">
+    <h3>C &middot; Pushing and pulling <span>A push-up or standing band/cable press, then a row or band pull. Watch from the side.</span></h3>
+    <div class="cp"><div class="k">Push</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="push.arch"> Low back arches</label>
+      <label class="ck"><input type="checkbox" data-k="push.shoulders"> Shoulders rise toward ears</label>
+      <label class="ck"><input type="checkbox" data-k="push.head"> Head moves forward</label></div></div>
+    <div class="cp"><div class="k">Pull</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="pull.arch"> Low back arches</label>
+      <label class="ck"><input type="checkbox" data-k="pull.shoulders"> Shoulders rise toward ears</label>
+      <label class="ck"><input type="checkbox" data-k="pull.head"> Head moves forward</label></div></div>
+  </div>
+
+  <div class="test">
+    <h3>D &middot; Climbing add-ons <span>Optional. Skip any that cause pain. No max-effort finger or hangboard testing in session one.</span></h3>
+    <div class="lr head"><span>Side-by-side checks</span><span class="c">Left</span><span class="c">Right</span></div>
+    <div class="lr"><span class="t">Knee-to-wall distance, heel down (cm)</span><span class="c"><input data-k="ank.l" aria-label="Left cm" style="text-align:center"></span><span class="c"><input data-k="ank.r" aria-label="Right cm" style="text-align:center"></span></div>
+    <div class="lr"><span class="t">Seated trunk rotation limited?</span><span class="c"><input type="checkbox" data-k="rot.l" aria-label="Left rotation limited"></span><span class="c"><input type="checkbox" data-k="rot.r" aria-label="Right rotation limited"></span></div>
+    <div class="cp"><div class="k">Overhead reach (back to wall)</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="reach.ok"> Reaches up without arching</label>
+      <label class="ck"><input type="checkbox" data-k="reach.arch"> Ribs flare or low back arches</label>
+      <label class="ck"><input type="checkbox" data-k="reach.limit"> Can't reach fully</label></div></div>
+    <div class="cp"><div class="k">Supported hang (feet on floor, 10 s or less)</div><div class="opts">
+      <label class="ck"><input type="checkbox" data-k="hang.set"> Shoulders stay set</label>
+      <label class="ck"><input type="checkbox" data-k="hang.shrug"> Shoulders shrug to ears</label>
+      <label class="ck"><input type="checkbox" data-k="hang.skip"> Skipped</label></div></div>
+  </div>
+
+  <div class="f mt"><span class="lbl">What stood out, and what the client said they felt (including any pain or discomfort, with where)</span><div class="ta l3" data-k="obs.notes"></div></div>
+
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; First-Session Assessment &middot; Draft v0.1</span><span>Page 2 of 3</span></footer>
+</section>
+
+<!-- ============ PAGE 3: baseline, focus, plan ============ -->
+<section class="sheet">
+  <header class="dh mini">
+    <div><span class="org">G1 Climbing + Fitness</span> <span class="mini-title">&middot; First-Session Assessment</span></div>
+    <label class="f"><span class="lbl">Client</span><input data-mirror="client" aria-label="Client name"></label>
+  </header>
+
+  <div class="sec" style="margin-top:.04in">
+    <h2 class="sec-h">5 &middot; Baseline snapshot <small>(optional; pick what fits; quality before quantity; stop on pain)</small></h2>
+    <table class="tbl stack">
+      <thead><tr><th style="width:1.45in">Test</th><th style="width:2.1in">Version / setup</th><th style="width:1.1in">Result</th><th>Notes (form, effort, RPE)</th></tr></thead>
+      <tbody>
+        <tr><td class="rowhead" data-label="Test">Plank hold</td><td data-label="Version"><div class="ta cell" data-k="b1.setup" aria-label="Plank version"></div></td><td data-label="Result"><div class="ta cell" data-k="b1.res" aria-label="Plank result"></div></td><td data-label="Notes"><div class="ta cell" data-k="b1.note" aria-label="Plank notes"></div></td></tr>
+        <tr><td class="rowhead" data-label="Test">Push-up (wall, incline, knees, full)</td><td data-label="Version"><div class="ta cell" data-k="b2.setup" aria-label="Push-up version"></div></td><td data-label="Result"><div class="ta cell" data-k="b2.res" aria-label="Push-up result"></div></td><td data-label="Notes"><div class="ta cell" data-k="b2.note" aria-label="Push-up notes"></div></td></tr>
+        <tr><td class="rowhead" data-label="Test">Sit-to-stand, 30 seconds</td><td data-label="Version"><div class="ta cell" data-k="b3.setup" aria-label="Sit-to-stand version"></div></td><td data-label="Result"><div class="ta cell" data-k="b3.res" aria-label="Sit-to-stand result"></div></td><td data-label="Notes"><div class="ta cell" data-k="b3.note" aria-label="Sit-to-stand notes"></div></td></tr>
+        <tr><td class="rowhead" data-label="Test">Easy cardio, 5 minutes</td><td data-label="Version"><div class="ta cell" data-k="b4.setup" aria-label="Cardio version"></div></td><td data-label="Result"><div class="ta cell" data-k="b4.res" aria-label="Cardio result"></div></td><td data-label="Notes"><div class="ta cell" data-k="b4.note" aria-label="Cardio notes"></div></td></tr>
+        <tr><td class="rowhead" data-label="Test">Climbing movement (optional)</td><td data-label="Version"><div class="ta cell" data-k="b5.setup" aria-label="Climbing version"></div></td><td data-label="Result"><div class="ta cell" data-k="b5.res" aria-label="Climbing result"></div></td><td data-label="Notes"><div class="ta cell" data-k="b5.note" aria-label="Climbing notes"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">6 &middot; What I noticed, and the training focus <small>(hypotheses to test through programming, not diagnoses)</small></h2>
+    <table class="tbl stack">
+      <thead><tr><th style="width:2.4in">What I noticed</th><th>Starting emphasis idea</th><th class="c" style="width:.6in">Priority</th></tr></thead>
+      <tbody>
+        <tr><td data-label="What I noticed"><div class="ta cell" data-k="f1.obs" aria-label="Observation 1"></div></td><td data-label="Starting emphasis"><div class="ta cell" data-k="f1.focus" aria-label="Emphasis 1"></div></td><td class="c" data-label="Priority H/M/L"><div class="ta cell" data-k="f1.pri" aria-label="Priority 1" style="text-align:center"></div></td></tr>
+        <tr><td data-label="What I noticed"><div class="ta cell" data-k="f2.obs" aria-label="Observation 2"></div></td><td data-label="Starting emphasis"><div class="ta cell" data-k="f2.focus" aria-label="Emphasis 2"></div></td><td class="c" data-label="Priority H/M/L"><div class="ta cell" data-k="f2.pri" aria-label="Priority 2" style="text-align:center"></div></td></tr>
+        <tr><td data-label="What I noticed"><div class="ta cell" data-k="f3.obs" aria-label="Observation 3"></div></td><td data-label="Starting emphasis"><div class="ta cell" data-k="f3.focus" aria-label="Emphasis 3"></div></td><td class="c" data-label="Priority H/M/L"><div class="ta cell" data-k="f3.pri" aria-label="Priority 3" style="text-align:center"></div></td></tr>
+        <tr><td data-label="What I noticed"><div class="ta cell" data-k="f4.obs" aria-label="Observation 4"></div></td><td data-label="Starting emphasis"><div class="ta cell" data-k="f4.focus" aria-label="Emphasis 4"></div></td><td class="c" data-label="Priority H/M/L"><div class="ta cell" data-k="f4.pri" aria-label="Priority 4" style="text-align:center"></div></td></tr>
+      </tbody>
+    </table>
+    <table class="tbl ref mt">
+      <thead><tr><th colspan="2">Quick reference: common observations and where programming often starts <span style="text-transform:none;font-weight:500;letter-spacing:0">(check against your NASM materials)</span></th></tr></thead>
+      <tbody>
+        <tr><td>Feet turn out or flatten; heels rise</td><td>Calf and ankle mobility; foot and lower-leg activation; stance cues</td></tr>
+        <tr><td>Knees move inward</td><td>Hip abductor and glute activation; foot and ankle mobility; knee-tracking cues</td></tr>
+        <tr><td>Low back arches; excessive forward lean</td><td>Hip flexor and lat length; glute and deep-core activation; rib and pelvis position cues</td></tr>
+        <tr><td>Low back rounds</td><td>Hamstring and hip mobility; glute and back-extensor activation; hip-hinge practice</td></tr>
+        <tr><td>Arms fall forward</td><td>Lat and chest length; mid-back and rotator-cuff activation; thoracic mobility</td></tr>
+        <tr><td>Shoulders rise or head moves forward (push, pull, hang)</td><td>Upper-trap and neck length; scapular control work; deep neck-flexor activation</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">7 &middot; Starting plan</h2>
+    <div class="f"><span class="lbl">Starting OPT phase (most new clients start in Phase 1)</span>
+      <div class="opts">
+        <label class="ck"><input type="radio" name="phase" value="p1" data-k="phase"> Phase 1 Stabilization Endurance</label>
+        <label class="ck"><input type="radio" name="phase" value="p2" data-k="phase"> Phase 2 Strength Endurance</label>
+        <label class="ck"><input type="radio" name="phase" value="other" data-k="phase"> Other: <input data-k="phase.other" aria-label="Other phase" style="width:1in"></label>
+      </div></div>
+    <div class="g c21">
+      <label class="f"><span class="lbl">Why this phase?</span><input data-k="phase.why"></label>
+      <label class="f"><span class="lbl">Sessions per week</span><input data-k="freq"></label>
+    </div>
+    <div class="g c3">
+      <label class="f span2"><span class="lbl">Homework (1-2 simple items)</span><input data-k="homework"></label>
+      <label class="f"><span class="lbl">First progress review</span><input data-k="review"></label>
+    </div>
+    <div class="f"><span class="lbl">Client's own words after today: what felt good, what worried them</span><div class="ta l2" data-k="words"></div></div>
+    <div class="g c21">
+      <div class="f"><span class="lbl">Referral or follow-up (a suggestion only; document what you said)</span>
+        <div class="opts">
+          <label class="ck"><input type="radio" name="ref" value="none" data-k="ref"> None needed</label>
+          <label class="ck"><input type="radio" name="ref" value="suggest" data-k="ref"> Suggested a healthcare check-in about:</label>
+        </div></div>
+      <label class="f"><span class="lbl">Next session (date, time)</span><input data-k="next"></label>
+    </div>
+    <label class="f"><span class="lbl">Referral topic (if any)</span><input data-k="ref.about"></label>
+  </div>
+
+  <p class="small muted mt">OPT phases: 1 Stabilization Endurance &middot; 2 Strength Endurance &middot; 3 Muscular Development &middot; 4 Maximal Strength &middot; 5 Power. This sheet is NASM-informed. It is not affiliated with or endorsed by NASM, and OPT is a trademark of NASM.</p>
+
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; First-Session Assessment &middot; Draft v0.1</span><span>Page 3 of 3</span></footer>
+</section>
+</main>
+
+<script src="assets/sample-data.js"></script>
+<script src="assets/toolkit.js"></script>
+</body>
+</html>

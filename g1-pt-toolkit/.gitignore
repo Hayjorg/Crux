@@ -1,0 +1,3 @@
+# Never commit filled-in client forms or anything with real client information.
+private/
+*filled*

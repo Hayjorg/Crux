@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>G1 Post-Session Follow-Up</title>
+<link rel="stylesheet" href="assets/toolkit.css">
+</head>
+<body data-doc="followup">
+
+<nav class="toolbar no-print" aria-label="Document tools">
+  <a class="btn" href="index.html">&larr; Toolkit</a>
+  <span class="grow"></span>
+  <a class="btn" data-sample-toggle href="?sample">View sample</a>
+  <button class="btn" type="button" data-copy="#message">Copy message</button>
+  <button class="btn primary" type="button" data-print>Print / Save PDF</button>
+</nav>
+
+<main class="wrap">
+<p class="notice only-blank">Draft template. Nothing typed here is saved or sent, and it clears when you reload. Please don't enter real client health information until G1 approves how it is stored.</p>
+<p class="notice only-sample">Sample with a <b>fictional</b> client. Every name, number and note is invented.</p>
+
+<!-- ============ PAGE 1: session note ============ -->
+<section class="sheet">
+  <header class="dh">
+    <div>
+      <div class="org">G1 Climbing + Fitness &middot; Personal Training</div>
+      <h1>Post-Session Follow-Up</h1>
+      <p class="sub">Trainer note first (2 minutes), then a short message to the client.</p>
+    </div>
+    <div class="tag"><b>Draft v0.1</b>Pending G1 management review</div>
+  </header>
+
+  <div class="g c4">
+    <label class="f span2"><span class="lbl">Client</span><input data-k="client"></label>
+    <label class="f"><span class="lbl">Date</span><input data-k="date"></label>
+    <label class="f"><span class="lbl">Session #</span><input data-k="num"></label>
+    <label class="f span2"><span class="lbl">Trainer</span><input data-k="trainer"></label>
+    <label class="f"><span class="lbl">Length (min)</span><input data-k="length"></label>
+    <label class="f"><span class="lbl">OPT phase</span><input data-k="phase"></label>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Focus today</h2>
+    <div class="opts cols4">
+        <label class="ck"><input type="checkbox" data-k="focus.assess"> Assessment</label>
+        <label class="ck"><input type="checkbox" data-k="focus.prep"> Movement prep</label>
+        <label class="ck"><input type="checkbox" data-k="focus.strength"> Strength</label>
+        <label class="ck"><input type="checkbox" data-k="focus.core"> Core and stability</label>
+        <label class="ck"><input type="checkbox" data-k="focus.cardio"> Cardio</label>
+        <label class="ck"><input type="checkbox" data-k="focus.climb"> Climbing-specific</label>
+        <label class="ck"><input type="checkbox" data-k="focus.recover"> Recovery</label>
+        <label class="ck"><input type="checkbox" data-k="focus.other"> Other</label>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">What we did</h2>
+    <table class="tbl stack">
+      <thead><tr><th style="width:2in">Exercise</th><th style="width:1in">Sets x reps</th><th style="width:1in">Load / level</th><th style="width:.5in">RPE</th><th>Notes and cues</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex1.name" aria-label="Exercise 1"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex1.sets" aria-label="Exercise 1 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex1.load" aria-label="Exercise 1 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex1.rpe" aria-label="Exercise 1 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex1.note" aria-label="Exercise 1 notes"></div></td></tr>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex2.name" aria-label="Exercise 2"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex2.sets" aria-label="Exercise 2 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex2.load" aria-label="Exercise 2 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex2.rpe" aria-label="Exercise 2 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex2.note" aria-label="Exercise 2 notes"></div></td></tr>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex3.name" aria-label="Exercise 3"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex3.sets" aria-label="Exercise 3 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex3.load" aria-label="Exercise 3 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex3.rpe" aria-label="Exercise 3 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex3.note" aria-label="Exercise 3 notes"></div></td></tr>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex4.name" aria-label="Exercise 4"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex4.sets" aria-label="Exercise 4 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex4.load" aria-label="Exercise 4 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex4.rpe" aria-label="Exercise 4 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex4.note" aria-label="Exercise 4 notes"></div></td></tr>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex5.name" aria-label="Exercise 5"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex5.sets" aria-label="Exercise 5 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex5.load" aria-label="Exercise 5 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex5.rpe" aria-label="Exercise 5 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex5.note" aria-label="Exercise 5 notes"></div></td></tr>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex6.name" aria-label="Exercise 6"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex6.sets" aria-label="Exercise 6 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex6.load" aria-label="Exercise 6 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex6.rpe" aria-label="Exercise 6 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex6.note" aria-label="Exercise 6 notes"></div></td></tr>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex7.name" aria-label="Exercise 7"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex7.sets" aria-label="Exercise 7 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex7.load" aria-label="Exercise 7 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex7.rpe" aria-label="Exercise 7 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex7.note" aria-label="Exercise 7 notes"></div></td></tr>
+        <tr><td data-label="Exercise"><div class="ta cell" data-k="ex8.name" aria-label="Exercise 8"></div></td><td data-label="Sets x reps"><div class="ta cell" data-k="ex8.sets" aria-label="Exercise 8 sets and reps"></div></td><td data-label="Load or level"><div class="ta cell" data-k="ex8.load" aria-label="Exercise 8 load"></div></td><td data-label="RPE"><div class="ta cell" data-k="ex8.rpe" aria-label="Exercise 8 RPE"></div></td><td data-label="Notes and cues"><div class="ta cell" data-k="ex8.note" aria-label="Exercise 8 notes"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">How it went</h2>
+    <div class="g c4">
+      <label class="f"><span class="lbl">Energy before / after (1-5)</span><input data-k="energy"></label>
+      <label class="f"><span class="lbl">Session effort (RPE 0-10)</span><input data-k="rpe"></label>
+      <div class="f span2"><span class="lbl">Soreness check</span>
+        <div class="opts">
+          <label class="ck"><input type="radio" name="sore" value="none" data-k="sore"> None</label>
+          <label class="ck"><input type="radio" name="sore" value="expected" data-k="sore"> Expected muscle fatigue</label>
+          <label class="ck"><input type="radio" name="sore" value="flag" data-k="sore"> Pain flag</label></div></div>
+    </div>
+    <label class="f"><span class="lbl">If a pain flag: where, when, what happened, what I advised</span><input data-k="flag"></label>
+    <div class="g c2 mt">
+      <div class="f"><span class="lbl">Wins</span><div class="ta l3" data-k="wins"></div></div>
+      <div class="f"><span class="lbl">Adjust next time</span><div class="ta l3" data-k="adjust"></div></div>
+    </div>
+    <label class="f"><span class="lbl">Progress toward goals (update the tracker)</span><input data-k="progress"></label>
+  </div>
+
+  <p class="ph mt"><b>Placeholder:</b> where session notes are kept and who can see them. Pending G1 policy on client records. Keep health details out of texts and email until it is set.</p>
+
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; Post-Session Follow-Up &middot; Draft v0.1</span><span>Page 1 of 2</span></footer>
+</section>
+
+<!-- ============ PAGE 2: next steps and message ============ -->
+<section class="sheet">
+  <header class="dh mini">
+    <div><span class="org">G1 Climbing + Fitness</span> <span class="mini-title">&middot; Post-Session Follow-Up</span></div>
+    <label class="f"><span class="lbl">Client</span><input data-mirror="client" aria-label="Client name"></label>
+  </header>
+
+  <div class="sec" style="margin-top:.04in">
+    <h2 class="sec-h">Between sessions <small>(two or three simple things, not a second workout plan)</small></h2>
+    <table class="tbl stack">
+      <thead><tr><th>Task</th><th style="width:2in">How often</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Between-session task"><div class="ta cell" data-k="hw1.task" aria-label="Task 1"></div></td><td data-label="How often"><div class="ta cell" data-k="hw1.freq" aria-label="Task 1 how often"></div></td></tr>
+        <tr><td data-label="Between-session task"><div class="ta cell" data-k="hw2.task" aria-label="Task 2"></div></td><td data-label="How often"><div class="ta cell" data-k="hw2.freq" aria-label="Task 2 how often"></div></td></tr>
+        <tr><td data-label="Between-session task"><div class="ta cell" data-k="hw3.task" aria-label="Task 3"></div></td><td data-label="How often"><div class="ta cell" data-k="hw3.freq" aria-label="Task 3 how often"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Next session</h2>
+    <div class="g c3">
+      <label class="f"><span class="lbl">Day, date, time</span><input data-k="next.when"></label>
+      <label class="f"><span class="lbl">Focus</span><input data-k="next.focus"></label>
+      <label class="f"><span class="lbl">Client should bring</span><input data-k="next.bring"></label>
+    </div>
+    <p class="ph mt"><b>Placeholder:</b> scheduling, late and cancellation wording, and anything about packages or payment. Pending G1 management approval. Don't quote prices or policies in messages until it is approved.</p>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Message to the client <small>(edit the [brackets]; keep it warm, short and general)</small></h2>
+    <div class="f"><span class="lbl">Send within a few hours. Use plain words; leave health details for in-person conversations.</span>
+<div class="ta msg" id="message" data-k="message">Hi [first name], thanks for training with me today. We worked on [focus] and you did really well with [one specific win].
+
+Between now and next time:
+1. [task] - [how often]
+2. [task] - [how often]
+
+Some muscle soreness in [areas] is normal for a day or two. If you notice sharp or worsening pain, numbness, or anything that worries you, skip that exercise, check in with a licensed healthcare professional, and let me know.
+
+Next session: [day, date, time]. Focus: [focus]. Bring [water, shoes, etc.].
+Scheduling questions: [placeholder: G1 scheduling wording, pending management approval]
+
+[trainer name], G1 Climbing + Fitness</div></div>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Wrap-up</h2>
+    <div class="opts cols2">
+      <label class="ck"><input type="checkbox" data-k="done.sent"> Message sent</label>
+      <label class="ck"><input type="checkbox" data-k="done.checkin"> 24-48 hour check-in done (soreness, questions)</label>
+      <label class="ck"><input type="checkbox" data-k="done.tracker"> Goals tracker updated</label>
+      <label class="ck"><input type="checkbox" data-k="done.notes"> Note saved per G1 process</label>
+    </div>
+  </div>
+
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; Post-Session Follow-Up &middot; Draft v0.1</span><span>Page 2 of 2</span></footer>
+</section>
+</main>
+
+<script src="assets/sample-data.js"></script>
+<script src="assets/toolkit.js"></script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>G1 Goals and Progress Tracker</title>
+<link rel="stylesheet" href="assets/toolkit.css">
+</head>
+<body data-doc="goals">
+
+<nav class="toolbar no-print" aria-label="Document tools">
+  <a class="btn" href="index.html">&larr; Toolkit</a>
+  <span class="grow"></span>
+  <a class="btn" data-sample-toggle href="?sample">View sample</a>
+  <button class="btn primary" type="button" data-print>Print / Save PDF</button>
+</nav>
+
+<main class="wrap">
+<p class="notice only-blank">Draft template. Nothing typed here is saved or sent, and it clears when you reload. Please don't enter real client health information until G1 approves how it is stored.</p>
+<p class="notice only-sample">Sample with a <b>fictional</b> client. Every name, number and note is invented.</p>
+
+<!-- ============ PAGE 1: goals ============ -->
+<section class="sheet">
+  <header class="dh">
+    <div>
+      <div class="org">G1 Climbing + Fitness &middot; Personal Training</div>
+      <h1>Goals and Progress Tracker</h1>
+      <p class="sub">Set goals together, then review them often. A few goals the client really cares about beat a long list.</p>
+    </div>
+    <div class="tag"><b>Draft v0.1</b>Pending G1 management review</div>
+  </header>
+
+  <div class="g c4">
+    <label class="f"><span class="lbl">Client</span><input data-k="client"></label>
+    <label class="f"><span class="lbl">Trainer</span><input data-k="trainer"></label>
+    <label class="f"><span class="lbl">Block starts</span><input data-k="start"></label>
+    <label class="f"><span class="lbl">Block ends (12 weeks)</span><input data-k="end"></label>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Why this matters</h2>
+    <div class="f"><span class="lbl">In the client's own words: why do you want this?</span><div class="ta l2" data-k="why"></div></div>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">SMART goals</h2>
+    <p class="note"><b>Specific &middot; Measurable &middot; Attainable &middot; Realistic &middot; Time-bound.</b> Aim for one main goal and up to two supporting goals. <b>Outcome</b> = the result you want. <b>Performance</b> = a skill or number you can test. <b>Process</b> = a habit you control. Pair an outcome goal with a process goal.</p>
+    <div class="goal">
+      <div class="gh">
+        <h3>Goal 1 <span class="muted small">(main goal)</span></h3>
+        <div class="opts"><span class="muted small">Type:</span>
+          <label class="ck"><input type="radio" name="g1.type" value="outcome" data-k="g1.type"> Outcome</label>
+          <label class="ck"><input type="radio" name="g1.type" value="performance" data-k="g1.type"> Performance</label>
+          <label class="ck"><input type="radio" name="g1.type" value="process" data-k="g1.type"> Process</label></div>
+      </div>
+      <label class="f"><span class="lbl">The goal in one sentence</span><input data-k="g1.text"></label>
+      <div class="g c4">
+        <label class="f"><span class="lbl">How we'll measure it</span><input data-k="g1.measure"></label>
+        <label class="f"><span class="lbl">Starting point</span><input data-k="g1.base"></label>
+        <label class="f"><span class="lbl">Target</span><input data-k="g1.target"></label>
+        <label class="f"><span class="lbl">Target date</span><input data-k="g1.date"></label>
+      </div>
+      <div class="g c2">
+        <div class="f"><span class="lbl">What could get in the way</span><div class="ta l2" data-k="g1.block"></div></div>
+        <div class="f"><span class="lbl">Our plan and first steps</span><div class="ta l2" data-k="g1.plan"></div></div>
+      </div>
+    </div>
+    <div class="goal">
+      <div class="gh">
+        <h3>Goal 2 <span class="muted small">(supporting)</span></h3>
+        <div class="opts"><span class="muted small">Type:</span>
+          <label class="ck"><input type="radio" name="g2.type" value="outcome" data-k="g2.type"> Outcome</label>
+          <label class="ck"><input type="radio" name="g2.type" value="performance" data-k="g2.type"> Performance</label>
+          <label class="ck"><input type="radio" name="g2.type" value="process" data-k="g2.type"> Process</label></div>
+      </div>
+      <label class="f"><span class="lbl">The goal in one sentence</span><input data-k="g2.text"></label>
+      <div class="g c4">
+        <label class="f"><span class="lbl">How we'll measure it</span><input data-k="g2.measure"></label>
+        <label class="f"><span class="lbl">Starting point</span><input data-k="g2.base"></label>
+        <label class="f"><span class="lbl">Target</span><input data-k="g2.target"></label>
+        <label class="f"><span class="lbl">Target date</span><input data-k="g2.date"></label>
+      </div>
+      <div class="g c2">
+        <div class="f"><span class="lbl">What could get in the way</span><div class="ta l2" data-k="g2.block"></div></div>
+        <div class="f"><span class="lbl">Our plan and first steps</span><div class="ta l2" data-k="g2.plan"></div></div>
+      </div>
+    </div>
+    <div class="goal">
+      <div class="gh">
+        <h3>Goal 3 <span class="muted small">(supporting)</span></h3>
+        <div class="opts"><span class="muted small">Type:</span>
+          <label class="ck"><input type="radio" name="g3.type" value="outcome" data-k="g3.type"> Outcome</label>
+          <label class="ck"><input type="radio" name="g3.type" value="performance" data-k="g3.type"> Performance</label>
+          <label class="ck"><input type="radio" name="g3.type" value="process" data-k="g3.type"> Process</label></div>
+      </div>
+      <label class="f"><span class="lbl">The goal in one sentence</span><input data-k="g3.text"></label>
+      <div class="g c4">
+        <label class="f"><span class="lbl">How we'll measure it</span><input data-k="g3.measure"></label>
+        <label class="f"><span class="lbl">Starting point</span><input data-k="g3.base"></label>
+        <label class="f"><span class="lbl">Target</span><input data-k="g3.target"></label>
+        <label class="f"><span class="lbl">Target date</span><input data-k="g3.date"></label>
+      </div>
+      <div class="g c2">
+        <div class="f"><span class="lbl">What could get in the way</span><div class="ta l2" data-k="g3.block"></div></div>
+        <div class="f"><span class="lbl">Our plan and first steps</span><div class="ta l2" data-k="g3.plan"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; Goals and Progress Tracker &middot; Draft v0.1</span><span>Page 1 of 2</span></footer>
+</section>
+
+<!-- ============ PAGE 2: tracker ============ -->
+<section class="sheet">
+  <header class="dh mini">
+    <div><span class="org">G1 Climbing + Fitness</span> <span class="mini-title">&middot; Goals and Progress Tracker</span></div>
+    <label class="f"><span class="lbl">Client</span><input data-mirror="client" aria-label="Client name"></label>
+  </header>
+
+  <div class="sec" style="margin-top:.04in">
+    <h2 class="sec-h">Weekly habits <small>(tick each week the target was met)</small></h2>
+    <div class="scroll">
+      <table class="tbl wk" style="min-width:6.6in">
+        <thead><tr><th style="width:1.9in">Habit or process goal</th><th style="width:.85in">Target / wk</th><th class="c">1</th><th class="c">2</th><th class="c">3</th><th class="c">4</th><th class="c">5</th><th class="c">6</th><th class="c">7</th><th class="c">8</th><th class="c">9</th><th class="c">10</th><th class="c">11</th><th class="c">12</th></tr></thead>
+        <tbody>
+        <tr><td class="rowhead">Sessions attended</td><td><div class="ta cell" data-k="h0.target" aria-label="Sessions target per week"></div></td><td class="c"><input type="checkbox" data-k="h0.w1" aria-label="Sessions attended week 1"></td><td class="c"><input type="checkbox" data-k="h0.w2" aria-label="Sessions attended week 2"></td><td class="c"><input type="checkbox" data-k="h0.w3" aria-label="Sessions attended week 3"></td><td class="c"><input type="checkbox" data-k="h0.w4" aria-label="Sessions attended week 4"></td><td class="c"><input type="checkbox" data-k="h0.w5" aria-label="Sessions attended week 5"></td><td class="c"><input type="checkbox" data-k="h0.w6" aria-label="Sessions attended week 6"></td><td class="c"><input type="checkbox" data-k="h0.w7" aria-label="Sessions attended week 7"></td><td class="c"><input type="checkbox" data-k="h0.w8" aria-label="Sessions attended week 8"></td><td class="c"><input type="checkbox" data-k="h0.w9" aria-label="Sessions attended week 9"></td><td class="c"><input type="checkbox" data-k="h0.w10" aria-label="Sessions attended week 10"></td><td class="c"><input type="checkbox" data-k="h0.w11" aria-label="Sessions attended week 11"></td><td class="c"><input type="checkbox" data-k="h0.w12" aria-label="Sessions attended week 12"></td></tr>
+        <tr><td><div class="ta cell" data-k="h1.name" aria-label="Habit 1"></div></td><td><div class="ta cell" data-k="h1.target" aria-label="Habit 1 target per week"></div></td><td class="c"><input type="checkbox" data-k="h1.w1" aria-label="Habit 1 week 1"></td><td class="c"><input type="checkbox" data-k="h1.w2" aria-label="Habit 1 week 2"></td><td class="c"><input type="checkbox" data-k="h1.w3" aria-label="Habit 1 week 3"></td><td class="c"><input type="checkbox" data-k="h1.w4" aria-label="Habit 1 week 4"></td><td class="c"><input type="checkbox" data-k="h1.w5" aria-label="Habit 1 week 5"></td><td class="c"><input type="checkbox" data-k="h1.w6" aria-label="Habit 1 week 6"></td><td class="c"><input type="checkbox" data-k="h1.w7" aria-label="Habit 1 week 7"></td><td class="c"><input type="checkbox" data-k="h1.w8" aria-label="Habit 1 week 8"></td><td class="c"><input type="checkbox" data-k="h1.w9" aria-label="Habit 1 week 9"></td><td class="c"><input type="checkbox" data-k="h1.w10" aria-label="Habit 1 week 10"></td><td class="c"><input type="checkbox" data-k="h1.w11" aria-label="Habit 1 week 11"></td><td class="c"><input type="checkbox" data-k="h1.w12" aria-label="Habit 1 week 12"></td></tr>
+        <tr><td><div class="ta cell" data-k="h2.name" aria-label="Habit 2"></div></td><td><div class="ta cell" data-k="h2.target" aria-label="Habit 2 target per week"></div></td><td class="c"><input type="checkbox" data-k="h2.w1" aria-label="Habit 2 week 1"></td><td class="c"><input type="checkbox" data-k="h2.w2" aria-label="Habit 2 week 2"></td><td class="c"><input type="checkbox" data-k="h2.w3" aria-label="Habit 2 week 3"></td><td class="c"><input type="checkbox" data-k="h2.w4" aria-label="Habit 2 week 4"></td><td class="c"><input type="checkbox" data-k="h2.w5" aria-label="Habit 2 week 5"></td><td class="c"><input type="checkbox" data-k="h2.w6" aria-label="Habit 2 week 6"></td><td class="c"><input type="checkbox" data-k="h2.w7" aria-label="Habit 2 week 7"></td><td class="c"><input type="checkbox" data-k="h2.w8" aria-label="Habit 2 week 8"></td><td class="c"><input type="checkbox" data-k="h2.w9" aria-label="Habit 2 week 9"></td><td class="c"><input type="checkbox" data-k="h2.w10" aria-label="Habit 2 week 10"></td><td class="c"><input type="checkbox" data-k="h2.w11" aria-label="Habit 2 week 11"></td><td class="c"><input type="checkbox" data-k="h2.w12" aria-label="Habit 2 week 12"></td></tr>
+        <tr><td><div class="ta cell" data-k="h3.name" aria-label="Habit 3"></div></td><td><div class="ta cell" data-k="h3.target" aria-label="Habit 3 target per week"></div></td><td class="c"><input type="checkbox" data-k="h3.w1" aria-label="Habit 3 week 1"></td><td class="c"><input type="checkbox" data-k="h3.w2" aria-label="Habit 3 week 2"></td><td class="c"><input type="checkbox" data-k="h3.w3" aria-label="Habit 3 week 3"></td><td class="c"><input type="checkbox" data-k="h3.w4" aria-label="Habit 3 week 4"></td><td class="c"><input type="checkbox" data-k="h3.w5" aria-label="Habit 3 week 5"></td><td class="c"><input type="checkbox" data-k="h3.w6" aria-label="Habit 3 week 6"></td><td class="c"><input type="checkbox" data-k="h3.w7" aria-label="Habit 3 week 7"></td><td class="c"><input type="checkbox" data-k="h3.w8" aria-label="Habit 3 week 8"></td><td class="c"><input type="checkbox" data-k="h3.w9" aria-label="Habit 3 week 9"></td><td class="c"><input type="checkbox" data-k="h3.w10" aria-label="Habit 3 week 10"></td><td class="c"><input type="checkbox" data-k="h3.w11" aria-label="Habit 3 week 11"></td><td class="c"><input type="checkbox" data-k="h3.w12" aria-label="Habit 3 week 12"></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Measures <small>(pick 5-8 that match the goals; record the same way each time)</small></h2>
+    <table class="tbl stack">
+      <thead><tr><th style="width:1.9in">Measure</th><th>Baseline</th><th>Week 4</th><th>Week 8</th><th>Week 12</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m1.name" aria-label="Measure 1 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m1.base" aria-label="Measure 1 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m1.w4" aria-label="Measure 1 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m1.w8" aria-label="Measure 1 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m1.w12" aria-label="Measure 1 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m1.target" aria-label="Measure 1 target"></div></td></tr>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m2.name" aria-label="Measure 2 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m2.base" aria-label="Measure 2 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m2.w4" aria-label="Measure 2 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m2.w8" aria-label="Measure 2 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m2.w12" aria-label="Measure 2 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m2.target" aria-label="Measure 2 target"></div></td></tr>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m3.name" aria-label="Measure 3 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m3.base" aria-label="Measure 3 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m3.w4" aria-label="Measure 3 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m3.w8" aria-label="Measure 3 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m3.w12" aria-label="Measure 3 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m3.target" aria-label="Measure 3 target"></div></td></tr>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m4.name" aria-label="Measure 4 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m4.base" aria-label="Measure 4 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m4.w4" aria-label="Measure 4 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m4.w8" aria-label="Measure 4 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m4.w12" aria-label="Measure 4 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m4.target" aria-label="Measure 4 target"></div></td></tr>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m5.name" aria-label="Measure 5 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m5.base" aria-label="Measure 5 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m5.w4" aria-label="Measure 5 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m5.w8" aria-label="Measure 5 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m5.w12" aria-label="Measure 5 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m5.target" aria-label="Measure 5 target"></div></td></tr>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m6.name" aria-label="Measure 6 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m6.base" aria-label="Measure 6 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m6.w4" aria-label="Measure 6 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m6.w8" aria-label="Measure 6 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m6.w12" aria-label="Measure 6 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m6.target" aria-label="Measure 6 target"></div></td></tr>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m7.name" aria-label="Measure 7 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m7.base" aria-label="Measure 7 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m7.w4" aria-label="Measure 7 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m7.w8" aria-label="Measure 7 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m7.w12" aria-label="Measure 7 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m7.target" aria-label="Measure 7 target"></div></td></tr>
+        <tr><td data-label="Measure"><div class="ta cell" data-k="m8.name" aria-label="Measure 8 measure"></div></td><td data-label="Baseline"><div class="ta cell" data-k="m8.base" aria-label="Measure 8 baseline"></div></td><td data-label="Week 4"><div class="ta cell" data-k="m8.w4" aria-label="Measure 8 week 4"></div></td><td data-label="Week 8"><div class="ta cell" data-k="m8.w8" aria-label="Measure 8 week 8"></div></td><td data-label="Week 12"><div class="ta cell" data-k="m8.w12" aria-label="Measure 8 week 12"></div></td><td data-label="Target"><div class="ta cell" data-k="m8.target" aria-label="Measure 8 target"></div></td></tr>
+      </tbody>
+    </table>
+    <p class="small muted mt">Ideas: plank hold &middot; push-ups with good form &middot; knee-to-wall distance &middot; overhead-squat compensations &middot; supported hang time &middot; climbing grade sent &middot; session effort (RPE) &middot; sleep &middot; sessions per week. Body measurements only if the client asks for them.</p>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Training blocks <small>(plan, then adjust at each review)</small></h2>
+    <table class="tbl stack">
+      <thead><tr><th style="width:1.7in">Block</th><th style="width:2.3in">OPT phase</th><th>Focus</th></tr></thead>
+      <tbody>
+        <tr><td class="rowhead" data-label="Block">Block 1 &middot; Weeks 1-4</td><td data-label="OPT phase"><div class="ta cell" data-k="p1.phase" aria-label="Block 1 phase"></div></td><td data-label="Focus"><div class="ta cell" data-k="p1.focus" aria-label="Block 1 focus"></div></td></tr>
+        <tr><td class="rowhead" data-label="Block">Block 2 &middot; Weeks 5-8</td><td data-label="OPT phase"><div class="ta cell" data-k="p2.phase" aria-label="Block 2 phase"></div></td><td data-label="Focus"><div class="ta cell" data-k="p2.focus" aria-label="Block 2 focus"></div></td></tr>
+        <tr><td class="rowhead" data-label="Block">Block 3 &middot; Weeks 9-12</td><td data-label="OPT phase"><div class="ta cell" data-k="p3.phase" aria-label="Block 3 phase"></div></td><td data-label="Focus"><div class="ta cell" data-k="p3.focus" aria-label="Block 3 focus"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec">
+    <h2 class="sec-h">Check-ins <small>(about every 4 weeks, plus any time the plan changes)</small></h2>
+    <table class="tbl stack">
+      <thead><tr><th style="width:.9in">Date</th><th>Wins</th><th>Challenges</th><th style="width:1in">On track?</th><th>Changes to the plan</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Date"><div class="ta cell" data-k="c1.date" aria-label="Check-in 1 date"></div></td><td data-label="Wins"><div class="ta cell" data-k="c1.win" aria-label="Check-in 1 wins"></div></td><td data-label="Challenges"><div class="ta cell" data-k="c1.hard" aria-label="Check-in 1 challenges"></div></td><td data-label="On track?"><div class="ta cell" data-k="c1.track" aria-label="Check-in 1 on track"></div></td><td data-label="Changes to the plan"><div class="ta cell" data-k="c1.change" aria-label="Check-in 1 changes"></div></td></tr>
+        <tr><td data-label="Date"><div class="ta cell" data-k="c2.date" aria-label="Check-in 2 date"></div></td><td data-label="Wins"><div class="ta cell" data-k="c2.win" aria-label="Check-in 2 wins"></div></td><td data-label="Challenges"><div class="ta cell" data-k="c2.hard" aria-label="Check-in 2 challenges"></div></td><td data-label="On track?"><div class="ta cell" data-k="c2.track" aria-label="Check-in 2 on track"></div></td><td data-label="Changes to the plan"><div class="ta cell" data-k="c2.change" aria-label="Check-in 2 changes"></div></td></tr>
+        <tr><td data-label="Date"><div class="ta cell" data-k="c3.date" aria-label="Check-in 3 date"></div></td><td data-label="Wins"><div class="ta cell" data-k="c3.win" aria-label="Check-in 3 wins"></div></td><td data-label="Challenges"><div class="ta cell" data-k="c3.hard" aria-label="Check-in 3 challenges"></div></td><td data-label="On track?"><div class="ta cell" data-k="c3.track" aria-label="Check-in 3 on track"></div></td><td data-label="Changes to the plan"><div class="ta cell" data-k="c3.change" aria-label="Check-in 3 changes"></div></td></tr>
+        <tr><td data-label="Date"><div class="ta cell" data-k="c4.date" aria-label="Check-in 4 date"></div></td><td data-label="Wins"><div class="ta cell" data-k="c4.win" aria-label="Check-in 4 wins"></div></td><td data-label="Challenges"><div class="ta cell" data-k="c4.hard" aria-label="Check-in 4 challenges"></div></td><td data-label="On track?"><div class="ta cell" data-k="c4.track" aria-label="Check-in 4 on track"></div></td><td data-label="Changes to the plan"><div class="ta cell" data-k="c4.change" aria-label="Check-in 4 changes"></div></td></tr>
+        <tr><td data-label="Date"><div class="ta cell" data-k="c5.date" aria-label="Check-in 5 date"></div></td><td data-label="Wins"><div class="ta cell" data-k="c5.win" aria-label="Check-in 5 wins"></div></td><td data-label="Challenges"><div class="ta cell" data-k="c5.hard" aria-label="Check-in 5 challenges"></div></td><td data-label="On track?"><div class="ta cell" data-k="c5.track" aria-label="Check-in 5 on track"></div></td><td data-label="Changes to the plan"><div class="ta cell" data-k="c5.change" aria-label="Check-in 5 changes"></div></td></tr>
+        <tr><td data-label="Date"><div class="ta cell" data-k="c6.date" aria-label="Check-in 6 date"></div></td><td data-label="Wins"><div class="ta cell" data-k="c6.win" aria-label="Check-in 6 wins"></div></td><td data-label="Challenges"><div class="ta cell" data-k="c6.hard" aria-label="Check-in 6 challenges"></div></td><td data-label="On track?"><div class="ta cell" data-k="c6.track" aria-label="Check-in 6 on track"></div></td><td data-label="Changes to the plan"><div class="ta cell" data-k="c6.change" aria-label="Check-in 6 changes"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; Goals and Progress Tracker &middot; Draft v0.1</span><span>Page 2 of 2</span></footer>
+</section>
+</main>
+
+<script src="assets/sample-data.js"></script>
+<script src="assets/toolkit.js"></script>
+</body>
+</html>
