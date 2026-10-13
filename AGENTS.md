@@ -155,18 +155,30 @@ A small, optional play area for rest times, using the player's own climber. Remo
   if it had an action), says "Back to work" with no buttons and closes after 1.8 s. In the last 10 s of a rest an end screen has no "Play again" / "Games"
   ("Rest is almost over."), and buttons already on screen are removed when the clock crosses 10 s. A hidden page pauses the round ("Paused. Tap to resume"); a paused round never resumed records nothing.
 - **Shell conveniences:** `gmHud` leaves the clock alone while a round runs; `gmSetSrc` does a 100 ms opacity settle on pose swaps (skipped for reduced motion and rapid cycling; its animationend never bubbles to a host); a game may set `gmSheetTap` to make the whole sheet (minus header/HUD/rest strip/buttons) a tap target (Summit Stack does); in a game the sheet hugs its content (`:has(.gm-play:not([hidden]))`).
-- **The four games** (menu order; all calm, best score only, no XP/streaks/rewards, no fail state, hardest reaction window >= 400 ms):
-  1. **Chalk Rhythm** `chalkRhythm`, 45 s. A ring grows to a fixed outline once per beat (60 -> 64 -> 70 bpm); tap on the beat. Windows
-     Perfect +-80 / Good +-160 / Close +-280 ms = 3/2/1 points; a miss is 0. Reduced motion: a bar fills instead of a ring scaling.
-     `games.chalkRhythm = {best, plays, perfectBest}`.
-  2. **Route Read** `routeRead`, 60 s. 3 x 5 hold wall; a route of N holds (5 to 8, 4 after a miss) is numbered, then hidden; tap it from
-     memory. +N per route. A wrong tap re-shows the route for 1.5 s. `{best, plays, longest}`.
-  3. **Summit Stack** `summitStack`, 45 s. A block slides over the tower; tap to drop; overhang is trimmed (never below 30 % width);
-     Perfect (<= 6 px) gives +1 and regains width; a total miss just drops the block. Flag at 20 blocks. `{best, plays, tallest, perfects}`.
-  4. **Reach Timer** `reachTimer`, 45 s. One target on the left or right half, ghost of the next shown; tap that half before it fades
-     (dwell 1.8 -> 1.4 -> 1.0 s). A wrong half or timeout slips one step. Score = peak height. `{best, plays, bestStreak}`.
-  Hold Hop is retired from the menu; its saved `holdHop` data is kept. Legacy Chalk Up is removed; its best is copied to Chalk Rhythm
-  once (`_meta.chalkMigrated`) and the `chalkUp` key is kept.
+- **The four games** (menu order; all calm, best score only, no XP/streaks/rewards, hardest reaction window >= 400 ms):
+  1. **Dyno** `dyno`, 45 s (replaced Chalk Rhythm, cut: "not a climbing action"). Hold anywhere (finger or Space) to charge; a meter
+     rises and falls; release with the bar inside the band shown for the target hold to latch it (+1 height, next hold farther, band narrower,
+     never under 400 ms of release time). Short/over drops one ledge and retries the same hold (peak kept; no fail state). Score = peak height.
+     Reduced motion: flat bar, no wobble or scroll. `games.dyno = {best, plays, cleanBest}`. Bot: `node dev/dyno-bot.js`.
+  2. **Route Read** `routeRead`, 60 s, a spray wall. 5 x 5 irregular wall (holds only where the generator puts them), two interleaved routes in
+     different colour + shape; one is called, tap its holds in order from memory (N 4 to 10, start 5; N+1 on a clean route, N-1 after a loss).
+     A wrong tap loses that route (it is re-shown for 1.8 s, then the next route). +N per route. `{best, plays, longest}`.
+     Bot: `node dev/route-bot-run.js` (`dev/route-bot.js` is its model).
+  3. **Summit Stack** `summitStack`, 45 s (v2). A block slides over the tower; tap to drop; overhang is trimmed (never below 30 % width);
+     Perfect (<= 6 px) gives +1 and regains width. Topple rule: a drop whose centre is more than half a width off the tower topples and costs the
+     top tier (score is the round peak). Crossing time ramps in 50 ms steps, 2400 -> 1350 ms over 22 blocks (405 ms window at the floor);
+     the first 3 blocks are learn blocks. Flag at 30 blocks (re-plants if the tower drops under it). `{best, plays, tallest, perfects}`.
+     Bot: `node dev/stack-bot.js`.
+  4. **Wall Run** `wallRun`, 45 s (replaced Reach Timer on the menu). Holds come down a three-lane wall in a seeded sequence; tap a hold's lane
+     as it reaches the climber's hands. Window is early-heavy: 350/250 ms early/late at the start -> 260/140 ms at top (400 ms total, reached by
+     25 s then a plateau); a hold is on the wall 2.0 -> 0.9 s (>= 600 ms of sight before its window), mean gap 950 -> 400 ms with doubles and
+     short runs (2-4 holds), floors by lane distance (280/340/420 ms), same lane <= 3 in a row. A hit climbs one move; a miss, a late tap or a
+     stray tap slips one move (floor 0, one stray slip per 350 ms, round goes on). Score = peak height. Reduced motion: next three holds in fixed
+     rows with a fuse bar. `{best, plays, longestRun}`. Bot: `node dev/wallrun-bot.js`.
+  Retired: Reach Timer is off the menu (unregistered; its pure rules, `GAME_ART` slots and saved `reachTimer` data are kept). Hold Hop is
+  retired (saved `holdHop` kept). Chalk Rhythm is cut (code, `.cr-` CSS, art slots, tests); its saved `chalkRhythm` data and the legacy
+  `chalkUp` key are kept (gamesNormalize keeps unknown ids; the one-time `_meta.chalkMigrated` copy is unchanged).
+  The `dev/*-bot.js` scripts are dev-only (they pull the pure rules out of `crux.html` or model them), never shipped in `crux.html`.
 - **Registry:** `GAMES` / `gmRegister(def)`; the menu (`renderGamesMenu`) is built from it, sorted by `order`. A def is
   `{ id, title, blurb, order, icon, intro:{title,text}, start(), stop?, pause?, resume?, state(), rest:{closeScore()}, hud0? }`.
   A game ends with `gmOver(id, score, {title, note, actions, extra})`, which records through `recordRound` and draws the end screen.
@@ -174,8 +186,8 @@ A small, optional play area for rest times, using the player's own climber. Remo
   Math.max), `gmBeep`/`gmBuzz` (setting `settings.gameSound`, silent in the last 3 s of a rest), `gmPause`/`gmResume`, `gamesWatch` (rest
   hand-off), `GAME_ART` slots with `gmArt`/`gmArtRegister`.
 - **GAME_ART slots** (each draws as a plain shape with `src:null`; set `src` through `gmArtRegister(slot, file, blobId)` to swap in a PNG
-  without touching game logic): `ss.ledge ss.block ss.flag`, `rr.hold rr.ring`, `cr.puff cr.ring`, `rt.hold rt.ghost`,
-  `ui.perfect ui.good ui.best ui.summit`, `card.chalkRhythm card.routeRead card.summitStack card.reachTimer`.
+  without touching game logic): `ss.ledge ss.block ss.flag`, `rr.hold rr.ring`, `dy.ledge dy.hold`, `wr.hold`, `rt.hold rt.ghost` (retired),
+  `ui.perfect ui.good ui.best ui.summit`, `card.dyno card.routeRead card.summitStack card.wallRun` (`card.reachTimer` kept).
 - **Adding a game:** (1) add a region `/* ==== myGame BEGIN/END ==== */` after the last one inside the GAMES block, with its pure rules
   between `/*MYGAME-PURE-BEGIN*/` and `-END*/`; (2) CSS under its own prefix after `.gm-art-img`; (3) `gmRegister({...})` with a fresh
   `order`; (4) extend the hook with `if(window.__cruxTest) Object.assign(window.__cruxGames, {...})` (the object is created before the
@@ -183,17 +195,17 @@ A small, optional play area for rest times, using the player's own climber. Remo
   `gmOver`, make the intro/end screens obey the last-10-s rule, honour `prefers-reduced-motion`, keep every target >= 56 px; (7) tests below.
 - **Art:** existing frames only, always through `climberFrame()` and `outfitFollow()` (variant, outfit layers and skip lists work);
   no shipped game art. Holds, blocks and rings are drawn defaults that a `GAME_ART` file can override.
-- **Saved data:** only `state.games` (`chalkUp`, `holdHop` legacy; the four ids; `_meta`) and `settings.gameSound`, normalised by
+- **Saved data:** only `state.games` (`chalkUp`, `holdHop`, `chalkRhythm` legacy; the four ids; `_meta`) and `settings.gameSound`, normalised by
   `gamesNormalize()` in `normalizeState()`. Games never write XP, levels, streaks, holds, sessions or attempts.
-- **Tests** (`dev/tests.html`, "Games:" and per-game blocks `// ---- chalkRhythm tests ----` etc.): pure rules through
-  `window.__cruxGames` (only with `window.__cruxTest`; `chalk*`, `route*`, `stack*`, `reach*`, `mulberry32`, `recordRound`, `normalize`),
-  each with a 500-seed property test (routes solvable, no side repeated > 3, stack window >= 400 ms, chalk windows), plus browser runs
+- **Tests** (`dev/tests.html`, "Games:" and per-game blocks `// ---- dyno tests ----` etc.): pure rules through
+  `window.__cruxGames` (only with `window.__cruxTest`; `dyno*`, `route*`, `stack*`, `wall*`, `reach*`, `mulberry32`, `recordRound`, `normalize`),
+  each with a 500-seed property test (routes solvable, no side repeated > 3, stack window >= 400 ms, dyno band >= 400 ms and a human-like bot that misses), plus browser runs
   for the rest hand-off, hidden-page pause, sound off, reduced motion and the registry/menu.
 - **Shell polish (2026-10-12):** the sheet is a bottom sheet <= 520 px wide (centered above) that slides up and fades down (~110 ms close, then `hidden`;
   `__cruxGames.close()` and reduced motion hide at once); body scroll is locked while it is open. Cards show best / plays and have a spoken aria-label;
   the intro is one line (`GM_HOWTO`, falls back to `intro.text`) and a 56 px Start; Escape steps back (round or intro -> menu -> closed), Back returns
   focus to the game's card, Tab is trapped inside the sheet; the whole sound row toggles and states On/Off in words. The end screen puts Play again first.
-- **Reduced motion:** every game has a still variant (bar instead of ring scale, no wobble, no scroll, crossfades <= 120 ms).
+- **Reduced motion:** every game has a still variant (Dyno: flat bar, no wobble; Wall Run: fixed rows and fuse bar; bar instead of ring scale elsewhere, no scroll, crossfades <= 120 ms).
 
 ## Projects (climb tracking)
 

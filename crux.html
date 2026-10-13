@@ -821,92 +821,100 @@
   .gm-art-ring{border:3px solid var(--accent);border-radius:50%;background:transparent;}
   .gm-art-flag{background:var(--send);border-radius:4px 14px 14px 4px;}
   .gm-art-img{object-fit:contain;}
-  /* ==== .cr- Chalk Rhythm CSS BEGIN ==== */
-  .cr-field{position:absolute;inset:0;pointer-events:none;overflow:hidden;animation:cr-in .4s ease-out both;}
-  @keyframes cr-in{from{opacity:0;}to{opacity:1;}}
-  .cr-outline, .cr-live, .cr-echo{position:absolute;left:50%;top:44%;margin:-115px 0 0 -115px;}
-  .cr-outline.gm-art-ring{border:3px solid color-mix(in srgb, var(--accent) 80%, transparent);}
-  .cr-live.gm-art-ring{border:6px solid color-mix(in srgb, var(--send) 70%, transparent);background:color-mix(in srgb, var(--send) 10%, transparent);transform:scale(0.35);opacity:0;will-change:transform, opacity;}
-  .cr-echo.gm-art-ring{border:5px solid color-mix(in srgb, var(--send) 75%, transparent);opacity:0;will-change:transform, opacity;}
-  .cr-outline.cr-hit{animation:cr-hit .34s cubic-bezier(.2,.8,.2,1);}
-  .cr-outline.cr-hit-perfect{animation-name:cr-hit-p;}
-  @keyframes cr-hit{0%{transform:scale(1);box-shadow:0 0 0 0 color-mix(in srgb, var(--send) 45%, transparent);}
-    40%{transform:scale(1.04);}100%{transform:scale(1);box-shadow:0 0 0 12px color-mix(in srgb, var(--send) 0%, transparent);}}
-  @keyframes cr-hit-p{0%{transform:scale(1);box-shadow:0 0 0 0 color-mix(in srgb, var(--send) 60%, transparent);}
-    35%{transform:scale(1.08);}100%{transform:scale(1);box-shadow:0 0 0 20px color-mix(in srgb, var(--send) 0%, transparent);}}
-  .cr-puff{position:absolute;left:50%;top:44%;margin:-52px 0 0 34px;opacity:0;pointer-events:none;
-    background:color-mix(in srgb, var(--text) 22%, transparent);box-shadow:none;}
-  .cr-puff.go{animation:cr-puff .45s ease-out forwards;}
-  @keyframes cr-puff{from{transform:translate(0,0) scale(0.4);opacity:0.9;}to{transform:translate(6px,-18px) scale(1.4);opacity:0;}}
-  .cr-bar{position:absolute;left:24px;right:24px;bottom:54px;height:14px;display:none;border-radius:7px;
-    background:color-mix(in srgb, var(--text) 8%, transparent);border:1px solid var(--border);}
-  .cr-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:color-mix(in srgb, var(--send) 75%, transparent);}
-  .cr-bar::after{content:"";position:absolute;right:-1px;top:-8px;bottom:-8px;width:3px;border-radius:2px;background:var(--accent);}
-  .cr-rm .cr-bar{display:block;}
-  .cr-rm .cr-live, .cr-rm .cr-outline, .cr-rm .cr-puff, .cr-rm .cr-echo{display:none;}
-  .cr-label{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:8px;min-height:24px;
-    font-size:16px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);opacity:0;transform:translateY(4px);
-    transition:opacity .16s ease-out, transform .16s ease-out;pointer-events:none;}
-  .cr-label.on{opacity:1;transform:none;}
-  .cr-label small{font-size:12px;font-weight:700;letter-spacing:0.06em;color:var(--text-dim);}
-  .cr-teach{position:absolute;left:16px;right:16px;top:14px;margin:0;text-align:center;font-size:14px;line-height:1.35;font-weight:600;color:var(--text);
-    opacity:0;transition:opacity .35s ease-out;pointer-events:none;}
-  .cr-teach.on{opacity:1;}
-  .gm-climber.cr-hop{animation:cr-hop .3s cubic-bezier(.2,.8,.2,1);}
-  .gm-climber.cr-hop-sm{animation:cr-hop-sm .24s cubic-bezier(.2,.8,.2,1);}
-  @keyframes cr-hop{0%{transform:translateY(0);}35%{transform:translateY(-9px);}100%{transform:translateY(0);}}
-  @keyframes cr-hop-sm{0%{transform:translateY(0);}40%{transform:translateY(-4px);}100%{transform:translateY(0);}}
-  #gmScore.cr-bump{animation:cr-bump .24s ease-out;}
-  @keyframes cr-bump{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
-  .cr-rm, .cr-rm .cr-label, .cr-rm .cr-teach{animation:none;transition:none;}
+  /* ==== .dy- Dyno CSS BEGIN ==== */
+  .dy-field{position:absolute;inset:0;overflow:hidden;pointer-events:none;animation:dy-in .3s ease-out both;}
+  @keyframes dy-in{from{opacity:0;}to{opacity:1;}}
+  .dy-scene{position:absolute;inset:0;will-change:transform;}
+  .dy-ledge{position:absolute;left:8%;right:50px;height:12px;}
+  .dy-ledge > .gm-art{position:absolute;left:0;top:0;opacity:0.75;}
+  .dy-guide{position:absolute;left:120px;right:0;top:5px;height:0;border-top:2px dashed color-mix(in srgb, var(--send) 70%, transparent);opacity:0;}
+  .dy-next > .gm-art{opacity:1;}
+  .dy-next > .gm-art-rect{background:var(--send);box-shadow:0 2px 0 color-mix(in srgb, var(--send) 60%, #000);}
+  .dy-next .dy-guide{opacity:1;}
+  .dy-climber{width:54px;height:81px;left:calc(8% + 33px);transform-origin:50% 100%;will-change:transform;}
+  .dy-gauge{position:absolute;right:14px;bottom:58px;width:22px;height:220px;border-radius:11px;overflow:hidden;box-sizing:border-box;
+    box-shadow:0 0 0 2px var(--border);background:color-mix(in srgb, var(--surface) 70%, transparent);--m:0;--z0:0.3;--z1:0.6;--mk:0;--mo:0;}
+  .dy-zone{position:absolute;left:0;right:0;bottom:calc(var(--z0) * 100%);height:calc((var(--z1) - var(--z0)) * 100%);
+    background:color-mix(in srgb, var(--accent) 45%, transparent);border-top:3px solid var(--accent);border-bottom:3px solid var(--accent);box-sizing:border-box;}
+  .dy-fill{position:absolute;left:0;right:0;bottom:0;height:100%;transform-origin:50% 100%;transform:scaleY(var(--m));background:color-mix(in srgb, var(--send) 60%, transparent);}
+  .dy-mark{position:absolute;left:0;right:0;bottom:calc(var(--mk) * 100%);height:3px;margin-bottom:-1px;background:var(--text);opacity:var(--mo);}
+  .dy-label{position:absolute;left:12px;right:60px;top:14px;display:flex;justify-content:center;min-height:28px;font-family:"Bebas Neue",sans-serif;font-size:26px;
+    letter-spacing:0.03em;opacity:0;pointer-events:none;transition:opacity .12s;}
+  .dy-label.on{opacity:1;}
+  .dy-teach{position:absolute;left:14px;right:60px;bottom:12px;margin:0;text-align:center;font-size:13.5px;line-height:1.35;font-weight:600;color:var(--text);
+    opacity:0;transition:opacity .2s;pointer-events:none;}
+  .dy-teach.on{opacity:1;}
+  .dy-tap{touch-action:none;}
+  .dy-rm .dy-gauge{left:16px;right:16px;top:14px;bottom:auto;width:auto;height:22px;--m:0;}
+  .dy-rm .dy-zone{top:0;bottom:0;left:calc(var(--z0) * 100%);width:calc((var(--z1) - var(--z0)) * 100%);height:auto;right:auto;border-top:0;border-bottom:0;border-left:3px solid var(--accent);border-right:3px solid var(--accent);}
+  .dy-rm .dy-fill{top:0;bottom:0;left:0;right:0;height:auto;transform-origin:0 50%;transform:scaleX(var(--m));}
+  .dy-rm .dy-mark{top:0;bottom:0;height:auto;width:3px;left:calc(var(--mk) * 100%);right:auto;margin:0 0 0 -1px;}
+  .dy-rm .dy-guide{display:none;}
+  .dy-rm .dy-label{top:46px;left:12px;right:12px;}
+  .dy-rm .dy-field{animation:none;}
+  .dy-rm .dy-scene, .dy-rm .dy-climber{transition:none !important;}
   @media (prefers-reduced-motion: reduce){
-    .cr-field{animation:none;} .cr-label, .cr-teach{transition:none;transform:none;}
-    .cr-outline.cr-hit, .gm-climber.cr-hop, .gm-climber.cr-hop-sm, #gmScore.cr-bump{animation:none;}
+    .dy-field{animation:none;} .dy-label, .dy-teach{transition:none;}
+    .dy-scene, .dy-climber{transition:none !important;}
   }
-  .cr-j{display:inline-block;box-sizing:border-box;width:16px;height:16px;border-radius:50%;flex-shrink:0;}
-  .cr-j-perfect{border:2px solid var(--send);box-shadow:0 0 0 3px var(--surface-2), 0 0 0 5px var(--send);margin:0 5px;}
-  .cr-j-good{border:3px solid var(--send);}
-  .cr-j-close{width:10px;height:10px;border:2px solid var(--text-dim);margin:0 3px;}
-  /* ==== .cr- Chalk Rhythm CSS END ==== */
+  /* ==== .dy- Dyno CSS END ==== */
   /* .rr- Route Read */
-  .rr-stage{position:absolute;inset:0;--rr-lift:0;}
-  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;translate:0 calc(var(--rr-lift)*-1px);transition:translate .38s cubic-bezier(.2,.8,.3,1);}
+  .rr-stage{position:absolute;inset:0;}
+  .rr-climber{left:6px;top:4px;width:36px;height:54px;}
   .rr-climber.rr-swap{animation:rr-swap .16s ease-out;}
   @keyframes rr-swap{from{opacity:0.65;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
-  .rr-label{position:absolute;left:8px;top:12px;width:88px;min-height:34px;margin:0;font-size:13px;font-weight:700;line-height:1.3;color:var(--text);}
-  .rr-pips{position:absolute;left:8px;top:62px;width:84px;display:flex;flex-wrap:wrap;gap:5px;}
+  .rr-label{position:absolute;left:50px;right:8px;top:6px;height:34px;margin:0;font-size:13px;line-height:1.3;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .rr-label b{font-weight:700;}
+  .rr-key{display:inline-block;width:15px;height:15px;flex:none;background:var(--rr-c, var(--accent));border-radius:50%;}
+  .rr-key[data-shape="square"]{border-radius:3px;}
+  .rr-key[data-shape="triangle"]{border-radius:0;clip-path:polygon(50% 4%,98% 94%,2% 94%);}
+  .rr-key[data-shape="diamond"]{border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  .rr-pips{position:absolute;left:50px;right:8px;top:40px;height:14px;display:flex;flex-wrap:nowrap;gap:5px;align-items:center;}
   .rr-pip{width:11px;height:11px;box-sizing:border-box;border-radius:50%;border:2px solid var(--text-dim);background:transparent;transition:background .15s ease, border-color .15s ease;}
   .rr-pip.on{background:var(--send);border-color:var(--send);}
-  .rr-wall{position:absolute;right:8px;top:16px;width:192px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:64px;border-radius:14px;background:color-mix(in srgb, var(--text) 5%, transparent);}
-  .rr-bar{position:absolute;right:8px;bottom:6px;width:192px;height:5px;border-radius:3px;background:color-mix(in srgb, var(--text) 10%, transparent);overflow:hidden;opacity:0;transition:opacity .15s ease;}
+  .rr-wall{position:absolute;left:4px;right:4px;top:58px;bottom:12px;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);border-radius:14px;
+    background:color-mix(in srgb, var(--text) 6%, transparent);background-image:radial-gradient(color-mix(in srgb, var(--text) 14%, transparent) 1px, transparent 1.5px);background-size:14px 14px;}
+  .rr-bar{position:absolute;left:8px;right:8px;bottom:4px;height:5px;border-radius:3px;background:color-mix(in srgb, var(--text) 10%, transparent);overflow:hidden;opacity:0;transition:opacity .15s ease;}
   .rr-bar.on{opacity:1;}
   .rr-bar i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:0 50%;transform:scaleX(1);}
-  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
+  .rr-cell{position:relative;display:grid;place-items:center;min-width:0;min-height:56px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
+  .rr-cell[hidden]{display:block;visibility:hidden;pointer-events:none;}
   .rr-cell:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:12px;}
-  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .2s ease, transform .2s ease, box-shadow .2s ease;}
-  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .15s ease;border-color:var(--text);}
+  .rr-cell .gm-art{grid-area:1/1;transition:opacity .2s ease, transform .2s ease, background-color .2s ease;}
+  .rr-cell .rr-hold{translate:var(--rr-dx, 0) var(--rr-dy, 0);rotate:var(--rr-rot, 0deg);opacity:1;border-radius:50%;
+    background:color-mix(in srgb, var(--text) 34%, var(--surface-2, #888));box-shadow:0 2px 0 color-mix(in srgb, var(--text) 24%, transparent);}
+  .rr-cell .rr-hold[data-blob="1"]{border-radius:42% 58% 52% 48% / 56% 44% 56% 44%;}
+  .rr-cell .rr-hold[data-blob="2"]{border-radius:30%;}
+  .rr-cell .rr-hold[data-blob="3"]{border-radius:62% 38% 34% 66% / 48% 62% 38% 52%;}
+  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .15s ease;border-color:var(--text);translate:var(--rr-dx, 0) var(--rr-dy, 0);}
   .rr-cell[data-state="tapped"] .rr-ring{opacity:1;}
-  .rr-cell[data-state="tapped"] .gm-art-circle{opacity:1;}
-  .rr-wall.rr-showing .rr-cell:not(.rr-lit) .gm-art-circle{opacity:0.28;transform:scale(0.86);}
-  .rr-wall.rr-showing .rr-cell.rr-lit .gm-art-circle{opacity:1;transform:scale(1.04);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 38%, transparent);}
-  .rr-badge{grid-area:1/1;z-index:1;min-width:28px;height:28px;border-radius:14px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
-    font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;opacity:0;transform:scale(0.7);transition:opacity .18s ease, transform .18s ease;}
+  .rr-cell[data-state="tapped"] .rr-hold{background:color-mix(in srgb, var(--text) 52%, var(--surface-2, #888));}
+  /* the coded look: colour AND shape, only while a route is lit */
+  .rr-wall.rr-showing .rr-cell .rr-hold{opacity:0.5;transform:scale(0.9);}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape]{background:var(--rr-c);border-radius:50%;box-shadow:none;}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape="square"]{border-radius:16%;}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape="triangle"]{border-radius:0;clip-path:polygon(50% 4%,98% 94%,2% 94%);}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape="diamond"]{border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  .rr-wall.rr-showing .rr-cell.rr-lit .rr-hold{opacity:1;transform:scale(1.12);}
+  .rr-wall.rr-showing .rr-cell.rr-lit-d .rr-hold{opacity:0.8;transform:scale(0.96);}
+  .rr-badge{grid-area:1/1;z-index:1;min-width:24px;height:24px;border-radius:12px;padding:0 5px;box-sizing:border-box;display:grid;place-items:center;
+    font-family:"Bebas Neue",sans-serif;font-size:18px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;opacity:0;transform:scale(0.7);transition:opacity .18s ease, transform .18s ease;}
   .rr-wall.rr-showing .rr-badge{opacity:1;transform:scale(1);transition-delay:calc(var(--i, 0)*55ms);}
   .rr-cell:not([data-state="wrong"]) .rr-badge:empty{opacity:0;}
-  .rr-cell[data-state="tapped"]::after{content:"\2713";position:absolute;z-index:2;right:10px;top:8px;width:18px;height:18px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;line-height:1;color:var(--bg, #fff);background:var(--send);pointer-events:none;}
+  .rr-cell[data-state="tapped"]::after{content:"\2713";position:absolute;z-index:2;right:6px;top:4px;width:16px;height:16px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:800;line-height:1;color:var(--bg, #fff);background:var(--send);pointer-events:none;}
   .rr-cell[data-state="wrong"] .rr-badge{display:grid;opacity:1;transform:scale(1);}
   .rr-cell[data-state="wrong"] .rr-badge::before{content:"\00D7";}
-  .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .gm-art{animation:rr-wob .32s ease;}
+  .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .rr-hold{animation:rr-wob .32s ease;}
   @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
   .rr-spark{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;pointer-events:none;opacity:0;color:var(--accent);
-    box-shadow:0 -25px 0 0 currentColor, 18px -18px 0 0 currentColor, 25px 0 0 0 currentColor, 18px 18px 0 0 currentColor, 0 25px 0 0 currentColor, -18px 18px 0 0 currentColor, -25px 0 0 0 currentColor, -18px -18px 0 0 currentColor;}
+    box-shadow:0 -23px 0 0 currentColor, 16px -16px 0 0 currentColor, 23px 0 0 0 currentColor, 16px 16px 0 0 currentColor, 0 23px 0 0 currentColor, -16px 16px 0 0 currentColor, -23px 0 0 0 currentColor, -16px -16px 0 0 currentColor;}
   .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-spark{animation:rr-spark .42s ease-out;}
   .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-ring{animation:rr-ring .3s ease-out;}
   @keyframes rr-spark{0%{opacity:0.95;transform:scale(0.35);}100%{opacity:0;transform:scale(1.15);}}
   @keyframes rr-ring{0%{transform:scale(0.8);}60%{transform:scale(1.18);}100%{transform:scale(1);}}
-  .rr-stage.rr-calm .rr-climber{transition:none;}
   .rr-stage.rr-calm .rr-cell .gm-art, .rr-stage.rr-calm .rr-badge, .rr-stage.rr-calm .rr-ring{transition-duration:.1s;}
   .rr-stage.rr-calm .rr-wall.rr-showing .rr-badge{transition-delay:0s;}
+  .rr-stage.rr-calm .rr-wall.rr-showing .rr-cell .rr-hold{transform:none;}
   /* summitStack (.ss-) */
   .ss-world{position:absolute;top:0;transform-origin:0 0;pointer-events:none;}
   .ss-cam{position:absolute;inset:0;will-change:transform;}
@@ -1004,7 +1012,68 @@
     .rt-half[data-flash]::before{opacity:0.6;}
     .rt-climber, .rt-slot, .rt-slot > .gm-art, .rt-mark, .rt-pad, .rt-letter, .rt-fuse{transition:none;}
   }
-  /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
+  /* ==== .wr- Wall Run CSS BEGIN ==== */
+  .wr-wall{position:absolute;inset:0;pointer-events:none;--wy:0px;
+    background:repeating-linear-gradient(180deg, transparent 0 25px, color-mix(in srgb, var(--text) 9%, transparent) 25px 26px);
+    background-position:0 var(--wy);transition:background-position .18s cubic-bezier(.2,.8,.2,1);}
+  .wr-div{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed color-mix(in srgb, var(--text) 16%, transparent);pointer-events:none;}
+  .wr-div-1{left:33.333%;} .wr-div-2{left:66.666%;}
+  .wr-line{position:absolute;left:0;right:0;top:245px;height:0;border-top:3px solid color-mix(in srgb, var(--accent) 55%, transparent);pointer-events:none;}
+  .wr-holds{position:absolute;inset:0;pointer-events:none;}
+  .wr-hold{position:absolute;top:0;width:64px;height:64px;opacity:0;will-change:transform;}
+  .wr-hold[data-lane="0"]{left:calc(16.667% - 32px);} .wr-hold[data-lane="1"]{left:calc(50% - 32px);} .wr-hold[data-lane="2"]{left:calc(83.333% - 32px);}
+  .wr-hold > .gm-art{position:absolute;left:0;top:0;transition:transform .15s ease-out, opacity .2s ease-out;}
+  .wr-hold[data-state="come"]{opacity:0.8;}
+  .wr-hold[data-state="live"]{opacity:1;}
+  .wr-hold[data-state="live"] > .gm-art{box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);}
+  .wr-hold[data-state="hit"]{opacity:0;transition:opacity .3s ease-out;}
+  .wr-hold[data-state="hit"] > .gm-art{transform:scale(1.25);}
+  .wr-hold[data-state="miss"]{opacity:0.9;transition:opacity .35s ease-out;}
+  .wr-hold[data-state="miss"] > .gm-art{background:var(--text-dim);border-color:var(--text-dim);box-shadow:none;transform:scale(0.9);}
+  .wr-x{position:absolute;inset:0;display:grid;place-items:center;font-family:"Bebas Neue",sans-serif;font-size:34px;color:var(--surface);opacity:0;}
+  .wr-hold[data-state="miss"] .wr-x{opacity:1;}
+  .wr-fuse{position:absolute;left:6px;right:6px;bottom:-12px;height:5px;border-radius:3px;overflow:hidden;opacity:0;background:color-mix(in srgb, var(--text) 14%, transparent);}
+  .wr-fuse i{display:block;height:100%;background:var(--accent);transform-origin:left center;}
+  .wr-climber{width:84px;height:126px;left:50%;margin-left:-42px;bottom:8px;z-index:1;
+    transform:translate(var(--rx, 0px), var(--ry, 0px));transition:transform .2s cubic-bezier(.2,.8,.2,1);}
+  .wr-lane{position:absolute;top:0;bottom:0;width:33.333%;z-index:2;border:0;padding:0;cursor:pointer;background:transparent;color:var(--text);
+    touch-action:manipulation;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;overflow:hidden;}
+  .wr-lane-0{left:0;} .wr-lane-1{left:33.333%;} .wr-lane-2{left:66.666%;}
+  .wr-lane::before{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;background:color-mix(in srgb, var(--text) 10%, transparent);}
+  .wr-lane[data-flash="hit"]::before{background:color-mix(in srgb, var(--send) 26%, transparent);animation:wr-flash .3s ease-out;}
+  .wr-lane[data-flash="slip"]::before{background:color-mix(in srgb, var(--text-dim) 30%, transparent);animation:wr-flash .36s ease-out;}
+  .wr-lane[data-flash="tap"]::before{animation:wr-flash .2s ease-out;}
+  .wr-lane:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
+  .wr-pad{position:absolute;left:50%;bottom:10px;margin-left:-28px;width:56px;height:56px;border-radius:28px;box-sizing:border-box;display:grid;place-items:center;
+    border:2px solid color-mix(in srgb, var(--text) 25%, transparent);background:color-mix(in srgb, var(--surface) 70%, transparent);}
+  .wr-lane-1 .wr-pad{bottom:8px;opacity:0.55;}
+  .wr-pad b{font-family:"Bebas Neue",sans-serif;font-size:24px;font-weight:400;line-height:1;}
+  .wr-slip{position:absolute;left:50%;top:64px;transform:translateX(-50%);padding:5px 14px;border-radius:16px;z-index:3;pointer-events:none;
+    font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.04em;color:var(--text);background:var(--surface);border:2px solid var(--text-dim);opacity:0;}
+  .wr-slip-on{opacity:1;animation:wr-slip .7s ease-out both;}
+  .wr-run{position:absolute;left:8px;top:8px;display:flex;align-items:baseline;gap:5px;padding:3px 11px;border-radius:14px;z-index:3;pointer-events:none;
+    background:var(--surface);border:1px solid var(--border);opacity:0;transition:opacity .2s ease;}
+  .wr-run b{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:24px;line-height:1;font-variant-numeric:tabular-nums;}
+  .wr-run small{font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--text-dim);}
+  .wr-run:not([data-tier="0"]){opacity:1;}
+  .wr-run[data-tier="2"], .wr-run[data-tier="3"]{border-color:var(--accent);}
+  .wr-run-pop b{animation:wr-pop .24s cubic-bezier(.2,.9,.3,1.4);}
+  @keyframes wr-flash{from{opacity:1;}to{opacity:0;}}
+  @keyframes wr-pop{from{transform:scale(1.35);}to{transform:scale(1);}}
+  @keyframes wr-slip{0%{transform:translateX(-50%) translateY(-6px);}20%{transform:translateX(-50%) translateY(0);}100%{transform:translateX(-50%) translateY(0);opacity:0.9;}}
+  .wr-rm .wr-lane::before, .wr-rm .wr-run-pop b, .wr-rm .wr-slip-on{animation:none;}
+  .wr-rm .wr-wall, .wr-rm .wr-climber, .wr-rm .wr-hold, .wr-rm .wr-hold > .gm-art, .wr-rm .wr-run{transition:none;}
+  .wr-rm .wr-fuse{opacity:1;}
+  @media (prefers-reduced-motion: reduce){
+    .wr-lane::before, .wr-run-pop b, .wr-slip-on{animation:none;}
+    .wr-lane[data-flash]::before{opacity:0.6;}
+    .wr-wall, .wr-climber, .wr-hold, .wr-hold > .gm-art, .wr-run{transition:none;}
+    .wr-hold[data-state="hit"] > .gm-art{transform:none;}
+    .wr-fuse{opacity:1;}
+    .wr-hold[data-state="hit"], .wr-hold[data-state="miss"]{transition:none;}
+  }
+  /* ==== .wr- Wall Run CSS END ==== */
+  /* per-game CSS lives in its own prefix: .dy- (Dyno), .rr- (Route Read), .ss- (Summit Stack), .wr- (Wall Run), .rt- (Reach Timer, retired) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
     .gm-card:active{transform:none;}
@@ -2803,8 +2872,9 @@
       // already watched your climber reach (null until you first open The Wall).
       restDays:[], wallSeen:null,
       // GAMES (Play): only a best score and a play count per game. Never touches XP, levels, streaks or holds.
-      games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 }, chalkRhythm:{ best:0, plays:0, perfectBest:0 },
+      games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 }, chalkRhythm:{ best:0, plays:0, perfectBest:0 }, dyno:{ best:0, plays:0, cleanBest:0 },
               routeRead:{ best:0, plays:0, longest:0 }, summitStack:{ best:0, plays:0, tallest:0, perfects:0 }, reachTimer:{ best:0, plays:0, bestStreak:0 },
+              wallRun:{ best:0, plays:0, longestRun:0 },
               _meta:{ playDays:[], chalkMigrated:false } },
       activeSessionId:null
     };
@@ -2813,9 +2883,9 @@
   // Older saves and backups have no `games`; anything malformed becomes zeros. Unknown games/keys are kept.
   // Per-game extra numeric fields and their caps; best is capped at 9999 and plays at 999999 for every game.
   var GAMES_FIELDS = {
-    chalkUp:{}, holdHop:{},                     // legacy: preserved (holdHop is no longer on the menu)
-    chalkRhythm:{ perfectBest:9999 }, routeRead:{ longest:9999 },
-    summitStack:{ tallest:9999, perfects:999999 }, reachTimer:{ bestStreak:9999 }
+    chalkUp:{}, holdHop:{},                     // legacy: preserved (holdHop and chalkRhythm are no longer on the menu)
+    chalkRhythm:{ perfectBest:9999 }, dyno:{ cleanBest:9999 }, routeRead:{ longest:9999 },
+    summitStack:{ tallest:9999, perfects:999999 }, reachTimer:{ bestStreak:9999 }, wallRun:{ longestRun:9999 }
   };
   function gamesClamp(v, max){ var n = Math.floor(Number(v)); return isFinite(n) && n>0 ? Math.min(n, max) : 0; }
   function gamesNormalize(g){
@@ -7340,11 +7410,12 @@
   var GAME_ART = {
     "ss.ledge":{ src:null, w:320, h:72, shape:"rect" }, "ss.block":{ src:null, w:320, h:72, shape:"rect" }, "ss.flag":{ src:null, w:96, h:144, shape:"flag" },
     "rr.hold":{ src:null, w:56, h:56, shape:"circle" }, "rr.ring":{ src:null, w:64, h:64, shape:"ring" },
-    "cr.puff":{ src:null, w:64, h:64, shape:"circle", frames:4 }, "cr.ring":{ src:null, w:230, h:230, shape:"ring" },
+    "dy.ledge":{ src:null, w:120, h:12, shape:"rect" }, "dy.hold":{ src:null, w:120, h:12, shape:"rect" },
     "rt.hold":{ src:null, w:64, h:64, shape:"circle" }, "rt.ghost":{ src:null, w:64, h:64, shape:"ring" },
     "ui.perfect":{ src:null, w:28, h:28, shape:"ring" }, "ui.good":{ src:null, w:28, h:28, shape:"circle" }, "ui.best":{ src:null, w:28, h:28, shape:"rect" }, "ui.summit":{ src:null, w:28, h:28, shape:"flag" },
-    "card.chalkRhythm":{ src:null, w:44, h:44, shape:"ring" }, "card.routeRead":{ src:null, w:44, h:44, shape:"circle" },
-    "card.summitStack":{ src:null, w:44, h:44, shape:"rect" }, "card.reachTimer":{ src:null, w:44, h:44, shape:"circle" }
+    "card.dyno":{ src:null, w:44, h:44, shape:"rect" }, "card.routeRead":{ src:null, w:44, h:44, shape:"circle" },
+    "card.summitStack":{ src:null, w:44, h:44, shape:"rect" }, "card.reachTimer":{ src:null, w:44, h:44, shape:"circle" },
+    "wr.hold":{ src:null, w:64, h:64, shape:"circle" }, "card.wallRun":{ src:null, w:44, h:44, shape:"circle" }
   };
   // The override hook. file is relative to assets/ (e.g. "games/ss-block.png"); blobId is its upload id (see asset()).
   // New PNGs need this (or an IMG entry) so the Artifact build can serve them; no art files ship with the shell.
@@ -7457,11 +7528,14 @@
   function gmEsc(t){ return String(t==null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   // One line of how-to per game for the intro (the game's own intro.text stays as the spoken description).
   var GM_HOWTO = {
-    chalkRhythm:"Tap when the ring meets the outline.",
-    routeRead:"Remember the numbered holds, then tap them in order.",
+    dyno:"Hold to charge, let go with the bar in the band.",
+    routeRead:"Read the called route by colour and shape, tap it in order.",
     summitStack:"Tap to drop the block and stack it neatly.",
-    reachTimer:"Tap the side where the next hold is."
+    reachTimer:"Tap the side where the next hold is.",
+    wallRun:"Tap each hold's lane as it reaches your hands."
   };
+  // Shared reduced-motion check: a game passes its test override (null/undefined follows the system setting).
+  function gmReducedWith(ov){ return ov==null ? !!prefersReducedMotion : !!ov; }
   function gmHowto(d){ return GM_HOWTO[d.id] || (d.intro && d.intro.text) || d.blurb || ""; }
   function gmSoundText(on){ return on ? "On. Soft ticks, never over the timer beeps." : "Off. Games stay silent."; }
   function gmSyncSound(){
@@ -7571,192 +7645,229 @@
 
   if(window.__cruxTest) Object.assign(window.__cruxGames, { howto:gmHowto, esc:gmEsc });
 
-  /* ==== chalkRhythm BEGIN (T1: replaces the legacy Chalk Up; the saved chalkUp data stays, its best was copied by gamesNormalize) ==== */
-  // Rules: a ring grows toward a fixed outline once per beat; tap when it meets the outline. Fixed grid from round start,
-  // no hidden beats, no fail. Tempo 60 -> 64 -> 70 bpm; windows +-80 / +-160 / +-280 ms (design doc 2.1).
-  /*CHALKRHYTHM-PURE-BEGIN*/
-  var CR_ROUND_MS = 45000, CR_WIN = { perfect:80, good:160, close:280 };
-  var CR_PHASES = [ { to:15000, bpm:60, beat:1000 }, { to:30000, bpm:64, beat:937 }, { to:45000, bpm:70, beat:857 } ];
-  function chalkPhase(tMs){ for(var i=0;i<CR_PHASES.length;i++){ if(tMs<CR_PHASES[i].to) return CR_PHASES[i]; } return CR_PHASES[CR_PHASES.length-1]; }
-  function chalkBpm(tMs){ return chalkPhase(tMs).bpm; }
-  function chalkBeatLen(tMs){ return chalkPhase(tMs).beat; }
-  var crBeatsCache = null;
-  // The fixed beat grid, in ms from round start. Each beat's length is set by the phase its ring starts in.
-  function chalkBeats(){
-    if(crBeatsCache) return crBeatsCache;
-    var out = [], t = 0;
-    for(;;){ var b = t+chalkBeatLen(t); if(b>CR_ROUND_MS) break; out.push(b); t = b; }
-    return (crBeatsCache = out);
+  /* ==== dyno BEGIN (replaces chalkRhythm: dyno* functions, .dy- CSS, gmRegister({id:"dyno", ...})) ==== */
+  // Dyno: hold anywhere to charge a jump, release to launch. A power meter climbs and falls (triangle wave, 2.2 to 4 s a cycle);
+  // the target hold sits at the height the meter must reach, shown as a band on the meter. Release with the bar inside the band
+  // and the climber latches (+1 height, next hold farther, band narrower); short or over, the climber falls one ledge and goes on.
+  // Seeded per hold (so a fall retries the same hold). The band is never narrower than 400 ms of release time. Score = peak height.
+  /*DYNO-PURE-BEGIN*/
+  var DY_ROUND_MS = 45000, DY_PX = 220, DY_BASE = 46, DY_FLIGHT_MS = 380, DY_LATCH_MS = 380, DY_FALL_MS = 700, DY_RAMP_HOLDS = 14, DY_MIN_WINDOW_MS = 400, DY_CLEAN = 0.4;
+  function dynoRamp(n){ return Math.max(0, Math.min(1, ((Math.floor(Number(n))||1)-1)/DY_RAMP_HOLDS)); }
+  // The n-th hold (n >= 1) of a round: tp = meter level to reach (0..1), w = half-width of the band, T = one full up-and-down in ms.
+  // windowMs = w*T is how long the bar sits inside the band on one pass (>= 420 ms by construction).
+  function dynoSpec(seed, n){
+    n = Math.max(1, Math.floor(Number(n))||1);
+    var rnd = mulberry32(((seed>>>0) ^ Math.imul(n, 0x9E3779B1))>>>0); rnd();
+    var r = dynoRamp(n), u1 = rnd(), u2 = rnd();
+    var windowMs = Math.round(900-480*r);
+    var T = Math.round((3300-500*r)*(0.8+0.4*u1));
+    var w = windowMs/T;
+    var tp = 0.28+0.40*r+(u2-0.5)*0.32;
+    tp = Math.max(w+0.06, Math.min(1-w-0.03, tp));
+    return { n:n, tp:tp, w:w, T:T, windowMs:windowMs };
   }
-  function chalkWindow(deltaMs){ var d = Math.abs(deltaMs); return d<=CR_WIN.perfect ? "perfect" : d<=CR_WIN.good ? "good" : d<=CR_WIN.close ? "close" : "miss"; }
-  function chalkPoints(label){ return label==="perfect" ? 3 : label==="good" ? 2 : label==="close" ? 1 : 0; }
-  // A tap goes to the nearest UNCLAIMED beat within the Close window; a claimed beat can never be claimed again.
-  function chalkAttribute(tMs, claimed){
-    var beats = chalkBeats(), best = -1, bd = Infinity;
-    for(var k=0;k<beats.length;k++){
-      if(claimed && claimed[k]) continue;
-      var d = Math.abs(tMs-beats[k]);
-      if(d<=CR_WIN.close && d<bd){ best = k; bd = d; }
+  // Meter level after holding h ms: 0 -> 1 in T/2, then back down, forever.
+  function dynoMeter(h, T){ var x = (((Number(h)||0) % T)+T) % T / T; return x<0.5 ? 2*x : 2-2*x; }
+  function dynoJudge(spec, h){
+    var m = dynoMeter(h, spec.T), d = m-spec.tp;
+    var kind = Math.abs(d)<=spec.w ? "latch" : d<0 ? "short" : "over";
+    return { kind:kind, m:m, d:d, clean:kind==="latch" && Math.abs(d)<=spec.w*DY_CLEAN };
+  }
+  function dynoIdealHold(spec){ return spec.tp*spec.T/2; }
+  // The holds (ms) that latch on pass 0 (rising) or pass 1 (falling).
+  function dynoHoldWindow(spec, pass){
+    var a = (spec.tp-spec.w)*spec.T/2, b = (spec.tp+spec.w)*spec.T/2;
+    return pass ? { from:spec.T-b, to:spec.T-a } : { from:a, to:b };
+  }
+  function dynoStep(st, j){
+    var s = { h:st.h||0, peak:st.peak||0, jumps:(st.jumps||0)+1, falls:st.falls||0, clean:st.clean||0 };
+    if(j.kind==="latch"){ s.h++; if(s.h>s.peak) s.peak = s.h; if(j.clean) s.clean++; }
+    else { s.h = Math.max(0, s.h-1); s.falls++; }
+    return s;
+  }
+  function dynoAfterMs(kind){ return DY_FLIGHT_MS+(kind==="latch" ? DY_LATCH_MS : DY_FALL_MS); }
+  // Replays a round through the same rules. policy(spec, st, i) returns a hold in ms, { gap, hold } (gap = ms from ready to press),
+  // or null to stop pressing (no input). Time counts hold + the flight/land/fall animation, so a fall costs real seconds.
+  function dynoRun(seed, policy){
+    var st = { h:0, peak:0, jumps:0, falls:0, clean:0 }, t = 0, log = [];
+    for(var i=0;i<500;i++){
+      var spec = dynoSpec(seed, st.h+1), p = policy ? policy(spec, st, i) : null;
+      if(p==null) break;
+      var gap = typeof p==="object" ? Math.max(0, p.gap||0) : 0, hold = Math.max(0, typeof p==="object" ? p.hold : p);
+      var rel = t+gap+hold;
+      if(rel>=DY_ROUND_MS) break;
+      var j = dynoJudge(spec, hold);
+      log.push({ n:spec.n, kind:j.kind, hold:hold, at:rel, clean:j.clean });
+      st = dynoStep(st, j);
+      t = rel+dynoAfterMs(j.kind);
     }
-    if(best<0) return null;
-    var delta = tMs-beats[best];
-    return { k:best, delta:delta, label:chalkWindow(delta) };
+    return { h:st.h, peak:st.peak, jumps:st.jumps, falls:st.falls, clean:st.clean, endT:t, log:log };
   }
-  // Which beat's ring is growing at tMs: { k, p } with p 0..1 (1 = the ring meets the outline).
-  function chalkRingAt(tMs){
-    var beats = chalkBeats(), n = beats.length;
-    for(var k=0;k<n;k++){
-      if(tMs<=beats[k]){ var s = k ? beats[k-1] : 0; return { k:k, p:Math.max(0, Math.min(1, (tMs-s)/(beats[k]-s))) }; }
-    }
-    return { k:n-1, p:1 };
-  }
-  function chalkRingScale(p){ return 0.35+0.65*Math.max(0, Math.min(1, p)); }
-  function chalkRingOpacity(p){ return Math.min(1, Math.max(0, p)*5); }   // fades in from nothing over the first 20% of the beat, then stays full (no pop when the next ring starts)
-  var CR_ECHO_MS = 300;
-  function chalkEase(x){ x = Math.max(0, Math.min(1, x)); return 1-Math.pow(1-x, 3); }
-  // The ring that just met the outline keeps going for CR_ECHO_MS: it swells a touch past the outline and fades, so the beat "lands"
-  // instead of the ring snapping back to small. null when no beat landed in the last CR_ECHO_MS.
-  function chalkEcho(tMs){
-    var beats = chalkBeats(), k = -1;
-    for(var i=0;i<beats.length;i++){ if(beats[i]<=tMs) k = i; else break; }
-    if(k<0) return null;
-    var age = tMs-beats[k];
-    if(age>=CR_ECHO_MS) return null;
-    var e = chalkEase(age/CR_ECHO_MS);
-    return { k:k, age:age, scale:1+0.22*e, opacity:0.9*(1-e) };
-  }
-  // Which beat a tap belongs to uses the input event's own timestamp (when the finger landed), not when our handler got to run.
-  // Falls back to "now" if the stamp is missing or implausible (older than 250 ms, in the future, or on another clock).
-  function chalkTapTime(evStamp, now){
+  // Which time a press/release belongs to: the input event's own stamp when it is plausible (<= 250 ms old, not in the future).
+  function dynoStamp(evStamp, now){
     return (typeof evStamp==="number" && isFinite(evStamp) && evStamp>0 && evStamp<=now+1 && evStamp>=now-250) ? Math.min(evStamp, now) : now;
   }
-  // "early" / "late" cue for a judged tap (null for Perfect: nothing to correct).
-  function chalkCue(label, deltaMs){ return label==="perfect" || label==="miss" ? null : (deltaMs<0 ? "early" : "late"); }
-  // Exponential smoothing step (timestamp based): how far a value moves toward its target in dt ms with time constant tau.
-  function chalkSmooth(cur, target, dtMs, tauMs){ return cur+(target-cur)*(1-Math.exp(-Math.max(0, dtMs)/tauMs)); }
-  // Replays a list of tap times (ms from round start) through the same rules the game uses.
-  function chalkSimulate(taps){
-    var claimed = {}, score = 0, perfects = 0, hits = 0, labels = [];
-    taps.slice().sort(function(a, b){ return a-b; }).forEach(function(t){
-      var r = chalkAttribute(t, claimed);
-      if(!r){ labels.push(null); return; }
-      claimed[r.k] = true; hits++; score += chalkPoints(r.label); if(r.label==="perfect") perfects++; labels.push(r);
-    });
-    return { score:score, perfects:perfects, hits:hits, claimed:claimed, labels:labels };
-  }
-  /*CHALKRHYTHM-PURE-END*/
+  /*DYNO-PURE-END*/
 
-  var crRMOverride = null;   // tests only
-  function crReduced(){ return crRMOverride===null ? !!prefersReducedMotion : crRMOverride; }
-  var CR_LABEL = { perfect:"Perfect", good:"Good", close:"Close" };
+  var dyRMOverride = null;   // tests only
+  function dyReduced(){ return gmReducedWith(dyRMOverride); }
+  var DY_LABEL = { latch:"Latched", short:"Short", over:"Over" };
   gmRegister({
-    id:"chalkRhythm", title:"Chalk Rhythm", order:1, blurb:"A slow beat, a ring, a tap. Calm and forgiving.",
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>',
-    intro:{ title:"Breathe and tap", text:"Breathe in as the ring grows, then tap the moment it meets the outline. Perfect 3, Good 2, Close 1. Miss one and the next is already coming.", hint:"Tap anywhere. 45 seconds, no fail." },
-    hud0:function(best){ return "Best "+best; },
-    start:function(){ chalkRhythmStart(); },
-    state:function(){ var g = gm && gm.id==="chalkRhythm" ? gm : null; return { score:g ? g.score : 0, actions:g ? g.taps : 0, extra:{ perfectBest:g ? g.perfects : 0 } }; },
-    rest:{ closeScore:function(){ var g = gm && gm.id==="chalkRhythm" ? gm : null; return { score:g ? g.score : 0, actions:g ? g.taps : 0, extra:{ perfectBest:g ? g.perfects : 0 } }; } },
+    id:"dyno", title:"Dyno", order:1, blurb:"Hold to charge, let go to leap. Land the hold or drop a ledge.",
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20h6M13 8h6"/><path d="M8 20c0-6 3-9 8-12"/><path d="M13 5l3 3-3 3"/></svg>',
+    intro:{ title:"Dyno", text:"Hold anywhere to charge a jump. The bar rises and falls. Let go with the bar inside the band to latch the next hold. Short or over, you drop one ledge and go again. Highest hold in 45 seconds counts.", hint:"Hold anywhere, or hold Space. 45 seconds, no fail." },
+    hud0:function(best){ return "Height 0 · Best "+best; },
+    start:function(){ dynoStart(); },
+    state:function(){ var g = gm && gm.id==="dyno" ? gm : null; return { score:g ? g.peak : 0, actions:g ? g.jumps : 0, extra:{ cleanBest:g ? g.clean : 0 } }; },
+    rest:{ closeScore:function(){ var g = gm && gm.id==="dyno" ? gm : null; return { score:g ? g.peak : 0, actions:g ? g.jumps : 0, extra:{ cleanBest:g ? g.clean : 0 } }; } },
+    pause:function(){ if(gm && gm.id==="dyno" && gm.cancel) gm.cancel(); },
     resume:function(){ if(gm && gm.frame) gmRaf = requestAnimationFrame(gm.frame); },
-    art:["cr.ring", "cr.puff"], frames:["idle", "chalk", "clap", "cheer"]
+    art:["dy.ledge", "dy.hold"], frames:["idle", "pull", "jump", "hit", "reach"]
   });
-  function chalkRhythmStart(){
+  function dynoStart(){
     var f = gmFrames(); gmPreload(f);
-    var rm = crReduced(), outline = gmArt("cr.ring"), live = gmArt("cr.ring"), echo = gmArt("cr.ring"), puff = gmArt("cr.puff");
-    outline.classList.add("cr-outline"); live.classList.add("cr-live"); live.id = "crRing"; echo.classList.add("cr-echo"); puff.classList.add("cr-puff");
-    var first = !(state.games.chalkRhythm && state.games.chalkRhythm.plays>0);   // first-ever round: say what to do on screen
+    var rm = dyReduced();
+    var first = !(state.games.dyno && state.games.dyno.plays>0);
     var stage = gmEl("gmStage");
-    stage.innerHTML = '<div class="cr-field'+(rm ? ' cr-rm' : '')+'" id="crField" aria-hidden="true"></div>'
-      + '<div class="gm-climber gm-climber-big" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
-      + '<p class="cr-teach" id="crTeach" aria-hidden="true">Tap when the ring meets the outline</p>'
-      + '<div class="cr-label" id="crLabel" aria-hidden="true"></div>'
-      + '<button type="button" class="gm-tap" id="gmTap" style="touch-action:manipulation" aria-label="Tap when the ring meets the outline"></button>';
-    var field = gmEl("crField");
-    field.appendChild(outline); field.appendChild(echo); field.appendChild(live); field.appendChild(puff);
-    field.insertAdjacentHTML("beforeend", '<div class="cr-bar"><i id="crBarFill"></i></div>');
-    var img = gmEl("gmClimberImg"), host = gmEl("gmClimber"); outfitFollow(img, host); gmSetSrc(img, f.idle[0]);
-    var beats = chalkBeats();
-    var g = gmBegin("chalkRhythm", f, { claimed:{}, judged:-1, score:0, perfects:0, taps:0, streak:0, chalkUntil:0, clapFrom:0, clapUntil:0,
-      puffUntil:0, labelUntil:0, lastScale:-1, lastOp:-1, lastSec:-1, lastEcho:-1, breath:0, lastT:0, teachUntil:first ? 6500 : 0, hits:0 });
-    gmHud(0, "Best "+state.games.chalkRhythm.best);
-    gmSay("Go. Tap as the ring meets the outline.");
-    var label = gmEl("crLabel"), bar = gmEl("crBarFill"), teach = gmEl("crTeach"), scoreEl = gmEl("gmScore");
+    stage.innerHTML = '<div class="dy-field'+(rm ? ' dy-rm' : '')+'" id="dyField" aria-hidden="true"><div class="dy-scene" id="dyScene">'
+      + '<div class="gm-climber dy-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div></div>'
+      + '<div class="dy-gauge" id="dyGauge"><span class="dy-zone"></span><span class="dy-fill"></span><span class="dy-mark"></span></div></div>'
+      + '<p class="dy-teach" id="dyTeach" aria-hidden="true">Hold to charge. Let go with the bar inside the band.</p>'
+      + '<div class="dy-label" id="dyLabel" aria-hidden="true"></div>'
+      + '<button type="button" class="gm-tap dy-tap" id="gmTap" style="touch-action:none" aria-label="Hold to charge the jump, let go to launch"></button>';
+    var scene = gmEl("dyScene"), gauge = gmEl("dyGauge"), host = gmEl("gmClimber"), img = gmEl("gmClimberImg");
+    var label = gmEl("dyLabel"), teach = gmEl("dyTeach"), tapEl = gmEl("gmTap");
+    outfitFollow(img, host); gmSetSrc(img, f.idle[0]);
+    var g = gmBegin("dyno", f, { h:0, peak:0, jumps:0, falls:0, clean:0, run:0, charge:null, readyAt:0, todo:[], spec:null, ys:[0], ledges:{},
+      lastSec:-1, lastM:-1, labelUntil:0, teachUntil:first ? 7000 : 0 });
     if(first) teach.classList.add("on");
-    label.innerHTML = '<span>Breathe in</span>'; label.classList.add("on"); g.labelUntil = 900;
-    function restart(el, cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
-    function tap(e){
-      if(gm!==g || g.paused) return;
-      var now = performance.now(), t = chalkTapTime(e && e.timeStamp, now)-g.t0;
-      g.taps++;
-      var r = chalkAttribute(t, g.claimed);
-      if(!r){                                           // between beats, or that beat is taken: nothing is lost, but the tap still gets an answer
-        if(!rm) restart(host, "cr-hop-sm");
-        return;
+    function Y(i){ while(g.ys.length<=i){ var k = g.ys.length; g.ys.push(g.ys[k-1]+dynoSpec(g.seed, k).tp*DY_PX); } return g.ys[i]; }
+    function ensureLedges(){
+      var lo = Math.max(0, g.h-2), hi = g.h+3, i;
+      for(i=lo;i<=hi;i++){
+        if(g.ledges[i]) continue;
+        var w = document.createElement("div"); w.className = "dy-ledge";
+        var art = gmArt(i===0 ? "dy.ledge" : "dy.hold"); w.appendChild(art);
+        var gd = document.createElement("i"); gd.className = "dy-guide"; w.appendChild(gd);
+        w.style.bottom = (DY_BASE+Y(i))+"px";
+        scene.insertBefore(w, host); g.ledges[i] = w;
       }
-      g.claimed[r.k] = true; g.score += chalkPoints(r.label); g.hits++;
-      g.streak++;
-      var cue = chalkCue(r.label, r.delta);
-      if(r.label==="perfect"){
-        g.perfects++; g.chalkUntil = t+380; g.puffUntil = t+450;
-        if(!rm){ restart(puff, "go"); }
-        gmBuzz(8);
-      }
-      if(r.label==="perfect" || r.label==="good") gmBeep(200, 60, 0.15);
-      if(g.streak%8===0){ g.clapFrom = t; g.clapUntil = t+900; }
-      if(!rm){
-        outline.classList.remove("cr-hit", "cr-hit-perfect"); void outline.offsetWidth;
-        outline.classList.add("cr-hit"); if(r.label==="perfect") outline.classList.add("cr-hit-perfect");
-        restart(host, r.label==="close" ? "cr-hop-sm" : "cr-hop");
-        restart(scoreEl, "cr-bump");
-      }
-      label.innerHTML = '<span class="cr-j cr-j-'+r.label+'" aria-hidden="true"></span><span>'+CR_LABEL[r.label]+'</span>'+(cue ? '<small>'+cue+'</small>' : '');
-      label.classList.add("on"); g.labelUntil = t+700;
-      teach.classList.remove("on"); g.teachUntil = 0;
-      gmHud(g.score, "Best "+Math.max(g.score, state.games.chalkRhythm.best));
-      g.lastSec = -1;                                   // gmHud blanks the clock; put it straight back on the next frame
-      gmSay(CR_LABEL[r.label]+(cue ? ", "+cue : "")+". "+g.score+" points.");
+      Object.keys(g.ledges).forEach(function(k){
+        var n = +k;
+        if(n<g.h-3 || n>g.h+4){ g.ledges[k].remove(); delete g.ledges[k]; }
+        else g.ledges[k].classList.toggle("dy-next", n===g.h+1);
+      });
     }
-    ["cr-hop", "cr-hop-sm"].forEach(function(c){ host.addEventListener("animationend", function(){ host.classList.remove(c); }); });
-    scoreEl.addEventListener("animationend", function(){ scoreEl.classList.remove("cr-bump"); });
-    var tapEl = gmEl("gmTap");
-    tapEl.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(e); });
-    tapEl.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(null); } });
+    function place(i){ host.style.bottom = (DY_BASE+Y(i)+12)+"px"; }
+    function still(el, prop, v){ el.style.transition = "none"; el.style[prop] = v; void el.offsetWidth; }
+    function setGauge(m){ if(m!==g.lastM){ gauge.style.setProperty("--m", m.toFixed(3)); g.lastM = m; } }
+    function setZone(spec){ gauge.style.setProperty("--z0", (spec.tp-spec.w).toFixed(4)); gauge.style.setProperty("--z1", (spec.tp+spec.w).toFixed(4)); }
+    function mark(m){ if(m<0) gauge.style.setProperty("--mo", "0"); else { gauge.style.setProperty("--mk", m.toFixed(3)); gauge.style.setProperty("--mo", "1"); } }
+    function say(text, t, ms){ label.textContent = text; label.classList.add("on"); g.labelUntil = t+ms; }
+    function later(at, fn){ g.todo.push({ at:at, fn:fn }); g.todo.sort(function(a, b){ return a.at-b.at; }); }
+    function wobble(m, now){
+      if(rm) return;
+      host.style.translate = (Math.sin(now/36)*m*1.8).toFixed(1)+"px 0";
+      host.style.scale = (1+0.03*m).toFixed(3)+" "+(1-0.08*m).toFixed(3);
+    }
+    function calm(){ host.style.translate = ""; host.style.scale = ""; }
+    function cancel(){
+      if(!g.charge) return;
+      g.charge = null; calm(); setGauge(0); gmSetSrc(img, f.idle[0]);
+    }
+    g.cancel = cancel;
+    g.spec = dynoSpec(g.seed, 1); setZone(g.spec); setGauge(0); mark(-1);
+    place(0); ensureLedges(); still(scene, "transform", "translateY(0px)");
+    gmHud(0, "Height 0 · Best "+state.games.dyno.best);
+    gmSay("Go. Hold to charge, let go with the bar in the band.");
+
+    function press(stamp, pid, kind){
+      if(gm!==g || g.paused || g.charge) return;
+      var now = performance.now(), t = now-g.t0;
+      if(t<g.readyAt || t>=DY_ROUND_MS) return;           // still flying, landing or falling: the press is not taken
+      g.charge = { t:dynoStamp(stamp, now), pid:pid, kind:kind };
+      mark(-1);
+      if(g.teachUntil){ teach.classList.remove("on"); g.teachUntil = 0; }
+      label.classList.remove("on");
+      gmSetSrc(img, f.pull);
+    }
+    function release(stamp, pid){
+      var c = g.charge;
+      if(!c || gm!==g || g.paused) return;
+      if(c.pid!=null && pid!=null && c.pid!==pid) return;   // a second finger doesn't release the first
+      g.charge = null; calm();
+      var now = performance.now(), at = Math.max(c.t, dynoStamp(stamp, now)), hold = at-c.t;
+      var t = Math.max(0, at-g.t0), spec = g.spec, j = dynoJudge(spec, hold), h0 = g.h;
+      var st = dynoStep({ h:g.h, peak:g.peak, jumps:g.jumps, falls:g.falls, clean:g.clean }, j);
+      g.h = st.h; g.peak = st.peak; g.jumps = st.jumps; g.falls = st.falls; g.clean = st.clean;
+      g.run = j.kind==="latch" ? g.run+1 : 0;
+      g.readyAt = t+dynoAfterMs(j.kind);
+      setGauge(j.m); mark(j.m);
+      gmSetSrc(img, f.jump[0]);
+      var flightEnd = t+DY_FLIGHT_MS;
+      host.style.transition = "transform "+(DY_FLIGHT_MS/1000)+"s cubic-bezier(.2,.7,.3,1)";
+      if(j.kind==="latch"){
+        host.style.transform = "translateY("+(-spec.tp*DY_PX).toFixed(1)+"px)";
+        later(flightEnd, function(){
+          place(g.h); still(host, "transform", "none");
+          gmSetSrc(img, h0%2 ? f.reachL : f.reachR);
+          ensureLedges();
+          scene.style.transition = "transform "+((DY_LATCH_MS-20)/1000)+"s cubic-bezier(.4,0,.2,1)";
+          scene.style.transform = "translateY("+Y(g.h).toFixed(1)+"px)";
+        });
+        later(flightEnd+DY_LATCH_MS-60, function(){ gmSetSrc(img, f.idle[0]); });
+        say(j.clean ? "Latched, clean" : "Latched", t, 900);
+        gmBeep(440+Math.min(g.run, 8)*28, 70, 0.08); gmBuzz(8);
+        gmSay("Latched. Height "+g.h+".");
+      } else {
+        host.style.transform = "translateY("+(-j.m*DY_PX).toFixed(1)+"px)";
+        later(flightEnd, function(){
+          gmSetSrc(img, f.hit);
+          var drop = h0>0 ? Y(h0)-Y(h0-1) : 0;
+          host.style.transition = "transform "+((DY_FALL_MS-280)/1000)+"s cubic-bezier(.5,0,.9,.6)";
+          host.style.transform = "translateY("+drop.toFixed(1)+"px)";
+          scene.style.transition = "transform "+((DY_FALL_MS-280)/1000)+"s cubic-bezier(.5,0,.9,.6)";
+          scene.style.transform = "translateY("+Y(g.h).toFixed(1)+"px)";
+        });
+        later(flightEnd+DY_FALL_MS-260, function(){ place(g.h); still(host, "transform", "none"); ensureLedges(); });
+        later(flightEnd+DY_FALL_MS-80, function(){ gmSetSrc(img, f.idle[0]); });
+        say(DY_LABEL[j.kind], t, 1000);
+        gmBeep(220, 90, 0.05);
+        gmSay((j.kind==="short" ? "Short" : "Over")+(h0>0 ? ". Down a ledge, height "+g.h+"." : ". Try again."));
+      }
+      gmHud(g.peak, "Height "+g.h+" · Best "+Math.max(g.peak, state.games.dyno.best));
+      g.lastSec = -1;
+    }
+    tapEl.addEventListener("pointerdown", function(e){
+      if(e.button>0) return; e.preventDefault();
+      try{ if(e.pointerId!=null && tapEl.setPointerCapture) tapEl.setPointerCapture(e.pointerId); }catch(_){}
+      press(e.timeStamp, e.pointerId, "pointer");
+    });
+    tapEl.addEventListener("pointerup", function(e){ e.preventDefault(); release(e.timeStamp, e.pointerId); });
+    tapEl.addEventListener("pointercancel", function(e){ if(g.charge && (g.charge.pid==null || e.pointerId==null || g.charge.pid===e.pointerId)) cancel(); });
+    tapEl.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+    tapEl.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) press(null, null, "key"); } });
+    tapEl.addEventListener("keyup", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(g.charge && g.charge.kind==="key") release(null, null); } });
+    tapEl.addEventListener("blur", function(){ if(g.charge && g.charge.kind==="key") cancel(); });
     tapEl.focus({ preventScroll:true });
     function frame(){
       if(gm!==g || g.paused) return;
-      var t = performance.now()-g.t0, dt = Math.min(100, Math.max(0, t-g.lastT)); g.lastT = t;
-      // a beat nobody claimed within its Close window is simply a 0 (its echo is drawn fainter, nothing else changes)
-      while(g.judged+1<beats.length && t>beats[g.judged+1]+CR_WIN.close){
-        g.judged++;
-        if(!g.claimed[g.judged]) g.streak = 0;
+      var now = performance.now(), t = now-g.t0;
+      while(g.todo.length && g.todo[0].at<=t){ g.todo.shift().fn(); }
+      if(t>=DY_ROUND_MS){
+        cancel();
+        gmOver("dyno", g.peak, { title:"Good climbing.", note:g.peak+" holds · "+g.falls+" falls"+(g.clean ? " · "+g.clean+" clean" : ""), actions:g.jumps, extra:{ cleanBest:g.clean } });
+        return;
       }
-      var ring = chalkRingAt(t), over = t>beats[beats.length-1];
-      if(rm){
-        var w = (ring.p*100).toFixed(1)+"%"; if(bar.style.width!==w) bar.style.width = w;
-      } else {
-        var s = chalkRingScale(ring.p), op = over ? 0 : chalkRingOpacity(ring.p);
-        if(s!==g.lastScale){ live.style.transform = "scale("+s.toFixed(3)+")"; g.lastScale = s; }
-        if(op!==g.lastOp){ live.style.opacity = op.toFixed(2); g.lastOp = op; }
-        var ec = chalkEcho(t);
-        if(ec){
-          echo.style.transform = "scale("+ec.scale.toFixed(3)+")";
-          echo.style.opacity = (ec.opacity*(g.claimed[ec.k] ? 1 : 0.45)).toFixed(2);
-          g.lastEcho = ec.k;
-        } else if(g.lastEcho>=0){ echo.style.opacity = "0"; g.lastEcho = -1; }
-        // the climber breathes in with the ring (smoothed, so the reset at each beat is an exhale rather than a snap)
-        g.breath = chalkSmooth(g.breath, chalkEase(ring.p)*(over ? 0 : 1), dt, 90);
-        host.style.scale = (1+0.03*g.breath).toFixed(4);
+      if(g.spec.n!==g.h+1 && t>=g.readyAt){ g.spec = dynoSpec(g.seed, g.h+1); setZone(g.spec); setGauge(0); }
+      if(g.charge){
+        var m = dynoMeter(now-g.charge.t, g.spec.T);
+        setGauge(m); wobble(m, now);
       }
       if(label.classList.contains("on") && t>=g.labelUntil) label.classList.remove("on");
       if(g.teachUntil && t>=g.teachUntil){ teach.classList.remove("on"); g.teachUntil = 0; }
-      var want = t<g.chalkUntil ? f.chalk : t<g.clapUntil ? f.clap[Math.floor((t-g.clapFrom)/300)%f.clap.length] : f.idle[0];
-      gmSetSrc(img, want);
-      var sec = Math.max(0, Math.ceil((CR_ROUND_MS-t)/1000));
-      if(sec!==g.lastSec){ gmEl("gmTime").textContent = sec+"s"; g.lastSec = sec; }
-      if(t>=CR_ROUND_MS){
-        gmOver("chalkRhythm", g.score, { title:"Nice breathing.", note:g.perfects+" perfect · "+g.hits+" of "+beats.length+" beats", actions:g.taps, extra:{ perfectBest:g.perfects } });
-        return;
-      }
+      var sec = Math.max(0, Math.ceil((DY_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
       gmRaf = requestAnimationFrame(frame);
     }
     g.frame = frame;
@@ -7764,21 +7875,30 @@
   }
   if(window.__cruxTest){
     Object.assign(window.__cruxGames, {
-      chalkBpm:chalkBpm, chalkBeatLen:chalkBeatLen, chalkBeats:chalkBeats, chalkWindow:chalkWindow, chalkPoints:chalkPoints,
-      chalkAttribute:chalkAttribute, chalkRingAt:chalkRingAt, chalkRingScale:chalkRingScale, chalkRingOpacity:chalkRingOpacity,
-      chalkSimulate:chalkSimulate, chalkEcho:chalkEcho, chalkEase:chalkEase, chalkTapTime:chalkTapTime, chalkCue:chalkCue, chalkSmooth:chalkSmooth,
-      chalkReduced:function(v){ crRMOverride = v; }
+      dynoSpec:dynoSpec, dynoRamp:dynoRamp, dynoMeter:dynoMeter, dynoJudge:dynoJudge, dynoIdealHold:dynoIdealHold, dynoHoldWindow:dynoHoldWindow,
+      dynoStep:dynoStep, dynoAfterMs:dynoAfterMs, dynoRun:dynoRun, dynoStamp:dynoStamp, DY_ROUND_MS:DY_ROUND_MS, DY_MIN_WINDOW_MS:DY_MIN_WINDOW_MS,
+      dynoReduced:function(v){ dyRMOverride = v; }
     });
   }
-  /* ==== chalkRhythm END ==== */
+  /* ==== dyno END ==== */
   /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
-  // Route Read (design doc 2.2): a 3 x 5 wall, a route lights up with numbers, then hides; tap the holds in order from memory.
-  // Rule functions are pure (rows count up from the bottom, row 0 = bottom). Cells are {row, col}.
-  var RR_COLS = 3, RR_ROWS = 5, RR_START = 5, RR_MIN = 4, RR_MAX = 8, RR_ROUND_MS = 60000, RR_BETWEEN_MS = 800, RR_RESHOW_MS = 1500, RR_FLAG_MS = 1200;
+  // Route Read, spray-wall edition: a 5 x 5 wall of irregular holds. Two routes light up at once, each a colour AND a shape
+  // ("read the green circles"); only the called route is numbered. Then everything goes neutral and you tap it from memory.
+  // A wrong tap loses that route (the answer is shown), the next one is shorter. Rows count up from the bottom (row 0).
+  /*ROUTE-PURE-BEGIN*/
+  var RR_COLS = 5, RR_ROWS = 5, RR_START = 5, RR_MIN = 4, RR_MAX = 10, RR_ROUND_MS = 60000, RR_BETWEEN_MS = 800, RR_REVEAL_MS = 1800, RR_FLAG_MS = 1200;
+  // colour AND shape: the shape alone identifies a route, so colour is never the only signal
+  var RR_CODES = [
+    { id:"g", name:"green circles",   one:"green circle",   shape:"circle",   color:"#2f9e63" },
+    { id:"a", name:"amber triangles", one:"amber triangle", shape:"triangle", color:"#d98a1f" },
+    { id:"b", name:"blue squares",    one:"blue square",    shape:"square",   color:"#3b78d8" },
+    { id:"r", name:"rose diamonds",   one:"rose diamond",   shape:"diamond",  color:"#cc3f78" }
+  ];
   function routeLen(n){ n = Math.floor(Number(n)); if(!isFinite(n)) n = RR_START; return Math.max(RR_MIN, Math.min(RR_MAX, n)); }
-  function routeShowMs(n){ return [2600, 3000, 3400, 3800, 4200][routeLen(n)-RR_MIN]; }
+  function routeShowMs(n){ return 900+560*routeLen(n); }                         // 3140 ms for 4 holds up to 6500 ms for 10
   function routeNextLen(n, missed){ n = routeLen(n); return routeLen(missed ? n-1 : n+1); }
-  function routeGen(seed, n){
+  function routeDecoyLen(n){ return Math.max(3, Math.min(7, routeLen(n)-2)); }
+  function routeGen(seed, n){                                                      // the called route on its own (target of routeWall)
     n = routeLen(n);
     var rnd = mulberry32(seed), counts = [1, 1, 1, 1, 1], r, i;
     if(n>RR_ROWS){
@@ -7786,14 +7906,14 @@
       for(i=rows.length-1;i>0;i--){ var j = Math.floor(rnd()*(i+1)), t = rows[i]; rows[i] = rows[j]; rows[j] = t; }
       for(i=0;i<n-RR_ROWS;i++) counts[rows[i]] = 2;
     } else if(n<RR_ROWS){
-      counts[1+Math.floor(rnd()*4)] = 0;     // skip one row above the bottom: never a gap wider than one row
+      counts[1+Math.floor(rnd()*3)] = 0;     // skip one middle row: never a gap wider than one row, and the top row is always used
     }
     var route = [], prev = -1;
     for(r=0;r<RR_ROWS;r++){
       for(i=0;i<counts[r];i++){
         var opts = [];
         for(var c=0;c<RR_COLS;c++){
-          if(prev>=0 && (Math.abs(c-prev)>1 || (i>0 && c===prev))) continue;
+          if(prev>=0 && (Math.abs(c-prev)>2 || (i>0 && c===prev))) continue;
           opts.push(c);
         }
         var col = opts[Math.floor(rnd()*opts.length)];
@@ -7802,7 +7922,7 @@
     }
     return route;
   }
-  // The rules a route must satisfy; also the property-test oracle.
+  // The rules the called route must satisfy; also the property-test oracle.
   function routeCheck(route, n){
     n = routeLen(n);
     if(!Array.isArray(route) || route.length!==n) return false;
@@ -7814,16 +7934,83 @@
       perRow[h.row] = (perRow[h.row]||0)+1;
       if(i===0){ if(h.row!==0) return false; continue; }
       var p = route[i-1], dr = h.row-p.row, dc = Math.abs(h.col-p.col);
-      if(dr<0 || dr>2 || dc>1) return false;
+      if(dr<0 || dr>2 || dc>2) return false;             // never a gap wider than one empty row, reach at most two columns
       if(dr===0 && dc===0) return false;
-      if(n<=RR_ROWS && dr<1) return false;                 // up to 5 holds: strictly ascending
+      if(n<=RR_ROWS && dr<1) return false;               // up to 5 holds: strictly ascending
     }
     for(var rr in perRow) if(perRow[rr]>2) return false;
     return route[n-1].row>=3;
   }
+  // The second route: ascending too, but it may skip rows, and each hold hugs the called route so the two interleave.
+  function routeDecoy(rnd, m, target){
+    var taken = {}, i, bag = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];
+    target.forEach(function(h){ taken[h.row+","+h.col] = 1; });
+    for(var attempt=0;attempt<40;attempt++){
+      var b = bag.slice();
+      for(i=b.length-1;i>0;i--){ var j = Math.floor(rnd()*(i+1)), t = b[i]; b[i] = b[j]; b[j] = t; }
+      var rows = b.slice(0, m).sort(function(x, y){ return x-y; }), out = [], used = {}, prev = -1, ok = true;
+      for(i=0;i<m && ok;i++){
+        var r = rows[i], best = [], bestD = 99;
+        for(var c=0;c<RR_COLS;c++){
+          var key = r+","+c;
+          if(taken[key] || used[key]) continue;
+          if(prev>=0 && Math.abs(c-prev)>2 && attempt<30) continue;
+          var d = 9;
+          target.forEach(function(h){ if(Math.abs(h.row-r)<=1) d = Math.min(d, Math.abs(h.col-c)+Math.abs(h.row-r)); });
+          if(d<bestD){ bestD = d; best = [c]; } else if(d===bestD) best.push(c);
+        }
+        if(!best.length){ ok = false; break; }
+        var col = best[Math.floor(rnd()*best.length)];
+        used[r+","+col] = 1; out.push({ row:r, col:col }); prev = col;
+      }
+      if(ok) return out;
+    }
+    // never reached for a valid target (<= 2 holds per row), but stay solvable: any free cells, ascending
+    var free = [];
+    for(var rw=0;rw<RR_ROWS;rw++) for(var cl=0;cl<RR_COLS;cl++) if(!taken[rw+","+cl]) free.push({ row:rw, col:cl });
+    return free.slice(0, m);
+  }
+  // The whole wall for one route: { n, m, codeT, codeD, target[], decoy[], holds[] (every cell that has a hold, with its look) }.
+  function routeWall(seed, n){
+    n = routeLen(n);
+    var rnd = mulberry32((seed>>>0) ^ 0x5bd1e995), target = routeGen((seed>>>0), n), m = routeDecoyLen(n);
+    var decoy = routeDecoy(rnd, m, target);
+    var ci = Math.floor(rnd()*RR_CODES.length), di = (ci+1+Math.floor(rnd()*(RR_CODES.length-1)))%RR_CODES.length;
+    var kind = {};
+    target.forEach(function(h){ kind[h.row+","+h.col] = "t"; });
+    decoy.forEach(function(h){ kind[h.row+","+h.col] = "d"; });
+    var spare = [], r, c;
+    for(r=0;r<RR_ROWS;r++) for(c=0;c<RR_COLS;c++) if(!kind[r+","+c]) spare.push(r+","+c);
+    var empties = Math.min(spare.length, 2+Math.floor(rnd()*3)), gone = {}, e;
+    for(e=0;e<empties;e++){ var at = Math.floor(rnd()*spare.length); gone[spare[at]] = 1; spare.splice(at, 1); }
+    var holds = [];
+    for(r=0;r<RR_ROWS;r++) for(c=0;c<RR_COLS;c++){
+      var k = r+","+c; if(gone[k]) continue;
+      holds.push({ row:r, col:c, kind:kind[k] || "n", sz:Math.floor(rnd()*3), blob:Math.floor(rnd()*4), fx:Math.round((rnd()*2-1)*100)/100, fy:Math.round((rnd()*2-1)*100)/100, rot:Math.round((rnd()*2-1)*24) });
+    }
+    return { n:n, m:m, codeT:ci, codeD:di, target:target, decoy:decoy, holds:holds };
+  }
+  // Property-test oracle for a wall.
+  function routeWallCheck(w){
+    if(!w || !routeCheck(w.target, w.n) || w.decoy.length!==routeDecoyLen(w.n)) return false;
+    if(w.codeT===w.codeD || !RR_CODES[w.codeT] || !RR_CODES[w.codeD]) return false;
+    if(RR_CODES[w.codeT].shape===RR_CODES[w.codeD].shape || RR_CODES[w.codeT].color===RR_CODES[w.codeD].color) return false;
+    var has = {}, i;
+    w.holds.forEach(function(h){ has[h.row+","+h.col] = h.kind; });
+    var seen = {};
+    for(i=0;i<w.target.length;i++){ var a = w.target[i].row+","+w.target[i].col; if(has[a]!=="t") return false; seen[a] = 1; }
+    for(i=0;i<w.decoy.length;i++){ var b = w.decoy[i].row+","+w.decoy[i].col; if(seen[b] || has[b]!=="d") return false; seen[b] = 1; }
+    return w.holds.length>=Math.min(25, w.n+w.decoy.length) && w.holds.length<=25;
+  }
+  // How many called holds have a decoy hold touching them (same or next row, within one column): the interleave.
+  function routeClutter(w){
+    var c = 0;
+    w.target.forEach(function(h){ if(w.decoy.some(function(d){ return Math.abs(d.row-h.row)<=1 && Math.abs(d.col-h.col)<=1; })) c++; });
+    return c;
+  }
+  /*ROUTE-PURE-END*/
 
   // Pure helpers for the polish pass (tested through __cruxGames).
-  function routeLift(row){ return Math.max(0, Math.min(RR_ROWS-1, Math.floor(Number(row)||0)))*10; }     // px the climber eases up with the last hold
   function routeSummary(done, longest){
     done = Math.max(0, Math.floor(Number(done))||0); longest = Math.max(0, Math.floor(Number(longest))||0);
     if(!done) return { title:"Warm-up done.", note:"No routes yet, they come back easy" };
@@ -7831,55 +8018,90 @@
   }
   function routeTone(step){ return 500+40*Math.max(0, Math.min(RR_MAX, Math.floor(Number(step))||0)); }    // soft rising tick per hold
   function routeBarScale(t, start, ms){ return ms>0 ? Math.max(0, Math.min(1, 1-(t-start)/ms)) : 0; }
+  function routeHoldPx(sz){ return [34, 44, 52][Math.max(0, Math.min(2, Math.floor(Number(sz))||0))]; }
 
+  var rrRMOverride = null;    // tests flip this; null follows the system setting
+  function rrRM(){ return gmReducedWith(rrRMOverride); }
   function routeReadStart(){
     var f = gmFrames(); gmPreload(f);
     var stage = gmEl("gmStage");
-    stage.innerHTML = '<div class="rr-stage'+(prefersReducedMotion ? ' rr-calm' : '')+'" id="rrStage">'
+    stage.innerHTML = '<div class="rr-stage'+(rrRM() ? ' rr-calm' : '')+'" id="rrStage">'
       + '<div class="gm-climber rr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
       + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p><div class="rr-pips" id="rrPips" aria-hidden="true"></div>'
-      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div>'
+      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Spray wall, five columns by five rows"></div>'
       + '<div class="rr-bar" id="rrBar" aria-hidden="true"><i id="rrBarFill"></i></div></div>';
     var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
     var wall = gmEl("rrWall"), cells = {}, rrStage = gmEl("rrStage"), climber = gmEl("gmClimber"), bar = gmEl("rrBar"), barFill = gmEl("rrBarFill"), pips = gmEl("rrPips");
     for(var r=RR_ROWS-1;r>=0;r--) for(var c=0;c<RR_COLS;c++){
       var b = document.createElement("button"); b.type = "button"; b.className = "rr-cell"; b.id = "rrCell_"+r+"_"+c;
-      b.setAttribute("data-row", r); b.setAttribute("data-col", c);
+      b.setAttribute("data-row", r); b.setAttribute("data-col", c); b.setAttribute("data-kind", "e");
       b.setAttribute("aria-label", "Hold, row "+(r+1)+", column "+(c+1));
-      b.appendChild(gmArt("rr.hold"));
+      var hold = gmArt("rr.hold"); hold.classList.add("rr-hold"); b.appendChild(hold);
       var ring = gmArt("rr.ring"); ring.classList.add("rr-ring"); b.appendChild(ring);
       var spark = document.createElement("span"); spark.className = "rr-spark"; spark.setAttribute("aria-hidden", "true"); b.appendChild(spark);
       var badge = document.createElement("span"); badge.className = "rr-badge"; badge.setAttribute("aria-hidden", "true"); b.appendChild(badge);
       wall.appendChild(b); cells[r+","+c] = b;
     }
-    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, phaseStart:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false, paintId:0 });
+    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, wallDef:null, phase:"show", phaseEnd:0, phaseStart:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false, paintId:0, failed:0 });
     var bestBefore = state.games.routeRead ? state.games.routeRead.best : 0;
     var firstEver = !(state.games.routeRead && state.games.routeRead.plays>0);
     function pose(src){
       if(img.getAttribute("src")===src) return;
       gmSetSrc(img, src);
-      if(!prefersReducedMotion){ climber.classList.remove("rr-swap"); void climber.offsetWidth; climber.classList.add("rr-swap"); }
+      if(!rrRM()){ climber.classList.remove("rr-swap"); void climber.offsetWidth; climber.classList.add("rr-swap"); }
     }
-    function lift(row){ rrStage.style.setProperty("--rr-lift", prefersReducedMotion ? 0 : routeLift(row)); }
+    function code(){ return RR_CODES[g.wallDef.codeT]; }
     function lineText(){ return "Route of "+g.N+" · Best "+Math.max(bestBefore, g.score); }
+    function keyHtml(cd){ return '<i class="rr-key" data-shape="'+cd.shape+'" style="--rr-c:'+cd.color+'"></i>'; }
+    // lay the holds out: size, blob and jitter are fixed per wall; the coded look only exists while the routes are lit
+    function layout(w){
+      var have = {};
+      w.holds.forEach(function(h){ have[h.row+","+h.col] = h; });
+      var cw = wall.clientWidth/RR_COLS || 62, ch = wall.clientHeight/RR_ROWS || 56;
+      for(var k in cells){
+        var el = cells[k], h = have[k], hd = el.querySelector(".rr-hold");
+        el.hidden = !h; el.setAttribute("data-kind", h ? h.kind : "e");
+        if(!h) continue;
+        var px = routeHoldPx(h.sz);
+        hd.style.width = px+"px"; hd.style.height = px+"px";
+        hd.style.setProperty("--rr-dx", (h.fx*Math.max(0, (cw-px)/2-4)).toFixed(1)+"px");
+        hd.style.setProperty("--rr-dy", (h.fy*Math.max(0, (ch-px)/2-3)).toFixed(1)+"px");
+        hd.style.setProperty("--rr-rot", h.rot+"deg");
+        hd.setAttribute("data-blob", h.blob);
+      }
+    }
     function paint(showNums){
-      var id = ++g.paintId;
+      var id = ++g.paintId, w = g.wallDef;
       wall.classList.toggle("rr-showing", !!showNums);
-      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.classList.remove("rr-lit", "rr-pop"); if(showNums) el.querySelector(".rr-badge").textContent = ""; }
+      for(var k in cells){
+        var el = cells[k], hd = el.querySelector(".rr-hold");
+        el.setAttribute("data-state", ""); el.classList.remove("rr-lit", "rr-lit-d", "rr-pop");
+        hd.removeAttribute("data-shape"); hd.style.removeProperty("--rr-c");
+        el.setAttribute("aria-label", "Hold, row "+(+el.getAttribute("data-row")+1)+", column "+(+el.getAttribute("data-col")+1));
+        if(showNums) el.querySelector(".rr-badge").textContent = "";
+      }
       if(showNums){
-        g.route.forEach(function(h, i){
-          var el = cells[h.row+","+h.col], bd = el.querySelector(".rr-badge");
-          el.classList.add("rr-lit"); bd.style.setProperty("--i", i); bd.textContent = String(i+1);
+        function light(h, cd, cls){
+          var el = cells[h.row+","+h.col], hd = el.querySelector(".rr-hold");
+          el.classList.add(cls); hd.setAttribute("data-shape", cd.shape); hd.style.setProperty("--rr-c", cd.color);
+          return el;
+        }
+        var cdT = RR_CODES[w.codeT], cdD = RR_CODES[w.codeD];
+        w.decoy.forEach(function(h){ var el = light(h, cdD, "rr-lit-d"); el.setAttribute("aria-label", "Other route, "+cdD.one); });
+        w.target.forEach(function(h, i){
+          var el = light(h, cdT, "rr-lit"), bd = el.querySelector(".rr-badge");
+          bd.style.setProperty("--i", i); bd.textContent = String(i+1);
+          el.setAttribute("aria-label", "Hold "+(i+1)+" of "+w.n+", "+cdT.one);
         });
       } else {
         // numbers fade out (CSS), then the text goes so nothing readable is left behind
         gmLater(function(){
           if(gm!==g || g.paintId!==id) return;
           for(var k2 in cells) cells[k2].querySelector(".rr-badge").textContent = "";
-        }, prefersReducedMotion ? 110 : 190);
+        }, rrRM() ? 110 : 190);
       }
     }
-    function label(txt){ gmEl("rrLabel").textContent = txt; }
+    function label(html){ gmEl("rrLabel").innerHTML = html; }
     function drawPips(){
       var h = "", i;
       for(i=0;i<g.N;i++) h += '<span class="rr-pip'+(i<g.step ? ' on' : '')+'"></span>';
@@ -7888,22 +8110,26 @@
     function pipsTo(n){ var p = pips.children; for(var i=0;i<p.length;i++) p[i].classList.toggle("on", i<n); }
     function barOn(on){ bar.classList.toggle("on", !!on); }
     function beginShow(t){
-      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseStart = t; g.phaseEnd = t+routeShowMs(g.N);
-      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]); lift(0); drawPips(); barOn(true);
+      g.wallDef = routeWall((g.rnd()*4294967296)>>>0, g.N); g.route = g.wallDef.target;
+      g.step = 0; g.phase = "show"; g.phaseStart = t; g.phaseEnd = t+routeShowMs(g.N);
+      layout(g.wallDef); paint(true); pose(g.frames.idle[0]); drawPips(); barOn(true);
+      label('Read the '+keyHtml(code())+'<b>'+code().name+'</b> · '+g.N+' holds');
       gmHud(g.score, lineText());
-      gmSay(firstEver && g.done===0 ? "Watch the numbers. They fade, then tap 1, 2, 3 in order." : "Memorise the route. "+g.N+" holds, numbered in order.");
+      gmSay(firstEver && g.done===0 && g.failed===0
+        ? "Two routes light up. Remember the numbered "+code().name+", then tap them in order."
+        : "Read the "+code().name+". "+g.N+" holds, numbered. The other route is a distraction.");
     }
+    function inputLabel(){ label('Tap the '+keyHtml(code())+'<b>'+code().name+'</b> · '+(g.step+1)+' of '+g.N); }
     function beginInput(){
-      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false);
-      gmSay("Your turn. Tap the holds in order, 1 of "+g.N+".");
+      g.phase = "input"; paint(false); inputLabel(); pose(g.frames.idle[0]); barOn(false);
+      gmSay("Your turn. Tap the "+code().name+" in order, 1 of "+g.N+".");
     }
-    function reachFor(h){ return h.col===0 ? g.frames.reachL : h.col===RR_COLS-1 ? g.frames.reachR : g.frames.pull; }
+    function reachFor(h){ return h.col<=1 ? g.frames.reachL : h.col>=RR_COLS-2 ? g.frames.reachR : g.frames.pull; }
     // Phase changes happen here, from the frame loop AND from a tap, so a tap that lands a few ms after a deadline is never lost.
     function advance(t){
       if(t<g.phaseEnd) return;
       if(g.phase==="show") beginInput();
-      else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false); pipsTo(0); gmSay("Try again from the start."); }
-      else if(g.phase==="between") beginShow(t);
+      else if(g.phase==="reshow" || g.phase==="between") beginShow(t);
     }
     function tap(cell, ts){
       if(gm!==g || g.paused) return;
@@ -7922,31 +8148,32 @@
         cell.classList.remove("rr-pop"); void cell.offsetWidth; cell.classList.add("rr-pop");
         g.step++; pipsTo(g.step);
         gmBeep(routeTone(g.step), 45, 0.06); gmBuzz(8);
-        lift(row);
         if(g.step>=g.N){
           g.score += g.N; g.done++; if(g.N>g.longest) g.longest = g.N;
           var wasMax = g.N===RR_MAX;
           g.N = routeNextLen(g.N, g.missed); g.missed = false;
           g.phase = "between"; g.phaseEnd = t+(wasMax ? RR_FLAG_MS : RR_BETWEEN_MS); g.flag = wasMax;
           pose(wasMax ? g.frames.flag[0] : g.frames.cheer[0]);
-          label(wasMax ? "Top of the route." : "Nice. Next route.");
+          label(wasMax ? "Top of the wall." : "Nice. Next route.");
           gmHud(g.score, lineText()); gmSay("Route complete. "+g.score+" points.");
           [440, 554, 659].forEach(function(fq, i){ gmLater(function(){ gmBeep(fq, 80, 0.1); }, i*90); });
         } else {
-          label("Tap hold "+(g.step+1)+" of "+g.N); pose(reachFor(g.route[g.step]));
+          inputLabel(); pose(reachFor(g.route[g.step]));
           gmSay("Good. "+g.step+" of "+g.N+".");
         }
       } else {
+        // a wrong hold (the other route, or a hold that was never lit) loses this route; the answer is shown, then a shorter one
         cell.setAttribute("data-state", "wrong");
-        g.missed = true;
-        g.phase = "reshow"; g.phaseStart = t; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
-        gmSay("That was close, here it is.");
-        label("Look again");
-        pose(g.frames.hit); lift(0);
+        g.failed++; g.missed = false;
+        g.N = routeNextLen(g.N, true);
+        g.phase = "reshow"; g.phaseStart = t; g.phaseEnd = t+RR_REVEAL_MS; g.step = 0;
+        gmSay("Not that one. Here is the route, next one is shorter.");
+        label("Look, that route is gone");
+        pose(g.frames.hit);
         gmBeep(262, 90, 0.05);
-        // the route re-shows with numbers; the wrong hold keeps its X until then
         var wrong = cell;
         paint(true); wrong.setAttribute("data-state", "wrong"); pipsTo(0); barOn(true);
+        gmHud(g.score, lineText());
       }
     }
     // pointerdown for an instant response; a click with no pointer (keyboard, assistive tech, .click()) still works.
@@ -7984,9 +8211,9 @@
   }
   function routeReadState(){ return { score:gm ? gm.score : 0, actions:gm ? gm.actions : 0, extra:{ longest:gm ? gm.longest : 0 } }; }
   gmRegister({
-    id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
+    id:"routeRead", title:"Route Read", order:2, blurb:"Read the route on the spray wall, then climb it from memory.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>',
-    intro:{ title:"Read, then climb", text:"Numbered holds light up, then fade. Tap them in order, 1, 2, 3, from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
+    intro:{ title:"Read the wall", text:"Two routes light up, each its own colour and shape. Remember the numbered one, then tap it in order from memory. A wrong hold loses that route.", hint:"No rush on each tap. 60 seconds." },
     hud0:function(best){ return "Route of 5 · Best "+best; },
     art:["rr.hold", "rr.ring", "card.routeRead"], frames:["idle", "reachL", "reachR", "pull", "hit", "cheer", "ledgeSit", "flag"],
     start:function(){ routeReadStart(); },
@@ -7995,34 +8222,46 @@
     resume:function(){ if(gm && gm.frame && !gmRaf) gmRaf = requestAnimationFrame(gm.frame); }
   });
   if(window.__cruxTest) Object.assign(window.__cruxGames, { routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
-    routeLift:routeLift, routeSummary:routeSummary, routeTone:routeTone, routeBarScale:routeBarScale,
-    routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, reshowMs:RR_RESHOW_MS } });
+    routeWall:routeWall, routeWallCheck:routeWallCheck, routeClutter:routeClutter, routeDecoyLen:routeDecoyLen, routeCodes:RR_CODES, routeHoldPx:routeHoldPx,
+    routeReduced:function(v){ rrRMOverride = v; }, routeSummary:routeSummary, routeTone:routeTone, routeBarScale:routeBarScale,
+    routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, revealMs:RR_REVEAL_MS } });
   /* ==== routeRead END ==== */
   /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
-  // Summit Stack (design doc 2.3). A block slides over the tower, tap drops it, the overlap stays. No fail state.
+  // Summit Stack (design doc 2.3). A block slides over the tower, tap drops it, the overlap stays.
+  // v2 (2026-10): real speed ramp (2400 -> 1350 ms edge to edge over 22 blocks), a block whose centre is off the tower topples
+  // (a "miss"), and a topple costs the top tier (score is the round's peak, so no fail screen, nothing is ever lost for good).
   // Geometry is in "logical px" of a 360-wide world (a 320 px block is 100%); the world is scaled to the stage.
-  var SS_BASE = 320, SS_FLOOR = 0.30*SS_BASE, SS_PERFECT_PX = 6, SS_REGAIN = 0.08*SS_BASE, SS_LEARN_BLOCKS = 4, SS_SUMMIT = 20;
+  /*STACK-PURE-BEGIN*/
+  var SS_BASE = 320, SS_FLOOR = 0.30*SS_BASE, SS_PERFECT_PX = 6, SS_REGAIN = 0.08*SS_BASE, SS_LEARN_BLOCKS = 3, SS_SUMMIT = 30;
+  var SS_CROSS_START = 2400, SS_CROSS_END = 1350, SS_CROSS_STEP = 50;          // 1350 ms at the 96 px floor = a 405 ms window
   var SS_WORLD_W = 360, SS_CENTER = SS_WORLD_W/2, SS_TRAVEL = SS_BASE/2;       // the slider's centre sweeps SS_CENTER +- 160
   var SS_ROUND_MS = 45000, SS_BLOCK_H = 28, SS_DROP_MS = 170, SS_FALL_MS = 380, SS_RISE = 118, SS_CLIMBER_H = 90;
   var SS_HOP_MS = 240, SS_ENTER_MS = 140, SS_SQUASH_MS = 190, SS_FLAG_H = 54;
-  // crossing time (edge to edge of the 320 lane) for block number n (1-based)
-  function stackCross(n){ n = Math.max(1, Math.floor(Number(n))||1); return n<=4 ? 2400 : n<=9 ? 2100 : n<=14 ? 1800 : 1500; }
+  // crossing time (edge to edge of the 320 lane) for block number n (1-based): a straight ramp, then a plateau
+  function stackCross(n){ n = Math.max(1, Math.floor(Number(n))||1); return Math.max(SS_CROSS_END, SS_CROSS_START-(n-1)*SS_CROSS_STEP); }
   // what a drop does. n = number of the block being dropped, prev = width of the block below, err = signed centre offset (px).
-  // Returns { miss, perfect, width, shift, over }: shift = new centre minus the block below's centre; over = trimmed overhang px.
+  // Returns { miss, perfect, width, shift, over }: shift = new centre minus the block below's centre; over = px of the dropped
+  // block that fell off (always prev - width, on the far side from the tower's centre).
+  // Rules: centre more than half a width off the tower topples (miss). Within 6 px is Perfect (regain). Otherwise the overhang is
+  // trimmed; the result never goes under the 30 % floor, and at the floor the block keeps the dropped block's inner edge so the
+  // picture and the numbers agree (no phantom chunk, the block never hangs further than its own centre allows).
   function stackDrop(n, prev, err){
     n = Math.max(1, Math.floor(Number(n))||1);
-    prev = Math.max(SS_FLOOR, Math.min(SS_BASE, Number(prev)||SS_BASE)); err = Number(err)||0;
-    var a = Math.abs(err);
-    if(a>=prev) return { miss:true, perfect:false, width:0, shift:0, over:0 };       // no overlap at all: it falls off, tower unchanged
+    prev = Number(prev); if(!isFinite(prev)) prev = SS_BASE; prev = Math.max(SS_FLOOR, Math.min(SS_BASE, prev));
+    err = Number(err); if(!isFinite(err)) err = 0;
+    var a = Math.abs(err), sign = err<0 ? -1 : 1;
+    if(a>=prev/2) return { miss:true, perfect:false, width:0, shift:0, over:0 };      // centre of mass off the tower: it topples
     if(a<=SS_PERFECT_PX) return { miss:false, perfect:true, width:Math.min(SS_BASE, prev+SS_REGAIN), shift:0, over:0 };
     if(n<=SS_LEARN_BLOCKS) return { miss:false, perfect:false, width:prev, shift:0, over:0 };   // learn blocks: forgiven, snapped on
-    return { miss:false, perfect:false, width:Math.max(prev-a, SS_FLOOR), shift:err/2, over:a };
+    var width = Math.max(prev-a, SS_FLOOR), over = prev-width;
+    return { miss:false, perfect:false, width:width, shift:err-sign*over/2, over:over };
   }
   function stackWidth(n, prev, err){ return stackDrop(n, prev, err).width; }
   // time the whole block takes to cross its own width (the reaction window), in ms
-  function stackWindowMs(n, width){ return width*stackCross(n)/SS_BASE; }
+  function stackWindowMs(n, width){ width = Math.max(0, Number(width)||0); return width*stackCross(n)/SS_BASE; }
   // slider centre offset (-160..160) at tMs since the block appeared: a triangle wave, deterministic. phase 0..1, side +1/-1.
   function stackPos(tMs, crossMs, phase, side){
+    tMs = Number(tMs)||0; crossMs = Math.max(1, Number(crossMs)||SS_CROSS_START);
     var u = ((tMs/(2*crossMs) + (phase||0)) % 1 + 1) % 1;
     var tri = u<0.5 ? u*4-1 : 3-u*4;
     return (side<0 ? -1 : 1)*tri*SS_TRAVEL;
@@ -8048,11 +8287,12 @@
   }
   // the Perfect tick rises a semitone per consecutive Perfect (up to an octave-ish cap); a non-perfect resets it
   function stackStreakFreq(streak){ var s = Math.max(1, Math.min(8, Math.floor(Number(streak))||1)); return 660*Math.pow(2, (s-1)/12); }
+  /*STACK-PURE-END*/
 
   gmRegister({
     id:"summitStack", title:"Summit Stack", order:3, blurb:"Drop each block on the last to build a tower.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="16" width="16" height="4" rx="1"/><rect x="6" y="10" width="12" height="4" rx="1"/><rect x="9" y="4" width="7" height="4" rx="1"/></svg>',
-    intro:{ title:"Stack to the summit", text:"A block slides over the tower. Tap anywhere to drop it. What overlaps stays, the overhang falls off. Line it up for a Perfect and it grows back. 45 seconds.", hint:"No XP, just for fun. A miss costs nothing." },
+    intro:{ title:"Stack to the summit", text:"A block slides over the tower. Tap anywhere to drop it. What overlaps stays, the overhang falls off, and it gets quicker as you climb. Line it up for a Perfect and it grows back. Drop it off the tower and the top block goes with it. 45 seconds.", hint:"No XP, just for fun. Your score is your highest tower." },
     hud0:function(best){ return "Blocks 0 · Best "+best; },
     start:function(){ summitStackStart(); },
     state:function(){ return summitStackState(); },
@@ -8067,7 +8307,7 @@
   function summitStackState(){
     var g = gm && gm.id==="summitStack" ? gm : null;
     if(!g) return { score:0, actions:0, extra:{} };
-    return { score:g.score, actions:g.taps, extra:{ tallest:g.n, perfects:g.perfects } };
+    return { score:g.peak, actions:g.taps, extra:{ tallest:g.peakN, perfects:g.perfects } };
   }
   function summitStackStart(){
     var f = gmFrames(); gmPreload(f);
@@ -8091,7 +8331,7 @@
     var ledge = gmArt("ss.ledge"); ledge.classList.add("ss-blk"); ledge.style.width = SS_BASE+"px"; ledge.style.height = SS_BLOCK_H+"px";
     ledge.style.left = (SS_CENTER-SS_BASE/2)+"px"; ledge.style.top = ground+"px"; tower.appendChild(ledge);
 
-    var g = gmBegin("summitStack", f, { n:0, score:0, perfects:0, taps:0, topC:SS_CENTER, topW:SS_BASE, phase:"slide", blockT0:0, dropAt:0, fallAt:0,
+    var g = gmBegin("summitStack", f, { n:0, score:0, peak:0, peakN:0, tiers:[], summited:false, slW:SS_BASE, fallY:0, perfects:0, taps:0, topC:SS_CENTER, topW:SS_BASE, phase:"slide", blockT0:0, dropAt:0, fallAt:0,
       poseAt:-1e9, side:1, cross:stackCross(1), ph:0, res:null, dropX:SS_CENTER, shift:0, lastBar:-1, lastSec:-1, flagged:false,
       streak:0, enterAt:-1e9, sqAt:-1e9, sqEl:null, sqAmp:0, hop:null, camY:0, laneY:0, dropFromY:0, lastF:0, cx:SS_CENTER-30, cy:0 });
     g.ph = g.rnd(); g.side = g.rnd()<0.5 ? -1 : 1; g.blockT0 = g.t0; g.lastF = g.t0;
@@ -8103,10 +8343,10 @@
       var fx = g.topC + Math.min(g.topW/2 - 12, 44);
       flagEl.style.left = fx+"px"; flagEl.style.top = (topY()-SS_FLAG_H)+"px";
     }
-    function setSlider(cx, y, rot){ slider.style.transform = "translate3d("+(cx-g.topW/2)+"px,"+y+"px,0)"+(rot ? " rotate("+rot+"deg)" : ""); }
+    function setSlider(cx, y, rot){ slider.style.transform = "translate3d("+(cx-g.slW/2)+"px,"+y+"px,0)"+(rot ? " rotate("+rot+"deg)" : ""); }
     function newSlider(now){
-      g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = now; g.enterAt = now;
-      slider.innerHTML = ""; slider.style.opacity = prefersReducedMotion ? "1" : "0"; slider.style.transformOrigin = (g.topW/2)+"px "+(SS_BLOCK_H/2)+"px";
+      g.slW = g.topW; g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = now; g.enterAt = now;
+      slider.innerHTML = ""; slider.style.opacity = prefersReducedMotion ? "1" : "0"; slider.style.transformOrigin = (g.slW/2)+"px "+(SS_BLOCK_H/2)+"px";
       slider.appendChild(mkBlock(g.topW));
     }
     function say(text, perfect){
@@ -8115,7 +8355,7 @@
       gmLater(function(){ if(g.labelN===stamp) label.classList.remove("on"); }, 900);
     }
     g.labelN = 0;
-    function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, g.score)); }
+    function hud(){ gmHud(g.peak, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, g.peak)); }
     function chunk(left, y, w, dir){
       var c = mkBlock(w); c.classList.add("ss-chunk"); c.style.left = left+"px"; c.style.top = y+"px"; cam.appendChild(c);
       requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*30)+"px,200px) rotate("+(dir*26)+"deg)"; }); });
@@ -8133,17 +8373,40 @@
         }
       }
     }
+    // a topple takes the top tier with it: the tower steps back one block (and gets a little wider and slower again)
+    function loseTier(now){
+      var t = g.tiers.pop(); if(!t) return;
+      var lastC = t.c, lastW = t.w, y = ground - g.n*SS_BLOCK_H;
+      g.n--; g.score -= t.pts; if(t.el.parentNode) t.el.parentNode.removeChild(t.el); g.sqEl = null;
+      var p = g.tiers[g.tiers.length-1];
+      g.topC = p ? p.c : SS_CENTER; g.topW = p ? p.w : SS_BASE;
+      chunk(lastC-lastW/2, y, lastW, lastC>=g.topC ? 1 : -1);
+      g.hop = { at:now, fx:g.cx, fy:g.cy, tx:g.topC-30, ty:climberTop(g.n) };
+      g.poseAt = now-150;                                                    // straight to the "hit" frame
+      if(g.flagged && g.n<SS_SUMMIT){ g.flagged = false; flagEl.hidden = true; flagEl.classList.remove("up"); }
+      else putFlag();
+    }
     function land(now){
       var r = g.res, ty = topY();
-      if(r.miss){ g.phase = "fall"; g.fallAt = now; g.streak = 0; say("Missed. Next block", false); gmSay("Missed the tower. Next block."); return; }
+      if(r.miss){
+        g.fallY = ty-SS_BLOCK_H; g.phase = "fall"; g.fallAt = now; g.streak = 0;
+        var lost = g.n>0;
+        if(lost) loseTier(now);
+        say(lost ? "Toppled. Down a block" : "Missed. Next block", false);
+        gmSay(lost ? "Toppled. Down one block, "+g.n+" left." : "Missed the tower. Next block.");
+        hud(); gmBuzz(14); return;
+      }
       var newC = g.topC + r.shift, b = mkBlock(r.width);
       b.style.left = (newC-r.width/2)+"px"; b.style.top = (ty-SS_BLOCK_H)+"px"; b.style.transformOrigin = "50% 100%"; tower.appendChild(b);
       g.sqEl = b; g.sqAt = now; g.sqAmp = r.perfect ? 0.1 : 0.16;
       if(r.over>0){
-        var sign = g.dropX>g.topC ? 1 : -1, edge = g.topC + sign*g.topW/2;
-        chunk(sign>0 ? edge : edge-r.over, ty-SS_BLOCK_H, r.over, sign);
+        var sign = g.dropX>g.topC ? 1 : -1, dl = g.dropX-g.slW/2;           // the kept part is the dropped block's inner side
+        chunk(sign>0 ? dl+r.width : dl, ty-SS_BLOCK_H, r.over, sign);
       }
-      g.n++; g.topC = newC; g.topW = r.width; g.score += 1 + (r.perfect ? 1 : 0);
+      var pts = 1 + (r.perfect ? 1 : 0);
+      g.tiers.push({ c:newC, w:r.width, pts:pts, el:b });
+      g.n++; g.topC = newC; g.topW = r.width; g.score += pts;
+      if(g.score>g.peak) g.peak = g.score; if(g.n>g.peakN) g.peakN = g.n;
       if(r.perfect){ g.perfects++; g.streak++; } else g.streak = 0;
       hud();
       gmBeep(110, 70, 0.12);
@@ -8154,7 +8417,7 @@
         say(g.streak>=2 ? "Perfect ×"+g.streak : "Perfect", true);
       } else say("Good", false);
       if(g.n>=SS_SUMMIT && !g.flagged){
-        g.flagged = true; flagEl.hidden = false; flagEl.classList.add("up"); say("Summit", false);
+        g.flagged = true; g.summited = true; flagEl.hidden = false; flagEl.classList.remove("up"); void flagEl.offsetWidth; flagEl.classList.add("up"); say("Summit", false);
         burst(newC, topY()-SS_CLIMBER_H*0.6, true);
       }
       putFlag();
@@ -8208,7 +8471,7 @@
         if(p>=1) land(now);
       } else if(g.phase==="fall"){
         var d = now-g.fallAt, fy = stackFallY(d), dir = g.dropX>g.topC ? 1 : -1;
-        setSlider(g.dropX, restY + fy, prefersReducedMotion ? 0 : dir*d*0.05);
+        setSlider(g.dropX, g.fallY + fy, prefersReducedMotion ? 0 : dir*d*0.05);
         slider.style.opacity = String(Math.max(0, 1-Math.max(0, d-SS_FALL_MS*0.5)/(SS_FALL_MS*0.5)));
         if(d>=SS_FALL_MS) newSlider(now);
       }
@@ -8242,13 +8505,13 @@
   }
   function summitStackFinish(g, f){
     var s = summitStackState(), prevBest = state.games.summitStack.best;
-    gmOver("summitStack", s.score, { title:"Nice stack.", note:"Tallest "+s.extra.tallest, actions:s.actions, extra:s.extra });
+    gmOver("summitStack", s.score, { title:g.summited ? "Summit." : "Nice stack.", note:"Tallest "+s.extra.tallest, actions:s.actions, extra:s.extra });
     // not a new best: sit on the ledge (the shell shows idle/cheer by default)
     if(!(s.actions>=1 && s.score>prevBest)){ var im = gmEl("gmClimberImg"); if(im) gmSetSrc(im, f.ledgeSit); }
   }
   if(window.__cruxTest) Object.assign(window.__cruxGames, { stackCross:stackCross, stackDrop:stackDrop, stackWidth:stackWidth, stackWindowMs:stackWindowMs, stackPos:stackPos, stackPose:stackPose, stackScore:stackScore,
       stackDropEase:stackDropEase, stackFallY:stackFallY, stackSquash:stackSquash, stackInputTime:stackInputTime, stackStreakFreq:stackStreakFreq,
-      stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT } });
+      stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT, learn:SS_LEARN_BLOCKS, crossEnd:SS_CROSS_END, dropMs:SS_DROP_MS, fallMs:SS_FALL_MS, enterMs:SS_ENTER_MS } });
   /* ==== summitStack END ==== */
   /* ==== reachTimer BEGIN (T4: reachTimer* functions, .rt- CSS, gmRegister({id:"reachTimer", ...})) ==== */
   // Reach Timer (design doc 2.4): one telegraphed target at a time on the left or right half; tap that half before it times out.
@@ -8314,8 +8577,9 @@
   function reachPitch(streak){ return 520+Math.min(Math.max(0, Math.floor(Number(streak))||0), 8)*14; }
   // How far (px) the climber sits above the floor for a height; it stops with the ladder.
   function reachRise(h){ return Math.min(Math.max(0, Math.floor(Number(h))||0), RT_LADDER)*RT_STEP_PX; }
-  gmRegister({
-    id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
+  // Retired from the menu (V2: Wall Run replaces it). Not registered; saved games.reachTimer data is kept by gamesNormalize.
+  var RT_RETIRED_DEF = ({
+    id:"reachTimer", title:"Reach Timer", order:9, blurb:"Reach the left or right hold before it fades.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>',
     intro:{ title:"Reach for it", text:"A hold appears on the left or right. Tap that side to climb a step. A faint ring shows what comes next. Climb as high as you can in 45 seconds.", hint:"Calm, no pressure." },
     hud0:function(best){ return "Height 0 · Best "+best; },
@@ -8462,6 +8726,241 @@
       reachJudge:reachJudge, reachStreakTier:reachStreakTier, reachPitch:reachPitch, reachRise:reachRise, RT_EARLY_MS:RT_EARLY_MS });
   }
   /* ==== reachTimer END ==== */
+  /* ==== wallRun BEGIN (V2: replaces Reach Timer on the menu; wallRun* functions, .wr- CSS, gmRegister({id:"wallRun", ...})) ==== */
+  // Wall Run: the climber ascends; holds come down the wall in three lanes (left / middle / right) and you tap each hold's lane as it
+  // reaches the climber's hands. A hit climbs one move; a miss, a late tap or a stray tap slips one move (floor 0), no fail state, the
+  // round goes on. Score = highest point reached. Everything is on the round clock (performance.now() minus gm.t0), so pausing is free.
+  var WR_ROUND_MS = 45000, WR_RAMP_MS = 25000, WR_FIRST_MS = 2200, WR_MAX_RUN = 3, WR_SLIP_COOLDOWN = 350, WR_POOL = 12, WR_STEP_PX = 26;
+  /*WALLRUN-PURE-BEGIN*/
+  // gap = mean time between holds, look = how long a hold is on the wall before it is due. A hold can be taken from `early` ms before it is due
+  // (reach for it as it comes) to `late` ms after (it slides past your hands). half = (early+late)/2, so 2*half is the whole window.
+  // Linear ramp over WR_RAMP_MS (25 s), then a plateau. Top speed: window 400 ms (260 early, 140 late), a hold is visible for 900 ms (650 ms before its window opens).
+  function wallPhase(t){
+    t = Math.max(0, Number(t)||0);
+    var u = Math.min(1, t/WR_RAMP_MS), mix = function(a, b){ return Math.round(a+(b-a)*u); };
+    var early = mix(350, 260), late = mix(250, 140);
+    return { u:u, gap:mix(950, 400), look:mix(2000, 900), early:early, late:late, half:Math.round((early+late)/2) };
+  }
+  // Fair minimum time from one hold to the next by lane distance (0 same lane, 1 next lane, 2 across the wall).
+  var WR_FLOOR = [280, 340, 420];
+  var WR_CELLS = [1, 1, 0.75, 0.75, 1.5, 0.6];
+  var WR_BURST_P = 0.22;   // chance that a hold starts a short run (2 to 4 holds) at the fastest fair spacing
+  // Seeded hold sequence: [{ i, lane (0|1|2), due (ms on the round clock) }]. Same seed, same wall.
+  function wallNotes(seed, maxT){
+    var rnd = mulberry32((seed>>>0) ^ 0x57414c4c), end = maxT==null ? WR_ROUND_MS+3000 : maxT;
+    var out = [], lane = Math.floor(rnd()*3), due = WR_FIRST_MS, run = 1, burst = 0;
+    while(due<end && out.length<400){
+      out.push({ i:out.length, lane:lane, due:due });
+      var ph = wallPhase(due), want;
+      if(burst>0){ burst--; want = Math.max(WR_FLOOR[0], Math.round(ph.gap*0.55)); }
+      else {
+        want = Math.max(WR_FLOOR[0], Math.round(ph.gap*WR_CELLS[Math.floor(rnd()*WR_CELLS.length)]));
+        if(ph.u>0.12 && rnd()<WR_BURST_P){ burst = 1+Math.floor(rnd()*3); want = Math.max(WR_FLOOR[0], Math.round(ph.gap*0.55)); }
+      }
+      var cand = [];
+      for(var l=0;l<3;l++){ var d = Math.abs(l-lane); if(WR_FLOOR[d]<=want && !(d===0 && run>=WR_MAX_RUN)) cand.push(l); }
+      if(!cand.length){ want = WR_FLOOR[1]; cand = lane===1 ? [0, 2] : [1]; }
+      // lane changes are likelier than repeats, the middle is a stepping stone
+      var wsum = 0, ws = cand.map(function(c){ var w = c===lane ? 1 : Math.abs(c-lane)===1 ? 2 : 1.4; wsum += w; return w; });
+      var r = rnd()*wsum, pick = cand[cand.length-1];
+      for(var k=0;k<cand.length;k++){ r -= ws[k]; if(r<0){ pick = cand[k]; break; } }
+      run = pick===lane ? run+1 : 1; lane = pick; due += want;
+    }
+    return out;
+  }
+  function wallHalf(note){ return wallPhase(note.due).half; }
+  function wallEarly(note){ return wallPhase(note.due).early; }
+  function wallLate(note){ return wallPhase(note.due).late; }
+  function wallLook(note){ return wallPhase(note.due).look; }
+  function wallNew(){ return { h:0, peak:0, hits:0, slips:0, streak:0, bestRun:0, lastSlip:-1e9, done:{} }; }
+  function wallHit(st, i){ st.done[i] = 1; st.h++; st.hits++; st.streak++; if(st.h>st.peak) st.peak = st.h; if(st.streak>st.bestRun) st.bestRun = st.streak; }
+  function wallSlip(st, t){ st.h = Math.max(0, st.h-1); st.slips++; st.streak = 0; st.lastSlip = t; }
+  // Holds whose window has closed unanswered each cost one move. Returns their indexes (mutates st).
+  function wallSweep(st, notes, t, from){
+    var out = [];
+    for(var i=Math.max(0, from||0);i<notes.length;i++){
+      var n = notes[i];
+      if(n.due-wallEarly(n)>t) break;                      // notes are in due order; the rest are still ahead
+      if(!st.done[i] && t>n.due+wallLate(n)){ st.done[i] = 2; wallSlip(st, n.due+wallLate(n)); out.push(i); }
+    }
+    return out;
+  }
+  // One tap in `lane` at time t. The earliest unanswered hold in that lane whose window holds t is taken. Otherwise it is a stray tap:
+  // one slip, but never more than one per WR_SLIP_COOLDOWN (a miss and the late tap that follows it are one slip). Mutates st.
+  function wallTap(st, notes, lane, t, from){
+    wallSweep(st, notes, t, from);
+    for(var i=Math.max(0, from||0);i<notes.length;i++){
+      var n = notes[i];
+      if(n.due-wallEarly(n)>t) break;
+      if(n.lane===lane && !st.done[i] && t>=n.due-wallEarly(n) && t<=n.due+wallLate(n)){ wallHit(st, i); return { verdict:"hit", i:i }; }
+    }
+    if(t-st.lastSlip>=WR_SLIP_COOLDOWN){ wallSlip(st, t); return { verdict:"slip", i:-1 }; }
+    return { verdict:"ignore", i:-1 };
+  }
+  // Replay a whole round: taps = [{ t, lane }]. Pure, used by tests and the bot.
+  function wallRound(notes, taps, endT){
+    var st = wallNew(), end = endT==null ? WR_ROUND_MS : endT;
+    var ts = taps.slice().sort(function(a, b){ return a.t-b.t; });
+    for(var k=0;k<ts.length;k++){ if(ts[k].t>=end) break; wallTap(st, notes, ts[k].lane, ts[k].t); }
+    wallSweep(st, notes.filter(function(n){ return n.due<end; }), end, 0);
+    return st;
+  }
+  // Where a hold is on its way down, 0 = just appeared at the top, 1 = at the climber's hands (due).
+  function wallProgress(note, t){ return 1-(note.due-t)/wallLook(note); }
+  function wallRunTier(n){ n = Math.max(0, Math.floor(Number(n))||0); return n<3 ? 0 : n<8 ? 1 : n<15 ? 2 : 3; }
+  /*WALLRUN-PURE-END*/
+  var wrReducedOverride = null;   // tests only
+  function wrReduced(){ return gmReducedWith(wrReducedOverride); }
+  var WR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="8" r="2"/><circle cx="12" cy="15" r="2"/><circle cx="18" cy="6" r="2"/><path d="M12 3v3M6 20h12"/></svg>';
+  gmRegister({
+    id:"wallRun", title:"Wall Run", order:4, blurb:"Tap each hold's lane as the wall rushes down.",
+    icon:WR_ICON,
+    intro:{ title:"Wall Run", text:"Holds come down the wall in three lanes. Tap the lane of each hold as it reaches your hands to climb a move. A miss slips you one move and the climb goes on. The wall speeds up for 45 seconds. Score is your highest point.", hint:"Calm, no pressure. A slip is just a move." },
+    hud0:function(best){ return "Height 0 · Best "+best; },
+    start:function(){ wallRunStart(); },
+    state:function(){ return { score:gm.peak||0, actions:gm.taps||0, extra:{ longestRun:gm.bestRun||0 } }; },
+    pause:function(){},
+    resume:function(){ if(gm && gm.frame) gmRaf = requestAnimationFrame(gm.frame); }
+  });
+  function wallRunStart(){
+    var f = gmFrames(); gmPreload(f);
+    var holds = "", k, lanes = "", names = ["Left lane", "Middle lane", "Right lane"], keys = ["L", "M", "R"];
+    for(k=0;k<WR_POOL;k++) holds += '<span class="wr-hold" data-state="off" data-lane="0" aria-hidden="true">'+gmArtHtml("wr.hold").replace('class="gm-art ', 'class="wr-art gm-art ')
+      + '<span class="wr-x">×</span><span class="wr-fuse"><i></i></span></span>';
+    for(k=0;k<3;k++) lanes += '<button type="button" class="wr-lane wr-lane-'+k+'" id="wr'+keys[k]+'" data-lane="'+k+'" aria-label="'+names[k]+'"><span class="wr-pad"><b>'+keys[k]+'</b></span></button>';
+    gmEl("gmStage").innerHTML = '<div class="wr-wall" id="wrWall" aria-hidden="true"></div><div class="wr-div wr-div-1" aria-hidden="true"></div><div class="wr-div wr-div-2" aria-hidden="true"></div>'
+      + '<div class="wr-line" aria-hidden="true"></div><div class="wr-holds" id="wrHolds">'+holds+'</div>'
+      + '<div class="wr-slip" id="wrSlip" aria-hidden="true"></div>'
+      + '<div class="wr-run" id="wrRun" data-tier="0" aria-hidden="true"><b>0</b><small>clean</small></div>'
+      + '<div class="gm-climber wr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>' + lanes;
+    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber"), wall = gmEl("wrWall"), runEl = gmEl("wrRun"), slipEl = gmEl("wrSlip");
+    outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
+    var g = gmBegin("wallRun", f, { notes:null, st:wallNew(), lo:0, peak:0, bestRun:0, taps:0, pose:0, lastSec:-1, shown:{} });
+    g.notes = wallNotes(g.seed);
+    var els = [].slice.call(gmEl("wrHolds").children), laneEls = keys.map(function(c){ return gmEl("wr"+c); });
+    var STAGE_H = 352, LINE_Y = 214, TOP_Y = -64;     // a hold's top edge: from TOP_Y to LINE_Y (its middle meets the climber's hands)
+    var rowY = [LINE_Y, LINE_Y-78, LINE_Y-150];       // reduced motion: the next three holds wait in fixed rows
+    function attr(el, name, v){ if(el.getAttribute(name)!==v) el.setAttribute(name, v); }
+    function paintHeight(){
+      gmHud(g.peak, "Height "+g.st.h+" · Best "+Math.max(g.peak, state.games.wallRun.best));
+      g.lastSec = Math.max(0, Math.ceil((WR_ROUND_MS-(performance.now()-g.t0))/1000));
+      gmEl("gmTime").textContent = g.lastSec+"s";
+      wall.style.setProperty("--wy", (g.st.h*WR_STEP_PX)+"px");
+      climber.style.setProperty("--ry", "0px");
+    }
+    function paintRun(grew){
+      attr(runEl, "data-tier", String(wallRunTier(g.st.streak))); runEl.querySelector("b").textContent = g.st.streak;
+      if(grew && g.st.streak>=3){ runEl.classList.remove("wr-run-pop"); void runEl.offsetWidth; runEl.classList.add("wr-run-pop"); }
+    }
+    function pose(src, ms){
+      var tok = ++g.pose; gmSetSrc(img, src);
+      if(ms) gmLater(function(){ if(gm===g && g.pose===tok) gmSetSrc(img, g.frames.idle[0]); }, ms);
+      return tok;
+    }
+    function lean(lane){ climber.style.setProperty("--rx", (lane-1)*30+"px"); }
+    function flash(lane, kind){
+      var b = laneEls[lane]; b.removeAttribute("data-flash"); void b.offsetWidth; b.setAttribute("data-flash", kind);
+      gmLater(function(){ if(gm===g && b.getAttribute("data-flash")===kind) b.removeAttribute("data-flash"); }, 340);
+    }
+    function showSlip(why){
+      slipEl.textContent = why; slipEl.classList.remove("wr-slip-on"); void slipEl.offsetWidth; slipEl.classList.add("wr-slip-on");
+      gmLater(function(){ if(gm===g) slipEl.classList.remove("wr-slip-on"); }, 700);
+    }
+    function onHit(i, lane){
+      g.peak = g.st.peak; g.bestRun = g.st.bestRun; g.shown[i] = performance.now();
+      var fq = 440+lane*70+Math.min(g.st.streak, 8)*8;
+      gmLater(function(){ if(gm===g){ gmBeep(fq, 50, 0.08); gmBuzz(8); } }, 30);
+      var tok = pose(lane===0 ? g.frames.reachL : lane===2 ? g.frames.reachR : g.frames.pull, 380);
+      lean(lane);
+      gmLater(function(){ if(gm===g && g.pose===tok) lean(1); }, 200);
+      gmSay(g.st.streak>=4 ? "Up. Height "+g.st.h+", "+g.st.streak+" clean." : "Up. Height "+g.st.h+".");
+      paintRun(true); paintHeight();
+    }
+    function onSlip(why, noteIdx){
+      if(noteIdx!=null && noteIdx>=0) g.shown[noteIdx] = performance.now();
+      gmLater(function(){ if(gm===g) gmBeep(250, 70, 0.05); }, 30);
+      pose(g.frames.hit, 420); lean(1);
+      climber.style.setProperty("--ry", "22px");
+      gmLater(function(){ if(gm===g) climber.style.setProperty("--ry", "0px"); }, 300);
+      showSlip(why);
+      gmSay("Slipped a move. Height "+g.st.h+".");
+      paintRun(false); paintHeight();
+    }
+    function judgeTap(lane, ts){
+      if(gm!==g || g.paused) return;
+      g.taps++;
+      var now = performance.now(), at = ts>0 && ts<=now && ts>=now-300 ? ts : now;
+      var t = at-g.t0, before = g.st.slips;
+      var res = wallTap(g.st, g.notes, lane, t, g.lo);
+      // holds that expired just before this tap were already slipped in the sweep; show the miss for the last one
+      if(res.verdict==="hit"){ flash(lane, "hit"); onHit(res.i, lane); }
+      else if(res.verdict==="slip"){ flash(lane, "slip"); onSlip(g.st.slips-before>1 ? "Slip \u00B7 missed" : "Slip \u00B7 wrong lane"); }
+      else flash(lane, "tap");
+      if(res.verdict!=="slip" && g.st.slips-before>0) onSlip("Slip \u00B7 missed");   // a hold expired in the same instant as this tap
+    }
+    laneEls.forEach(function(b, lane){
+      b.addEventListener("pointerdown", function(e){ if(e.button>0) return; e.preventDefault(); judgeTap(lane, e.timeStamp); });
+      b.addEventListener("click", function(e){ if(e.detail===0) judgeTap(lane); });
+      b.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+    });
+    gmKey = function(e){
+      if(e.repeat) return;
+      var k = e.key, lane = k==="ArrowLeft" || k==="a" || k==="A" ? 0 : k==="ArrowUp" || k==="ArrowDown" || k==="s" || k==="S" ? 1 : k==="ArrowRight" || k==="d" || k==="D" ? 2 : -1;
+      if(lane>=0){ e.preventDefault(); judgeTap(lane); }
+    };
+    document.addEventListener("keydown", gmKey);
+    laneEls[1].focus({ preventScroll:true });
+    if(wrReduced()) gmEl("gmStage").classList.add("wr-rm");
+    lean(1); paintHeight(); paintRun(false);
+    gmSay("Go. Tap the lane of the hold.");
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      if(t>=WR_ROUND_MS){ wallRunFinish(g); return; }
+      var missed = wallSweep(g.st, g.notes, t, g.lo);
+      if(missed.length) onSlip("Slip \u00B7 missed", missed[missed.length-1]);
+      while(g.lo<g.notes.length && (g.st.done[g.lo] && g.shown[g.lo]!=null && performance.now()-g.shown[g.lo]>420) && g.notes[g.lo].due+wallLate(g.notes[g.lo])<t) g.lo++;
+      // draw: holds i in [lo, ...) that have appeared. Normal motion slides them down; reduced motion keeps the next three in fixed rows.
+      var used = {}, rank = 0, now = performance.now(), rm = wrReduced();
+      for(var i=g.lo;i<g.notes.length;i++){
+        var n = g.notes[i], p = wallProgress(n, t);
+        if(p<0) break;
+        if(g.st.done[i] && g.shown[i]==null) g.shown[i] = now;
+        var el = els[i%WR_POOL], fin = g.st.done[i] ? now-g.shown[i] : -1;
+        if(fin>380) continue;                                   // answered and faded out
+        used[i%WR_POOL] = 1;
+        var y, state;
+        if(g.st.done[i]===1) state = "hit"; else if(g.st.done[i]===2) state = "miss"; else state = p>=1-wallEarly(n)/wallLook(n) ? "live" : "come";
+        if(rm){
+          if(g.st.done[i]){ y = rowY[0]; } else { if(rank>=3){ used[i%WR_POOL] = 0; continue; } y = rowY[rank]; rank++; }
+        } else y = TOP_Y+(LINE_Y-TOP_Y)*p;
+        if(el._n!==i){ el._n = i; attr(el, "data-lane", String(n.lane)); }
+        attr(el, "data-state", state);
+        el.style.transform = "translateY("+Math.round(y)+"px)";
+        var fz = el.querySelector(".wr-fuse i");
+        if(fz && state!=="hit" && state!=="miss") fz.style.transform = "scaleX("+Math.max(0, Math.min(1, (n.due-t)/Math.min(wallLook(n), 1200))).toFixed(3)+")";
+      }
+      for(var e2=0;e2<WR_POOL;e2++) if(!used[e2] && els[e2].getAttribute("data-state")!=="off"){ attr(els[e2], "data-state", "off"); els[e2]._n = -1; }
+      var sec = Math.max(0, Math.ceil((WR_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function wallRunFinish(g){
+    wallSweep(g.st, g.notes, WR_ROUND_MS, g.lo);
+    var parts = [];
+    if(g.st.bestRun>1) parts.push("Longest clean run "+g.st.bestRun);
+    parts.push(g.st.slips+(g.st.slips===1 ? " slip" : " slips"));
+    gmOver("wallRun", g.peak, { title:"Good climb.", note:parts.join(" · "), actions:g.taps, extra:{ longestRun:g.st.bestRun } });
+  }
+  if(window.__cruxTest){
+    Object.assign(window.__cruxGames, { wallPhase:wallPhase, wallNotes:wallNotes, wallNew:wallNew, wallTap:wallTap, wallSweep:wallSweep, wallRound:wallRound,
+      wallHalf:wallHalf, wallEarly:wallEarly, wallLate:wallLate, wallLook:wallLook, wallProgress:wallProgress, wallRunTier:wallRunTier, WR_ROUND_MS:WR_ROUND_MS, WR_FLOOR:WR_FLOOR, WR_MAX_RUN:WR_MAX_RUN,
+      WR_SLIP_COOLDOWN:WR_SLIP_COOLDOWN, wallReduced:function(v){ wrReducedOverride = v; } });
+  }
+  /* ==== wallRun END ==== */
 
 
   /* ---- the overlay: open, close, rest strip ---- */

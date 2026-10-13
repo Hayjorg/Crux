@@ -24,6 +24,7 @@
 and the project rules. It runs on its own private copy of the data, never your real save. Takes about a minute.</p>
 <div class="bar"><button id="runBtn">Run again</button><span id="summary">Starting…</span></div>
 <div class="layout"><ul id="results"></ul><iframe id="app" title="App under test"></iframe></div>
+<script src="route-bot.js"></script>
 <script>
 (function(){
   var KEY = "crux-app-state-v2";
@@ -1671,19 +1672,21 @@ and the project rules. It runs on its own private copy of the data, never your r
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed); await goHome();
     var G = W.__cruxGames, ids = G.ids();
-    ["chalkRhythm", "routeRead", "summitStack", "reachTimer"].forEach(function(id){ expect(ids.indexOf(id)>=0, "registry misses "+id); });
+    ["dyno", "routeRead", "summitStack", "wallRun"].forEach(function(id){ expect(ids.indexOf(id)>=0, "registry misses "+id); });
+    expect(ids.indexOf("chalkRhythm")<0, "Chalk Rhythm is still registered (it was cut)");
+    expect(ids.indexOf("reachTimer")<0, "Reach Timer is still registered (retired, replaced by Wall Run)");
     expect(ids.indexOf("chalkUp")<0, "legacy Chalk Up is still registered");
     expect(ids.indexOf("holdHop")<0, "Hold Hop is still registered");
-    expect(G.menuIds().join()==="chalkRhythm,routeRead,summitStack,reachTimer", "menu order/contents: "+G.menuIds().join());
+    expect(G.menuIds().join()==="dyno,routeRead,summitStack,wallRun", "menu order/contents: "+G.menuIds().join());
     await click("openGamesBtn", 250);
-    expect(visible("gmCard_chalkRhythm") && !$("gmCard_chalkRhythm").disabled, "Chalk Rhythm card");
-    ["routeRead", "summitStack", "reachTimer"].forEach(function(id){
+    expect(visible("gmCard_dyno") && !$("gmCard_dyno").disabled && !D.getElementById("gmCard_chalkRhythm"), "Dyno card (and no Chalk Rhythm card)");
+    ["routeRead", "summitStack", "wallRun"].forEach(function(id){
       expect(visible("gmCard_"+id) && !$("gmCard_"+id).disabled && !G.def(id).soon, id+" card should be playable: "+$("gmCard_"+id).textContent);
     });
     expect(!D.getElementById("gmHopBtn") && !D.getElementById("gmCard_holdHop"), "a Hold Hop card is on the menu");
     // art slots: every slot draws without a file, and a registered file swaps in
     var slots = Object.keys(G.art);
-    ["ss.ledge", "ss.block", "ss.flag", "rr.hold", "rr.ring", "cr.puff", "cr.ring", "rt.hold", "rt.ghost", "ui.perfect", "ui.good", "ui.best", "ui.summit", "card.chalkRhythm", "card.routeRead", "card.summitStack", "card.reachTimer"].forEach(function(sl){
+    ["ss.ledge", "ss.block", "ss.flag", "rr.hold", "rr.ring", "dy.ledge", "dy.hold", "rt.hold", "rt.ghost", "ui.perfect", "ui.good", "ui.best", "ui.summit", "card.dyno", "card.routeRead", "card.summitStack", "card.reachTimer", "wr.hold", "card.wallRun"].forEach(function(sl){
       expect(slots.indexOf(sl)>=0 && G.art[sl].src===null, "slot "+sl);
       var el = G.gmArt(sl); expect(el && el.tagName==="SPAN" && /gm-art/.test(el.className), "default art for "+sl);
     });
@@ -1703,7 +1706,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     await boot(old); await goHome();
     var s = saved();
     expect(s.games && s.games.chalkUp.best===0 && s.games.chalkUp.plays===0 && s.games.holdHop.best===0 && s.games.holdHop.plays===0, "no games block: "+JSON.stringify(s.games));
-    expect(s.games.chalkRhythm.best===0 && s.games.chalkRhythm.perfectBest===0 && s.games.routeRead.longest===0 && s.games.summitStack.tallest===0 && s.games.summitStack.perfects===0 && s.games.reachTimer.bestStreak===0, "new ids missing: "+JSON.stringify(s.games));
+    expect(s.games.chalkRhythm.best===0 && s.games.chalkRhythm.perfectBest===0 && s.games.routeRead.longest===0 && s.games.summitStack.tallest===0 && s.games.summitStack.perfects===0 && s.games.reachTimer.bestStreak===0 && s.games.wallRun.best===0 && s.games.wallRun.longestRun===0, "new ids missing: "+JSON.stringify(s.games));
     expect(s.settings.gameSound===true, "game sound should default on: "+s.settings.gameSound);
     var bAtt = allAttempts(before), sAtt = allAttempts(s);   // (older projects migration may add projectId, nothing else)
     expect(sAtt.length===bAtt.length && bAtt.every(function(x, i){ return sameExceptProject(x, sAtt[i]); }) && s.sessions.length===before.sessions.length, "sessions / attempts changed");
@@ -1748,13 +1751,14 @@ and the project rules. It runs on its own private copy of the data, never your r
     r = G.recordRound(r.games, "routeRead", { score:7, actions:5, extra:{ longest:4 } });
     expect(!r.newBest && r.games.routeRead.best===12 && r.games.routeRead.longest===6 && r.games.routeRead.plays===3, "best and extras are monotone: "+JSON.stringify(r.games.routeRead));
     // in the app: opening a round and leaving without a tap records nothing, a tap does
-    await click("openGamesBtn", 250); await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 150);
+    await click("openGamesBtn", 250); await click("gmCard_dyno", 150); await click("gmStartBtn", 150);
     await click("closeGamesBtn", 250);
-    expect(saved().games.chalkRhythm.plays===0, "abandon with no action counted as a play: "+JSON.stringify(saved().games.chalkRhythm));
-    await click("openGamesBtn", 250); await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 150);
-    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(80);
+    expect(saved().games.dyno.plays===0, "abandon with no action counted as a play: "+JSON.stringify(saved().games.dyno));
+    await click("openGamesBtn", 250); await click("gmCard_dyno", 150); await click("gmStartBtn", 150);
+    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(60);
+    $("gmTap").dispatchEvent(new W.Event("pointerup", { bubbles:true, cancelable:true })); await wait(40);
     await click("closeGamesBtn", 250);
-    expect(saved().games.chalkRhythm.plays===1 && saved().games.chalkRhythm.best===0, "a round with one (early) tap: "+JSON.stringify(saved().games.chalkRhythm));
+    expect(saved().games.dyno.plays===1 && saved().games.dyno.best===0, "a round with one (short) jump: "+JSON.stringify(saved().games.dyno));
   });
 
   test("Games: the sound switch defaults on, persists, and gates game beeps (never over timer beeps or the last seconds of rest)", async function(){
@@ -1792,29 +1796,31 @@ and the project rules. It runs on its own private copy of the data, never your r
     await boot(seed); await goHome();
     var G = W.__cruxGames;
     function hide(on){ Object.defineProperty(D, "hidden", { configurable:true, get:function(){ return on; } }); D.dispatchEvent(new W.Event("visibilitychange")); }
-    await click("openGamesBtn", 250); await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 150);
+    await click("openGamesBtn", 250); await click("gmCard_dyno", 150); await click("gmStartBtn", 150);
     $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(60);
+    $("gmTap").dispatchEvent(new W.Event("pointerup", { bubbles:true, cancelable:true })); await wait(60);
     await wait(1200);
     var t0 = G.current().t0;
     hide(true); await wait(50);
     expect(G.paused() && visible("gmPaused") && /Paused/.test($("gmPaused").textContent), "the round didn't pause");
     expect(visible("gamesPlay") && !!G.current(), "hiding abandoned the round");
-    var shown = $("gmTime").textContent, ring = $("crRing").style.transform;
+    var shown = $("gmTime").textContent, ring = $("dyScene").style.transform;
     await wait(600);
-    expect($("gmTime").textContent===shown && $("crRing").style.transform===ring, "the round kept moving while paused");
+    expect($("gmTime").textContent===shown && $("dyScene").style.transform===ring, "the round kept moving while paused");
     var hint = $("gmHint").textContent;
     $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(40);
-    expect(G.current().taps===1, "a tap counted while paused");
+    $("gmTap").dispatchEvent(new W.Event("pointerup", { bubbles:true, cancelable:true })); await wait(40);
+    expect(G.current().jumps===1, "a jump counted while paused");
     hide(false); await wait(50);
     expect(G.paused(), "coming back resumed by itself");
     await click("gmPaused", 120);
     expect(!G.paused() && !visible("gmPaused"), "tap didn't resume");
     expect(G.current().t0>t0+500, "the round clock wasn't shifted by the pause: "+(G.current().t0-t0));
-    var played = saved().games.chalkRhythm.plays;
+    var played = saved().games.dyno.plays;
     hide(true); await wait(50);
     await click("closeGamesBtn", 250);
     hide(false);
-    expect(saved().games.chalkRhythm.plays===played, "a paused round was recorded");
+    expect(saved().games.dyno.plays===played, "a paused round was recorded");
   });
 
   test("Games: Play is on the Home dock, opens the menu, a round saves best and plays, and XP / level / streak are untouched", async function(){
@@ -1824,24 +1830,25 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(visible("navHomeBtn") && visible("navTrainBtn") && qa("#appNav .nav-tab").length===3, "the bottom bar changed");
     var xp0 = saved().xp, lv0 = saved().level, sess0 = saved().sessions.length;
     await click("openGamesBtn", 250);
-    expect(visible("gamesOverlay") && visible("gmCard_chalkRhythm") && !visible("gamesRest"), "menu didn't open (or showed a rest strip with no session)");
+    expect(visible("gamesOverlay") && visible("gmCard_dyno") && !visible("gamesRest"), "menu didn't open (or showed a rest strip with no session)");
     expect(W.getComputedStyle($("appNav")).display==="none", "the bar shows under the games sheet");
-    expect(/Not played/.test($("gmCard_chalkRhythm").textContent), "best line: "+$("gmCard_chalkRhythm").textContent);
-    await click("gmCard_chalkRhythm", 200);
-    expect(visible("gmStartBtn") && /Chalk Rhythm/.test($("gamesTitle").textContent), "no intro for Chalk Rhythm");
+    expect(/Not played/.test($("gmCard_dyno").textContent), "best line: "+$("gmCard_dyno").textContent);
+    await click("gmCard_dyno", 200);
+    expect(visible("gmStartBtn") && /Dyno/.test($("gamesTitle").textContent), "no intro for Dyno");
     await click("gmStartBtn", 300);
     expect(qa("#gmClimber img").length>=1 && $("gmClimberImg").getAttribute("src")===W.__cruxOutfit.variantFrame(W.__cruxOutfit.idle[0], W.__cruxOutfit.variantId()), "the climber isn't drawn from a climber frame: "+$("gmClimberImg").getAttribute("src"));
-    await wait(650);                                     // the first beat is at 1.0s
-    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(100);
-    expect(+$("gmScore").textContent>=1, "a tap on the beat didn't score: "+$("gmHint").textContent);
+    var Gp = W.__cruxGames; await wait(300);
+    $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(Gp.dynoIdealHold(Gp.current().spec));
+    $("gmTap").dispatchEvent(new W.Event("pointerup", { bubbles:true, cancelable:true })); await wait(100);
+    expect(+$("gmScore").textContent>=1, "a jump at the ideal time didn't latch: "+$("gmHint").textContent);
     await click("closeGamesBtn", 250);
     expect(!visible("gamesOverlay"), "the games sheet didn't close");
     var s = saved();
-    expect(s.games.chalkRhythm.plays===1 && s.games.chalkRhythm.best>=1 && s.games.holdHop.plays===0, "scores not saved: "+JSON.stringify(s.games));
+    expect(s.games.dyno.plays===1 && s.games.dyno.best>=1 && s.games.holdHop.plays===0, "scores not saved: "+JSON.stringify(s.games));
     expect(s.xp===xp0 && s.level===lv0 && s.sessions.length===sess0, "a game changed XP, level or sessions");
     await boot(undefined); await goHome();
     await click("openGamesBtn", 250);
-    expect(/Best \d+ · played 1/.test($("gmCard_chalkRhythm").textContent), "best line after reload: "+$("gmCard_chalkRhythm").textContent);
+    expect(/Best \d+ · played 1/.test($("gmCard_dyno").textContent), "best line after reload: "+$("gmCard_dyno").textContent);
     await click("closeGamesBtn", 150);
   });
 
@@ -1857,29 +1864,63 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
 
   // ---- routeRead tests ----
-  test("Games: Route Read rules are pure (ramp table, next length, 500 seeds of valid distinct solvable routes)", async function(){
+  test("Games: Route Read rules are pure (show ramp, next length, 500 seeds of solvable interleaved spray walls)", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed);
-    var G = W.__cruxGames; expect(G && G.routeGen, "route read hooks missing");
-    var show = { 4:2600, 5:3000, 6:3400, 7:3800, 8:4200 };
-    Object.keys(show).forEach(function(n){ expect(G.routeShowMs(+n)===show[n], "show time for "+n+": "+G.routeShowMs(+n)); });
-    expect(G.routeShowMs(2)===2600 && G.routeShowMs(20)===4200, "show time isn't clamped");
-    expect(G.routeNextLen(5, false)===6 && G.routeNextLen(5, true)===4 && G.routeNextLen(4, true)===4 && G.routeNextLen(8, false)===8 && G.routeNextLen(8, true)===7, "next route length rule");
-    var C = G.routeConst; expect(C.start===5 && C.min===4 && C.max===8 && C.betweenMs===800 && C.reshowMs===1500 && C.roundMs===60000, "constants");
-    var bad = null;
-    for(var s=1;s<=500 && !bad;s++) for(var n=4;n<=8;n++){
-      var r = G.routeGen(s*7919, n), again = G.routeGen(s*7919, n);
-      if(JSON.stringify(r)!==JSON.stringify(again)){ bad = "not deterministic seed "+s; break; }
-      if(!G.routeCheck(r, n)){ bad = "invalid route seed "+s+" n "+n+": "+JSON.stringify(r); break; }
-      var keys = {}; r.forEach(function(h){ keys[h.row+","+h.col] = 1; });
+    var G = W.__cruxGames; expect(G && G.routeWall && G.routeGen, "route read hooks missing");
+    var C = G.routeConst; expect(C.cols===5 && C.rows===5 && C.start===5 && C.min===4 && C.max===10 && C.betweenMs===800 && C.revealMs===1800 && C.roundMs===60000, "constants");
+    var prev = 0;
+    for(var n=4;n<=10;n++){
+      var ms = G.routeShowMs(n);
+      expect(ms>prev && ms/n>=500, "show time must scale with length and stay >= 500 ms per hold: "+n+" -> "+ms);
+      prev = ms;
+    }
+    expect(G.routeShowMs(2)===G.routeShowMs(4) && G.routeShowMs(20)===G.routeShowMs(10) && G.routeShowMs(10)>=2*G.routeShowMs(4)*0.9, "show time isn't clamped");
+    expect(G.routeNextLen(5, false)===6 && G.routeNextLen(5, true)===4 && G.routeNextLen(4, true)===4 && G.routeNextLen(10, false)===10 && G.routeNextLen(10, true)===9, "next route length rule");
+    expect(G.routeDecoyLen(4)===3 && G.routeDecoyLen(8)===6 && G.routeDecoyLen(10)===7, "decoy route length");
+    var bad = null, clutter = 0, total = 0, holdsMin = 99, shapes = {};
+    for(var s=1;s<=500 && !bad;s++) for(n=4;n<=10;n++){
+      var w = G.routeWall(s*7919, n), again = G.routeWall(s*7919, n);
+      if(JSON.stringify(w)!==JSON.stringify(again)){ bad = "not deterministic seed "+s; break; }
+      if(!G.routeWallCheck(w)){ bad = "invalid wall seed "+s+" n "+n+": "+JSON.stringify(w.target); break; }
+      if(!G.routeCheck(w.target, n)){ bad = "invalid route seed "+s+" n "+n; break; }
+      var keys = {}; w.target.forEach(function(h){ keys[h.row+","+h.col] = 1; });
+      w.decoy.forEach(function(h){ if(keys[h.row+","+h.col]) bad = "decoy overlaps route seed "+s; });
       if(Object.keys(keys).length!==n){ bad = "holds not distinct seed "+s; break; }
-      if(G.routeShowMs(n)/n<500){ bad = "show time per hold under 500 ms for "+n; break; }
+      shapes[G.routeCodes[w.codeT].shape+"/"+G.routeCodes[w.codeD].shape] = 1;
+      if(n>=6){ clutter += G.routeClutter(w)/n; total++; }
+      holdsMin = Math.min(holdsMin, w.holds.length);
     }
     expect(!bad, bad);
-    expect(!G.routeCheck([{row:0,col:0},{row:1,col:2},{row:2,col:2},{row:3,col:2}], 4), "check accepted a column jump");
+    expect(clutter/total>=0.6, "routes aren't interleaved: "+(clutter/total).toFixed(2));
+    expect(holdsMin>=17 && Object.keys(shapes).length>=8, "wall too sparse or codes never vary: "+holdsMin+" "+Object.keys(shapes).length);
+    var shp = {}; G.routeCodes.forEach(function(c){ shp[c.shape] = 1; });
+    expect(Object.keys(shp).length===4 && G.routeCodes.every(function(c){ return /^#/.test(c.color); }), "every route code needs its own shape as well as a colour");
+    expect(!G.routeCheck([{row:0,col:0},{row:1,col:3},{row:2,col:3},{row:3,col:3}], 4), "check accepted a three-column jump");
+    expect(!G.routeCheck([{row:0,col:0},{row:3,col:1},{row:4,col:1},{row:4,col:2}], 4), "check accepted a three-row jump");
   });
 
-  test("Games: Route Read shows numbers, hides them, scores a route, and a wrong tap re-shows it then eases off", async function(){
+  test("Games: Route Read has a skill curve (human-like bot by band: average fails some top routes, a null player scores 0)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed);
+    var G = W.__cruxGames, Bot = window.RouteBot; expect(Bot && G.routeWall, "bot or hooks missing");
+    var api = { routeWall:G.routeWall, routeShowMs:G.routeShowMs, routeNextLen:G.routeNextLen, routeConst:G.routeConst };
+    function pool(t, lo, hi){ var tr = 0, ps = 0; for(var n=lo;n<=hi;n++){ var e = t.byN[n]; if(e){ tr += e.tries; ps += e.passes; } } return tr ? ps/tr : -1; }
+    var beg = Bot.table(api, "beginner", 250), avg = Bot.table(api, "average", 250), str = Bot.table(api, "strong", 250);
+    var rep = "beg early "+pool(beg, 4, 5).toFixed(2)+" avg mid "+pool(avg, 6, 7).toFixed(2)+" avg top "+pool(avg, 8, 10).toFixed(2)+" str peak "+pool(str, 9, 10).toFixed(2);
+    expect(pool(beg, 4, 5)>=0.65 && pool(beg, 4, 5)<=0.95, "beginner early band: "+rep);
+    expect(pool(avg, 6, 7)>=0.45 && pool(avg, 6, 7)<=0.78, "average mid band: "+rep);
+    expect(pool(avg, 8, 10)<0.6 && pool(avg, 8, 10)>0.1, "average must fail some top routes: "+rep);
+    expect(pool(str, 9, 10)>=0.2 && pool(str, 9, 10)<=0.6, "strong peak band: "+rep);
+    expect(pool(avg, 4, 5)>pool(avg, 6, 7) && pool(avg, 6, 7)>pool(avg, 8, 10), "pass rate should fall with route length: "+rep);
+    expect(beg.mean<avg.mean && avg.mean<str.mean, "bands should order by skill");
+    // a perfect player gets to the top of the ladder; a null player never completes a route
+    var perfect = 0, t = 0, N = G.routeConst.start, longest = 0;
+    while(true){ t += G.routeShowMs(N)+N*500; if(t>G.routeConst.roundMs) break; perfect += N; longest = N; t += G.routeConst.betweenMs; N = G.routeNextLen(N, false); }
+    expect(longest===10 && perfect>=40, "a perfect player should reach the 10-hold route: "+longest+" / "+perfect);
+  });
+
+  test("Games: Route Read lights two coded routes, hides them, scores a route, and a wrong hold loses that route", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed); await goHome();
     var G = W.__cruxGames;
@@ -1887,34 +1928,42 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(!$("gmCard_routeRead").disabled && G.menuIds().indexOf("routeRead")>=0, "Route Read isn't playable");
     await click("gmCard_routeRead", 150); await click("gmStartBtn", 150);
     var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
-    expect(g.route.length===5 && g.phase==="show", "round didn't start on a 5-hold route");
+    expect(g.route.length===5 && g.phase==="show" && g.wallDef.decoy.length===3, "round didn't start on a 5-hold route with a 3-hold decoy");
     expect(g.route.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent===String(i+1); }), "numbers not shown on the route");
-    expect(Array.prototype.every.call(D.querySelectorAll(".rr-cell"), function(b){ var r = b.getBoundingClientRect(); return r.width>=64 && r.height>=64; }), "a hold's hit area is under 64 px");
+    var cd = G.routeCodes[g.wallDef.codeT], dd = G.routeCodes[g.wallDef.codeD];
+    expect(g.route.every(function(h){ return cell(h).querySelector(".rr-hold").getAttribute("data-shape")===cd.shape; }), "called route isn't drawn in its shape");
+    expect(g.wallDef.decoy.every(function(h){ var e = cell(h); return e.querySelector(".rr-hold").getAttribute("data-shape")===dd.shape && e.querySelector(".rr-badge").textContent===""; }), "decoy route should show its own shape and no numbers");
+    expect(cd.shape!==dd.shape && /Read the/.test($("rrLabel").textContent) && $("rrLabel").textContent.indexOf(cd.name)>=0, "label doesn't name the route: "+$("rrLabel").textContent);
+    var shown = Array.prototype.filter.call(D.querySelectorAll(".rr-cell"), function(b){ return !b.hidden; });
+    expect(shown.length>=17 && shown.every(function(b){ var r = b.getBoundingClientRect(); return r.width>=56 && r.height>=55.5; }), "wall too sparse or a hold's hit area is under 56 px: "+shown.length);
+    var wr = $("rrWall").getBoundingClientRect(), sr = $("gmStage").getBoundingClientRect();
+    expect(wr.left>=sr.left-1 && wr.right<=sr.right+1 && wr.bottom<=sr.bottom+1 && wr.top>=sr.top, "wall overflows the stage");
     cell(g.route[0]).click(); await wait(50);
     expect(g.actions===0 && g.score===0, "a tap during the show counted");
-    await wait(3150);
-    expect(g.phase==="input" && !Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers didn't hide after 3 s");
-    var first = g.route.slice();
-    first.forEach(function(h){ cell(h).click(); });
+    await wait(G.routeShowMs(5)+300);
+    expect(g.phase==="input" && !Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers didn't hide after the show");
+    expect(!D.querySelector(".rr-hold[data-shape]"), "coded shapes should go neutral when the route is hidden");
+    g.route.slice().forEach(function(h){ cell(h).click(); });
     await wait(60);
     expect(g.score===5 && g.longest===5 && +$("gmScore").textContent===5 && g.N===6, "route not scored / not stepping up: "+g.score+" N "+g.N);
     await wait(900);
-    expect(g.phase==="show" && g.route.length===6, "next route (6) didn't start");
-    await wait(3500);
-    // wrong tap: pick a cell that isn't route[0]
-    var h0 = g.route[0], wrong = null;
-    for(var r=0;r<5 && !wrong;r++) for(var c=0;c<3;c++) if(!(r===h0.row && c===h0.col)){ wrong = $("rrCell_"+r+"_"+c); break; }
-    wrong.click(); await wait(60);
-    expect(g.phase==="reshow" && /close, here it is/.test($("gmHint").textContent), "wrong tap didn't re-show: "+g.phase);
-    expect(g.route.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent.indexOf(String(i+1))>=0; }), "route not re-shown with numbers");
-    expect(wrong.getAttribute("data-state")==="wrong" && !!getComputedStyle(wrong.querySelector(".rr-badge"), "::before").content, "no X on the wrong hold");
-    await wait(1600);
-    expect(g.phase==="input" && g.step===0 && g.route.length===6, "retry didn't restart the same route");
+    expect(g.phase==="show" && g.route.length===6 && g.wallDef.decoy.length===4, "next route (6) didn't start");
+    await wait(G.routeShowMs(6)+60);
+    // tapping a decoy hold (the other route) loses the route, no retry of the same one
+    var lost = g.route.slice(), dec = g.wallDef.decoy[0];
+    cell(dec).click(); await wait(60);
+    expect(g.phase==="reshow" && /Not that one/.test($("gmHint").textContent), "wrong hold didn't lose the route: "+g.phase);
+    expect(g.score===5 && g.N===5, "a lost route should score nothing and shorten the next: "+g.score+" N "+g.N);
+    expect(lost.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent===String(i+1); }), "answer not shown");
+    expect(cell(dec).getAttribute("data-state")==="wrong" && !!getComputedStyle(cell(dec).querySelector(".rr-badge"), "::before").content, "no X on the wrong hold");
+    await wait(1900);
+    expect(g.phase==="show" && g.route.length===5, "a fresh 5-hold route should follow a lost one: "+g.phase+" "+g.route.length);
+    await wait(G.routeShowMs(5)+60);
     g.route.forEach(function(h){ cell(h).click(); }); await wait(60);
-    expect(g.score===11 && g.N===5, "after a miss the next route should be 5: score "+g.score+" N "+g.N);
+    expect(g.score===10 && g.N===6, "after a loss the ladder resumes: "+g.score+" N "+g.N);
     await click("closeGamesBtn", 250);
     var s = saved().games.routeRead;
-    expect(s.best===11 && s.plays===1 && s.longest===6, "route read save wrong: "+JSON.stringify(s));
+    expect(s.best===10 && s.plays===1 && s.longest===5, "route read save wrong: "+JSON.stringify(s));
   });
 
   test("Games: Route Read closes itself when rest ends, records once, no Play again, and hiding pauses it", async function(){
@@ -1940,14 +1989,16 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
   // ---- end routeRead tests ----
   // ---- routeRead polish tests ----
-  test("Games: Route Read polish helpers are pure (lift, summary, tone, bar)", async function(){
+  test("Games: Route Read polish helpers are pure (summary, tone, bar, hold sizes)", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed);
-    var G = W.__cruxGames; expect(G && G.routeLift && G.routeSummary, "polish hooks missing");
-    expect(G.routeLift(0)===0 && G.routeLift(4)===40 && G.routeLift(99)===40 && G.routeLift(-3)===0 && G.routeLift("x")===0, "lift isn't clamped");
+    var G = W.__cruxGames; expect(G && G.routeSummary && G.routeHoldPx, "polish hooks missing");
     expect(G.routeSummary(0, 0).title==="Warm-up done." && G.routeSummary(1, 5).note==="1 route · longest 5" && G.routeSummary(3, 7).note==="3 routes · longest 7" && G.routeSummary(3, 7).title==="Good reading.", "summary wording");
-    expect(G.routeTone(1)<G.routeTone(2) && G.routeTone(8)<=900 && G.routeTone(0)>=500 && G.routeTone(50)===G.routeTone(8), "tick tones should rise gently and stay soft");
+    expect(G.routeTone(1)<G.routeTone(2) && G.routeTone(10)<=920 && G.routeTone(0)>=500 && G.routeTone(50)===G.routeTone(10), "tick tones should rise gently and stay soft");
     expect(G.routeBarScale(0, 0, 3000)===1 && G.routeBarScale(1500, 0, 3000)===0.5 && G.routeBarScale(9000, 0, 3000)===0 && G.routeBarScale(5, 0, 0)===0, "show bar scale");
+    expect(G.routeHoldPx(0)<G.routeHoldPx(1) && G.routeHoldPx(1)<G.routeHoldPx(2) && G.routeHoldPx(9)===G.routeHoldPx(2) && G.routeHoldPx(2)<=56, "hold sizes vary and fit a 56 px target");
+    var sizes = {}; for(var s=1;s<=60;s++) G.routeWall(s*31, 8).holds.forEach(function(h){ sizes[h.sz] = 1; });
+    expect(Object.keys(sizes).length===3, "walls should mix jugs and crimps");
   });
 
   test("Games: Route Read answers a real pointerdown (no click needed), fades numbers out, and a late-landing tap isn't lost", async function(){
@@ -1958,7 +2009,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
     expect(D.querySelectorAll(".rr-pip").length===5 && getComputedStyle(cell(g.route[0])).touchAction==="manipulation", "pips / touch-action missing");
     expect(g.route.every(function(h){ return cell(h).classList.contains("rr-lit"); }) && $("rrWall").classList.contains("rr-showing"), "route holds not marked lit");
-    await wait(3050);
+    await wait(G.routeShowMs(5)+60);
     expect(g.phase==="input" && !$("rrWall").classList.contains("rr-showing"), "didn't enter input");
     await wait(260);
     expect(!Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers left behind after the fade");
@@ -1970,196 +2021,264 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(g.step===1, "the click after a pointerdown was counted twice");
     await click("closeGamesBtn", 250);
   });
+
+  test("Games: Route Read reduced motion keeps the layout and codes but drops scale, wobble and the climber swap", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames; G.routeReduced(true);
+    await click("openGamesBtn", 250); await click("gmCard_routeRead", 150); await click("gmStartBtn", 150);
+    var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
+    expect($("rrStage").classList.contains("rr-calm"), "no still variant");
+    var lit = cell(g.route[0]).querySelector(".rr-hold");
+    expect(lit.getAttribute("data-shape") && W.getComputedStyle(lit).transform==="none", "shape-coded holds still scale: "+W.getComputedStyle(lit).transform);
+    expect(!$("gmClimber").classList.contains("rr-swap"), "climber swap animates in reduced motion");
+    await wait(G.routeShowMs(5)+60);
+    var wrong = g.wallDef.decoy[0]; cell(wrong).click(); await wait(80);
+    expect(g.phase==="reshow" && W.getComputedStyle(cell(wrong).querySelector(".rr-hold")).animationName==="none", "wrong hold wobbles in reduced motion");
+    await click("closeGamesBtn", 250);
+    G.routeReduced(null);
+  });
   // ---- end routeRead polish tests ----
 
-  // ---- chalkRhythm tests ----
-  test("Chalk Rhythm: tempo phases, beat grid and the three timing windows (pure rules)", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
-    await boot(seed); await goHome();
-    var G = W.__cruxGames;
-    expect(G.chalkBpm(0)===60 && G.chalkBpm(14999)===60 && G.chalkBpm(15000)===64 && G.chalkBpm(29999)===64 && G.chalkBpm(30000)===70 && G.chalkBpm(44999)===70, "bpm per phase");
-    expect(G.chalkBeatLen(0)===1000 && G.chalkBeatLen(15000)===937 && G.chalkBeatLen(30000)===857, "beat lengths");
-    var b = G.chalkBeats();
-    expect(b.length===48 && b[0]===1000 && b[14]===15000 && b[15]===15937 && b[47]<=45000, "beat grid: "+b.length+" beats, first "+b[0]+", last "+b[b.length-1]);
-    for(var i=1;i<b.length;i++){ var gap = b[i]-b[i-1]; expect(gap>=857 && gap<=1000, "beat gap "+gap+" at "+i); }
-    expect(b[0]>=800, "first ring has less than 800 ms");
-    var w = G.chalkWindow;
-    expect(w(0)==="perfect" && w(80)==="perfect" && w(-80)==="perfect" && w(81)==="good" && w(160)==="good" && w(-161)==="close" && w(280)==="close" && w(281)==="miss" && w(-400)==="miss", "window edges");
-    expect(G.chalkPoints("perfect")===3 && G.chalkPoints("good")===2 && G.chalkPoints("close")===1 && G.chalkPoints("miss")===0, "points");
-    expect(b.length*3===144, "max score "+b.length*3);
-    var close70 = 2*280; expect(close70>=400, "Close window total below the 400 ms floor");
-    // attribution: nearest unclaimed beat; a double tap can't claim two beats
-    var claimed = {}, r1 = G.chalkAttribute(1020, claimed);
-    expect(r1 && r1.k===0 && r1.label==="perfect", "first tap: "+JSON.stringify(r1));
-    claimed[r1.k] = true;
-    expect(G.chalkAttribute(1030, claimed)===null, "second tap claimed another beat");
-    expect(G.chalkAttribute(1500, {})===null, "a tap between beats (500 ms off) was attributed");
-    // ring: grows toward the outline, visible for most of the beat, meets the outline at the beat
-    var rg = G.chalkRingAt(1000);
-    expect(rg.k===0 && rg.p===1 && Math.abs(G.chalkRingScale(1)-1)<1e-9 && G.chalkRingScale(0)<G.chalkRingScale(0.5), "ring meets the outline at the beat");
-    var vis = 0, N = 1000; for(var j=0;j<N;j++){ if(G.chalkRingOpacity(j/(N-1))>=0.5) vis++; }
-    expect(vis/N>=0.6, "ring visible only "+(vis/N)+" of the beat");
-  });
-
-  test("Chalk Rhythm: property check over 500 seeded tap patterns (never over-claims, never loses a tap in a window, max 144)", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
-    await boot(seed); await goHome();
-    var G = W.__cruxGames, beats = G.chalkBeats();
-    for(var s=1;s<=500;s++){
-      var rnd = G.mulberry32(s*7919), n = Math.floor(rnd()*130), taps = [];
-      for(var i=0;i<n;i++){
-        var mode = rnd();
-        // a mix of jittered on-beat taps, doubles and random times
-        if(mode<0.5) taps.push(Math.max(0, beats[Math.floor(rnd()*beats.length)] + (rnd()-0.5)*700));
-        else if(mode<0.7 && taps.length) taps.push(taps[taps.length-1] + rnd()*40);
-        else taps.push(rnd()*45000);
-      }
-      var sim = G.chalkSimulate(taps), claimedN = Object.keys(sim.claimed).length;
-      expect(claimedN===sim.hits && sim.hits<=Math.min(n, 48), "seed "+s+": claimed "+claimedN+" hits "+sim.hits+" taps "+n);
-      expect(sim.score>=0 && sim.score<=3*sim.hits && sim.score<=144 && sim.perfects<=sim.hits, "seed "+s+": score "+sim.score);
-      // every tap that has an unclaimed beat inside its Close window is attributed to the nearest one (none silently dropped)
-      var claimed = {}, sorted = taps.slice().sort(function(a, b){ return a-b; });
-      sorted.forEach(function(t){
-        var near = -1, nd = Infinity;
-        beats.forEach(function(bt, k){ var d = Math.abs(t-bt); if(!claimed[k] && d<=280 && d<nd){ near = k; nd = d; } });
-        var r = G.chalkAttribute(t, claimed);
-        if(near<0){ if(r!==null) throw new Error("seed "+s+": attributed with no beat in window"); }
-        else { if(!r || r.k!==near) throw new Error("seed "+s+": wrong beat for t="+t); claimed[near] = true; }
-      });
-    }
-    var perfect = G.chalkSimulate(beats.slice());
-    expect(perfect.score===144 && perfect.perfects===48 && perfect.hits===48, "perfect play isn't 144: "+perfect.score);
-    var dbl = G.chalkSimulate(beats.reduce(function(a, x){ a.push(x, x+5, x+10); return a; }, []));
-    expect(dbl.hits===48 && dbl.score===144, "triple taps changed the score: "+dbl.hits+"/"+dbl.score);
-  });
-
-  async function crOpen(){
-    await click("openGamesBtn", 250); await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+  // ---- dyno tests ----
+  async function dyOpen(){
+    await click("openGamesBtn", 250); await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
     return W.__cruxGames;
   }
-  function crTapAt(G, ms){ var g = G.current(); g.t0 = W.performance.now()-ms; $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); }
+  function dyEv(type){ return new W.Event(type, { bubbles:true, cancelable:true }); }
+  async function dyHold(ms){ $("gmTap").dispatchEvent(dyEv("pointerdown")); await wait(ms); $("gmTap").dispatchEvent(dyEv("pointerup")); }
+  async function dyLatch(G){ var sp = G.current().spec; await dyHold(G.dynoIdealHold(sp)); }
+  async function dyReady(G){ var g = G.current(); for(var k=0;k<40 && W.performance.now()-g.t0<g.readyAt+30;k++) await wait(50); await wait(60); }
 
-  test("Chalk Rhythm: a round scores Perfect/Good/Close, a double tap can't claim twice, the end screen is calm and the best is saved", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.games = { chalkUp:{ best:7, plays:4 } };
+  test("Dyno: rules are pure (meter triangle wave, judge, band windows, step, seeded holds)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed); await goHome();
-    var s0 = saved();
-    expect(s0.games.chalkRhythm.best===7 && s0.games.chalkRhythm.plays===0 && s0.games.chalkUp.best===7 && s0.games.chalkUp.plays===4, "legacy best not migrated / legacy data not kept: "+JSON.stringify(s0.games));
+    var G = W.__cruxGames;
+    expect(typeof G.dynoSpec==="function" && typeof G.dynoRun==="function", "dyno rules missing from the test hook");
+    [[0, 0], [500, 0.5], [1000, 1], [1500, 0.5], [2000, 0], [3000, 1], [-500, 0.5]].forEach(function(c){
+      expect(Math.abs(G.dynoMeter(c[0], 2000)-c[1])<1e-9, "meter at "+c[0]+": "+G.dynoMeter(c[0], 2000));
+    });
+    var sp = G.dynoSpec(12345, 7);
+    expect(JSON.stringify(sp)===JSON.stringify(G.dynoSpec(12345, 7)) && JSON.stringify(sp)!==JSON.stringify(G.dynoSpec(12346, 7)), "specs are seeded and deterministic");
+    var ideal = G.dynoIdealHold(sp), win = G.dynoHoldWindow(sp, 0), win2 = G.dynoHoldWindow(sp, 1);
+    expect(G.dynoJudge(sp, ideal).kind==="latch" && G.dynoJudge(sp, win.from+1).kind==="latch" && G.dynoJudge(sp, win.to-1).kind==="latch", "inside the band latches");
+    expect(G.dynoJudge(sp, win.from-5).kind==="short" && G.dynoJudge(sp, win.to+5).kind==="over", "outside the band is short/over");
+    expect(G.dynoJudge(sp, (win2.from+win2.to)/2).kind==="latch", "the falling pass latches too");
+    expect(Math.abs((win.to-win.from)-sp.w*sp.T)<1e-6 && Math.abs(sp.windowMs-sp.w*sp.T)<1, "window ms = w*T");
+    var st = G.dynoStep({ h:0, peak:0 }, { kind:"latch", clean:true });
+    expect(st.h===1 && st.peak===1 && st.clean===1, "latch +1");
+    st = G.dynoStep(st, { kind:"short" });
+    expect(st.h===0 && st.peak===1 && st.falls===1, "fall drops one ledge, peak stays");
+    st = G.dynoStep(st, { kind:"over" });
+    expect(st.h===0 && st.peak===1 && st.falls===2, "a fall on the ground stays on the ground");
+    expect(G.dynoStamp(100, 120)===100 && G.dynoStamp(10, 500)===500 && G.dynoStamp(900, 500)===500 && G.dynoStamp(null, 500)===500, "input time stamp rules");
+  });
+
+  test("Dyno: property check over 500 seeds (solvable, window >= 400 ms at every hold, ramp monotone then flat, perfect >= 20, null 0, fall costs one ledge)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    for(var s=1;s<=500;s++){
+      var prev = null;
+      for(var n=1;n<=40;n++){
+        var sp = G.dynoSpec(s*7919, n);
+        expect(sp.tp-sp.w>=0.05 && sp.tp+sp.w<=0.98, "band leaves the meter, seed "+s+" hold "+n);
+        expect(sp.w*sp.T>=G.DY_MIN_WINDOW_MS, "window under 400 ms, seed "+s+" hold "+n+": "+(sp.w*sp.T));
+        expect(G.dynoJudge(sp, G.dynoIdealHold(sp)).kind==="latch" && G.dynoJudge(sp, G.dynoHoldWindow(sp, 1).from+1).kind==="latch", "unsolvable hold "+n);
+        expect(sp.T>=2200 && sp.T<=4000, "meter cycle out of range: "+sp.T);
+        if(prev) expect(sp.windowMs<=prev.windowMs, "difficulty rose again: hold "+n);
+        prev = sp;
+      }
+      expect(G.dynoSpec(s, 15).windowMs===G.dynoSpec(s, 40).windowMs, "ramp didn't plateau");
+      var perfect = G.dynoRun(s*31, function(spec){ return G.dynoIdealHold(spec); });
+      expect(perfect.peak>=20 && perfect.falls===0 && perfect.endT<=G.DY_ROUND_MS+2000, "perfect player: "+perfect.peak+" seed "+s);
+      var nul = G.dynoRun(s*31, null);
+      expect(nul.peak===0 && nul.jumps===0 && nul.h===0, "null player scored");
+      var mis = G.dynoRun(s*31, function(spec, st, i){ return i===0 ? 10 : G.dynoIdealHold(spec); });   // one miss at the start (a tap), then perfect
+      expect(mis.log[0].kind==="short" && mis.h>=0 && mis.log[1].n===1, "a fall retries the same hold");
+    }
+    var a = G.dynoRun(5, function(spec, st, i){ return i<3 ? G.dynoIdealHold(spec) : 10; });
+    expect(a.log[2].kind==="latch" && a.h===0 && a.peak===3 && a.falls===0 || a.peak===3, "run bookkeeping: "+JSON.stringify(a));
+    var b = G.dynoRun(5, function(spec, st, i){ return i<3 ? G.dynoIdealHold(spec) : i===3 ? 10 : null; });
+    expect(b.peak===3 && b.h===2 && b.falls===1, "one fall from height 3 leaves height 2, peak 3: "+JSON.stringify(b));
+  });
+
+  test("Dyno: a human-like bot misses items (beginner < average < strong), none is flawless, and a perfect player has a real ceiling", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    function gauss(r){ var u = 0, v = 0; while(!u) u = r(); while(!v) v = r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+    var BANDS = { beginner:{ sigma:140, bias:60, lapse:0.08, antic:0 }, average:{ sigma:90, bias:25, lapse:0.05, antic:0.4 }, strong:{ sigma:50, bias:0, lapse:0.03, antic:0.45 } };
+    function pol(band, seed){
+      var b = BANDS[band], r = G.mulberry32(seed*7919+13);
+      return function(spec, st){
+        var prog = Math.min(1, st.jumps*1900/45000), lat = (180+80*r())*(1-b.antic), gap = Math.max(0, 250+80*gauss(r));
+        if(r()<b.lapse) return { gap:gap, hold:spec.T*r() };
+        return { gap:gap, hold:Math.max(0, G.dynoIdealHold(spec)+b.bias+lat+gauss(r)*b.sigma*(1+0.15*prog)) };
+      };
+    }
+    var rate = {}, mean = {}, perfect = 0;
+    Object.keys(BANDS).forEach(function(band){
+      var ok = 0, tot = 0, sum = 0;
+      for(var s=1;s<=200;s++){
+        var p = pol(band, s*31+15);
+        for(var k=0;k<20;k++){ var sp = G.dynoSpec(s, 15), h = p(sp, { jumps:15 }).hold; ok += G.dynoJudge(sp, h).kind==="latch" ? 1 : 0; tot++; }
+        sum += G.dynoRun(s*977, pol(band, s)).peak;
+      }
+      rate[band] = ok/tot; mean[band] = sum/200;
+    });
+    for(var s2=1;s2<=200;s2++) perfect += G.dynoRun(s2*977, function(sp){ return G.dynoIdealHold(sp); }).peak;
+    perfect /= 200;
+    expect(rate.beginner>0.25 && rate.beginner<0.60, "beginner at the hardest hold: "+rate.beginner);
+    expect(rate.average>0.45 && rate.average<0.78, "average at the hardest hold: "+rate.average);
+    expect(rate.strong>0.75 && rate.strong<0.97, "strong at the hardest hold: "+rate.strong);
+    expect(mean.beginner<mean.average && mean.average<mean.strong && mean.strong<perfect, "skill ordering: "+JSON.stringify(mean)+" perfect "+perfect);
+    expect(perfect-mean.strong>=3, "no ceiling above a strong player: "+perfect+" vs "+mean.strong);
+  });
+
+  test("Dyno: a round latches (+1), a short or over jump drops a ledge (peak stays), the best is saved once and XP/level are untouched", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var xp0 = saved().xp, lv0 = saved().level, sess0 = saved().sessions.length;
     await click("openGamesBtn", 250);
-    expect(!D.getElementById("gmCard_chalkUp") && visible("gmCard_chalkRhythm") && !$("gmCard_chalkRhythm").disabled, "menu cards");
-    expect(/Best 7 · played 0|Not played/.test($("gmCard_chalkRhythm").textContent), "best line: "+$("gmCard_chalkRhythm").textContent);
-    await click("gmCard_chalkRhythm", 150);
-    expect(/Chalk Rhythm/.test($("gamesTitle").textContent) && visible("gmStartBtn"), "intro");
+    expect(visible("gmCard_dyno") && !D.getElementById("gmCard_chalkRhythm") && /Not played/.test($("gmCard_dyno").textContent), "menu card");
+    await click("gmCard_dyno", 150);
+    expect(/Dyno/.test($("gamesTitle").textContent) && visible("gmStartBtn"), "intro");
     await click("gmStartBtn", 100);
     var G = W.__cruxGames;
-    expect(visible("gmTap") && !!$("crRing").style.transform && qa("#gmClimber img").length>=1, "round isn't drawn");
-    var b = G.chalkBeats();
-    crTapAt(G, b[0]+5); await wait(60);
-    expect(+$("gmScore").textContent===3 && /Perfect/.test($("crLabel").textContent) && $("crLabel").classList.contains("on"), "perfect: score "+$("gmScore").textContent+" / "+$("crLabel").textContent);
-    expect(/climb-chalk-up|cl_chalk|chalk/i.test($("gmClimberImg").getAttribute("src")||"") || true, "chalk frame");
-    crTapAt(G, b[0]+20); await wait(40);
-    expect(+$("gmScore").textContent===3, "a double tap scored twice: "+$("gmScore").textContent);
-    crTapAt(G, b[1]-120); await wait(40);
-    expect(+$("gmScore").textContent===5 && /Good/.test($("crLabel").textContent), "good: "+$("gmScore").textContent);
-    crTapAt(G, b[2]+250); await wait(40);
-    expect(+$("gmScore").textContent===6 && /Close/.test($("crLabel").textContent), "close: "+$("gmScore").textContent);
-    crTapAt(G, b[3]+500); await wait(40);
-    expect(+$("gmScore").textContent===6, "a tap 500 ms off scored");
-    expect(G.current().taps===5 && G.current().perfects===1, "tap/perfect counts "+G.current().taps+"/"+G.current().perfects);
-    G.current().t0 -= 45000; await wait(250);               // the round runs out
-    expect(!G.current() && /Nice breathing\./.test($("gmStage").textContent) && $("gmStage").textContent.indexOf("lost")<0, "end screen: "+$("gmStage").textContent);
-    expect(/6/.test($("gmStage").querySelector(".gm-big").textContent), "end score");
-    expect(!!$("gmAgainBtn") && !!$("gmMenuBtn"), "end buttons");
-    var s1 = saved().games;
-    expect(s1.chalkRhythm.plays===1 && s1.chalkRhythm.best===7 && s1.chalkRhythm.perfectBest===1 && s1.chalkUp.best===7 && s1.chalkUp.plays===4, "record: "+JSON.stringify(s1.chalkRhythm));
-    // second round beats the best
-    await click("gmAgainBtn", 150); await click("gmStartBtn", 100);
-    var b2 = G.chalkBeats();
-    for(var k=0;k<4;k++){ crTapAt(G, b2[k]); await wait(20); }
-    G.current().t0 -= 45000; await wait(250);
-    expect(/New personal best/.test($("gmStage").textContent) && saved().games.chalkRhythm.best===12 && saved().games.chalkRhythm.plays===2 && saved().games.chalkRhythm.perfectBest===4, "new best: "+JSON.stringify(saved().games.chalkRhythm));
+    expect(qa("#gmClimber img").length>=1 && $("gmClimberImg").getAttribute("src")===W.__cruxOutfit.variantFrame(W.__cruxOutfit.idle[0], W.__cruxOutfit.variantId()), "climber isn't a climber frame");
+    expect(q(".dy-gauge") && q(".dy-zone") && qa(".dy-ledge").length>=2, "meter or holds missing");
+    await dyLatch(G); await wait(80);
+    expect(G.current().h===1 && +$("gmScore").textContent===1 && /Latched/.test($("dyLabel").textContent) && /Height 1/.test($("gmLine").textContent), "latch: h="+G.current().h+" "+$("dyLabel").textContent);
+    await dyReady(G);
+    expect(G.current().spec.n===2, "the next hold wasn't set up");
+    await dyLatch(G); await dyReady(G);
+    expect(G.current().h===2 && G.current().peak===2, "second latch");
+    await dyHold(60); await wait(80);                    // far too short: undershoot
+    expect(G.current().h===1 && G.current().peak===2 && +$("gmScore").textContent===2 && /Short/.test($("dyLabel").textContent) && G.current().falls===1, "short jump: "+JSON.stringify([G.current().h, G.current().peak, $("dyLabel").textContent]));
+    await dyReady(G);
+    expect(G.current().spec.n===2, "after a fall the same hold is the target again");
+    var sp = G.current().spec; await dyHold(G.dynoHoldWindow(sp, 0).to+250); await wait(80);   // let go late: overshoot
+    expect(G.current().falls===2 && /Over/.test($("dyLabel").textContent) && G.current().h===0, "over jump: "+JSON.stringify([G.current().h, G.current().falls, $("dyLabel").textContent]));
     await click("closeGamesBtn", 250);
-    expect(saved().games.chalkRhythm.plays===2, "closing recorded again");
-  });
-
-  test("Chalk Rhythm: leaving with no tap records nothing, and an unattributed tap still counts as an action", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
-    await boot(seed); await goHome();
-    var G = await crOpen();
-    await click("closeGamesBtn", 250);
-    expect(saved().games.chalkRhythm.plays===0, "abandon with no tap counted");
-    G = await crOpen();
-    crTapAt(G, 400); await wait(40);
-    expect(+$("gmScore").textContent===0, "off-beat tap scored");
-    await click("closeGamesBtn", 250);
-    expect(saved().games.chalkRhythm.plays===1 && saved().games.chalkRhythm.best===0, "action with score 0: "+JSON.stringify(saved().games.chalkRhythm));
-  });
-
-  test("Chalk Rhythm: sound ticks on Perfect/Good only, never when sound is off", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
-    await boot(seed); await goHome();
-    var G = await crOpen(), b = G.chalkBeats(), n0 = G.beepCount();
-    crTapAt(G, b[0]); await wait(30);
-    expect(G.beepCount()===n0+1, "no tick on Perfect");
-    crTapAt(G, b[1]+120); await wait(30);
-    expect(G.beepCount()===n0+2, "no tick on Good");
-    crTapAt(G, b[2]+250); await wait(30);
-    expect(G.beepCount()===n0+2, "tick on Close");
-    crTapAt(G, b[3]+600); await wait(30);
-    expect(G.beepCount()===n0+2, "tick on a miss");
-    await click("gmBackBtn", 200); await click("gmSoundSwitch", 150);
-    expect(saved().settings.gameSound===false, "sound didn't switch off");
-    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
-    var n1 = G.beepCount();
-    crTapAt(G, b[0]); await wait(30); crTapAt(G, b[1]); await wait(30);
-    expect(G.beepCount()===n1 && +$("gmScore").textContent===6, "a game beep played with sound off / score "+$("gmScore").textContent);
+    var s = saved();
+    expect(s.games.dyno.plays===1 && s.games.dyno.best===2 && s.games.chalkRhythm.plays===0, "scores not saved: "+JSON.stringify(s.games.dyno));
+    expect(s.xp===xp0 && s.level===lv0 && s.sessions.length===sess0, "a game changed XP, level or sessions");
+    await click("openGamesBtn", 250);
+    expect(/Best 2 · played 1/.test($("gmCard_dyno").textContent), "best line: "+$("gmCard_dyno").textContent);
     await click("closeGamesBtn", 150);
   });
 
-  test("Chalk Rhythm: reduced motion swaps the scaling ring for a bar and a fixed line (no puff)", async function(){
+  test("Dyno: an untouched round records nothing, a release (even a bad one) is an action, a press during a landing is ignored", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed); await goHome();
-    W.__cruxGames.chalkReduced(true);
-    var G = await crOpen();
-    expect($("crField").classList.contains("cr-rm"), "no reduced-motion variant");
-    expect(W.getComputedStyle($("crRing")).display==="none" && W.getComputedStyle(q(".cr-bar")).display!=="none", "ring/bar visibility");
-    await wait(300);
-    var w1 = $("crBarFill").style.width;
-    await wait(250);
-    expect(!$("crRing").style.transform || /0\.35/.test($("crRing").style.transform), "the ring scaled in reduced motion: "+$("crRing").style.transform);
-    expect($("crBarFill").style.width!==w1 && w1!=="", "the bar isn't filling: "+w1+" -> "+$("crBarFill").style.width);
-    crTapAt(G, G.chalkBeats()[0]); await wait(40);
-    expect(+$("gmScore").textContent===3 && /Perfect/.test($("crLabel").textContent) && !q(".cr-puff.go"), "label only: "+$("crLabel").textContent);
+    var G = await dyOpen();
     await click("closeGamesBtn", 250);
-    G.chalkReduced(null);
+    expect(saved().games.dyno.plays===0, "abandon with no action counted: "+JSON.stringify(saved().games.dyno));
+    G = await dyOpen();
+    $("gmTap").dispatchEvent(dyEv("pointerdown")); await wait(120);
+    await click("closeGamesBtn", 250);                   // pressed but never released: still no action
+    expect(saved().games.dyno.plays===0, "a held press with no release counted");
+    G = await dyOpen();
+    await dyHold(40); await wait(100);
+    var j0 = G.current().jumps;
+    $("gmTap").dispatchEvent(dyEv("pointerdown")); await wait(60); $("gmTap").dispatchEvent(dyEv("pointerup"));   // still falling
+    expect(G.current().jumps===j0 && !G.current().charge, "a press during the fall was taken");
+    await click("closeGamesBtn", 250);
+    expect(saved().games.dyno.plays===1 && saved().games.dyno.best===0, "one bad release: "+JSON.stringify(saved().games.dyno));
   });
 
-  test("Chalk Rhythm: rest hand-off (round closes itself once at rest end) and no Again prompt in the last 10 s of rest", async function(){
+  test("Dyno: Space charges and releases like a finger; a second finger cannot release the first; hiding the page cancels a charge and pauses", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = await dyOpen();
+    function key(type, k){ var e = new W.KeyboardEvent(type, { key:k, bubbles:true, cancelable:true }); $("gmTap").dispatchEvent(e); return e; }
+    var ideal = G.dynoIdealHold(G.current().spec);
+    key("keydown", " "); await wait(40); key("keydown", " ");
+    expect(!!G.current().charge && G.current().charge.kind==="key", "Space didn't start a charge");
+    await wait(Math.max(0, ideal-40)); key("keyup", " "); await wait(60);
+    expect(G.current().h===1, "Space hold at the ideal time didn't latch: h="+G.current().h);
+    await dyReady(G);
+    var e1 = new W.Event("pointerdown", { bubbles:true, cancelable:true }); e1.pointerId = 7;
+    $("gmTap").dispatchEvent(e1); await wait(50);
+    var e2 = new W.Event("pointerup", { bubbles:true, cancelable:true }); e2.pointerId = 9;
+    $("gmTap").dispatchEvent(e2); await wait(30);
+    expect(!!G.current().charge, "another finger released the charge");
+    function hide(on){ Object.defineProperty(D, "hidden", { configurable:true, get:function(){ return on; } }); D.dispatchEvent(new W.Event("visibilitychange")); }
+    var jumps = G.current().jumps;
+    hide(true); await wait(60);
+    expect(G.paused() && !G.current().charge && G.current().jumps===jumps, "hiding didn't cancel the charge and pause");
+    var t = $("gmTime").textContent; await wait(500);
+    expect($("gmTime").textContent===t, "the clock moved while paused");
+    hide(false); await click("gmPaused", 120);
+    expect(!G.paused(), "tap didn't resume");
+    await click("closeGamesBtn", 250);
+  });
+
+  test("Dyno: sound ticks on a latch and a fall, never when sound is off", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = await dyOpen(), n0 = G.beepCount();
+    await dyLatch(G); await wait(60);
+    expect(G.beepCount()===n0+1, "no tick on a latch");
+    await dyReady(G); await dyHold(50); await wait(60);
+    expect(G.beepCount()===n0+2, "no tick on a fall");
+    await click("gmBackBtn", 200); await click("gmSoundSwitch", 150);
+    expect(saved().settings.gameSound===false, "sound didn't switch off");
+    await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
+    var n1 = G.beepCount();
+    await dyLatch(G); await wait(60);
+    expect(G.beepCount()===n1 && +$("gmScore").textContent===1, "a game beep played with sound off");
+    await click("closeGamesBtn", 150);
+  });
+
+  test("Dyno: reduced motion shows the meter as a flat bar with no wobble or scroll, and still plays", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    W.__cruxGames.dynoReduced(true);
+    var G = await dyOpen();
+    expect($("dyField").classList.contains("dy-rm"), "no reduced-motion variant");
+    var gr = $("dyGauge").getBoundingClientRect();
+    expect(gr.width>gr.height*3, "meter isn't a horizontal bar: "+gr.width+"x"+gr.height);
+    $("gmTap").dispatchEvent(dyEv("pointerdown")); await wait(250);
+    expect($("gmClimber").style.translate==="" && $("gmClimber").style.scale==="", "the climber wobbled: "+$("gmClimber").style.translate);
+    expect(+$("dyGauge").style.getPropertyValue("--m")>0, "the bar isn't filling");
+    $("gmTap").dispatchEvent(dyEv("pointerup")); await wait(60);
+    expect(W.getComputedStyle($("gmClimber")).transitionDuration.split(",")[0].trim()==="0s", "the climber animates in reduced motion: "+W.getComputedStyle($("gmClimber")).transitionDuration);
+    await dyReady(G); await dyLatch(G); await wait(80);
+    expect(G.current().peak>=1 || G.current().falls>=1, "no result in reduced motion");
+    await click("closeGamesBtn", 250);
+    G.dynoReduced(null);
+  });
+
+  test("Dyno: rest hand-off (round closes itself once at rest end) and no Again prompt in the last 10 s of rest", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:7 };
     await boot(seed); await goHome();
     await click("startSessionBtn", 300);
     await click("startBtn", 4400);                       // resting, about 6 s left (<= 10 s)
     expect(/REST/.test($("phaseLabel").textContent) && visible("playRestBtn"), "not resting");
     await click("playRestBtn", 300);
-    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
-    var G = W.__cruxGames, b = G.chalkBeats();
-    crTapAt(G, b[0]); await wait(40);
+    await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
+    var G = W.__cruxGames;
+    await dyLatch(G); await wait(40);
     G.current().t0 -= 45000; await wait(250);            // the round ends naturally while rest is nearly over
     expect(!D.getElementById("gmAgainBtn") && !D.getElementById("gmMenuBtn") && /Rest is almost over/.test($("gmStage").textContent), "an Again prompt shows in the last 10 s: "+$("gmStage").textContent);
-    expect(saved().games.chalkRhythm.plays===1 && saved().games.chalkRhythm.best===3, "round not recorded once: "+JSON.stringify(saved().games.chalkRhythm));
+    expect(saved().games.dyno.plays===1 && saved().games.dyno.best===1, "round not recorded once: "+JSON.stringify(saved().games.dyno));
     for(var k=0;k<120 && visible("gamesOverlay");k++) await wait(100);
     expect(!visible("gamesOverlay"), "games sheet stayed open after rest");
-    expect(saved().games.chalkRhythm.plays===1, "recorded twice at rest end");
+    expect(saved().games.dyno.plays===1, "recorded twice at rest end");
     await click("startBtn", 150);
   });
 
-  test("Chalk Rhythm: rest ending mid-round closes the round once and keeps its score", async function(){
+  test("Dyno: rest ending mid-round (mid-charge too) closes the round once and keeps its score", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:4 };
     await boot(seed); await goHome();
     await click("startSessionBtn", 300); await click("startBtn", 4400);
-    await click("playRestBtn", 300); await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
-    var G = W.__cruxGames; crTapAt(G, G.chalkBeats()[0]); await wait(30);
+    await click("playRestBtn", 300); await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
+    var G = W.__cruxGames; await dyLatch(G); await wait(30);
+    $("gmTap").dispatchEvent(dyEv("pointerdown"));       // charging when rest runs out
     for(var k=0;k<60 && visible("gamesOverlay");k++) await wait(100);
-    expect(!visible("gamesOverlay") && saved().games.chalkRhythm.plays===1 && saved().games.chalkRhythm.best>=3, "mid-round rest end: "+JSON.stringify(saved().games.chalkRhythm));
+    expect(!visible("gamesOverlay") && saved().games.dyno.plays===1 && saved().games.dyno.best>=1, "mid-round rest end: "+JSON.stringify(saved().games.dyno));
     expect(/WORK/.test($("phaseLabel").textContent) && $("startBtn").textContent==="Pause", "timer was altered");
     await click("startBtn", 150);
   });
@@ -2167,7 +2286,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:3, restSec:14 };
     await boot(seed); await goHome();
     await click("startSessionBtn", 300); await click("startBtn", 3400);
-    await click("playRestBtn", 300); await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    await click("playRestBtn", 300); await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
     var G = W.__cruxGames; G.current().t0 -= 45000; await wait(300);   // round over with ~10-11 s of rest left
     var early = !!D.getElementById("gmAgainBtn");
     for(var k=0;k<40 && D.getElementById("gmAgainBtn");k++) await wait(100);
@@ -2176,62 +2295,23 @@ and the project rules. It runs on its own private copy of the data, never your r
     for(var j=0;j<80 && visible("gamesOverlay");j++) await wait(100);
     await click("startBtn", 150);
   });
-  // ---- chalkRhythm polish tests ----
-  test("Chalk Rhythm polish: echo, tap-time, cue and smoothing rules (pure)", async function(){
+  test("Dyno: saved Chalk Rhythm and Chalk Up data survive the cut (kept, not shown, not rewritten by a Dyno round)", async function(){
+    var G;
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    seed.games = { chalkUp:{ best:5, plays:2 }, chalkRhythm:{ best:31, plays:9, perfectBest:6 }, holdHop:{ best:4, plays:1 }, _meta:{ chalkMigrated:true, playDays:[] }, futureGame:{ best:3, plays:1, shiny:"x" } };
     await boot(seed); await goHome();
-    var G = W.__cruxGames, b = G.chalkBeats();
-    expect(G.chalkEcho(0)===null && G.chalkEcho(b[0]-1)===null, "an echo before the first beat");
-    var e0 = G.chalkEcho(b[0]), e1 = G.chalkEcho(b[0]+100), e2 = G.chalkEcho(b[0]+250);
-    expect(e0 && e0.k===0 && e0.scale===1 && Math.abs(e0.opacity-0.9)<1e-9, "echo at the beat: "+JSON.stringify(e0));
-    expect(e1.scale>e0.scale && e2.scale>e1.scale && e2.scale<=1.22 && e1.opacity<e0.opacity && e2.opacity<e1.opacity && e2.opacity>0, "echo isn't monotone: "+JSON.stringify([e0, e1, e2]));
-    expect(G.chalkEcho(b[0]+300)===null && G.chalkEcho(b[0]+299)!==null, "echo window edge");
-    // a beat's echo is finished before the next beat's ring is half grown, for every beat of the grid
-    for(var i=0;i<b.length;i++){ var nxt = i+1<b.length ? b[i+1] : 45000; expect(nxt-b[i]>=300, "beat "+i+" is shorter than its echo"); }
-    expect(G.chalkEase(0)===0 && G.chalkEase(1)===1 && G.chalkEase(0.5)>0.5 && G.chalkEase(-3)===0 && G.chalkEase(9)===1, "ease");
-    expect(G.chalkRingOpacity(0)===0 && G.chalkRingOpacity(0.1)>=0.5 && G.chalkRingOpacity(0.2)===1 && G.chalkRingOpacity(1)===1, "ring fade-in");
-    expect(G.chalkTapTime(1000, 1010)===1000 && G.chalkTapTime(1010, 1010)===1010 && G.chalkTapTime(0, 1010)===1010 && G.chalkTapTime(NaN, 1010)===1010
-      && G.chalkTapTime(undefined, 1010)===1010 && G.chalkTapTime(500, 1010)===1010 && G.chalkTapTime(2000, 1010)===1010 && G.chalkTapTime(1000.5, 1000)===1000, "tap time");
-    expect(G.chalkCue("perfect", 5)===null && G.chalkCue("good", -90)==="early" && G.chalkCue("close", 200)==="late" && G.chalkCue("miss", 400)===null, "cue");
-    var v = 0, prev = 0; for(var j=0;j<40;j++){ v = G.chalkSmooth(v, 1, 16, 90); expect(v>prev && v<1, "smooth step "+j); prev = v; }
-    expect(v>0.9 && G.chalkSmooth(0.5, 0.5, 16, 90)===0.5 && G.chalkSmooth(0, 1, 0, 90)===0, "smooth ends");
-  });
-
-  test("Chalk Rhythm polish: hit feedback, steady clock, first-round hint, tap target", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
-    await boot(seed); await goHome();
-    var G = await crOpen(), b = G.chalkBeats();
-    expect(W.getComputedStyle($("gmTap")).touchAction==="manipulation" || $("gmTap").style.touchAction==="manipulation", "tap layer lacks touch-action: manipulation");
-    var tr = $("gmTap").getBoundingClientRect(); expect(tr.width>=56 && tr.height>=56, "tap target "+tr.width+"x"+tr.height);
-    expect($("crTeach").classList.contains("on"), "no first-round hint");
-    await wait(80);
-    expect(/\d+s/.test($("gmTime").textContent), "clock missing at start: '"+$("gmTime").textContent+"'");
-    crTapAt(G, b[0]-90); await wait(60);
-    expect(/Good/.test($("crLabel").textContent) && /early/.test($("crLabel").textContent), "early cue: "+$("crLabel").textContent);
-    expect(!$("crTeach").classList.contains("on"), "hint stayed after the first tap");
-    expect(/\d+s/.test($("gmTime").textContent), "clock blanked by a tap: '"+$("gmTime").textContent+"'");
-    expect(q(".cr-outline").classList.contains("cr-hit") && !q(".cr-outline").classList.contains("cr-hit-perfect"), "outline pulse (good)");
-    crTapAt(G, b[1]); await wait(40);
-    expect(q(".cr-outline").classList.contains("cr-hit-perfect") && q(".cr-puff.go") && $("gmScore").classList.contains("cr-bump"), "perfect pulse/puff/score bump");
-    crTapAt(G, b[2]+200); await wait(40);
-    expect(/Close/.test($("crLabel").textContent) && /late/.test($("crLabel").textContent), "late cue: "+$("crLabel").textContent);
-    var before = +$("gmScore").textContent;
-    crTapAt(G, b[3]+600); await wait(40);
-    expect(+$("gmScore").textContent===before && $("gmClimber").classList.contains("cr-hop-sm"), "an off-beat tap gave no answer / changed the score");
-    // the echo of a landed beat is drawn and then goes away
-    G.current().t0 = W.performance.now()-(b[5]+100); await wait(40);
-    expect(+q(".cr-echo").style.opacity>0, "no echo after a beat");
-    await wait(450);
-    expect(+q(".cr-echo").style.opacity===0 || q(".cr-echo").style.opacity==="0", "echo didn't clear: "+q(".cr-echo").style.opacity);
-    G.current().t0 -= 45000; await wait(250);
-    expect(/beats/.test($("gmStage").textContent) && /of 48 beats/.test($("gmStage").textContent), "end note lacks the beat count: "+$("gmStage").textContent);
-    // a second round: the first-round hint is gone
-    await click("gmAgainBtn", 150); await click("gmStartBtn", 100);
-    expect(!$("crTeach").classList.contains("on"), "the hint came back on round 2");
+    G = W.__cruxGames;
+    var g = saved().games;
+    expect(g.chalkRhythm.best===31 && g.chalkRhythm.plays===9 && g.chalkRhythm.perfectBest===6 && g.chalkUp.best===5 && g.holdHop.best===4 && g.futureGame.shiny==="x", "legacy ids lost: "+JSON.stringify(g));
+    expect(g.dyno.best===0 && g.dyno.plays===0 && g.dyno.cleanBest===0, "dyno defaults: "+JSON.stringify(g.dyno));
+    await dyOpen(); await dyLatch(G); await wait(60);
     await click("closeGamesBtn", 250);
+    g = saved().games;
+    expect(g.dyno.plays===1 && g.dyno.best===1 && g.chalkRhythm.best===31 && g.chalkRhythm.plays===9 && g.chalkRhythm.perfectBest===6 && g.futureGame.best===3, "a Dyno round touched other games: "+JSON.stringify(g));
+    var n = G.normalize({ dyno:{ best:"7", plays:-1, cleanBest:1e9 }, chalkRhythm:{ best:12 } });
+    expect(n.dyno.best===7 && n.dyno.plays===0 && n.dyno.cleanBest===9999 && n.chalkRhythm.best===12, "normalize "+JSON.stringify(n));
   });
-
-  // ---- end chalkRhythm tests ----
+  // ---- end dyno tests ----
 
   test("Games: Play while you rest keeps the timer running, shows the rest clock, and returns to work when rest ends", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:4 };
@@ -2242,7 +2322,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(/REST/.test($("phaseLabel").textContent) && visible("playRestBtn") && /Play while you rest/.test($("playRestBtn").textContent), "no Play while you rest button: "+$("phaseLabel").textContent);
     await click("playRestBtn", 300);
     expect(visible("gamesOverlay") && visible("gamesRest") && /\d\d:\d\d/.test($("gamesRestClock").textContent) && /timer still running/.test($("gamesRestText").textContent), "no rest strip: "+$("gamesRestText").textContent);
-    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
     var sawCue = false;                                  // rest ends while the game is open
     for(var k=0;k<60 && visible("gamesOverlay");k++){ await wait(100); if(/Back to work/.test($("gamesRestText").textContent)) sawCue = true; }
     expect(sawCue, "no back-to-work cue");
@@ -2298,70 +2378,6 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(maxRun<=3, "a side repeated "+maxRun+" times in a row");
   });
 
-  test("Games: Reach Timer round (hit climbs, wrong half slips and floors at 0, score is the peak, saved once)", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
-    await boot(seed); await goHome();
-    var G = W.__cruxGames;
-    await click("openGamesBtn", 250);
-    expect(visible("gmCard_reachTimer") && !$("gmCard_reachTimer").disabled && /Not played/.test($("gmCard_reachTimer").textContent), "Reach Timer card");
-    await click("gmCard_reachTimer", 150);
-    expect(/Reach Timer/.test($("gamesTitle").textContent) && visible("gmStartBtn"), "intro");
-    await click("gmStartBtn", 120);
-    expect(visible("rtL") && visible("rtR") && $("rtL").offsetHeight>=56 && $("rtR").offsetWidth>=56, "halves missing or too small");
-    expect(/^L/.test($("rtL").textContent.trim()) && /^R|R$/.test($("rtR").textContent.trim()), "L and R labels");
-    var g = G.current();
-    expect(g.st==="gap" && qa(".rt-slot[data-kind='ghost']").length===2, "the first target should be telegraphed as a ghost: "+g.st);
-    function press(side){ $("rt"+side).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); }
-    async function untilLive(){ for(var k=0;k<40 && g.st!=="live";k++) await wait(50); expect(g.st==="live", "target never went live"); }
-    var other = function(s){ return s==="L" ? "R" : "L"; };
-    await wait(150);
-    // a wrong half in the gap is ignored; wrong half on a live target at height 0 stays at 0
-    await untilLive();
-    var want = g.seq[g.i];
-    press(other(want)); await wait(40);
-    expect(g.h===0 && g.peak===0 && g.i===1, "wrong half at 0: h="+g.h+" i="+g.i);
-    for(var n=0;n<2;n++){
-      await untilLive(); want = g.seq[g.i];
-      press(want); await wait(40);
-    }
-    expect(g.h===2 && g.peak===2 && +$("gmScore").textContent===2, "two hits: h="+g.h+" score "+$("gmScore").textContent);
-    expect(qa(".rt-mark[data-on='1']").length===2, "ladder marks");
-    await untilLive(); press(other(g.seq[g.i])); await wait(40);
-    expect(g.h===1 && g.peak===2 && +$("gmScore").textContent===2, "slip: h="+g.h+" peak "+g.peak);
-    await untilLive();                                   // a timeout slips too, without any tap
-    for(var k=0;k<60 && g.h===1;k++) await wait(50);
-    expect(g.h===0 && g.peak===2, "timeout: h="+g.h+" peak "+g.peak);
-    await click("closeGamesBtn", 250);
-    var sv = saved().games.reachTimer;
-    expect(sv.plays===1 && sv.best===2 && sv.bestStreak===2, "saved: "+JSON.stringify(sv));
-  });
-
-  test("Games: Reach Timer in rest closes itself at rest end (score kept once), never offers Again, and hiding the page pauses it", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:6 };
-    await boot(seed); await goHome();
-    var G = W.__cruxGames;
-    function hide(on){ Object.defineProperty(D, "hidden", { configurable:true, get:function(){ return on; } }); D.dispatchEvent(new W.Event("visibilitychange")); }
-    await click("startSessionBtn", 300); await click("startBtn", 4300);
-    expect(/REST/.test($("phaseLabel").textContent), "not resting");
-    await click("playRestBtn", 250); await click("gmCard_reachTimer", 150); await click("gmStartBtn", 120);
-    var g = G.current();
-    for(var k=0;k<40 && g.st!=="live";k++) await wait(50);
-    $("rt"+g.seq[g.i]).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(40);
-    expect(g.h===1, "no hit");
-    var t0 = g.t0; hide(true); await wait(60);
-    expect(G.paused() && visible("gmPaused"), "didn't pause");
-    var i0 = g.i; await wait(700);
-    expect(g.i===i0, "the round moved while paused");
-    hide(false); await click("gmPaused", 100);
-    expect(!G.paused() && g.t0>t0+500, "resume didn't shift the clock");
-    var sawAgain = false;
-    for(var j=0;j<60 && visible("gamesOverlay");j++){ await wait(100); if(D.getElementById("gmAgainBtn")) sawAgain = true; }
-    expect(!visible("gamesOverlay") && !sawAgain, "rest end: overlay "+visible("gamesOverlay")+" again "+sawAgain);
-    var sv = saved().games.reachTimer;
-    expect(sv.plays===1 && sv.best>=1, "round not recorded once: "+JSON.stringify(sv));
-    expect(/WORK/.test($("phaseLabel").textContent), "timer didn't carry on");
-    await click("startBtn", 150);
-  });
   // ---- end reachTimer tests ----
   // ---- reachTimer polish tests ----
   test("Games: Reach Timer polish rules (early-tap buffer, run tiers, pitch, rise)", async function(){
@@ -2378,50 +2394,227 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(G.reachRise(0)===0 && G.reachRise(3)===3*G.reachRise(1)&&G.reachRise(1)>=12 && G.reachRise(99)===G.reachRise(10) && G.reachRise(-4)===0, "rise caps at the ladder");
   });
 
-  test("Games: Reach Timer polish feel (half flash, run chip, gliding ghost, early tap, no ghost clicks, tap targets)", async function(){
+  // ---- end reachTimer polish tests ----
+  // ---- wallRun tests ----
+  test("Games: Wall Run rules (ramp, hit/slip/ignore verdicts, stray-tap cooldown, floor at 0, peak is the score)", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed); await goHome();
     var G = W.__cruxGames;
-    await click("openGamesBtn", 250); await click("gmCard_reachTimer", 150); await click("gmStartBtn", 120);
-    var g = G.current();
-    function press(side){ $("rt"+side).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); }
-    async function untilLive(){ for(var k=0;k<60 && g.st!=="live";k++) await wait(40); expect(g.st==="live", "never live"); }
-    ["rtL", "rtR"].forEach(function(id){
-      var cs = W.getComputedStyle($(id));
-      expect(cs.touchAction==="manipulation" && $(id).offsetHeight>=200 && $(id).offsetWidth>=150, id+" touch-action "+cs.touchAction+" size "+$(id).offsetWidth+"x"+$(id).offsetHeight);
-      expect($(id).querySelector(".rt-pad").offsetHeight>=56, id+" pad too small");
-    });
-    expect(+$("rtCombo").getAttribute("data-tier")===0, "chip should start hidden");
-    // the letter belongs to its element: the ghost that is next keeps its element and moves up to the live place
-    var ghostEl = qa(".rt-slot[data-kind='ghost'][data-k='1']")[0], ghostSide = ghostEl.getAttribute("data-side");
-    await untilLive();
-    var liveEl = q(".rt-slot[data-kind='live']");
-    expect(liveEl && liveEl.getAttribute("data-k")==="0" && liveEl.getAttribute("data-side")===g.seq[g.i], "live slot");
-    press(g.seq[g.i]); await wait(30);
-    expect($("rt"+liveEl.getAttribute("data-side")).hasAttribute("data-flash"), "the half should flash on a tap");
-    expect(g.h===1 && qa(".rt-slot[data-kind='done']").length===1, "answered slot should fade out as done");
-    var nextEl = q(".rt-slot[data-kind='ghost'][data-k='0']");
-    expect(nextEl===ghostEl && nextEl.getAttribute("data-side")===ghostSide, "the ghost should become the next target in place (identity kept)");
-    expect(+$("rtCombo").getAttribute("data-tier")===0, "one hit is not a run");
-    await untilLive(); press(g.seq[g.i]); await wait(30);
-    expect(g.streak===2 && +$("rtCombo").getAttribute("data-tier")===1 && /2/.test($("rtCombo").textContent), "run chip at 2: "+$("rtCombo").textContent);
-    // an early correct tap in the last RT_EARLY_MS of the gap counts; a wrong one does nothing
-    for(var k=0;k<80 && !(g.st==="gap" && performance.now()-g.t0>=g.appearAt-60 && performance.now()-g.t0<g.appearAt-10);k++) await wait(5);
-    var h0 = g.h, want = g.seq[g.i], wrong = want==="L" ? "R" : "L";
-    if(g.st==="gap" && W.performance.now()-g.t0>=g.appearAt-G.RT_EARLY_MS){
-      press(wrong); await wait(10); expect(g.h===h0 && g.i===g.i, "wrong half early must be ignored");
-      press(want); await wait(30); expect(g.h===h0+1, "early correct tap should count: h "+g.h+" want "+(h0+1));
+    expect(typeof G.wallPhase==="function" && typeof G.wallNotes==="function" && typeof G.wallRound==="function", "wall run rules missing from the test hook");
+    var p0 = G.wallPhase(0), p1 = G.wallPhase(20000), pT = G.wallPhase(40000), pE = G.wallPhase(90000);
+    expect(p0.gap>p1.gap && p1.gap>pT.gap && p0.half>p1.half && p1.half>=pT.half && p0.look>pT.look, "ramp should speed up: "+JSON.stringify([p0, p1, pT]));
+    expect(JSON.stringify(pT)===JSON.stringify(pE) && JSON.stringify(G.wallPhase(25000))===JSON.stringify(pE), "plateau from 25 s on");
+    expect(pE.early+pE.late>=400 && pE.look-pE.early>=600, "top speed keeps a 400 ms window and 600 ms of sight: "+JSON.stringify(pE));
+    var notes = [{ i:0, lane:0, due:2000 }, { i:1, lane:2, due:3000 }, { i:2, lane:1, due:4000 }, { i:3, lane:1, due:5000 }];
+    var late0 = G.wallLate(notes[0]), early1 = G.wallEarly(notes[1]);
+    expect(G.wallEarly(notes[0])>G.wallLate(notes[0]) && G.wallEarly(notes[0])+late0===2*G.wallHalf(notes[0]), "window is early-heavy: you reach for a hold as it comes");
+    var st = G.wallNew(), r = G.wallTap(st, notes, 0, 2000+late0);
+    expect(r.verdict==="hit" && r.i===0 && st.h===1 && st.peak===1 && st.streak===1, "hit at the window edge: "+JSON.stringify(r));
+    r = G.wallTap(st, notes, 2, 3000-early1-1);
+    expect(r.verdict==="slip" && st.h===0 && st.peak===1 && st.slips===1 && st.streak===0, "a tap just before the window is a stray slip, floor 0: "+JSON.stringify(st));
+    r = G.wallTap(st, notes, 1, 3000-early1);
+    expect(r.verdict==="ignore" && st.slips===1, "a second stray within the cooldown is one slip, not two");
+    // wrong lane inside another hold's window: stray; right lane after cooldown: hit
+    st = G.wallNew(); G.wallTap(st, notes, 0, 2000);
+    expect(G.wallTap(st, notes, 1, 2800).verdict==="slip" && G.wallTap(st, notes, 2, 3000).verdict==="hit", "wrong lane slips, and the right lane still hits right after (the cooldown only limits strays)");
+    // a hold left alone slips exactly once when its window closes, and a late tap right after is not a second slip
+    st = G.wallNew(); G.wallTap(st, notes, 0, 2000);
+    var late = 3000+G.wallLate(notes[1])+40;
+    r = G.wallTap(st, notes, 2, late);
+    expect(r.verdict==="ignore" && st.slips===1 && st.h===0 && st.done[1]===2, "late tap after a miss: one slip total: "+JSON.stringify(st));
+    // same lane twice in a row: earliest unanswered hold is taken
+    st = G.wallNew(); G.wallTap(st, notes, 1, 4000); G.wallTap(st, notes, 1, 5000);
+    expect(st.hits===2 && st.done[2]===1 && st.done[3]===1, "repeat lane holds are taken in order");
+    var rd = G.wallRound(notes, [{ t:2000, lane:0 }, { t:3000, lane:2 }, { t:4000, lane:1 }, { t:5000, lane:1 }], 6000);
+    expect(rd.peak===4 && rd.slips===0 && rd.bestRun===4, "perfect replay: "+JSON.stringify(rd));
+    expect([0, 2, 3, 7, 8, 14, 15, 60].map(G.wallRunTier).join()==="0,0,1,1,2,2,3,3", "clean-run tiers");
+    expect(G.wallProgress({ due:3000 }, 3000)!==undefined, "progress helper");
+  });
+
+  test("Games: Wall Run property, 500 seeds always solvable, fair lane changes, reaction window >= 400 ms at top speed, a null player scores 0", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, F = G.WR_FLOOR, R = G.WR_ROUND_MS;
+    // difficulty is monotone and plateaus; the hardest window and visible time hold the 400 ms floor
+    var prev = G.wallPhase(0), mono = true, minWin = 1e9, minSeen = 1e9;
+    for(var t=0;t<=70000;t+=250){
+      var ph = G.wallPhase(t);
+      if(ph.gap>prev.gap || ph.look>prev.look || ph.half>prev.half || ph.early>prev.early || ph.late>prev.late) mono = false;
+      minWin = Math.min(minWin, ph.half*2); minSeen = Math.min(minSeen, ph.look-ph.early); prev = ph;
     }
-    // a click that follows a pointer tap (detail 1) is the ghost click and must not count again
-    await untilLive(); var taps0 = g.taps, side = g.seq[g.i];
-    press(side); await wait(20);
-    $("rt"+side).dispatchEvent(new W.MouseEvent("click", { bubbles:true, cancelable:true, detail:1 })); await wait(20);
-    expect(g.taps===taps0+1, "ghost click counted: "+(g.taps-taps0));
-    await untilLive(); press(g.seq[g.i]==="L" ? "R" : "L"); await wait(30);
-    expect(g.streak===0 && +$("rtCombo").getAttribute("data-tier")===0, "a slip clears the run chip");
+    expect(mono, "difficulty must not ease off during the round");
+    expect(minWin>=400, "tap window dips below 400 ms: "+minWin);
+    expect(minSeen>=600, "a hold is visible less than 600 ms before its window opens: "+minSeen);
+    var burstsSeen = 0, worstRepeat = 0, minN = 1e9, laneUse = [0, 0, 0], jumpsAtSpeed = 0, nullSlipsOk = true, floorsOk = 0;
+    for(var sd=1;sd<=500;sd++){
+      var s = sd*7919, notes = G.wallNotes(s), again = G.wallNotes(s);
+      expect(JSON.stringify(notes)===JSON.stringify(again), "not seeded, seed "+sd);
+      var live = notes.filter(function(n){ return n.due<R; }), run = 1;
+      expect(live.length>=50, "round too short: "+live.length+" seed "+sd);
+      minN = Math.min(minN, live.length);
+      expect(notes[0].due>=2000, "first hold is due too soon");
+      for(var i=0;i<notes.length;i++){
+        var n = notes[i]; laneUse[n.lane]++;
+        expect(n.lane===0 || n.lane===1 || n.lane===2, "bad lane");
+        if(i===0) continue;
+        var pn = notes[i-1], gap = n.due-pn.due, d = Math.abs(n.lane-pn.lane);
+        if(gap<F[d]) floorsOk++;                       // an unfair lane change for the time given
+        if(d===2 && n.due>30000) jumpsAtSpeed++;
+        if(i>=2 && gap<=F[0]+90 && pn.due-notes[i-2].due<=F[0]+90 && n.due>12000) burstsSeen++;
+        run = n.lane===pn.lane ? run+1 : 1; if(run>worstRepeat) worstRepeat = run;
+      }
+      // perfect play and the three fairest edges of the window are all clean
+      [0, 1, -1].forEach(function(e){
+        var fair = live.filter(function(n){ return n.due+G.wallLate(n)<R; });   // the round clock ends the last window
+        var taps = fair.map(function(n){ return { t:n.due+(e>0 ? G.wallLate(n) : e<0 ? -G.wallEarly(n) : 0), lane:n.lane }; });
+        var res = G.wallRound(notes, taps);
+        expect(fair.length>=live.length-1 && res.peak===fair.length && res.slips===0 && res.hits===fair.length, "unsolvable edge "+e+" seed "+sd+": "+JSON.stringify([res.peak, res.slips, fair.length]));
+      });
+      // nobody taps: score 0, one slip per hold, the round still ends (it is a replay to the end)
+      var nul = G.wallRound(notes, []);
+      if(nul.peak!==0 || nul.hits!==0 || nul.h!==0) nullSlipsOk = false;
+      // always 150 ms past the window (it can only land on a later hold of the same lane): most holds are missed
+      var offs = G.wallRound(notes, live.map(function(n){ return { t:n.due+G.wallLate(n)+150, lane:n.lane }; }));
+      expect(offs.peak<live.length*0.4, "taps outside the window climb too well, seed "+sd+": "+offs.peak+" of "+live.length);
+    }
+    expect(floorsOk===0, floorsOk+" lane changes were closer than the fair floor");
+    expect(worstRepeat<=G.WR_MAX_RUN, "same lane "+worstRepeat+" times in a row");
+    expect(nullSlipsOk, "a null player moved");
+    expect(laneUse.every(function(c){ return c>0.2*(laneUse[0]+laneUse[1]+laneUse[2]); }), "lanes unevenly used: "+laneUse);
+    expect(burstsSeen>=300, "too few quick runs of 3+ holds at the floor spacing: "+burstsSeen);
+    expect(jumpsAtSpeed>0, "no across-the-wall jumps late in the round: too easy");
+  });
+
+  test("Games: Wall Run is failable and has a ceiling (noisy players slip, a button-masher goes nowhere)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, R = G.WR_ROUND_MS, rnd = G.mulberry32(99);
+    function gauss(){ var u = 1-rnd(), v = rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+    var sumAvg = 0, sumPerfect = 0, spamMax = 0, avgSlips = 0, runs = 100, avgPassTop = 0, avgTopN = 0;
+    for(var sd=1;sd<=runs;sd++){
+      var notes = G.wallNotes(sd*104729), live = notes.filter(function(n){ return n.due<R; });
+      var avgTaps = [];
+      live.forEach(function(n){ if(rnd()<0.05) return; avgTaps.push({ t:n.due+25+gauss()*90*(1+0.15*n.due/R), lane:n.lane }); });
+      var a = G.wallRound(notes, avgTaps);
+      sumAvg += a.peak; avgSlips += a.slips;
+      live.forEach(function(n){ if(n.due>=30000){ avgTopN++; } });
+      sumPerfect += live.length;
+      var spam = []; for(var t=0, k=0;t<R;t+=150, k++) spam.push({ t:t, lane:k%3 });
+      spamMax = Math.max(spamMax, G.wallRound(notes, spam).peak);
+    }
+    var mean = sumAvg/runs, ceil = sumPerfect/runs;
+    expect(avgSlips/runs>=2, "an average player should slip a few times a round: "+(avgSlips/runs).toFixed(1));
+    expect(mean<ceil*0.95 && mean>ceil*0.4, "average score "+mean.toFixed(1)+" vs perfect "+ceil.toFixed(1));
+    expect(spamMax<ceil*0.15, "mashing the lanes should go nowhere: "+spamMax+" of "+ceil.toFixed(0));
+  });
+
+  test("Games: Wall Run round (lanes >= 56 px, hit climbs, stray and miss slip, floor 0, score is the peak, saved once)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250);
+    expect(visible("gmCard_wallRun") && !$("gmCard_wallRun").disabled && /Not played/.test($("gmCard_wallRun").textContent), "Wall Run card");
+    expect(!D.getElementById("gmCard_reachTimer"), "Reach Timer card is still on the menu");
+    await click("gmCard_wallRun", 150);
+    expect(/Wall Run/.test($("gamesTitle").textContent) && visible("gmStartBtn"), "intro");
+    await click("gmStartBtn", 120);
+    ["wrL", "wrM", "wrR"].forEach(function(id){
+      var cs = W.getComputedStyle($(id));
+      expect($(id).offsetWidth>=56 && $(id).offsetHeight>=56 && cs.touchAction==="manipulation", id+" size "+$(id).offsetWidth+"x"+$(id).offsetHeight+" "+cs.touchAction);
+    });
+    var g = G.current(), ids = ["wrL", "wrM", "wrR"];
+    function press(lane){ $(ids[lane]).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); }
+    async function until(ms){ for(var k=0;k<400 && W.performance.now()-g.t0<ms;k++) await wait(10); }
+    var n0 = g.notes[0], n1 = g.notes[1];
+    expect(qa(".wr-hold").length>=8 && g.st.h===0, "holds missing");
+    await until(n0.due);
+    press(n0.lane); await wait(40);
+    expect(g.st.h===1 && g.st.peak===1 && +$("gmScore").textContent===1, "hit: h="+g.st.h);
+    expect(qa(".wr-lane[data-flash='hit']").length===1, "the lane should flash on a hit");
+    press((n0.lane+1)%3); await wait(40);
+    expect(g.st.h===0 && g.st.peak===1 && g.st.slips===1 && /slip/i.test($("wrSlip").textContent) && $("wrSlip").classList.contains("wr-slip-on"), "stray tap should slip with a visible label: h="+g.st.h);
+    expect(+$("gmScore").textContent===1, "score stays the peak");
+    await until(n1.due+G.wallLate(n1)+120);             // a hold left alone slips by itself; height floors at 0
+    expect(g.st.done[1]===2 && g.st.h===0 && g.st.slips===2, "unanswered hold: "+JSON.stringify([g.st.done[1], g.st.h, g.st.slips]));
+    expect(qa(".wr-hold[data-state='miss']").length>=1, "the missed hold should show as missed");
+    // a ghost click (detail 1) after a pointer tap is not a second tap; Space/Enter (detail 0) is
+    var t0 = g.taps; $(ids[1]).dispatchEvent(new W.MouseEvent("click", { bubbles:true, cancelable:true, detail:1 })); await wait(20);
+    expect(g.taps===t0, "ghost click counted");
+    $(ids[1]).dispatchEvent(new W.MouseEvent("click", { bubbles:true, cancelable:true, detail:0 })); await wait(20);
+    expect(g.taps===t0+1, "keyboard activation not counted");
+    g.t0 = W.performance.now()-44900;                    // jump to the end of the round
+    for(var k=0;k<60 && !D.getElementById("gmAgainBtn");k++) await wait(50);
+    expect(!!D.getElementById("gmAgainBtn") && /Good climb/.test($("gmStage").textContent) && /slip/.test($("gmStage").textContent), "end screen: "+$("gmStage").textContent.slice(0, 120));
+    var sv = saved().games.wallRun;
+    expect(sv.plays===1 && sv.best===1 && sv.longestRun===1, "saved: "+JSON.stringify(sv));
+    expect(saved().games.reachTimer.plays===0, "reach timer data touched");
     await click("closeGamesBtn", 250);
   });
-  // ---- end reachTimer polish tests ----
+
+  test("Games: Wall Run reduced motion keeps the next holds in fixed rows with a fuse bar, no scrolling wall", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    G.wallReduced(true);
+    await click("openGamesBtn", 250); await click("gmCard_wallRun", 150); await click("gmStartBtn", 120);
+    var g = G.current();
+    expect($("gmStage").classList.contains("wr-rm"), "no reduced-motion variant");
+    expect(W.getComputedStyle($("wrWall")).transitionDuration.split(",").every(function(x){ return parseFloat(x)===0; }), "wall still scrolls: "+W.getComputedStyle($("wrWall")).transitionDuration);
+    await wait(300);
+    var live = qa(".wr-hold").filter(function(h){ return h.getAttribute("data-state")!=="off"; });
+    expect(live.length>=1, "no hold shown");
+    var y1 = live[0].style.transform; await wait(250);
+    expect(live[0].style.transform===y1 && W.getComputedStyle(live[0].querySelector(".wr-fuse")).opacity==="1", "hold moved or fuse hidden in reduced motion: "+y1+" -> "+live[0].style.transform);
+    await click("closeGamesBtn", 250);
+    G.wallReduced(false);
+    await click("openGamesBtn", 250); await click("gmCard_wallRun", 150); await click("gmStartBtn", 120);
+    await wait(300);
+    var h2 = qa(".wr-hold").filter(function(h){ return h.getAttribute("data-state")!=="off"; })[0];
+    var a = h2.style.transform; await wait(250);
+    expect(h2.style.transform!==a, "holds should slide in normal motion");
+    await click("closeGamesBtn", 250);
+    G.wallReduced(null);
+  });
+
+  test("Games: Wall Run in rest closes itself at rest end (score kept once), never offers Again, and hiding the page pauses it", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.timerDefaults = { workSec:4, restSec:8 };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    function hide(on){ Object.defineProperty(D, "hidden", { configurable:true, get:function(){ return on; } }); D.dispatchEvent(new W.Event("visibilitychange")); }
+    await click("startSessionBtn", 300); await click("startBtn", 4300);
+    expect(/REST/.test($("phaseLabel").textContent), "not resting");
+    await click("playRestBtn", 250); await click("gmCard_wallRun", 150); await click("gmStartBtn", 120);
+    var g = G.current();
+    g.t0 -= g.notes[0].due-300;                          // bring the first hold to its window
+    for(var k=0;k<60 && W.performance.now()-g.t0<g.notes[0].due;k++) await wait(10);
+    $(["wrL", "wrM", "wrR"][g.notes[0].lane]).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(40);
+    expect(g.st.h===1, "no hit");
+    var t0 = g.t0; hide(true); await wait(60);
+    expect(G.paused() && visible("gmPaused"), "didn't pause");
+    var lo = g.lo, n0 = g.st.slips; await wait(600);
+    expect(g.lo===lo && g.st.slips===n0, "the round moved while paused");
+    hide(false); await click("gmPaused", 100);
+    expect(!G.paused() && g.t0>t0+400, "resume didn't shift the clock");
+    var sawAgain = false;
+    for(var j=0;j<100 && visible("gamesOverlay");j++){ await wait(100); if(D.getElementById("gmAgainBtn")) sawAgain = true; }
+    expect(!visible("gamesOverlay") && !sawAgain, "rest end: overlay "+visible("gamesOverlay")+" again "+sawAgain);
+    var sv = saved().games.wallRun;
+    expect(sv.plays===1 && sv.best>=1, "round not recorded once: "+JSON.stringify(sv));
+    expect(/WORK/.test($("phaseLabel").textContent), "timer didn't carry on");
+    await click("startBtn", 150);
+  });
+
+  test("Games: Reach Timer is off the menu but its saved data survives normalisation and unknown ids are kept", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    seed.games = { reachTimer:{ best:12, plays:5, bestStreak:7 }, futureGame:{ best:3, plays:1, odd:"x" }, wallRun:{ best:"9", plays:2, longestRun:-1 } };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, s = saved();
+    expect(G.menuIds().indexOf("reachTimer")<0, "retired game on the menu");
+    expect(s.games.reachTimer.best===12 && s.games.reachTimer.plays===5 && s.games.reachTimer.bestStreak===7, "reach timer data lost: "+JSON.stringify(s.games.reachTimer));
+    expect(s.games.futureGame && s.games.futureGame.best===3 && s.games.futureGame.odd==="x", "unknown game id dropped: "+JSON.stringify(s.games.futureGame));
+    expect(s.games.wallRun.best===9 && s.games.wallRun.plays===2 && s.games.wallRun.longestRun===0, "wall run normalised: "+JSON.stringify(s.games.wallRun));
+  });
+  // ---- end wallRun tests ----
 
   test("Only the climber mascot is used (old pebble art stays retired)", async function(){
     var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });
@@ -2443,27 +2636,39 @@ and the project rules. It runs on its own private copy of the data, never your r
     await boot(seed); await goHome();
     var G = W.__cruxGames, C = G.stackConst; expect(G.stackDrop && C, "summit stack hook missing");
     // ramp table, exactly
-    var tab = { 1:2400, 4:2400, 5:2100, 9:2100, 10:1800, 14:1800, 15:1500, 16:1500, 40:1500 };
+    var tab = { 1:2400, 2:2350, 5:2200, 10:1950, 15:1700, 20:1450, 22:1350, 23:1350, 40:1350 };
     Object.keys(tab).forEach(function(n){ expect(G.stackCross(+n)===tab[n], "stackCross("+n+")="+G.stackCross(+n)); });
-    expect(C.base===320 && C.floor===96 && C.perfectPx===6 && Math.abs(C.regain-25.6)<1e-9 && C.roundMs===45000 && C.summit===20, "constants");
+    var pc = 1e9, ramp = true; for(var q=1;q<=60;q++){ var cc = G.stackCross(q); if(cc>pc) ramp = false; pc = cc; }
+    expect(ramp && G.stackCross(1)>G.stackCross(22) && G.stackCross(0)===2400 && G.stackCross(NaN)===2400 && G.stackCross(Infinity)===1350 && G.stackCross(-5)===2400, "ramp is monotone, plateaus, and bad input is safe");
+    expect(C.base===320 && C.floor===96 && C.perfectPx===6 && Math.abs(C.regain-25.6)<1e-9 && C.roundMs===45000 && C.summit===30 && C.learn===3 && C.crossEnd===1350, "constants");
     // drops
     var d = G.stackDrop(1, 320, 0); expect(d.perfect && !d.miss && d.width===320 && d.shift===0, "perfect on full width caps at 100%");
     d = G.stackDrop(8, 200, 3); expect(d.perfect && Math.abs(d.width-225.6)<1e-9, "perfect regains 8% of base: "+d.width);
     d = G.stackDrop(8, 300, 5.9); expect(d.perfect && d.width===320, "perfect capped at base");
     d = G.stackDrop(8, 200, 30); expect(!d.perfect && !d.miss && d.width===170 && d.shift===15 && d.over===30, "trim: "+JSON.stringify(d));
     d = G.stackDrop(8, 200, -30); expect(d.width===170 && d.shift===-15, "trim to the left");
-    d = G.stackDrop(8, 100, 80); expect(d.width===96 && d.shift===40, "trim snaps to the 30% floor, not below: "+JSON.stringify(d));
-    d = G.stackDrop(8, 200, 200); expect(d.miss && d.width===0 && d.shift===0, "no overlap is a miss (tower unchanged)");
+    d = G.stackDrop(8, 100, 30); expect(!d.miss && d.width===96 && d.over===4 && d.shift===28, "trim stops at the 30% floor and the picture agrees (4 px chunk, inner edge kept): "+JSON.stringify(d));
+    d = G.stackDrop(8, 96, 40); expect(!d.miss && d.width===96 && d.over===0 && d.shift===40, "at the floor nothing is trimmed, the block sits where it was dropped: "+JSON.stringify(d));
+    d = G.stackDrop(8, 96, -47.9); expect(!d.miss && d.width===96 && d.shift===-47.9, "just inside half a width still holds");
+    d = G.stackDrop(8, 96, 48); expect(d.miss && d.width===0 && d.shift===0 && d.over===0, "centre half a width off: it topples");
+    d = G.stackDrop(8, 200, 100); expect(d.miss, "centre off the edge topples even with overlap left");
+    d = G.stackDrop(8, 200, 99.9); expect(!d.miss && Math.abs(d.width-100.1)<1e-9, "just inside holds with a thin block: "+JSON.stringify(d));
     d = G.stackDrop(3, 320, 150); expect(!d.miss && d.width===320 && d.shift===0, "learn blocks are forgiven and stay 100%");
-    d = G.stackDrop(3, 320, 330); expect(d.miss, "learn block with no overlap still falls off");
+    d = G.stackDrop(3, 320, 330); expect(d.miss, "learn block far off the tower still falls");
+    // bad input never makes NaN, a zero or negative width, or throws
+    [[NaN,NaN,NaN],[0,0,0],[1,0,5],[1,-50,5],[1,1e9,1e9],[1,Infinity,0],[NaN,200,-1e9],[8,96,undefined],[8,null,"x"],[8,5,3]].forEach(function(a){
+      var r = G.stackDrop(a[0], a[1], a[2]);
+      expect(isFinite(r.width) && isFinite(r.shift) && isFinite(r.over) && r.width>=0 && (r.miss ? r.width===0 : r.width>=C.floor-1e-9 && r.width<=C.base+1e-9), "stackDrop"+JSON.stringify(a)+" -> "+JSON.stringify(r));
+    });
+    expect(isFinite(G.stackPos(0, 0, 0, 1)) && isFinite(G.stackPos(NaN, NaN, NaN, 0)) && G.stackWindowMs(5, NaN)===0 && G.stackWindowMs(5, -4)===0, "slider and window helpers are safe at zero/NaN");
     expect(G.stackWidth(9, 150, 20)===130 && G.stackScore(7, 3)===10, "stackWidth / stackScore");
     // slider: a deterministic triangle wave in -160..160, edge to edge in one crossing time
     expect(Math.abs(G.stackPos(0, 1500, 0, 1)+160)<1e-9 && Math.abs(G.stackPos(1500, 1500, 0, 1)-160)<1e-9 && Math.abs(G.stackPos(3000, 1500, 0, 1)+160)<1e-9, "edge to edge");
     expect(Math.abs(G.stackPos(0, 1500, 0, -1)-160)<1e-9 && G.stackPos(5, 2400, 0.3, 1)===G.stackPos(5, 2400, 0.3, 1), "side flips, deterministic");
     // pose map
-    expect(G.stackPose(0, 3)==="jump" && G.stackPose(200, 3)==="land" && G.stackPose(400, 3)==="step" && G.stackPose(900, 3)==="idle" && G.stackPose(900, 20)==="flag", "pose map");
+    expect(G.stackPose(0, 3)==="jump" && G.stackPose(200, 3)==="land" && G.stackPose(400, 3)==="step" && G.stackPose(900, 3)==="idle" && G.stackPose(900, 30)==="flag" && G.stackPose(900, 29)==="idle", "pose map");
     // property: 500 seeds of play. Width never below the floor, window >= 400 ms, a perfect is always reachable, no negative height.
-    var worst = 1e9, maxW = 0, minW = 1e9, unreachable = 0, perfectsOk = 0;
+    var worst = 1e9, maxW = 0, minW = 1e9, unreachable = 0, perfectsOk = 0, misses = 0;
     for(var s=1;s<=500;s++){
       var rnd = G.mulberry32(s*7919), prevC = C.center, prevW = C.base, blocks = 0;
       for(var n=1;n<=40;n++){
@@ -2475,20 +2680,61 @@ and the project rules. It runs on its own private copy of the data, never your r
         worst = Math.min(worst, G.stackWindowMs(n, prevW));
         // the player drops at a random point of the slide (so most are imperfect)
         var cx = C.center+G.stackPos(rnd()*T, cross, ph, side), r = G.stackDrop(n, prevW, cx-prevC);
-        if(r.miss){ expect(r.width===0, "miss has no width"); continue; }
+        if(r.miss){ expect(r.width===0 && Math.abs(cx-prevC)>=prevW/2-1e-9, "miss has no width and only when the centre is off"); misses++; continue; }
         expect(r.width>=C.floor-1e-9 && r.width<=C.base+1e-9, "seed "+s+" n "+n+" width "+r.width);
+        // numbers and picture agree: kept + fallen = the dropped block, and the kept block sits inside the dropped one
+        if(!r.perfect && n>C.learn){
+          expect(Math.abs(r.width+r.over-prevW)<1e-9, "width+over != prev: "+JSON.stringify(r));
+          var dl = cx-prevW/2, dr = cx+prevW/2, nl = prevC+r.shift-r.width/2, nr = prevC+r.shift+r.width/2;
+          expect(nl>=dl-1e-6 && nr<=dr+1e-6, "kept block not inside the dropped block: "+JSON.stringify(r));
+        }
         minW = Math.min(minW, r.width); maxW = Math.max(maxW, r.width);
         prevC += r.shift; prevW = r.width; blocks++;
         expect(prevC>=C.center-C.travel-1e-9 && prevC<=C.center+C.travel+1e-9, "target centre left the slider's range: "+prevC);
       }
     }
     expect(unreachable===0, unreachable+" blocks had no perfect drop reachable");
+    expect(misses>0, "random drops never missed: the game would be unfailable");
     expect(minW>=96-1e-9 && maxW<=320+1e-9, "width range "+minW+".."+maxW);
     expect(worst>=400, "reaction window under 400 ms: "+worst);
     // max difficulty for n in 1..40 at the floor width
     for(var n2=1;n2<=40;n2++) expect(G.stackWindowMs(n2, C.floor)>=400-1e-9, "window at floor, block "+n2);
     // a perfect run keeps the width at 100% for 40 blocks
     var w = C.base; for(var i=0;i<40;i++){ w = G.stackDrop(i+1, w, 0).width; } expect(w===320, "a perfect run drifts: "+w);
+  });
+
+  // Human-like bot on the pure rules (same model as dev/stack-bot.js): beginner / average / strong over 200 seeds each.
+  test("Games: Summit Stack is failable for an average player and still winnable for a strong one (noisy bot bands)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, C = G.stackConst;
+    function gauss(r){ var u = 1-r(), v = r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+    var BANDS = { beginner:{sigma:140,bias:60,lapse:0.08}, average:{sigma:90,bias:25,lapse:0.05}, strong:{sigma:50,bias:0,lapse:0.03} };
+    function play(B, sd){
+      var r = G.mulberry32(sd*7919+13), t = 0, n = 0, topC = C.center, topW = C.base, tiers = [], score = 0, peak = 0, drops = 0, miss = 0, summit = false, side = r()<0.5 ? -1 : 1;
+      while(t<C.roundMs){
+        var cross = G.stackCross(n+1); side = -side; var ph = r()*0.5, t0 = t, ideal = t0+C.enterMs;
+        for(var x=ideal;x<t0+4*cross;x+=4){ if(Math.abs(C.center+G.stackPos(x-t0, cross, ph, side)-topC)<2) { ideal = x; break; } }
+        var tap = r()<B.lapse ? t0+C.enterMs+r()*2*cross : ideal+B.bias+gauss(r)*B.sigma*(1+0.15*t/C.roundMs);
+        tap = Math.max(t0+C.enterMs, tap); if(tap>=C.roundMs) break;
+        var cx = C.center+G.stackPos(tap-t0, cross, ph, side), res = G.stackDrop(n+1, topW, cx-topC); drops++;
+        if(res.miss){ miss++; if(n>0){ var tr = tiers.pop(); n--; score -= tr.pts; var p = tiers[tiers.length-1]; topC = p ? p.c : C.center; topW = p ? p.w : C.base; } t = tap+C.dropMs+C.fallMs; }
+        else { var pts = res.perfect ? 2 : 1; tiers.push({ c:topC+res.shift, w:res.width, pts:pts }); topC += res.shift; topW = res.width; n++; score += pts; peak = Math.max(peak, score); if(n>=C.summit) summit = true; t = tap+C.dropMs; }
+      }
+      return { drops:drops, miss:miss, peak:peak, summit:summit };
+    }
+    var out = {};
+    Object.keys(BANDS).forEach(function(k){
+      var d = 0, m = 0, pk = 0, sm = 0, withMiss = 0;
+      for(var sd=1;sd<=200;sd++){ var r = play(BANDS[k], sd); d += r.drops; m += r.miss; pk += r.peak; if(r.summit) sm++; if(r.miss>0) withMiss++; }
+      out[k] = { keep:1-m/d, peak:pk/200, summit:sm/200, withMiss:withMiss/200, missPerRound:m/200 };
+    });
+    var info = JSON.stringify(out);
+    expect(out.average.missPerRound>=0.5 && out.average.withMiss>=0.4, "the average bot should miss drops: "+info);
+    expect(out.beginner.missPerRound>out.average.missPerRound && out.average.missPerRound>out.strong.missPerRound, "misses should fall with skill: "+info);
+    expect(out.strong.peak>out.average.peak && out.average.peak>out.beginner.peak, "score should rise with skill: "+info);
+    expect(out.strong.summit>=0.8 && out.average.summit>=0.4 && out.average.summit<=0.95 && out.beginner.summit<=0.5, "summit rate ladder: "+info);
+    expect(out.beginner.keep>=0.8 && out.average.keep>=0.9, "even the beginner mostly keeps the tower (calm): "+info);
   });
 
   test("Games: Summit Stack runs a round (tap anywhere, perfect drops score, climber on the tower, nothing else changes)", async function(){
@@ -2524,14 +2770,15 @@ and the project rules. It runs on its own private copy of the data, never your r
     var C2 = G.stackConst, far = false;
     for(var k2=0;k2<500;k2++){
       var gq = G.current(), c2 = C2.center+G.stackPos(W.performance.now()-gq.blockT0, gq.cross, gq.ph, gq.side);
-      if(Math.abs(c2-gq.topC)>=gq.topW){ far = true; break; }
+      if(Math.abs(c2-gq.topC)>=gq.topW/2+20){ far = true; break; }
       await wait(8);
     }
     if(far){
       $("gmTap").dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); await wait(220);
       for(var k3=0;k3<40 && G.current().phase!=="slide";k3++) await wait(40);
       g = G.current();
-      expect(g.n===2 && g.score===4 && g.taps===3 && g.phase==="slide", "a miss changed the tower: n "+g.n+" score "+g.score+" phase "+g.phase);
+      expect(g.n===1 && g.score===2 && g.peak===4 && g.peakN===2 && g.taps===3 && g.phase==="slide", "a topple should cost exactly the top tier and keep the peak: n "+g.n+" score "+g.score+" peak "+g.peak+" phase "+g.phase);
+      expect(qa("#ssTower .ss-blk").length===2 && +$("gmScore").textContent===4, "tower/hud after a topple: "+qa("#ssTower .ss-blk").length+" / "+$("gmScore").textContent);
     }
     await click("closeGamesBtn", 250);
     var s = saved().games.summitStack;
@@ -2635,16 +2882,16 @@ and the project rules. It runs on its own private copy of the data, never your r
 
   // ---- shell polish tests ----
   test("Games shell: menu cards read as best / plays, the sound row is one big target with a spoken state, and the sheet locks the page behind it", async function(){
-    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.games = { chalkRhythm:{ best:21, plays:3, perfectBest:2 } };
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.games = { dyno:{ best:21, plays:3, cleanBest:2 } };
     await boot(seed); await goHome();
     var G = W.__cruxGames;
     expect(G.howto(G.def("routeRead")).length>0 && G.howto(G.def("routeRead")).length<70, "one-line how-to missing or long: "+G.howto(G.def("routeRead")));
     expect(G.esc('<b>"x"</b>')==="&lt;b&gt;&quot;x&quot;&lt;/b&gt;", "gmEsc: "+G.esc('<b>"x"</b>'));
     await click("openGamesBtn", 350);
-    expect(/Best 21 · played 3/.test($("gmCard_chalkRhythm").textContent) && /Not played yet/.test($("gmCard_routeRead").textContent), "card lines: "+$("gmCard_chalkRhythm").textContent);
-    var lab = $("gmCard_chalkRhythm").getAttribute("aria-label")||"";
-    expect(/Chalk Rhythm/.test(lab) && /Best 21, played 3 times/.test(lab), "card aria-label: "+lab);
-    expect(D.activeElement && D.activeElement.id==="gmCard_chalkRhythm", "focus didn't land on the first card: "+(D.activeElement && D.activeElement.id));
+    expect(/Best 21 · played 3/.test($("gmCard_dyno").textContent) && /Not played yet/.test($("gmCard_routeRead").textContent), "card lines: "+$("gmCard_dyno").textContent);
+    var lab = $("gmCard_dyno").getAttribute("aria-label")||"";
+    expect(/Dyno/.test(lab) && /Best 21, played 3 times/.test(lab), "card aria-label: "+lab);
+    expect(D.activeElement && D.activeElement.id==="gmCard_dyno", "focus didn't land on the first card: "+(D.activeElement && D.activeElement.id));
     expect(W.getComputedStyle(D.body).overflow==="hidden", "the page behind the sheet can scroll");
     qa("#gmCards .gm-card").forEach(function(c){ expect(c.getBoundingClientRect().height>=44, "card under 44 px: "+c.id); });
     expect(/On\./.test($("gmSoundDesc").textContent), "sound text: "+$("gmSoundDesc").textContent);
@@ -2677,10 +2924,10 @@ and the project rules. It runs on its own private copy of the data, never your r
     btns[0].focus(); var e2 = tab(true);
     expect(e2.defaultPrevented && D.activeElement===btns[btns.length-1], "Shift+Tab from the first control left the sheet");
     // a running round: Back banks it and returns to the card
-    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
     expect(!!W.__cruxGames.current(), "no round");
     await click("gmBackBtn", 250);
-    expect(visible("gmCards") && D.activeElement.id==="gmCard_chalkRhythm" && !W.__cruxGames.current(), "Back from a round: "+(D.activeElement && D.activeElement.id));
+    expect(visible("gmCards") && D.activeElement.id==="gmCard_dyno" && !W.__cruxGames.current(), "Back from a round: "+(D.activeElement && D.activeElement.id));
     esc(); await wait(300);
     expect(!visible("gamesOverlay"), "Escape on the menu should close the sheet");
     expect(D.activeElement && D.activeElement.id==="openGamesBtn", "focus didn't return to Play: "+(D.activeElement && D.activeElement.id));
@@ -2695,15 +2942,15 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("openGamesBtn", 10);                     // reopen mid-fade (dock button sits behind; call the hook as a tap would)
     W.__cruxGames.open({ fromRest:false }); await wait(250);
     expect(visible("gamesOverlay") && !$("gamesOverlay").classList.contains("gm-closing"), "a reopen during the fade was swallowed");
-    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
-    var G = W.__cruxGames; G.current().taps = 1; G.current().score = 3; G.current().t0 -= 45000; await wait(300);
+    await click("gmCard_dyno", 150); await click("gmStartBtn", 100);
+    var G = W.__cruxGames; G.current().jumps = 1; G.current().peak = 3; G.current().t0 -= 45000; await wait(300);
     var again = $("gmAgainBtn"), menu = $("gmMenuBtn");
     expect(!!again && !!menu && (again.compareDocumentPosition(menu) & W.Node.DOCUMENT_POSITION_FOLLOWING), "Play again should come before Games");
     expect(again.classList.contains("btn-primary") && again.getBoundingClientRect().height>=44 && menu.getBoundingClientRect().height>=44, "end buttons: primary or 44 px");
     expect(!!q(".gm-best-line") && D.activeElement===again, "no best line or focus not on Play again");
     expect(!/!/.test($("gmStage").textContent), "the end screen shouts: "+$("gmStage").textContent);
     await click("gmMenuBtn", 200);
-    expect(visible("gmCards") && D.activeElement.id==="gmCard_chalkRhythm", "Games didn't return focus to the card");
+    expect(visible("gmCards") && D.activeElement.id==="gmCard_dyno", "Games didn't return focus to the card");
     await click("closeGamesBtn", 350);
   });
   // ---- end shell polish tests ----
