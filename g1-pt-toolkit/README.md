@@ -29,7 +29,7 @@ app files, so nothing here is published.
 - **Phone or tablet:** the PDFs open anywhere and can be marked up with the device's PDF tools. The HTML pages are
   responsive (checked at 375 px), but to open them on a device they need to be hosted. That is not set up and
   is your call. Nothing in the pages stores or sends data, so any static host would do.
-- **Typing into the pages:** fields are fillable on screen, but **nothing is saved or sent**. It all clears on reload,
+- **Typing into the pages:** fields are fillable on screen (tap a chosen option again to clear it), but **nothing is saved or sent**. It all clears on reload,
   so print or save the PDF first. There is no database, no `localStorage`, no cookies and no network call.
   Don't enter real client personal or health information until G1 approves how it is stored.
 
@@ -42,9 +42,14 @@ app files, so nothing here is published.
 - **Sample data:** `assets/sample-data.js`. A field shows sample content only if it has a `data-k="key"` attribute
   that matches a key there.
 - **Single-line fields don't wrap.** Use a multi-line box (`.ta`) where an answer could be long. Table cells already grow.
-- **Re-export the PDFs:** browser Print, or, with Node and Playwright installed,
-  `NODE_PATH=<folder containing playwright> node g1-pt-toolkit/tools/build-pdfs.cjs`. The script also fails if any
-  sheet overflows its page or a sample key matches no field.
+- **Fonts:** Inter is bundled in `assets/fonts` (SIL Open Font License; see `assets/fonts/LICENSE-Inter.txt`) so pages lay out
+  the same on every device and browser.
+- **Re-export the PDFs:** browser Print gives the same result. With Node and Playwright installed:
+  macOS or Linux `NODE_PATH=<folder containing playwright> node tools/build-pdfs.cjs`;
+  Windows PowerShell `$env:NODE_PATH = "<folder containing playwright>"; node tools\build-pdfs.cjs`
+  (`npx playwright install chromium` first, or set `CHROMIUM_PATH` to Chrome or Edge). The script fails if a page overflows,
+  has under 0.2 in spare, has a single-line field with cut-off text, doesn't render in Inter, or has a PDF page count that
+  differs from its sheets, or if a sample key matches no field. The PDFs it makes are tagged for accessibility.
 - **Never commit a filled-in form.** `.gitignore` here skips `private/` and anything with `filled` in its name.
 
 ## Placeholders pending G1 management approval
@@ -90,13 +95,15 @@ Shown as yellow dashed "PLACEHOLDER" boxes. Replace them (and delete the box sty
   professional for red-flag symptoms. G1 should confirm that wording and supply its emergency action plan.
 - **Browsers:** layout, printing and the PDFs were tested in Chromium only. Safari (including iPhone and iPad) and Firefox
   printing are untested.
-- **Accessibility:** tick boxes and fields are sized for touch and labelled for screen readers, but this hasn't been
-  tested with a screen reader.
+- **Accessibility:** fields, tick-box groups and Yes/No rows are labelled and grouped for screen readers, touch targets are about
+  22 px on touch screens, and the PDFs are tagged, but none of it has been tested with an actual screen reader.
 
 ## Checked
 
-- Print layout: every sheet fits its Letter page with at least 0.2 in spare above the footer (the build script fails otherwise).
-- A read-only wording, scope and privacy review was run and its findings applied (stronger emergency wording, no overpromising, print-visible privacy placeholder, consistent status labels).
+- Print layout (Chromium, bundled Inter): every sheet fits its Letter page with at least 0.2 in spare above the footer, and an overlong page now
+  shows as visible overflow instead of silently clipping a row (the build script fails either way). Other browsers' print engines are untested.
+- Two read-only reviews by separate agents (wording, scope and privacy; code, accessibility and print) were run and their findings applied: stronger emergency wording,
+  no overpromising, print-visible privacy placeholder, silent-clipping fix, phone field widths, focus ring, group labels, plain-text editing, honest copy button.
 - Phone: no horizontal scroll at 375 px on any page; no console errors or failed requests.
 - Behaviour: typing, mirrored client name, one-choice radios, copy-message button, sample toggle,
   nothing written to storage, no network requests.

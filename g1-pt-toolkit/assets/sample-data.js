@@ -13,7 +13,7 @@ window.G1_SAMPLE = {
     why: "I started bouldering last year and I'm stuck around V3. I'd like a plan so I climb stronger and my shoulders stop feeling tight after sessions.",
     "goal.climb": true, "goal.strength": true, "goal.mobility": true, "goal.injury": true,
     success: "Finish a session without shoulder tightness and send a couple of V4s.",
-    event: "Climbing trip in the first week of December.",
+    event: "Climbing trip in mid-December.",
     "climb.exp": "mid", "climb.usual": "2 days a week, mostly bouldering", "climb.grade": "V2 to V3, projecting a few V4s",
     exercise: "Walks most days; the occasional easy jog",
     lift: "some",
@@ -57,8 +57,8 @@ window.G1_SAMPLE = {
     "f2.obs": "Arms fall forward; shrug in hang", "f2.focus": "Lat and chest length; mid-back activation; thoracic mobility", "f2.pri": "H",
     "f3.obs": "Shoulders rise in push and pull", "f3.focus": "Scapular control: band pull-aparts, cue \"long neck\"", "f3.pri": "M",
     "f4.obs": "Right ankle feels tighter", "f4.focus": "Calf and ankle mobility; knee-to-wall drills", "f4.pri": "M",
-    phase: "p1", "phase.why": "New to structured training; build movement quality and control first",
-    freq: "2", homework: "Glute bridge 2 x 12 and wall slides 2 x 10, most days", review: "10/06/2026 (week 4)",
+    phase: "p1", "phase.why": "New to training; movement quality first",
+    freq: "2", homework: "Glute bridge 2 x 12 and wall slides 2 x 10, most days", review: "10/06/2026 (4 weeks)",
     words: "Felt good, no pain. Excited about the December trip. A little worried about the right wrist.",
     ref: "none", next: "Thu 09/10/2026, 6:00 pm"
   },
@@ -72,7 +72,7 @@ window.G1_SAMPLE = {
     "g1.block": "Shoulder tightness limits pulling. Busy work weeks.",
     "g1.plan": "Phase 1, then 2. Train twice a week. Shoulder prep before every climbing session.",
     "g2.type": "outcome", "g2.date": "12/01/2026", "g2.text": "Shoulders feel comfortable after climbing sessions.",
-    "g2.measure": "My own tightness rating, 0-10", "g2.base": "5", "g2.target": "3 or lower",
+    "g2.measure": "Tightness, 0-10", "g2.base": "5", "g2.target": "3 or lower",
     "g2.block": "Eight-hour desk days.",
     "g2.plan": "Wall slides daily, short movement breaks at work, rate it each week.",
     "g3.type": "process", "g3.date": "Ongoing", "g3.text": "Train twice a week with my trainer.",
@@ -115,7 +115,7 @@ window.G1_SAMPLE = {
     "hw1.task": "Glute bridge, 2 x 12", "hw1.freq": "Most days",
     "hw2.task": "Wall slides, 2 x 10", "hw2.freq": "Most days",
     "next.when": "Thu 09/10/2026, 6:00 pm", "next.focus": "Hip and shoulder stability", "next.bring": "Water, climbing shoes",
-    message: "Hi Casey, thanks for training with me today. We worked on movement basics and shoulder and hip control, and you did really well with your knee tracking once we added the cue.\n\nBetween now and next time:\n1. Glute bridge, 2 x 12 - most days\n2. Wall slides, 2 x 10 - most days\n\nMild muscle soreness for a day or two can happen after new exercise. If you have sharp or worsening pain, numbness or tingling, or anything that worries you, stop that exercise and speak with a licensed healthcare professional. For chest pain, fainting or trouble breathing, call emergency services. Please let me know too, so I can adjust your plan.\n\nNext session: Thursday 09/10/2026, 6:00 pm. Focus: hip and shoulder stability and an easy climbing warm-up. Bring water and your climbing shoes.\nScheduling questions: [placeholder: G1 scheduling wording, pending G1 approval]\n\nTaylor Trainer, G1 Climbing + Fitness",
+    message: "Hi Casey, thanks for training with me today. We worked on movement basics and shoulder and hip control, and you did really well with your knee tracking once we added the cue.\n\nBetween now and next time:\n1. Glute bridge, 2 x 12 - most days\n2. Wall slides, 2 x 10 - most days\n\nMild muscle soreness for a day or two can happen after new exercise. If you have sharp or worsening pain, numbness or tingling, or anything that worries you, stop that exercise and speak with a licensed healthcare professional. For chest pain, fainting or trouble breathing, call emergency services. Please let me know too, so I can adjust your plan.\n\nNext session: Thursday 09/10/2026, 6:00 pm. Focus: hip and shoulder stability. Bring water and your climbing shoes.\nScheduling questions: [placeholder: G1 scheduling wording, pending G1 approval]\n\nTaylor Trainer, G1 Climbing + Fitness",
     "done.sent": true
   }
 };

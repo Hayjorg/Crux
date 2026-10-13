@@ -1,6 +1,13 @@
 /* G1 Personal Training onboarding toolkit: shared styles (screen + print).
    Re-brand by editing the tokens in :root. Page size is US Letter; for A4 change the two
-   "Letter" / "11in" values marked [PAGE SIZE] below. */
+   "Letter" / "10.97in" values marked [PAGE SIZE] below.
+   Inter is bundled in assets/fonts (SIL OFL) so every device lays pages out the same way. */
+
+@font-face { font-family: Inter; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/Inter-Regular.woff2") format("woff2"); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/Inter-Medium.woff2") format("woff2"); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/Inter-SemiBold.woff2") format("woff2"); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/Inter-Bold.woff2") format("woff2"); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 800; font-display: swap; src: url("fonts/Inter-ExtraBold.woff2") format("woff2"); }
 
 :root {
   color-scheme: light;
@@ -21,7 +28,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+html { scroll-padding-top: 5rem; -webkit-text-size-adjust: 100%; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.4 var(--font); }
 h1, h2, h3, p, ul { margin: 0; }
 a { color: var(--accent); }
@@ -38,7 +45,7 @@ a { color: var(--accent); }
   font: 600 .95rem var(--font); text-decoration: none; cursor: pointer;
 }
 .btn.primary { background: var(--accent); color: #fff; }
-.btn:focus-visible, .ck input:focus-visible { outline: 3px solid #7fb2c6; outline-offset: 2px; }
+.btn:focus-visible, .ck input:focus-visible, .qtbl input:focus-visible, .lr input:focus-visible, .wk input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .wrap { padding: 0 12px 40px; }
 .notice {
   max-width: 8.5in; margin: .8rem auto 0; padding: .65rem .9rem; background: #fff;
@@ -59,7 +66,7 @@ body.is-sample .sheet::before {
   transform: translate(-50%, -50%) rotate(-28deg); white-space: nowrap; pointer-events: none;
   font-size: 40pt; font-weight: 800; letter-spacing: .04em; color: rgba(31, 77, 95, .09);
 }
-.sheet > * { position: relative; z-index: 1; }
+.sheet > * { position: relative; z-index: 1; flex-shrink: 0; }   /* overflow must show, never clip a row silently */
 
 /* ---------- document header / footer ---------- */
 .dh { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem;
@@ -68,6 +75,7 @@ body.is-sample .sheet::before {
 .dh h1 { font-size: 1.7em; line-height: 1.12; font-weight: 800; }
 .dh .sub { margin-top: .02in; font-size: .88em; color: var(--muted); }
 .dh .tag { text-align: right; font-size: .72em; line-height: 1.35; color: var(--muted); white-space: nowrap; }
+.dh .tag .lbl { font-size: 1em; }
 .dh .tag b { display: block; color: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
 .dh.mini { align-items: center; padding-bottom: .05in; margin-bottom: .06in; border-bottom-width: 1.5px; }
 .dh.mini .org { font-size: .68em; }
@@ -80,7 +88,7 @@ body.is-sample .sheet::before {
 .sec { margin-top: .11in; }
 .sec-h { margin-bottom: .05in; padding-bottom: 2px; border-bottom: 1.5px solid var(--accent);
   font-size: .78em; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
-.sec-h small { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.sec-h small { font-size: 1em; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
 .note, .stop, .ph { border-radius: 3px; padding: .05in .1in; font-size: .9em; line-height: 1.3; }
 .note { background: var(--accent-soft); border-left: 3px solid var(--accent); }
 .stop { background: var(--stop-bg); border: 1px solid var(--stop-line); border-left-width: 4px; }
@@ -104,7 +112,8 @@ input:not([type=checkbox]):not([type=radio]) {
   width: 100%; min-width: 0; height: var(--line-h); padding: 0 .12em; border: 0; border-radius: 0;
   border-bottom: 1px solid var(--field); background: #f5f7f9; color: var(--ink); font: inherit;
 }
-input[readonly] { background: transparent; }
+input[type=checkbox], input[type=radio] { font: inherit; }
+.dh.mini input[readonly] { background: transparent; cursor: default; }
 input:focus, .ta:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ta {
   white-space: pre-wrap; min-height: calc(var(--line-h) * var(--n, 2)); line-height: var(--line-h);
@@ -145,8 +154,8 @@ input:focus, .ta:focus { outline: 2px solid var(--accent); outline-offset: 1px; 
 
 /* ---------- movement test blocks (assessment) ---------- */
 .test { margin-top: .06in; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
-.test > h3 { padding: .035in .09in; background: var(--accent-soft); font-size: .84em; font-weight: 700; }
-.test > h3 span { font-weight: 500; color: var(--muted); }
+.test > h2 { padding: .035in .09in; background: var(--accent-soft); font-size: .84em; font-weight: 700; }
+.test > h2 span { font-weight: 500; color: var(--muted); }
 .cp { display: grid; grid-template-columns: 1.25in 1fr; gap: .1in; align-items: start; padding: .04in .09in; border-top: 1px solid var(--rule); }
 .cp .k { font-size: .78em; font-weight: 600; color: var(--muted); line-height: 1.25; padding-top: .02in; }
 .lr { display: grid; grid-template-columns: 1fr .55in .55in; align-items: center; padding: .025in .09in; border-top: 1px solid var(--rule); }
@@ -171,7 +180,8 @@ input:focus, .ta:focus { outline: 2px solid var(--accent); outline-offset: 1px; 
 @media (max-width: 640px) {
   body.is-sample .sheet::before { font-size: 20pt; }
   .c2, .c21, .cp { grid-template-columns: 1fr; }
-  .c3, .c4 { grid-template-columns: 1fr 1fr; }
+  .c3, .c4 { grid-template-columns: 1fr; }
+  .g.short { grid-template-columns: 1fr 1fr; }
   .span2, .span3 { grid-column: 1 / -1; }
   .opts.cols3, .opts.cols4 { grid-template-columns: 1fr 1fr; }
   .dh { flex-direction: column; align-items: flex-start; }
