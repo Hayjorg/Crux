@@ -163,8 +163,12 @@ A small, optional play area for rest times, using the player's own climber. Remo
      memory. +N per route. A wrong tap re-shows the route for 1.5 s. `{best, plays, longest}`.
   3. **Summit Stack** `summitStack`, 45 s. A block slides over the tower; tap to drop; overhang is trimmed (never below 30 % width);
      Perfect (<= 6 px) gives +1 and regains width; a total miss just drops the block. Flag at 20 blocks. `{best, plays, tallest, perfects}`.
-  4. **Reach Timer** `reachTimer`, 45 s. One target on the left or right half, ghost of the next shown; tap that half before it fades
-     (dwell 1.8 -> 1.4 -> 1.0 s). A wrong half or timeout slips one step. Score = peak height. `{best, plays, bestStreak}`.
+  4. **Wall Run** `wallRun`, 45 s (replaces Reach Timer, V2). Holds come down a three-lane wall in a seeded sequence; tap a hold's lane as it
+     reaches the climber's hands. Window +-300 -> +-200 ms (>= 400 ms total at top speed), a hold is on the wall 2.2 -> 1.0 s, mean gap
+     950 -> 400 ms, floors by lane distance (280/340/420 ms), same lane <= 3 in a row. A hit climbs one move; a miss, a late tap or a stray
+     tap slips one move (floor 0, one stray slip per 350 ms, round goes on). Score = peak height. Reduced motion: next three holds in
+     fixed rows with a fuse bar. `{best, plays, longestRun}`. Bot: `node dev/wallrun-bot.js`.
+  Reach Timer is retired from the menu (unregistered; its pure rules, `GAME_ART` slots and saved `reachTimer` data are kept).
   Hold Hop is retired from the menu; its saved `holdHop` data is kept. Legacy Chalk Up is removed; its best is copied to Chalk Rhythm
   once (`_meta.chalkMigrated`) and the `chalkUp` key is kept.
 - **Registry:** `GAMES` / `gmRegister(def)`; the menu (`renderGamesMenu`) is built from it, sorted by `order`. A def is
@@ -174,7 +178,7 @@ A small, optional play area for rest times, using the player's own climber. Remo
   Math.max), `gmBeep`/`gmBuzz` (setting `settings.gameSound`, silent in the last 3 s of a rest), `gmPause`/`gmResume`, `gamesWatch` (rest
   hand-off), `GAME_ART` slots with `gmArt`/`gmArtRegister`.
 - **GAME_ART slots** (each draws as a plain shape with `src:null`; set `src` through `gmArtRegister(slot, file, blobId)` to swap in a PNG
-  without touching game logic): `ss.ledge ss.block ss.flag`, `rr.hold rr.ring`, `cr.puff cr.ring`, `rt.hold rt.ghost`,
+  without touching game logic): `ss.ledge ss.block ss.flag`, `rr.hold rr.ring`, `cr.puff cr.ring`, `rt.hold rt.ghost`, `wr.hold`, `card.wallRun`,
   `ui.perfect ui.good ui.best ui.summit`, `card.chalkRhythm card.routeRead card.summitStack card.reachTimer`.
 - **Adding a game:** (1) add a region `/* ==== myGame BEGIN/END ==== */` after the last one inside the GAMES block, with its pure rules
   between `/*MYGAME-PURE-BEGIN*/` and `-END*/`; (2) CSS under its own prefix after `.gm-art-img`; (3) `gmRegister({...})` with a fresh
