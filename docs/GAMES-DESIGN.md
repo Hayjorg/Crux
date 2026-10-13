@@ -18,7 +18,7 @@ Sources behind the research notes are blog-grade; fairness and physiology points
 
 | # | Game | Replaces | Why (2 lines) |
 |---|------|----------|---------------|
-| 1 | Chalk Rhythm | Chalk Up (rework) | Slow 60-70 bpm tap-on-beat is the calmest rest game and the app already has the ring UI; we polish, add forgiving windows and sound. |
+| 1 | Dyno | Chalk Rhythm (cut 2026-10-12) | Charge-and-release timing with a real climbing action: hold, let go in the band, latch the next hold or drop a ledge. |
 | 2 | Route Read | new | Memory of a hold route is on-theme (reading a problem before you pull) and is untimed per tap, so it never panics. |
 | 3 | Summit Stack | new | One-tap drop with a visible payoff (climber on top, summit flag) gives the "one more block" pull without a fail state. |
 | 4 | Reach Timer | Hold Hop | Keeps the left/right reach feel Hold Hop had but removes falling rocks: a single telegraphed target, always solvable. |
@@ -35,27 +35,24 @@ idle[0..n], blink, step, jump, land, climb-reach-left, climb-reach-right, climb-
 
 Judgement labels (text + shape, never colour alone): "Perfect" (double ring), "Good" (single ring), "Close" (open dot).
 
-### 2.1 Chalk Rhythm (id `chalkRhythm`)
+### 2.1 Dyno (id `dyno`; replaces the cut Chalk Rhythm, 2026-10-12)
 
-Rules: a ring grows toward a fixed outline once per beat. Tap when it meets the outline. A missed beat just scores 0 for that beat and the next beat comes; there is no reset, no fail.
-Controls: tap anywhere (also Space/Enter). Round: 45 s.
-Scoring: Perfect 3, Good 2, Close 1, miss 0. Score = sum. Best = highest sum.
-
-| Phase | Time | BPM | Beat length | Perfect | Good | Close |
-|---|---|---|---|---|---|---|
-| Warm | 0-15 s | 60 | 1000 ms | +-80 ms | +-160 ms | +-280 ms |
-| Mid | 15-30 s | 64 | 937 ms | +-80 | +-160 | +-280 |
-| Hold | 30-45 s | 70 | 857 ms | +-80 | +-160 | +-280 |
-
-Reaction floor: the Close window total (560 ms) exceeds 400 ms at the fastest tempo. Max possible score about 3 x 48 = 144.
-Fairness: beats are on a fixed grid from round start, one tap is attributed to the nearest unclaimed beat within the Close window; double-taps cannot claim two beats; the ring is always visible >= 60% of the beat. No hidden beats.
-Feedback: ring pulse + label under the outline; chalk puff on Perfect (GAME_ART `cr.puff`). Miss: ring fades, no shake.
-Frame map: idle[0] resting; `chalk` (climb-chalk-up) on Perfect for 300 ms; `clap` frames (chalk-clap-1..3) cycle every 8 consecutive non-miss beats; end: cheer-1 if new best else idle[0].
-Reduced motion: ring does not scale; instead a bar fills left-to-right and the outline is a fixed line. No puff animation; label only.
-Sound (optional, soft): a 200 Hz wood-click tick 60 ms at beat 0.15 volume (below timer beep volume, different pitch) on Perfect/Good only; none on miss. Silent when sound off. Haptic: buzz(8) on Perfect only, skipped on reduced motion.
-End screen: "Nice breathing." big score, "Best N" or "New best." Buttons "Again" and "Games" (hidden if rest has <= 10 s left; see rest mode).
-Rest mode: see section 4.6.
-Schema: `games.chalkRhythm = { best, plays, perfectBest }`. Legacy `chalkUp` best is copied once on first load (`best` only, plays reset) so no score is lost; chalkUp key preserved.
+Why: the owner found the ring-on-a-beat game "weird", not a climbing action. Dyno is the dyno itself: charge, release, latch or fall.
+Rules: hold anywhere to charge; the power meter rises and falls (triangle wave, one cycle 2.2-4.0 s, speed differs per hold). The target hold is
+drawn at the height the meter must reach, with a band on the meter (and a dashed line from the hold to the meter). Release with the bar in the band:
+the climber latches (+1 height, camera moves up, next hold farther and its band narrower). Short or over: the climber falls one ledge to the
+previous hold and the round goes on (no fail state; a fall costs ~1.1 s and the peak is kept). A fall retries the same hold (seeded per hold).
+Controls: press and hold with a finger, or hold Space/Enter; a second finger cannot release the first; presses during flight/landing are ignored.
+Round: 45 s. Score = peak height. Extra: `cleanBest` (catches in the central 40 % of the band).
+Ramp (by hold number, plateau at hold 15): band window 900 -> 420 ms of release time, cycle 3.3 s -> 2.8 s (x0.8-1.2 per hold), target level 0.28 -> 0.68 of the meter.
+Hardest window is never below 400 ms (test asserts `w*T >= 400` for 500 seeds x 40 holds). The ideal release is also reachable on the falling pass.
+Failability: the meter speed changes every hold, so a human reacts to the bar instead of timing a known interval. Bot pass rate at the hardest hold:
+beginner ~42 %, average ~69 %, strong ~92 %; perfect player ~28 holds, strong ~21, average ~16, beginner ~9 (`dev/dyno-bot.js`).
+Feedback: label "Latched" / "Latched, clean" / "Short" / "Over"; a bar mark stays at the release level. Frames: pull while charging, jump in flight,
+reachL/R on a latch, hit on a fall, cheer on a new best. Sound: soft rising tick on a latch, low tick on a fall; silent when sound is off.
+Reduced motion: the meter is a flat horizontal bar, no wobble, no flight or scroll animation (positions snap), same rules.
+Art slots: `dy.ledge` (ground), `dy.hold` (hold), `card.dyno`.
+Schema: `games.dyno = { best, plays, cleanBest }`. Saved `chalkRhythm` and `chalkUp` data are kept untouched (unknown ids are preserved by gamesNormalize).
 
 ### 2.2 Route Read (id `routeRead`)
 
@@ -204,7 +201,7 @@ Property tests (N = 500 seeds each):
 - routeGen: N distinct cells in range, rows strictly ascending, column drift <= 1, every route hold exists in the wall (solvable).
 - reachSeq: no side repeated > 3 in a row; dwell(t) >= 1000 ms for all t.
 - stack: for all n in 1..40, min width/speed window >= 400 ms at max difficulty.
-- chalk: window total at 70 bpm >= 400 ms and beat >= 800 ms.
+- dyno: band window w*T >= 400 ms for every hold; ideal hold latches; a fall retries the same hold; human-like bot misses some (dev/dyno-bot.js).
 Integration (browser, playwright or the existing dev harness):
 - Start a game from the rest strip, advance fake clock to rest end: the round closes, score recorded once, returns to timer within 2 s.
 - Rest <= 10 s: no "Again" button rendered.
