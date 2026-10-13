@@ -24,6 +24,7 @@
 and the project rules. It runs on its own private copy of the data, never your real save. Takes about a minute.</p>
 <div class="bar"><button id="runBtn">Run again</button><span id="summary">Starting…</span></div>
 <div class="layout"><ul id="results"></ul><iframe id="app" title="App under test"></iframe></div>
+<script src="route-bot.js"></script>
 <script>
 (function(){
   var KEY = "crux-app-state-v2";
@@ -1862,29 +1863,63 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
 
   // ---- routeRead tests ----
-  test("Games: Route Read rules are pure (ramp table, next length, 500 seeds of valid distinct solvable routes)", async function(){
+  test("Games: Route Read rules are pure (show ramp, next length, 500 seeds of solvable interleaved spray walls)", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed);
-    var G = W.__cruxGames; expect(G && G.routeGen, "route read hooks missing");
-    var show = { 4:2600, 5:3000, 6:3400, 7:3800, 8:4200 };
-    Object.keys(show).forEach(function(n){ expect(G.routeShowMs(+n)===show[n], "show time for "+n+": "+G.routeShowMs(+n)); });
-    expect(G.routeShowMs(2)===2600 && G.routeShowMs(20)===4200, "show time isn't clamped");
-    expect(G.routeNextLen(5, false)===6 && G.routeNextLen(5, true)===4 && G.routeNextLen(4, true)===4 && G.routeNextLen(8, false)===8 && G.routeNextLen(8, true)===7, "next route length rule");
-    var C = G.routeConst; expect(C.start===5 && C.min===4 && C.max===8 && C.betweenMs===800 && C.reshowMs===1500 && C.roundMs===60000, "constants");
-    var bad = null;
-    for(var s=1;s<=500 && !bad;s++) for(var n=4;n<=8;n++){
-      var r = G.routeGen(s*7919, n), again = G.routeGen(s*7919, n);
-      if(JSON.stringify(r)!==JSON.stringify(again)){ bad = "not deterministic seed "+s; break; }
-      if(!G.routeCheck(r, n)){ bad = "invalid route seed "+s+" n "+n+": "+JSON.stringify(r); break; }
-      var keys = {}; r.forEach(function(h){ keys[h.row+","+h.col] = 1; });
+    var G = W.__cruxGames; expect(G && G.routeWall && G.routeGen, "route read hooks missing");
+    var C = G.routeConst; expect(C.cols===5 && C.rows===5 && C.start===5 && C.min===4 && C.max===10 && C.betweenMs===800 && C.revealMs===1800 && C.roundMs===60000, "constants");
+    var prev = 0;
+    for(var n=4;n<=10;n++){
+      var ms = G.routeShowMs(n);
+      expect(ms>prev && ms/n>=500, "show time must scale with length and stay >= 500 ms per hold: "+n+" -> "+ms);
+      prev = ms;
+    }
+    expect(G.routeShowMs(2)===G.routeShowMs(4) && G.routeShowMs(20)===G.routeShowMs(10) && G.routeShowMs(10)>=2*G.routeShowMs(4)*0.9, "show time isn't clamped");
+    expect(G.routeNextLen(5, false)===6 && G.routeNextLen(5, true)===4 && G.routeNextLen(4, true)===4 && G.routeNextLen(10, false)===10 && G.routeNextLen(10, true)===9, "next route length rule");
+    expect(G.routeDecoyLen(4)===3 && G.routeDecoyLen(8)===6 && G.routeDecoyLen(10)===7, "decoy route length");
+    var bad = null, clutter = 0, total = 0, holdsMin = 99, shapes = {};
+    for(var s=1;s<=500 && !bad;s++) for(n=4;n<=10;n++){
+      var w = G.routeWall(s*7919, n), again = G.routeWall(s*7919, n);
+      if(JSON.stringify(w)!==JSON.stringify(again)){ bad = "not deterministic seed "+s; break; }
+      if(!G.routeWallCheck(w)){ bad = "invalid wall seed "+s+" n "+n+": "+JSON.stringify(w.target); break; }
+      if(!G.routeCheck(w.target, n)){ bad = "invalid route seed "+s+" n "+n; break; }
+      var keys = {}; w.target.forEach(function(h){ keys[h.row+","+h.col] = 1; });
+      w.decoy.forEach(function(h){ if(keys[h.row+","+h.col]) bad = "decoy overlaps route seed "+s; });
       if(Object.keys(keys).length!==n){ bad = "holds not distinct seed "+s; break; }
-      if(G.routeShowMs(n)/n<500){ bad = "show time per hold under 500 ms for "+n; break; }
+      shapes[G.routeCodes[w.codeT].shape+"/"+G.routeCodes[w.codeD].shape] = 1;
+      if(n>=6){ clutter += G.routeClutter(w)/n; total++; }
+      holdsMin = Math.min(holdsMin, w.holds.length);
     }
     expect(!bad, bad);
-    expect(!G.routeCheck([{row:0,col:0},{row:1,col:2},{row:2,col:2},{row:3,col:2}], 4), "check accepted a column jump");
+    expect(clutter/total>=0.6, "routes aren't interleaved: "+(clutter/total).toFixed(2));
+    expect(holdsMin>=17 && Object.keys(shapes).length>=8, "wall too sparse or codes never vary: "+holdsMin+" "+Object.keys(shapes).length);
+    var shp = {}; G.routeCodes.forEach(function(c){ shp[c.shape] = 1; });
+    expect(Object.keys(shp).length===4 && G.routeCodes.every(function(c){ return /^#/.test(c.color); }), "every route code needs its own shape as well as a colour");
+    expect(!G.routeCheck([{row:0,col:0},{row:1,col:3},{row:2,col:3},{row:3,col:3}], 4), "check accepted a three-column jump");
+    expect(!G.routeCheck([{row:0,col:0},{row:3,col:1},{row:4,col:1},{row:4,col:2}], 4), "check accepted a three-row jump");
   });
 
-  test("Games: Route Read shows numbers, hides them, scores a route, and a wrong tap re-shows it then eases off", async function(){
+  test("Games: Route Read has a skill curve (human-like bot by band: average fails some top routes, a null player scores 0)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed);
+    var G = W.__cruxGames, Bot = window.RouteBot; expect(Bot && G.routeWall, "bot or hooks missing");
+    var api = { routeWall:G.routeWall, routeShowMs:G.routeShowMs, routeNextLen:G.routeNextLen, routeConst:G.routeConst };
+    function pool(t, lo, hi){ var tr = 0, ps = 0; for(var n=lo;n<=hi;n++){ var e = t.byN[n]; if(e){ tr += e.tries; ps += e.passes; } } return tr ? ps/tr : -1; }
+    var beg = Bot.table(api, "beginner", 250), avg = Bot.table(api, "average", 250), str = Bot.table(api, "strong", 250);
+    var rep = "beg early "+pool(beg, 4, 5).toFixed(2)+" avg mid "+pool(avg, 6, 7).toFixed(2)+" avg top "+pool(avg, 8, 10).toFixed(2)+" str peak "+pool(str, 9, 10).toFixed(2);
+    expect(pool(beg, 4, 5)>=0.65 && pool(beg, 4, 5)<=0.95, "beginner early band: "+rep);
+    expect(pool(avg, 6, 7)>=0.45 && pool(avg, 6, 7)<=0.78, "average mid band: "+rep);
+    expect(pool(avg, 8, 10)<0.6 && pool(avg, 8, 10)>0.1, "average must fail some top routes: "+rep);
+    expect(pool(str, 9, 10)>=0.2 && pool(str, 9, 10)<=0.6, "strong peak band: "+rep);
+    expect(pool(avg, 4, 5)>pool(avg, 6, 7) && pool(avg, 6, 7)>pool(avg, 8, 10), "pass rate should fall with route length: "+rep);
+    expect(beg.mean<avg.mean && avg.mean<str.mean, "bands should order by skill");
+    // a perfect player gets to the top of the ladder; a null player never completes a route
+    var perfect = 0, t = 0, N = G.routeConst.start, longest = 0;
+    while(true){ t += G.routeShowMs(N)+N*500; if(t>G.routeConst.roundMs) break; perfect += N; longest = N; t += G.routeConst.betweenMs; N = G.routeNextLen(N, false); }
+    expect(longest===10 && perfect>=40, "a perfect player should reach the 10-hold route: "+longest+" / "+perfect);
+  });
+
+  test("Games: Route Read lights two coded routes, hides them, scores a route, and a wrong hold loses that route", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed); await goHome();
     var G = W.__cruxGames;
@@ -1892,34 +1927,42 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(!$("gmCard_routeRead").disabled && G.menuIds().indexOf("routeRead")>=0, "Route Read isn't playable");
     await click("gmCard_routeRead", 150); await click("gmStartBtn", 150);
     var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
-    expect(g.route.length===5 && g.phase==="show", "round didn't start on a 5-hold route");
+    expect(g.route.length===5 && g.phase==="show" && g.wallDef.decoy.length===3, "round didn't start on a 5-hold route with a 3-hold decoy");
     expect(g.route.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent===String(i+1); }), "numbers not shown on the route");
-    expect(Array.prototype.every.call(D.querySelectorAll(".rr-cell"), function(b){ var r = b.getBoundingClientRect(); return r.width>=64 && r.height>=64; }), "a hold's hit area is under 64 px");
+    var cd = G.routeCodes[g.wallDef.codeT], dd = G.routeCodes[g.wallDef.codeD];
+    expect(g.route.every(function(h){ return cell(h).querySelector(".rr-hold").getAttribute("data-shape")===cd.shape; }), "called route isn't drawn in its shape");
+    expect(g.wallDef.decoy.every(function(h){ var e = cell(h); return e.querySelector(".rr-hold").getAttribute("data-shape")===dd.shape && e.querySelector(".rr-badge").textContent===""; }), "decoy route should show its own shape and no numbers");
+    expect(cd.shape!==dd.shape && /Read the/.test($("rrLabel").textContent) && $("rrLabel").textContent.indexOf(cd.name)>=0, "label doesn't name the route: "+$("rrLabel").textContent);
+    var shown = Array.prototype.filter.call(D.querySelectorAll(".rr-cell"), function(b){ return !b.hidden; });
+    expect(shown.length>=17 && shown.every(function(b){ var r = b.getBoundingClientRect(); return r.width>=56 && r.height>=55.5; }), "wall too sparse or a hold's hit area is under 56 px: "+shown.length);
+    var wr = $("rrWall").getBoundingClientRect(), sr = $("gmStage").getBoundingClientRect();
+    expect(wr.left>=sr.left-1 && wr.right<=sr.right+1 && wr.bottom<=sr.bottom+1 && wr.top>=sr.top, "wall overflows the stage");
     cell(g.route[0]).click(); await wait(50);
     expect(g.actions===0 && g.score===0, "a tap during the show counted");
-    await wait(3150);
-    expect(g.phase==="input" && !Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers didn't hide after 3 s");
-    var first = g.route.slice();
-    first.forEach(function(h){ cell(h).click(); });
+    await wait(G.routeShowMs(5)+300);
+    expect(g.phase==="input" && !Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers didn't hide after the show");
+    expect(!D.querySelector(".rr-hold[data-shape]"), "coded shapes should go neutral when the route is hidden");
+    g.route.slice().forEach(function(h){ cell(h).click(); });
     await wait(60);
     expect(g.score===5 && g.longest===5 && +$("gmScore").textContent===5 && g.N===6, "route not scored / not stepping up: "+g.score+" N "+g.N);
     await wait(900);
-    expect(g.phase==="show" && g.route.length===6, "next route (6) didn't start");
-    await wait(3500);
-    // wrong tap: pick a cell that isn't route[0]
-    var h0 = g.route[0], wrong = null;
-    for(var r=0;r<5 && !wrong;r++) for(var c=0;c<3;c++) if(!(r===h0.row && c===h0.col)){ wrong = $("rrCell_"+r+"_"+c); break; }
-    wrong.click(); await wait(60);
-    expect(g.phase==="reshow" && /close, here it is/.test($("gmHint").textContent), "wrong tap didn't re-show: "+g.phase);
-    expect(g.route.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent.indexOf(String(i+1))>=0; }), "route not re-shown with numbers");
-    expect(wrong.getAttribute("data-state")==="wrong" && !!getComputedStyle(wrong.querySelector(".rr-badge"), "::before").content, "no X on the wrong hold");
-    await wait(1600);
-    expect(g.phase==="input" && g.step===0 && g.route.length===6, "retry didn't restart the same route");
+    expect(g.phase==="show" && g.route.length===6 && g.wallDef.decoy.length===4, "next route (6) didn't start");
+    await wait(G.routeShowMs(6)+60);
+    // tapping a decoy hold (the other route) loses the route, no retry of the same one
+    var lost = g.route.slice(), dec = g.wallDef.decoy[0];
+    cell(dec).click(); await wait(60);
+    expect(g.phase==="reshow" && /Not that one/.test($("gmHint").textContent), "wrong hold didn't lose the route: "+g.phase);
+    expect(g.score===5 && g.N===5, "a lost route should score nothing and shorten the next: "+g.score+" N "+g.N);
+    expect(lost.every(function(h, i){ return cell(h).querySelector(".rr-badge").textContent===String(i+1); }), "answer not shown");
+    expect(cell(dec).getAttribute("data-state")==="wrong" && !!getComputedStyle(cell(dec).querySelector(".rr-badge"), "::before").content, "no X on the wrong hold");
+    await wait(1900);
+    expect(g.phase==="show" && g.route.length===5, "a fresh 5-hold route should follow a lost one: "+g.phase+" "+g.route.length);
+    await wait(G.routeShowMs(5)+60);
     g.route.forEach(function(h){ cell(h).click(); }); await wait(60);
-    expect(g.score===11 && g.N===5, "after a miss the next route should be 5: score "+g.score+" N "+g.N);
+    expect(g.score===10 && g.N===6, "after a loss the ladder resumes: "+g.score+" N "+g.N);
     await click("closeGamesBtn", 250);
     var s = saved().games.routeRead;
-    expect(s.best===11 && s.plays===1 && s.longest===6, "route read save wrong: "+JSON.stringify(s));
+    expect(s.best===10 && s.plays===1 && s.longest===5, "route read save wrong: "+JSON.stringify(s));
   });
 
   test("Games: Route Read closes itself when rest ends, records once, no Play again, and hiding pauses it", async function(){
@@ -1945,14 +1988,16 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
   // ---- end routeRead tests ----
   // ---- routeRead polish tests ----
-  test("Games: Route Read polish helpers are pure (lift, summary, tone, bar)", async function(){
+  test("Games: Route Read polish helpers are pure (summary, tone, bar, hold sizes)", async function(){
     var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
     await boot(seed);
-    var G = W.__cruxGames; expect(G && G.routeLift && G.routeSummary, "polish hooks missing");
-    expect(G.routeLift(0)===0 && G.routeLift(4)===40 && G.routeLift(99)===40 && G.routeLift(-3)===0 && G.routeLift("x")===0, "lift isn't clamped");
+    var G = W.__cruxGames; expect(G && G.routeSummary && G.routeHoldPx, "polish hooks missing");
     expect(G.routeSummary(0, 0).title==="Warm-up done." && G.routeSummary(1, 5).note==="1 route · longest 5" && G.routeSummary(3, 7).note==="3 routes · longest 7" && G.routeSummary(3, 7).title==="Good reading.", "summary wording");
-    expect(G.routeTone(1)<G.routeTone(2) && G.routeTone(8)<=900 && G.routeTone(0)>=500 && G.routeTone(50)===G.routeTone(8), "tick tones should rise gently and stay soft");
+    expect(G.routeTone(1)<G.routeTone(2) && G.routeTone(10)<=920 && G.routeTone(0)>=500 && G.routeTone(50)===G.routeTone(10), "tick tones should rise gently and stay soft");
     expect(G.routeBarScale(0, 0, 3000)===1 && G.routeBarScale(1500, 0, 3000)===0.5 && G.routeBarScale(9000, 0, 3000)===0 && G.routeBarScale(5, 0, 0)===0, "show bar scale");
+    expect(G.routeHoldPx(0)<G.routeHoldPx(1) && G.routeHoldPx(1)<G.routeHoldPx(2) && G.routeHoldPx(9)===G.routeHoldPx(2) && G.routeHoldPx(2)<=56, "hold sizes vary and fit a 56 px target");
+    var sizes = {}; for(var s=1;s<=60;s++) G.routeWall(s*31, 8).holds.forEach(function(h){ sizes[h.sz] = 1; });
+    expect(Object.keys(sizes).length===3, "walls should mix jugs and crimps");
   });
 
   test("Games: Route Read answers a real pointerdown (no click needed), fades numbers out, and a late-landing tap isn't lost", async function(){
@@ -1963,7 +2008,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
     expect(D.querySelectorAll(".rr-pip").length===5 && getComputedStyle(cell(g.route[0])).touchAction==="manipulation", "pips / touch-action missing");
     expect(g.route.every(function(h){ return cell(h).classList.contains("rr-lit"); }) && $("rrWall").classList.contains("rr-showing"), "route holds not marked lit");
-    await wait(3050);
+    await wait(G.routeShowMs(5)+60);
     expect(g.phase==="input" && !$("rrWall").classList.contains("rr-showing"), "didn't enter input");
     await wait(260);
     expect(!Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers left behind after the fade");
@@ -1974,6 +2019,23 @@ and the project rules. It runs on its own private copy of the data, never your r
     el.dispatchEvent(new W.MouseEvent("click", { bubbles:true, detail:1 }));
     expect(g.step===1, "the click after a pointerdown was counted twice");
     await click("closeGamesBtn", 250);
+  });
+
+  test("Games: Route Read reduced motion keeps the layout and codes but drops scale, wobble and the climber swap", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames; G.routeReduced(true);
+    await click("openGamesBtn", 250); await click("gmCard_routeRead", 150); await click("gmStartBtn", 150);
+    var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
+    expect($("rrStage").classList.contains("rr-calm"), "no still variant");
+    var lit = cell(g.route[0]).querySelector(".rr-hold");
+    expect(lit.getAttribute("data-shape") && W.getComputedStyle(lit).transform==="none", "shape-coded holds still scale: "+W.getComputedStyle(lit).transform);
+    expect(!$("gmClimber").classList.contains("rr-swap"), "climber swap animates in reduced motion");
+    await wait(G.routeShowMs(5)+60);
+    var wrong = g.wallDef.decoy[0]; cell(wrong).click(); await wait(80);
+    expect(g.phase==="reshow" && W.getComputedStyle(cell(wrong).querySelector(".rr-hold")).animationName==="none", "wrong hold wobbles in reduced motion");
+    await click("closeGamesBtn", 250);
+    G.routeReduced(null);
   });
   // ---- end routeRead polish tests ----
 
