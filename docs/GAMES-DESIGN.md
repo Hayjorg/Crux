@@ -85,7 +85,7 @@ early-heavy window: 350 ms early / 250 ms late at the start, tightening to 260 /
 2.0 s falling to 0.9 s (always >= 600 ms of sight before its window). Mean gap 950 -> 400 ms with 22 % chance of a short run of 2 to 4 holds at the fastest
 fair spacing; floors by lane distance 280 / 340 / 420 ms; the same lane at most 3 in a row. A hit climbs one move; a miss, a late tap or a stray tap slips one move
 (floor 0; one stray slip per 350 ms; the round goes on). Round: 45 s. Score = peak height.
-Controls: three full-height lane buttons (>= 56 px), keys 1/2/3 or arrow keys. Reduced motion: the next three holds sit in fixed rows with a fuse bar, no scroll.
+Controls: three full-height lane buttons (>= 56 px), keys Left/A, Up or Down/S, Right/D. Reduced motion: the next three holds sit in fixed rows with a fuse bar, no scroll.
 Art slots: `wr.hold`, `card.wallRun`. Schema: `games.wallRun = { best, plays, longestRun }`.
 Bot: `node dev/wallrun-bot.js` pulls the pure rules out of crux.html and plays with noisy timing per band.
 
