@@ -144,7 +144,7 @@ input:focus, .ta:focus { outline: 2px solid var(--accent); outline-offset: 1px; 
 .scroll { overflow-x: auto; }
 
 /* ---------- movement test blocks (assessment) ---------- */
-.test { margin-top: .08in; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.test { margin-top: .06in; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
 .test > h3 { padding: .035in .09in; background: var(--accent-soft); font-size: .84em; font-weight: 700; }
 .test > h3 span { font-weight: 500; color: var(--muted); }
 .cp { display: grid; grid-template-columns: 1.25in 1fr; gap: .1in; align-items: start; padding: .04in .09in; border-top: 1px solid var(--rule); }
@@ -197,7 +197,7 @@ input:focus, .ta:focus { outline: 2px solid var(--accent); outline-offset: 1px; 
   .wrap { padding: 0; }
   .sheet {
     width: 8.5in; max-width: none; height: 10.97in;      /* [PAGE SIZE] A4: 8.27in x 11.66in */
-    margin: 0; padding: .45in .55in .38in; border-radius: 0; box-shadow: none;
+    margin: 0; padding: .42in .55in .36in; border-radius: 0; box-shadow: none;
     break-after: page; page-break-after: always;
   }
   .sheet:last-of-type { break-after: auto; page-break-after: auto; }

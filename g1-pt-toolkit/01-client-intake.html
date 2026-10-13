@@ -17,7 +17,7 @@
 </nav>
 
 <main class="wrap">
-<p class="notice only-blank">Draft template. Nothing typed here is saved or sent, and it clears when you reload. Please don't enter real client health information until G1 approves how it is stored.</p>
+<p class="notice only-blank">Draft template. Nothing typed here is saved or sent, and it clears when you reload. Please don't enter real client personal or health information until G1 approves how it is stored.</p>
 <p class="notice only-sample">Sample with a <b>fictional</b> client. Every name, number and note is invented.</p>
 
 <!-- ============ PAGE 1 ============ -->
@@ -27,11 +27,11 @@
       <div class="org">G1 Climbing + Fitness &middot; Personal Training</div>
       <h1>Client Intake Questionnaire</h1>
     </div>
-    <div class="tag"><b>Draft v0.1</b>Pending G1 management review<br>
+    <div class="tag"><b>Draft v0.1</b>Pending G1 management approval<br>
       <label class="f"><span class="lbl">Date</span><input data-k="date" aria-label="Date"></label></div>
   </header>
 
-  <p class="note">Welcome! This helps your trainer plan a safe, useful first session. It takes about 10 minutes. Skip anything you'd rather talk through in person. Nothing here is a test, and you can update it any time.</p>
+  <p class="note">Welcome! This helps your trainer plan a first session that suits you. It takes about 10 minutes. Skip anything you'd rather talk through in person. Nothing here is a test, and you can tell your trainer if anything changes.</p>
 
   <div class="sec">
     <h2 class="sec-h">1 &middot; About you</h2>
@@ -39,7 +39,7 @@
       <label class="f"><span class="lbl">Full name</span><input data-k="name"></label>
       <label class="f"><span class="lbl">Preferred name</span><input data-k="pref"></label>
       <label class="f"><span class="lbl">Pronouns (optional)</span><input data-k="pron"></label>
-      <label class="f"><span class="lbl">Date of birth</span><input data-k="dob"></label>
+      <label class="f"><span class="lbl">Date of birth (MM/DD/YYYY)</span><input data-k="dob"></label>
       <label class="f"><span class="lbl">Phone</span><input type="tel" data-k="phone"></label>
       <label class="f"><span class="lbl">Email</span><input type="email" data-k="email"></label>
       <div class="f"><span class="lbl">Best way to reach you</span>
@@ -62,8 +62,8 @@
         <label class="ck"><input type="checkbox" data-k="goal.strength"> Build overall strength</label>
         <label class="ck"><input type="checkbox" data-k="goal.mobility"> Mobility and posture</label>
         <label class="ck"><input type="checkbox" data-k="goal.cardio"> Cardio fitness and endurance</label>
-        <label class="ck"><input type="checkbox" data-k="goal.body"> Body composition</label>
-        <label class="ck"><input type="checkbox" data-k="goal.injury"> Stay healthy / lower injury risk</label>
+        <label class="ck"><input type="checkbox" data-k="goal.body"> Body composition (optional)</label>
+        <label class="ck"><input type="checkbox" data-k="goal.injury"> Build a base for healthy climbing</label>
         <label class="ck"><input type="checkbox" data-k="goal.return"> Return to activity after a break</label>
         <label class="ck"><input type="checkbox" data-k="goal.confidence"> Feel confident in the gym</label>
         <label class="ck"><input type="checkbox" data-k="goal.other"> Other: <input data-k="goal.otherText" aria-label="Other goal" style="width:1in"></label>
@@ -120,14 +120,14 @@
         </div></div>
       <div class="g c3" style="gap:.06in .12in">
         <label class="f"><span class="lbl">Sleep (hrs)</span><input data-k="sleep"></label>
-        <label class="f"><span class="lbl">Stress (1-5)</span><input data-k="stress"></label>
+        <label class="f"><span class="lbl">Stress (1 calm, 5 high)</span><input data-k="stress"></label>
         <label class="f"><span class="lbl">Sessions/wk</span><input data-k="sessions"></label>
       </div>
     </div>
     <label class="f"><span class="lbl">Days and times that work for training</span><input data-k="times"></label>
   </div>
 
-  <footer class="foot"><span>G1 Climbing + Fitness &middot; Client Intake &middot; Draft v0.1, pending management review</span><span>Page 1 of 2</span></footer>
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; Client Intake &middot; Draft v0.1 &middot; pending G1 management approval</span><span>Page 1 of 2</span></footer>
 </section>
 
 <!-- ============ PAGE 2 ============ -->
@@ -139,24 +139,24 @@
 
   <div class="sec" style="margin-top:.04in">
     <h2 class="sec-h">5 &middot; Health and comfort check <small>(self-reported)</small></h2>
-    <p class="note">Share only what you're comfortable with. This is not a medical exam, and your trainer can't diagnose or treat conditions. It helps us choose safe starting exercises and know when to suggest a licensed healthcare professional.</p>
+    <p class="note">Share only what you're comfortable with. This is not a medical exam, and your trainer can't diagnose or treat conditions. It helps us choose sensible starting exercises and know when to suggest a licensed healthcare professional.</p>
+    <p class="ph mt"><b>Placeholder:</b> who sees these answers, where kept, for how long. Pending G1 approval. Not for real clients yet.</p>
     <table class="tbl qtbl mt">
       <thead><tr><th>Does this apply to you?</th><th class="c">Yes</th><th class="c">No</th><th class="c" style="width:.9in">Prefer to discuss</th></tr></thead>
       <tbody>
-        <tr><td>A doctor or other health professional has advised me to limit or avoid some kinds of exercise.</td>
+        <tr><td>A health professional has advised me to limit some kinds of exercise.</td>
           <td class="c"><input type="radio" name="q1" value="yes" data-k="q1" aria-label="Question 1 yes"></td><td class="c"><input type="radio" name="q1" value="no" data-k="q1" aria-label="Question 1 no"></td><td class="c"><input type="radio" name="q1" value="discuss" data-k="q1" aria-label="Question 1 prefer to discuss"></td></tr>
-        <tr><td>I sometimes get chest pain, fainting, dizziness or unusual breathlessness during activity.</td>
+        <tr><td>I sometimes get chest pain, dizziness or unusual breathlessness when active.</td>
           <td class="c"><input type="radio" name="q2" value="yes" data-k="q2" aria-label="Question 2 yes"></td><td class="c"><input type="radio" name="q2" value="no" data-k="q2" aria-label="Question 2 no"></td><td class="c"><input type="radio" name="q2" value="discuss" data-k="q2" aria-label="Question 2 prefer to discuss"></td></tr>
-        <tr><td>I take medication, or have a condition, that may affect exercise (for example heart, blood pressure, breathing, diabetes or balance).</td>
+        <tr><td>My health, medication or circumstances (for example pregnancy or a recent birth, heart, blood pressure, breathing, diabetes or balance) may affect exercise.</td>
           <td class="c"><input type="radio" name="q3" value="yes" data-k="q3" aria-label="Question 3 yes"></td><td class="c"><input type="radio" name="q3" value="no" data-k="q3" aria-label="Question 3 no"></td><td class="c"><input type="radio" name="q3" value="discuss" data-k="q3" aria-label="Question 3 prefer to discuss"></td></tr>
-        <tr><td>I am pregnant or have recently given birth.</td>
+        <tr><td>I've had surgery or an injury recently (details below).</td>
           <td class="c"><input type="radio" name="q4" value="yes" data-k="q4" aria-label="Question 4 yes"></td><td class="c"><input type="radio" name="q4" value="no" data-k="q4" aria-label="Question 4 no"></td><td class="c"><input type="radio" name="q4" value="discuss" data-k="q4" aria-label="Question 4 prefer to discuss"></td></tr>
-        <tr><td>I've had surgery or an injury in the past 12 months.</td>
-          <td class="c"><input type="radio" name="q5" value="yes" data-k="q5" aria-label="Question 5 yes"></td><td class="c"><input type="radio" name="q5" value="no" data-k="q5" aria-label="Question 5 no"></td><td class="c"><input type="radio" name="q5" value="discuss" data-k="q5" aria-label="Question 5 prefer to discuss"></td></tr>
         <tr><td>I have pain or discomfort right now, in daily life or when exercising.</td>
-          <td class="c"><input type="radio" name="q6" value="yes" data-k="q6" aria-label="Question 6 yes"></td><td class="c"><input type="radio" name="q6" value="no" data-k="q6" aria-label="Question 6 no"></td><td class="c"><input type="radio" name="q6" value="discuss" data-k="q6" aria-label="Question 6 prefer to discuss"></td></tr>
+          <td class="c"><input type="radio" name="q5" value="yes" data-k="q5" aria-label="Question 5 yes"></td><td class="c"><input type="radio" name="q5" value="no" data-k="q5" aria-label="Question 5 no"></td><td class="c"><input type="radio" name="q5" value="discuss" data-k="q5" aria-label="Question 5 prefer to discuss"></td></tr>
       </tbody>
     </table>
+    <p class="small muted mt">"Prefer to discuss" means your trainer will ask you privately. Blank means not answered.</p>
     <div class="f mt"><span class="lbl">Areas that are sore, injured, or have been a problem before (tick any, then add detail)</span>
       <div class="opts cols4">
         <label class="ck"><input type="checkbox" data-k="area.fingers"> Fingers / hands</label>
@@ -177,21 +177,31 @@
   <div class="sec">
     <h2 class="sec-h">6 &middot; Coaching preferences</h2>
     <div class="g c2">
-      <div class="f"><span class="lbl">Hands-on adjustments (guiding a position) are</span>
-        <div class="opts">
-          <label class="ck"><input type="radio" name="touch" value="ok" data-k="touch"> OK</label>
-          <label class="ck"><input type="radio" name="touch" value="ask" data-k="touch"> Ask me first</label>
-          <label class="ck"><input type="radio" name="touch" value="no" data-k="touch"> Please don't</label>
-        </div></div>
-      <div class="f"><span class="lbl">I like to be coached</span>
-        <div class="opts">
-          <label class="ck"><input type="checkbox" data-k="coach.show"> Show me</label>
-          <label class="ck"><input type="checkbox" data-k="coach.tell"> Tell me</label>
-          <label class="ck"><input type="checkbox" data-k="coach.try"> Let me try first</label>
-          <label class="ck"><input type="checkbox" data-k="coach.simple"> Keep it simple</label>
-        </div></div>
+      <div>
+        <div class="f" style="margin-top:0"><span class="lbl">Hands-on adjustments (guiding a position) are</span>
+          <div class="opts">
+            <label class="ck"><input type="radio" name="touch" value="ok" data-k="touch"> OK</label>
+            <label class="ck"><input type="radio" name="touch" value="ask" data-k="touch"> Ask me first</label>
+            <label class="ck"><input type="radio" name="touch" value="no" data-k="touch"> Please don't</label>
+          </div></div>
+        <div class="f"><span class="lbl">Photos or video of your movement (for form feedback) are</span>
+          <div class="opts">
+            <label class="ck"><input type="radio" name="photo" value="ok" data-k="photo"> OK</label>
+            <label class="ck"><input type="radio" name="photo" value="ask" data-k="photo"> Ask me first</label>
+            <label class="ck"><input type="radio" name="photo" value="no" data-k="photo"> No thanks</label>
+          </div></div>
+      </div>
+      <div>
+        <div class="f" style="margin-top:0"><span class="lbl">I like to be coached</span>
+          <div class="opts">
+            <label class="ck"><input type="checkbox" data-k="coach.show"> Show me</label>
+            <label class="ck"><input type="checkbox" data-k="coach.tell"> Tell me</label>
+            <label class="ck"><input type="checkbox" data-k="coach.try"> Let me try first</label>
+            <label class="ck"><input type="checkbox" data-k="coach.simple"> Keep it simple</label>
+          </div></div>
+        <label class="f"><span class="lbl">Anything that would help you feel comfortable here?</span><input data-k="comfort"></label>
+      </div>
     </div>
-    <label class="f"><span class="lbl">Anything that would help you feel comfortable training here?</span><input data-k="comfort"></label>
   </div>
 
   <div class="sec">
@@ -202,9 +212,9 @@
       <p class="ph"><b>Placeholder:</b> pricing and packages</p>
       <p class="ph"><b>Placeholder:</b> payment terms</p>
       <p class="ph"><b>Placeholder:</b> cancellation and late policy</p>
-      <p class="ph"><b>Placeholder:</b> under-18s and medical clearance</p>
+      <p class="ph"><b>Placeholder:</b> pre-activity screening form, medical clearance, under-18s</p>
     </div>
-    <p class="ph mt"><b>Placeholder: client acknowledgment and signature.</b> Add the signature block only after G1 approves the waiver and policy wording above.</p>
+    <p class="ph mt"><b>Placeholder:</b> client acknowledgment and signature, added only after G1 approves the wording above</p>
   </div>
 
   <div class="trainer-box">
@@ -221,7 +231,7 @@
     </div>
   </div>
 
-  <footer class="foot"><span>G1 Climbing + Fitness &middot; Client Intake &middot; Draft v0.1, pending management review</span><span>Page 2 of 2</span></footer>
+  <footer class="foot"><span>G1 Climbing + Fitness &middot; Client Intake &middot; Draft v0.1 &middot; pending G1 management approval</span><span>Page 2 of 2</span></footer>
 </section>
 </main>
 

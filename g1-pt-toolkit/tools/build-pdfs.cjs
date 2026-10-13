@@ -41,6 +41,15 @@ const docs = [
         problems++;
         console.error(`OVERFLOW ${file}${sample ? " (sample)" : ""}:`, JSON.stringify(overflow));
       }
+      const tight = await page.evaluate(() =>
+        Array.from(document.querySelectorAll(".sheet")).map((s, i) => {
+          const f = s.querySelector(".foot");
+          return { sheet: i + 1, inches: +((f.getBoundingClientRect().top - f.previousElementSibling.getBoundingClientRect().bottom) / 96).toFixed(2) };
+        }).filter((x) => x.inches < 0.2));
+      if (tight.length) {
+        problems++;
+        console.error(`TIGHT (under 0.2in spare above the footer; other fonts could push it over) ${file}${sample ? " (sample)" : ""}:`, JSON.stringify(tight));
+      }
       if (sample) {
         const missing = await page.evaluate((d) => {
           const data = (window.G1_SAMPLE || {})[d] || {};
@@ -61,5 +70,5 @@ const docs = [
   }
   await browser.close();
   if (problems) { console.error(problems + " problem(s)."); process.exit(1); }
-  console.log("OK: no overflow, all sample keys matched.");
+  console.log("OK: no overflow, at least 0.2in spare on every page, all sample keys matched.");
 })();
