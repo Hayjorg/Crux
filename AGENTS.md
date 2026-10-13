@@ -154,6 +154,7 @@ A small, optional play area for rest times, using the player's own climber. Remo
   running untouched. Opened from the rest button, it shows the rest clock; when rest ends the round closes itself (the score still counts
   if it had an action), says "Back to work" with no buttons and closes after 1.8 s. In the last 10 s of a rest an end screen has no "Play again" / "Games"
   ("Rest is almost over."), and buttons already on screen are removed when the clock crosses 10 s. A hidden page pauses the round ("Paused. Tap to resume"); a paused round never resumed records nothing.
+- **Shell conveniences:** `gmHud` leaves the clock alone while a round runs; `gmSetSrc` does a 100 ms opacity settle on pose swaps (skipped for reduced motion and rapid cycling; its animationend never bubbles to a host); a game may set `gmSheetTap` to make the whole sheet (minus header/HUD/rest strip/buttons) a tap target (Summit Stack does); in a game the sheet hugs its content (`:has(.gm-play:not([hidden]))`).
 - **The four games** (menu order; all calm, best score only, no XP/streaks/rewards, no fail state, hardest reaction window >= 400 ms):
   1. **Chalk Rhythm** `chalkRhythm`, 45 s. A ring grows to a fixed outline once per beat (60 -> 64 -> 70 bpm); tap on the beat. Windows
      Perfect +-80 / Good +-160 / Close +-280 ms = 3/2/1 points; a miss is 0. Reduced motion: a bar fills instead of a ring scaling.
@@ -188,6 +189,10 @@ A small, optional play area for rest times, using the player's own climber. Remo
   `window.__cruxGames` (only with `window.__cruxTest`; `chalk*`, `route*`, `stack*`, `reach*`, `mulberry32`, `recordRound`, `normalize`),
   each with a 500-seed property test (routes solvable, no side repeated > 3, stack window >= 400 ms, chalk windows), plus browser runs
   for the rest hand-off, hidden-page pause, sound off, reduced motion and the registry/menu.
+- **Shell polish (2026-10-12):** the sheet is a bottom sheet <= 520 px wide (centered above) that slides up and fades down (~110 ms close, then `hidden`;
+  `__cruxGames.close()` and reduced motion hide at once); body scroll is locked while it is open. Cards show best / plays and have a spoken aria-label;
+  the intro is one line (`GM_HOWTO`, falls back to `intro.text`) and a 56 px Start; Escape steps back (round or intro -> menu -> closed), Back returns
+  focus to the game's card, Tab is trapped inside the sheet; the whole sound row toggles and states On/Off in words. The end screen puts Play again first.
 - **Reduced motion:** every game has a still variant (bar instead of ring scale, no wobble, no scroll, crossfades <= 120 ms).
 
 ## Projects (climb tracking)

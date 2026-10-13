@@ -1939,6 +1939,38 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("startBtn", 150);
   });
   // ---- end routeRead tests ----
+  // ---- routeRead polish tests ----
+  test("Games: Route Read polish helpers are pure (lift, summary, tone, bar)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed);
+    var G = W.__cruxGames; expect(G && G.routeLift && G.routeSummary, "polish hooks missing");
+    expect(G.routeLift(0)===0 && G.routeLift(4)===40 && G.routeLift(99)===40 && G.routeLift(-3)===0 && G.routeLift("x")===0, "lift isn't clamped");
+    expect(G.routeSummary(0, 0).title==="Warm-up done." && G.routeSummary(1, 5).note==="1 route · longest 5" && G.routeSummary(3, 7).note==="3 routes · longest 7" && G.routeSummary(3, 7).title==="Good reading.", "summary wording");
+    expect(G.routeTone(1)<G.routeTone(2) && G.routeTone(8)<=900 && G.routeTone(0)>=500 && G.routeTone(50)===G.routeTone(8), "tick tones should rise gently and stay soft");
+    expect(G.routeBarScale(0, 0, 3000)===1 && G.routeBarScale(1500, 0, 3000)===0.5 && G.routeBarScale(9000, 0, 3000)===0 && G.routeBarScale(5, 0, 0)===0, "show bar scale");
+  });
+
+  test("Games: Route Read answers a real pointerdown (no click needed), fades numbers out, and a late-landing tap isn't lost", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250); await click("gmCard_routeRead", 150); await click("gmStartBtn", 150);
+    var g = G.current(), cell = function(h){ return $("rrCell_"+h.row+"_"+h.col); };
+    expect(D.querySelectorAll(".rr-pip").length===5 && getComputedStyle(cell(g.route[0])).touchAction==="manipulation", "pips / touch-action missing");
+    expect(g.route.every(function(h){ return cell(h).classList.contains("rr-lit"); }) && $("rrWall").classList.contains("rr-showing"), "route holds not marked lit");
+    await wait(3050);
+    expect(g.phase==="input" && !$("rrWall").classList.contains("rr-showing"), "didn't enter input");
+    await wait(260);
+    expect(!Array.prototype.some.call(D.querySelectorAll(".rr-badge"), function(b){ return b.textContent; }), "numbers left behind after the fade");
+    var h = g.route[0], el = cell(h), r = el.getBoundingClientRect();
+    el.dispatchEvent(new W.PointerEvent("pointerdown", { bubbles:true, button:0, clientX:r.left+5, clientY:r.top+5 }));
+    expect(g.step===1 && el.getAttribute("data-state")==="tapped" && D.querySelectorAll(".rr-pip.on").length===1, "pointerdown didn't register straight away");
+    el.click();    // the click that follows a real touch carries detail>0; a bare .click() has detail 0 and is a keyboard-style activation
+    el.dispatchEvent(new W.MouseEvent("click", { bubbles:true, detail:1 }));
+    expect(g.step===1, "the click after a pointerdown was counted twice");
+    await click("closeGamesBtn", 250);
+  });
+  // ---- end routeRead polish tests ----
 
   // ---- chalkRhythm tests ----
   test("Chalk Rhythm: tempo phases, beat grid and the three timing windows (pure rules)", async function(){
@@ -2144,6 +2176,61 @@ and the project rules. It runs on its own private copy of the data, never your r
     for(var j=0;j<80 && visible("gamesOverlay");j++) await wait(100);
     await click("startBtn", 150);
   });
+  // ---- chalkRhythm polish tests ----
+  test("Chalk Rhythm polish: echo, tap-time, cue and smoothing rules (pure)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, b = G.chalkBeats();
+    expect(G.chalkEcho(0)===null && G.chalkEcho(b[0]-1)===null, "an echo before the first beat");
+    var e0 = G.chalkEcho(b[0]), e1 = G.chalkEcho(b[0]+100), e2 = G.chalkEcho(b[0]+250);
+    expect(e0 && e0.k===0 && e0.scale===1 && Math.abs(e0.opacity-0.9)<1e-9, "echo at the beat: "+JSON.stringify(e0));
+    expect(e1.scale>e0.scale && e2.scale>e1.scale && e2.scale<=1.22 && e1.opacity<e0.opacity && e2.opacity<e1.opacity && e2.opacity>0, "echo isn't monotone: "+JSON.stringify([e0, e1, e2]));
+    expect(G.chalkEcho(b[0]+300)===null && G.chalkEcho(b[0]+299)!==null, "echo window edge");
+    // a beat's echo is finished before the next beat's ring is half grown, for every beat of the grid
+    for(var i=0;i<b.length;i++){ var nxt = i+1<b.length ? b[i+1] : 45000; expect(nxt-b[i]>=300, "beat "+i+" is shorter than its echo"); }
+    expect(G.chalkEase(0)===0 && G.chalkEase(1)===1 && G.chalkEase(0.5)>0.5 && G.chalkEase(-3)===0 && G.chalkEase(9)===1, "ease");
+    expect(G.chalkRingOpacity(0)===0 && G.chalkRingOpacity(0.1)>=0.5 && G.chalkRingOpacity(0.2)===1 && G.chalkRingOpacity(1)===1, "ring fade-in");
+    expect(G.chalkTapTime(1000, 1010)===1000 && G.chalkTapTime(1010, 1010)===1010 && G.chalkTapTime(0, 1010)===1010 && G.chalkTapTime(NaN, 1010)===1010
+      && G.chalkTapTime(undefined, 1010)===1010 && G.chalkTapTime(500, 1010)===1010 && G.chalkTapTime(2000, 1010)===1010 && G.chalkTapTime(1000.5, 1000)===1000, "tap time");
+    expect(G.chalkCue("perfect", 5)===null && G.chalkCue("good", -90)==="early" && G.chalkCue("close", 200)==="late" && G.chalkCue("miss", 400)===null, "cue");
+    var v = 0, prev = 0; for(var j=0;j<40;j++){ v = G.chalkSmooth(v, 1, 16, 90); expect(v>prev && v<1, "smooth step "+j); prev = v; }
+    expect(v>0.9 && G.chalkSmooth(0.5, 0.5, 16, 90)===0.5 && G.chalkSmooth(0, 1, 0, 90)===0, "smooth ends");
+  });
+
+  test("Chalk Rhythm polish: hit feedback, steady clock, first-round hint, tap target", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = await crOpen(), b = G.chalkBeats();
+    expect(W.getComputedStyle($("gmTap")).touchAction==="manipulation" || $("gmTap").style.touchAction==="manipulation", "tap layer lacks touch-action: manipulation");
+    var tr = $("gmTap").getBoundingClientRect(); expect(tr.width>=56 && tr.height>=56, "tap target "+tr.width+"x"+tr.height);
+    expect($("crTeach").classList.contains("on"), "no first-round hint");
+    await wait(80);
+    expect(/\d+s/.test($("gmTime").textContent), "clock missing at start: '"+$("gmTime").textContent+"'");
+    crTapAt(G, b[0]-90); await wait(60);
+    expect(/Good/.test($("crLabel").textContent) && /early/.test($("crLabel").textContent), "early cue: "+$("crLabel").textContent);
+    expect(!$("crTeach").classList.contains("on"), "hint stayed after the first tap");
+    expect(/\d+s/.test($("gmTime").textContent), "clock blanked by a tap: '"+$("gmTime").textContent+"'");
+    expect(q(".cr-outline").classList.contains("cr-hit") && !q(".cr-outline").classList.contains("cr-hit-perfect"), "outline pulse (good)");
+    crTapAt(G, b[1]); await wait(40);
+    expect(q(".cr-outline").classList.contains("cr-hit-perfect") && q(".cr-puff.go") && $("gmScore").classList.contains("cr-bump"), "perfect pulse/puff/score bump");
+    crTapAt(G, b[2]+200); await wait(40);
+    expect(/Close/.test($("crLabel").textContent) && /late/.test($("crLabel").textContent), "late cue: "+$("crLabel").textContent);
+    var before = +$("gmScore").textContent;
+    crTapAt(G, b[3]+600); await wait(40);
+    expect(+$("gmScore").textContent===before && $("gmClimber").classList.contains("cr-hop-sm"), "an off-beat tap gave no answer / changed the score");
+    // the echo of a landed beat is drawn and then goes away
+    G.current().t0 = W.performance.now()-(b[5]+100); await wait(40);
+    expect(+q(".cr-echo").style.opacity>0, "no echo after a beat");
+    await wait(450);
+    expect(+q(".cr-echo").style.opacity===0 || q(".cr-echo").style.opacity==="0", "echo didn't clear: "+q(".cr-echo").style.opacity);
+    G.current().t0 -= 45000; await wait(250);
+    expect(/beats/.test($("gmStage").textContent) && /of 48 beats/.test($("gmStage").textContent), "end note lacks the beat count: "+$("gmStage").textContent);
+    // a second round: the first-round hint is gone
+    await click("gmAgainBtn", 150); await click("gmStartBtn", 100);
+    expect(!$("crTeach").classList.contains("on"), "the hint came back on round 2");
+    await click("closeGamesBtn", 250);
+  });
+
   // ---- end chalkRhythm tests ----
 
   test("Games: Play while you rest keeps the timer running, shows the rest clock, and returns to work when rest ends", async function(){
@@ -2276,6 +2363,65 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("startBtn", 150);
   });
   // ---- end reachTimer tests ----
+  // ---- reachTimer polish tests ----
+  test("Games: Reach Timer polish rules (early-tap buffer, run tiers, pitch, rise)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames, E = G.RT_EARLY_MS;
+    expect(E>=100 && E<=250, "early window should be small: "+E);
+    expect(G.reachJudge("gap", "L", "L", 1000-E, 1000)==="hit" && G.reachJudge("gap", "L", "L", 1000-E-1, 1000)==="ignore", "early window edge");
+    expect(G.reachJudge("gap", "R", "L", 1000, 1000)==="ignore", "a wrong half in the gap is never judged");
+    expect(G.reachJudge("in", "L", "L", 0, 0)==="hit" && G.reachJudge("in", "R", "L", 0, 0)==="ignore" && G.reachJudge("live", "R", "L", 0, 0)==="slip" && G.reachJudge("live", "L", "L", 0, 0)==="hit", "in/live verdicts");
+    expect([0, 1, 2, 4, 5, 9, 10, 40].map(G.reachStreakTier).join()==="0,0,1,1,2,2,3,3", "tiers: "+[0, 1, 2, 4, 5, 9, 10, 40].map(G.reachStreakTier).join());
+    var prev = 0, ok = true; for(var n=0;n<=30;n++){ var f = G.reachPitch(n); if(f<prev || f<500 || f>700) ok = false; prev = f; }
+    expect(ok && G.reachPitch(0)===520, "pitch is soft and never falls as the run grows");
+    expect(G.reachRise(0)===0 && G.reachRise(3)===3*G.reachRise(1)&&G.reachRise(1)>=12 && G.reachRise(99)===G.reachRise(10) && G.reachRise(-4)===0, "rise caps at the ladder");
+  });
+
+  test("Games: Reach Timer polish feel (half flash, run chip, gliding ghost, early tap, no ghost clicks, tap targets)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    await click("openGamesBtn", 250); await click("gmCard_reachTimer", 150); await click("gmStartBtn", 120);
+    var g = G.current();
+    function press(side){ $("rt"+side).dispatchEvent(new W.Event("pointerdown", { bubbles:true, cancelable:true })); }
+    async function untilLive(){ for(var k=0;k<60 && g.st!=="live";k++) await wait(40); expect(g.st==="live", "never live"); }
+    ["rtL", "rtR"].forEach(function(id){
+      var cs = W.getComputedStyle($(id));
+      expect(cs.touchAction==="manipulation" && $(id).offsetHeight>=200 && $(id).offsetWidth>=150, id+" touch-action "+cs.touchAction+" size "+$(id).offsetWidth+"x"+$(id).offsetHeight);
+      expect($(id).querySelector(".rt-pad").offsetHeight>=56, id+" pad too small");
+    });
+    expect(+$("rtCombo").getAttribute("data-tier")===0, "chip should start hidden");
+    // the letter belongs to its element: the ghost that is next keeps its element and moves up to the live place
+    var ghostEl = qa(".rt-slot[data-kind='ghost'][data-k='1']")[0], ghostSide = ghostEl.getAttribute("data-side");
+    await untilLive();
+    var liveEl = q(".rt-slot[data-kind='live']");
+    expect(liveEl && liveEl.getAttribute("data-k")==="0" && liveEl.getAttribute("data-side")===g.seq[g.i], "live slot");
+    press(g.seq[g.i]); await wait(30);
+    expect($("rt"+liveEl.getAttribute("data-side")).hasAttribute("data-flash"), "the half should flash on a tap");
+    expect(g.h===1 && qa(".rt-slot[data-kind='done']").length===1, "answered slot should fade out as done");
+    var nextEl = q(".rt-slot[data-kind='ghost'][data-k='0']");
+    expect(nextEl===ghostEl && nextEl.getAttribute("data-side")===ghostSide, "the ghost should become the next target in place (identity kept)");
+    expect(+$("rtCombo").getAttribute("data-tier")===0, "one hit is not a run");
+    await untilLive(); press(g.seq[g.i]); await wait(30);
+    expect(g.streak===2 && +$("rtCombo").getAttribute("data-tier")===1 && /2/.test($("rtCombo").textContent), "run chip at 2: "+$("rtCombo").textContent);
+    // an early correct tap in the last RT_EARLY_MS of the gap counts; a wrong one does nothing
+    for(var k=0;k<80 && !(g.st==="gap" && performance.now()-g.t0>=g.appearAt-60 && performance.now()-g.t0<g.appearAt-10);k++) await wait(5);
+    var h0 = g.h, want = g.seq[g.i], wrong = want==="L" ? "R" : "L";
+    if(g.st==="gap" && W.performance.now()-g.t0>=g.appearAt-G.RT_EARLY_MS){
+      press(wrong); await wait(10); expect(g.h===h0 && g.i===g.i, "wrong half early must be ignored");
+      press(want); await wait(30); expect(g.h===h0+1, "early correct tap should count: h "+g.h+" want "+(h0+1));
+    }
+    // a click that follows a pointer tap (detail 1) is the ghost click and must not count again
+    await untilLive(); var taps0 = g.taps, side = g.seq[g.i];
+    press(side); await wait(20);
+    $("rt"+side).dispatchEvent(new W.MouseEvent("click", { bubbles:true, cancelable:true, detail:1 })); await wait(20);
+    expect(g.taps===taps0+1, "ghost click counted: "+(g.taps-taps0));
+    await untilLive(); press(g.seq[g.i]==="L" ? "R" : "L"); await wait(30);
+    expect(g.streak===0 && +$("rtCombo").getAttribute("data-tier")===0, "a slip clears the run chip");
+    await click("closeGamesBtn", 250);
+  });
+  // ---- end reachTimer polish tests ----
 
   test("Only the climber mascot is used (old pebble art stays retired)", async function(){
     var paths = (SRC.match(/asset\("mascot\/[^"]+"/g) || []).map(function(m){ return m.slice(7, -1); });
@@ -2466,6 +2612,102 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("closeGamesBtn", 250);
   });
   // ---- end summitStack tests ----
+  // ---- summitStack polish tests ----
+  test("Games: Summit Stack polish helpers are pure and bounded (drop ease, fall, squash, input time, streak pitch)", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    expect(G.stackDropEase(0)===0 && Math.abs(G.stackDropEase(1)-1)<1e-12 && G.stackDropEase(-3)===0 && G.stackDropEase(9)===1, "drop ease endpoints/clamp");
+    var prev = -1, mono = true; for(var i=0;i<=20;i++){ var v = G.stackDropEase(i/20); if(v<prev) mono = false; prev = v; }
+    expect(mono && G.stackDropEase(0.1)>0.02 && G.stackDropEase(0.5)<0.5, "drop ease monotonic, quick start, still accelerating");
+    expect(G.stackFallY(0)===0 && G.stackFallY(380)>150 && G.stackFallY(100)<G.stackFallY(200), "fall accelerates and clears the tower: "+G.stackFallY(380));
+    expect(G.stackSquash(-1)===null && G.stackSquash(400)===null && G.stackSquash(0).sy===1, "squash is null outside its window and starts at rest");
+    var mid = G.stackSquash(80, 0.14); expect(mid.sy<1 && mid.sy>0.8 && mid.sx>1 && mid.sx<1.1, "squash dips a little: "+JSON.stringify(mid));
+    expect(G.stackInputTime(1000, 1050)===1000 && G.stackInputTime(100, 1050)===1050 && G.stackInputTime(undefined, 1050)===1050 && G.stackInputTime(1200, 1050)===1050 && G.stackInputTime(NaN, 5)===5, "input time: use the event stamp only when recent and not from the future");
+    expect(G.stackStreakFreq(1)===660 && G.stackStreakFreq(0)===660 && G.stackStreakFreq(2)>660 && G.stackStreakFreq(99)===G.stackStreakFreq(8) && G.stackStreakFreq(8)<1300, "streak pitch rises and caps");
+    var C = G.stackConst; expect(G.stackWindowMs(40, C.floor)>=400-1e-9, "the reaction floor is untouched");
+    // the round still draws with touch-action: manipulation and the climber stays on the tower
+    await click("openGamesBtn", 250); await click("gmCard_summitStack", 150); await click("gmStartBtn", 150);
+    expect(getComputedStyle($("gmTap")).touchAction==="manipulation", "tap layer should be touch-action: manipulation");
+    await click("closeGamesBtn", 250);
+  });
+  // ---- end summitStack polish tests ----
+
+  // ---- shell polish tests ----
+  test("Games shell: menu cards read as best / plays, the sound row is one big target with a spoken state, and the sheet locks the page behind it", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now(); seed.games = { chalkRhythm:{ best:21, plays:3, perfectBest:2 } };
+    await boot(seed); await goHome();
+    var G = W.__cruxGames;
+    expect(G.howto(G.def("routeRead")).length>0 && G.howto(G.def("routeRead")).length<70, "one-line how-to missing or long: "+G.howto(G.def("routeRead")));
+    expect(G.esc('<b>"x"</b>')==="&lt;b&gt;&quot;x&quot;&lt;/b&gt;", "gmEsc: "+G.esc('<b>"x"</b>'));
+    await click("openGamesBtn", 350);
+    expect(/Best 21 · played 3/.test($("gmCard_chalkRhythm").textContent) && /Not played yet/.test($("gmCard_routeRead").textContent), "card lines: "+$("gmCard_chalkRhythm").textContent);
+    var lab = $("gmCard_chalkRhythm").getAttribute("aria-label")||"";
+    expect(/Chalk Rhythm/.test(lab) && /Best 21, played 3 times/.test(lab), "card aria-label: "+lab);
+    expect(D.activeElement && D.activeElement.id==="gmCard_chalkRhythm", "focus didn't land on the first card: "+(D.activeElement && D.activeElement.id));
+    expect(W.getComputedStyle(D.body).overflow==="hidden", "the page behind the sheet can scroll");
+    qa("#gmCards .gm-card").forEach(function(c){ expect(c.getBoundingClientRect().height>=44, "card under 44 px: "+c.id); });
+    expect(/On\./.test($("gmSoundDesc").textContent), "sound text: "+$("gmSoundDesc").textContent);
+    await click("gmSoundRow", 150);                      // the row, not just the thumb, toggles
+    expect($("gmSoundSwitch").getAttribute("aria-pressed")==="false" && saved().settings.gameSound===false && /Off\./.test($("gmSoundDesc").textContent), "row didn't toggle: "+$("gmSoundDesc").textContent);
+    await click("gmSoundSwitch", 150);                   // and the switch alone toggles exactly once
+    expect($("gmSoundSwitch").getAttribute("aria-pressed")==="true" && saved().settings.gameSound===true, "switch toggled twice or not at all");
+    await click("closeGamesBtn", 350);
+    expect(!visible("gamesOverlay") && W.getComputedStyle(D.body).overflow!=="hidden", "sheet stayed or the page stayed locked");
+  });
+
+  test("Games shell: intro is one line and a big Start, Escape steps back a level, Back returns focus to the game's card, Tab stays in the sheet", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    function esc(){ D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); }
+    function tab(sh){ var e = new W.KeyboardEvent("keydown", { key:"Tab", shiftKey:!!sh, bubbles:true, cancelable:true }); D.dispatchEvent(e); return e; }
+    $("openGamesBtn").focus(); await click("openGamesBtn", 300);
+    await click("gmCard_summitStack", 200);
+    var st = $("gmStartBtn"), r = st.getBoundingClientRect();
+    expect(r.height>=48 && D.activeElement===st, "Start is small or unfocused: "+r.height);
+    expect(!!q(".gm-howto") && q(".gm-howto").textContent.length<70 && /First time/.test($("gmStage").textContent), "intro: "+$("gmStage").textContent);
+    expect(q(".gm-panel").getAttribute("aria-describedby")==="gmIntroFull" && $("gmIntroFull").textContent.length>0, "intro has no spoken description");
+    esc(); await wait(60);
+    expect(visible("gmCards") && !visible("gmStartBtn") && /Play/.test($("gamesTitle").textContent) && visible("gamesOverlay"), "Escape on an intro should go back to the menu");
+    expect(D.activeElement && D.activeElement.id==="gmCard_summitStack", "focus didn't return to the card: "+(D.activeElement && D.activeElement.id));
+    // Tab wraps inside the sheet
+    var btns = qa("#gamesCard button:not([disabled])").filter(function(b){ return b.offsetParent!==null; });
+    btns[btns.length-1].focus(); var e1 = tab(false);
+    expect(e1.defaultPrevented && D.activeElement===btns[0], "Tab from the last control left the sheet");
+    btns[0].focus(); var e2 = tab(true);
+    expect(e2.defaultPrevented && D.activeElement===btns[btns.length-1], "Shift+Tab from the first control left the sheet");
+    // a running round: Back banks it and returns to the card
+    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    expect(!!W.__cruxGames.current(), "no round");
+    await click("gmBackBtn", 250);
+    expect(visible("gmCards") && D.activeElement.id==="gmCard_chalkRhythm" && !W.__cruxGames.current(), "Back from a round: "+(D.activeElement && D.activeElement.id));
+    esc(); await wait(300);
+    expect(!visible("gamesOverlay"), "Escape on the menu should close the sheet");
+    expect(D.activeElement && D.activeElement.id==="openGamesBtn", "focus didn't return to Play: "+(D.activeElement && D.activeElement.id));
+  });
+
+  test("Games shell: the sheet fades out before it hides, a quick reopen cancels the close, the end screen puts Play again first with a calm best line", async function(){
+    var seed = clone(TEMPLATE); seed.settings.ackSafety = Date.now();
+    await boot(seed); await goHome();
+    await click("openGamesBtn", 300);
+    $("closeGamesBtn").click(); await wait(20);
+    expect($("gamesOverlay").classList.contains("gm-closing") || !visible("gamesOverlay"), "no closing state");
+    await click("openGamesBtn", 10);                     // reopen mid-fade (dock button sits behind; call the hook as a tap would)
+    W.__cruxGames.open({ fromRest:false }); await wait(250);
+    expect(visible("gamesOverlay") && !$("gamesOverlay").classList.contains("gm-closing"), "a reopen during the fade was swallowed");
+    await click("gmCard_chalkRhythm", 150); await click("gmStartBtn", 100);
+    var G = W.__cruxGames; G.current().taps = 1; G.current().score = 3; G.current().t0 -= 45000; await wait(300);
+    var again = $("gmAgainBtn"), menu = $("gmMenuBtn");
+    expect(!!again && !!menu && (again.compareDocumentPosition(menu) & W.Node.DOCUMENT_POSITION_FOLLOWING), "Play again should come before Games");
+    expect(again.classList.contains("btn-primary") && again.getBoundingClientRect().height>=44 && menu.getBoundingClientRect().height>=44, "end buttons: primary or 44 px");
+    expect(!!q(".gm-best-line") && D.activeElement===again, "no best line or focus not on Play again");
+    expect(!/!/.test($("gmStage").textContent), "the end screen shouts: "+$("gmStage").textContent);
+    await click("gmMenuBtn", 200);
+    expect(visible("gmCards") && D.activeElement.id==="gmCard_chalkRhythm", "Games didn't return focus to the card");
+    await click("closeGamesBtn", 350);
+  });
+  // ---- end shell polish tests ----
+
 
   /* ---------- runner ---------- */
   var running = false;

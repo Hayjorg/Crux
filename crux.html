@@ -762,11 +762,13 @@
   .gm-card-sub{font-size:12.5px;color:var(--text-dim);line-height:1.35;}
   .gm-card-best{font-size:11.5px;font-weight:700;color:var(--text-dim);letter-spacing:0.04em;text-transform:uppercase;}
   .gm-note{margin:2px 2px 0;font-size:12px;color:var(--text-dim);text-align:center;}
-  .gm-hud{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
-  .gm-back{min-height:44px;padding:0 8px;}
+  .gm-hud{display:flex;align-items:center;gap:10px;margin-bottom:8px;min-height:44px;}
+  .gm-back{min-height:44px;padding:0 10px 0 6px;display:inline-flex;align-items:center;gap:2px;}
+  .gm-back svg{width:18px;height:18px;}
   .gm-score{font-family:"Bebas Neue",sans-serif;font-size:30px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums;}
-  .gm-line{font-size:12px;font-weight:700;color:var(--text-dim);}
-  .gm-time{font-size:12px;font-weight:700;color:var(--text-dim);min-width:26px;text-align:right;font-variant-numeric:tabular-nums;}
+  .gm-meta{display:flex;flex-direction:column;align-items:flex-end;gap:1px;min-width:64px;}
+  .gm-line{font-size:12px;font-weight:700;color:var(--text-dim);line-height:1.25;text-align:right;}
+  .gm-time{font-size:13px;font-weight:700;color:var(--text);min-width:26px;min-height:16px;line-height:1.2;text-align:right;font-variant-numeric:tabular-nums;}
   .gm-stage{position:relative;height:352px;overflow:hidden;border-radius:var(--radius-md);border:1px solid var(--border);
     background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, var(--surface-2)), var(--surface-2));
     touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
@@ -820,111 +822,264 @@
   .gm-art-flag{background:var(--send);border-radius:4px 14px 14px 4px;}
   .gm-art-img{object-fit:contain;}
   /* ==== .cr- Chalk Rhythm CSS BEGIN ==== */
-  .cr-field{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-  .cr-outline, .cr-live{position:absolute;left:50%;top:44%;margin:-115px 0 0 -115px;}
+  .cr-field{position:absolute;inset:0;pointer-events:none;overflow:hidden;animation:cr-in .4s ease-out both;}
+  @keyframes cr-in{from{opacity:0;}to{opacity:1;}}
+  .cr-outline, .cr-live, .cr-echo{position:absolute;left:50%;top:44%;margin:-115px 0 0 -115px;}
   .cr-outline.gm-art-ring{border:3px solid color-mix(in srgb, var(--accent) 80%, transparent);}
-  .cr-live.gm-art-ring{border:6px solid color-mix(in srgb, var(--send) 70%, transparent);background:color-mix(in srgb, var(--send) 10%, transparent);transform:scale(0.35);will-change:transform;}
-  .cr-live.cr-dim{opacity:0.35 !important;}
+  .cr-live.gm-art-ring{border:6px solid color-mix(in srgb, var(--send) 70%, transparent);background:color-mix(in srgb, var(--send) 10%, transparent);transform:scale(0.35);opacity:0;will-change:transform, opacity;}
+  .cr-echo.gm-art-ring{border:5px solid color-mix(in srgb, var(--send) 75%, transparent);opacity:0;will-change:transform, opacity;}
+  .cr-outline.cr-hit{animation:cr-hit .34s cubic-bezier(.2,.8,.2,1);}
+  .cr-outline.cr-hit-perfect{animation-name:cr-hit-p;}
+  @keyframes cr-hit{0%{transform:scale(1);box-shadow:0 0 0 0 color-mix(in srgb, var(--send) 45%, transparent);}
+    40%{transform:scale(1.04);}100%{transform:scale(1);box-shadow:0 0 0 12px color-mix(in srgb, var(--send) 0%, transparent);}}
+  @keyframes cr-hit-p{0%{transform:scale(1);box-shadow:0 0 0 0 color-mix(in srgb, var(--send) 60%, transparent);}
+    35%{transform:scale(1.08);}100%{transform:scale(1);box-shadow:0 0 0 20px color-mix(in srgb, var(--send) 0%, transparent);}}
   .cr-puff{position:absolute;left:50%;top:44%;margin:-52px 0 0 34px;opacity:0;pointer-events:none;
-    background:color-mix(in srgb, var(--text) 16%, transparent);box-shadow:none;}
-  .cr-puff.go{animation:cr-puff .3s ease-out forwards;}
-  @keyframes cr-puff{from{transform:scale(0.4);opacity:0.9;}to{transform:scale(1.25);opacity:0;}}
+    background:color-mix(in srgb, var(--text) 22%, transparent);box-shadow:none;}
+  .cr-puff.go{animation:cr-puff .45s ease-out forwards;}
+  @keyframes cr-puff{from{transform:translate(0,0) scale(0.4);opacity:0.9;}to{transform:translate(6px,-18px) scale(1.4);opacity:0;}}
   .cr-bar{position:absolute;left:24px;right:24px;bottom:54px;height:14px;display:none;border-radius:7px;
     background:color-mix(in srgb, var(--text) 8%, transparent);border:1px solid var(--border);}
   .cr-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:color-mix(in srgb, var(--send) 75%, transparent);}
   .cr-bar::after{content:"";position:absolute;right:-1px;top:-8px;bottom:-8px;width:3px;border-radius:2px;background:var(--accent);}
   .cr-rm .cr-bar{display:block;}
-  .cr-rm .cr-live, .cr-rm .cr-outline, .cr-rm .cr-puff{display:none;}
+  .cr-rm .cr-live, .cr-rm .cr-outline, .cr-rm .cr-puff, .cr-rm .cr-echo{display:none;}
   .cr-label{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:8px;min-height:24px;
-    font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);opacity:0;transition:opacity .12s ease;pointer-events:none;}
-  .cr-label.on{opacity:1;}
-  .cr-rm .cr-label{transition:none;}
+    font-size:16px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);opacity:0;transform:translateY(4px);
+    transition:opacity .16s ease-out, transform .16s ease-out;pointer-events:none;}
+  .cr-label.on{opacity:1;transform:none;}
+  .cr-label small{font-size:12px;font-weight:700;letter-spacing:0.06em;color:var(--text-dim);}
+  .cr-teach{position:absolute;left:16px;right:16px;top:14px;margin:0;text-align:center;font-size:14px;line-height:1.35;font-weight:600;color:var(--text);
+    opacity:0;transition:opacity .35s ease-out;pointer-events:none;}
+  .cr-teach.on{opacity:1;}
+  .gm-climber.cr-hop{animation:cr-hop .3s cubic-bezier(.2,.8,.2,1);}
+  .gm-climber.cr-hop-sm{animation:cr-hop-sm .24s cubic-bezier(.2,.8,.2,1);}
+  @keyframes cr-hop{0%{transform:translateY(0);}35%{transform:translateY(-9px);}100%{transform:translateY(0);}}
+  @keyframes cr-hop-sm{0%{transform:translateY(0);}40%{transform:translateY(-4px);}100%{transform:translateY(0);}}
+  #gmScore.cr-bump{animation:cr-bump .24s ease-out;}
+  @keyframes cr-bump{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
+  .cr-rm, .cr-rm .cr-label, .cr-rm .cr-teach{animation:none;transition:none;}
+  @media (prefers-reduced-motion: reduce){
+    .cr-field{animation:none;} .cr-label, .cr-teach{transition:none;transform:none;}
+    .cr-outline.cr-hit, .gm-climber.cr-hop, .gm-climber.cr-hop-sm, #gmScore.cr-bump{animation:none;}
+  }
   .cr-j{display:inline-block;box-sizing:border-box;width:16px;height:16px;border-radius:50%;flex-shrink:0;}
   .cr-j-perfect{border:2px solid var(--send);box-shadow:0 0 0 3px var(--surface-2), 0 0 0 5px var(--send);margin:0 5px;}
   .cr-j-good{border:3px solid var(--send);}
   .cr-j-close{width:10px;height:10px;border:2px solid var(--text-dim);margin:0 3px;}
   /* ==== .cr- Chalk Rhythm CSS END ==== */
   /* .rr- Route Read */
-  .rr-stage{position:absolute;inset:0;}
-  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;}
-  .rr-label{position:absolute;left:8px;top:12px;width:88px;margin:0;font-size:12.5px;font-weight:700;line-height:1.3;color:var(--text-dim);}
+  .rr-stage{position:absolute;inset:0;--rr-lift:0;}
+  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;translate:0 calc(var(--rr-lift)*-1px);transition:translate .38s cubic-bezier(.2,.8,.3,1);}
+  .rr-climber.rr-swap{animation:rr-swap .16s ease-out;}
+  @keyframes rr-swap{from{opacity:0.65;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
+  .rr-label{position:absolute;left:8px;top:12px;width:88px;min-height:34px;margin:0;font-size:13px;font-weight:700;line-height:1.3;color:var(--text);}
+  .rr-pips{position:absolute;left:8px;top:62px;width:84px;display:flex;flex-wrap:wrap;gap:5px;}
+  .rr-pip{width:11px;height:11px;box-sizing:border-box;border-radius:50%;border:2px solid var(--text-dim);background:transparent;transition:background .15s ease, border-color .15s ease;}
+  .rr-pip.on{background:var(--send);border-color:var(--send);}
   .rr-wall{position:absolute;right:8px;top:16px;width:192px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:64px;border-radius:14px;background:color-mix(in srgb, var(--text) 5%, transparent);}
-  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);}
+  .rr-bar{position:absolute;right:8px;bottom:6px;width:192px;height:5px;border-radius:3px;background:color-mix(in srgb, var(--text) 10%, transparent);overflow:hidden;opacity:0;transition:opacity .15s ease;}
+  .rr-bar.on{opacity:1;}
+  .rr-bar i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:0 50%;transform:scaleX(1);}
+  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
   .rr-cell:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:12px;}
-  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .12s ease;}
-  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .12s ease;border-color:var(--send);}
+  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .2s ease, transform .2s ease, box-shadow .2s ease;}
+  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .15s ease;border-color:var(--text);}
   .rr-cell[data-state="tapped"] .rr-ring{opacity:1;}
-  .rr-cell.rr-lit .gm-art-circle{box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 40%, transparent);}
-  .rr-badge{grid-area:1/1;z-index:1;min-width:26px;height:26px;border-radius:13px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
-    font-family:"Bebas Neue",sans-serif;font-size:19px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;}
-  .rr-badge:empty{display:none;}
-  .rr-cell[data-state="wrong"] .rr-badge{display:grid;}
+  .rr-cell[data-state="tapped"] .gm-art-circle{opacity:1;}
+  .rr-wall.rr-showing .rr-cell:not(.rr-lit) .gm-art-circle{opacity:0.28;transform:scale(0.86);}
+  .rr-wall.rr-showing .rr-cell.rr-lit .gm-art-circle{opacity:1;transform:scale(1.04);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 38%, transparent);}
+  .rr-badge{grid-area:1/1;z-index:1;min-width:28px;height:28px;border-radius:14px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
+    font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;opacity:0;transform:scale(0.7);transition:opacity .18s ease, transform .18s ease;}
+  .rr-wall.rr-showing .rr-badge{opacity:1;transform:scale(1);transition-delay:calc(var(--i, 0)*55ms);}
+  .rr-cell:not([data-state="wrong"]) .rr-badge:empty{opacity:0;}
+  .rr-cell[data-state="tapped"]::after{content:"\2713";position:absolute;z-index:2;right:10px;top:8px;width:18px;height:18px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;line-height:1;color:var(--bg, #fff);background:var(--send);pointer-events:none;}
+  .rr-cell[data-state="wrong"] .rr-badge{display:grid;opacity:1;transform:scale(1);}
   .rr-cell[data-state="wrong"] .rr-badge::before{content:"\00D7";}
   .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .gm-art{animation:rr-wob .32s ease;}
-  @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+  @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  .rr-spark{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;pointer-events:none;opacity:0;color:var(--accent);
+    box-shadow:0 -25px 0 0 currentColor, 18px -18px 0 0 currentColor, 25px 0 0 0 currentColor, 18px 18px 0 0 currentColor, 0 25px 0 0 currentColor, -18px 18px 0 0 currentColor, -25px 0 0 0 currentColor, -18px -18px 0 0 currentColor;}
+  .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-spark{animation:rr-spark .42s ease-out;}
+  .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-ring{animation:rr-ring .3s ease-out;}
+  @keyframes rr-spark{0%{opacity:0.95;transform:scale(0.35);}100%{opacity:0;transform:scale(1.15);}}
+  @keyframes rr-ring{0%{transform:scale(0.8);}60%{transform:scale(1.18);}100%{transform:scale(1);}}
+  .rr-stage.rr-calm .rr-climber{transition:none;}
+  .rr-stage.rr-calm .rr-cell .gm-art, .rr-stage.rr-calm .rr-badge, .rr-stage.rr-calm .rr-ring{transition-duration:.1s;}
+  .rr-stage.rr-calm .rr-wall.rr-showing .rr-badge{transition-delay:0s;}
   /* summitStack (.ss-) */
   .ss-world{position:absolute;top:0;transform-origin:0 0;pointer-events:none;}
-  .ss-cam{position:absolute;inset:0;transition:transform .28s ease;will-change:transform;}
+  .ss-cam{position:absolute;inset:0;will-change:transform;}
   .ss-blk{position:absolute;display:block;}
-  .ss-slider{position:absolute;left:0;top:0;will-change:transform;transition:opacity .35s ease;}
-  .ss-chunk{opacity:0.9;transition:transform .55s ease-in, opacity .55s ease-in;}
+  .ss-slider{position:absolute;left:0;top:0;will-change:transform,opacity;}
+  .ss-chunk{opacity:0.9;transition:transform .7s cubic-bezier(.5,0,.9,.6), opacity .7s ease-in;}
   .ss-chunk.go{opacity:0;}
-  .ss-bob{animation:ssBob .32s ease-out;}
-  @keyframes ssBob{0%{transform:translateY(-5px);}60%{transform:translateY(2px);}100%{transform:none;}}
-  .ss-climber{width:60px;height:90px;transition:top .16s ease;z-index:2;}
+  .ss-tap{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  .ss-climber{left:0;top:0;width:60px;height:90px;z-index:2;will-change:transform;}
   .ss-climber img.wide, .ss-climber img.outfit-layer.wide{width:141%;max-width:none;margin-left:-20.5%;}
-  .ss-flag{position:absolute;z-index:2;}
+  .ss-flag{position:absolute;z-index:1;width:26px;height:54px;}
+  .ss-pole{position:absolute;left:0;bottom:0;width:3px;height:100%;border-radius:2px;background:var(--text-dim);transform-origin:50% 100%;}
+  .ss-flag .ss-pennant{position:absolute;left:3px;top:0;border-radius:2px 8px 8px 2px;transform-origin:0 50%;}
+  .ss-flag.up .ss-pole{animation:ssPole .42s cubic-bezier(.2,.8,.3,1) both;}
+  .ss-flag.up .ss-pennant{animation:ssPenn .35s .3s cubic-bezier(.2,.9,.3,1.3) both;}
+  @keyframes ssPole{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+  @keyframes ssPenn{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:1;}}
+  .ss-ring{position:absolute;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid var(--send);box-sizing:border-box;pointer-events:none;z-index:3;
+    animation:ssRing .5s ease-out forwards;}
+  .ss-ring.big{width:110px;height:110px;margin:-55px 0 0 -55px;animation-duration:.7s;}
+  @keyframes ssRing{from{transform:scale(0.5);opacity:0.9;}to{transform:scale(1.5);opacity:0;}}
+  .ss-spark{position:absolute;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:2px;background:var(--accent);pointer-events:none;z-index:3;opacity:0;
+    animation:ssSpark 1s ease-out forwards;}
+  .ss-spark:nth-of-type(odd){background:var(--send);border-radius:50%;}
+  @keyframes ssSpark{0%{opacity:0;transform:translate(0,0) rotate(0);}15%{opacity:1;}100%{opacity:0;transform:translate(var(--dx),var(--dy,-70px)) rotate(200deg);}}
   .ss-time{position:absolute;left:0;top:0;right:0;height:4px;z-index:3;background:var(--accent);transform-origin:0 50%;pointer-events:none;}
   .ss-label{position:absolute;left:0;right:0;top:12px;margin:0;z-index:3;display:flex;justify-content:center;align-items:center;gap:6px;opacity:0;pointer-events:none;
     font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.04em;transition:opacity .2s ease;}
   .ss-label.on{opacity:1;}
   .ss-label .gm-art{width:20px !important;height:20px !important;}
   @media (prefers-reduced-motion: reduce){
-    .ss-cam, .ss-climber, .ss-slider{transition:none;}
-    .ss-bob{animation:none;}
     .ss-chunk{transition:opacity .3s linear;}
+    .ss-flag.up .ss-pole, .ss-flag.up .ss-pennant{animation:none;}
+    .ss-ring, .ss-spark{display:none;}
   }
   /* .rt- (Reach Timer) */
   .rt-ladder{position:absolute;left:0;right:0;top:12px;display:flex;justify-content:center;gap:6px;pointer-events:none;}
-  .rt-mark{width:10px;height:10px;border-radius:3px;border:2px solid color-mix(in srgb, var(--text) 35%, transparent);box-sizing:border-box;}
-  .rt-mark[data-on="1"]{background:var(--accent);border-color:var(--accent);}
+  .rt-mark{width:12px;height:12px;border-radius:4px;border:2px solid color-mix(in srgb, var(--text) 45%, transparent);box-sizing:border-box;
+    transition:background-color .22s ease, border-color .22s ease, transform .22s cubic-bezier(.2,.9,.3,1.3);}
+  .rt-mark[data-on="1"]{background:var(--accent);border-color:var(--accent);transform:scale(1.12);}
   .rt-wall{position:absolute;inset:0;pointer-events:none;}
-  .rt-slot{position:absolute;width:64px;height:64px;margin-left:-32px;transition:opacity .15s ease;}
+  .rt-slot{position:absolute;width:64px;height:64px;margin-left:-32px;opacity:0;transform:scale(0.86);
+    transition:top .28s cubic-bezier(.2,.8,.2,1), opacity .18s ease-out, transform .18s ease-out;}
   .rt-slot[data-side="L"]{left:25%;} .rt-slot[data-side="R"]{left:75%;}
   .rt-slot[data-k="0"]{top:176px;} .rt-slot[data-k="1"]{top:104px;} .rt-slot[data-k="2"]{top:34px;}
-  .rt-slot[data-kind="off"]{opacity:0;}
-  .rt-slot[data-kind="ghost"]{opacity:0.5;}
-  .rt-slot > .gm-art{position:absolute;left:0;top:0;}
-  .rt-slot[data-kind="ghost"] .rt-art-hold, .rt-slot[data-kind="live"] .rt-art-ghost, .rt-slot[data-kind="off"] .rt-art-hold{display:none;}
-  .rt-slot[data-kind="ghost"] .rt-art-ghost{border-style:dashed;}
-  .rt-letter{position:absolute;inset:0;display:grid;place-items:center;font-family:"Bebas Neue",sans-serif;font-size:26px;color:var(--accent-contrast, #fff);}
-  .rt-slot[data-kind="ghost"] .rt-letter{color:var(--text);font-size:20px;}
-  .rt-fuse{position:absolute;left:6px;right:6px;bottom:-12px;height:4px;border-radius:2px;background:var(--text-dim);transform-origin:left center;display:none;}
-  .rt-slot[data-k="0"][data-kind="live"] .rt-fuse{display:block;}
-  .rt-pop{animation:rt-pop .15s ease-out;}
-  @keyframes rt-pop{from{transform:scale(0.82);}to{transform:scale(1);}}
-  .rt-climber{width:84px;height:126px;left:50%;margin-left:-42px;bottom:8px;transition:transform .22s ease;}
-  .rt-half{z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:var(--text);}
+  .rt-slot[data-kind="ghost"]{opacity:1;transform:scale(0.9);}
+  .rt-slot[data-kind="live"]{opacity:1;transform:scale(1);}
+  .rt-slot[data-kind="done"]{opacity:0;transform:scale(1.18);transition:opacity .3s ease-out, transform .3s ease-out;}
+  .rt-slot[data-kind="done"][data-res="slip"]{transform:scale(0.9) translateY(8px);}
+  .rt-slot[data-kind="off"]{transition:none;}
+  .rt-slot > .gm-art{position:absolute;left:0;top:0;transition:opacity .15s ease-out;}
+  .rt-art-hold{opacity:0;} .rt-art-ghost{opacity:0;border-style:dashed;}
+  .rt-slot[data-kind="ghost"] .rt-art-ghost{opacity:0.75;}
+  .rt-slot[data-kind="live"] .rt-art-hold, .rt-slot[data-kind="done"] .rt-art-hold{opacity:1;}
+  .rt-letter{position:absolute;inset:0;display:grid;place-items:center;font-family:"Bebas Neue",sans-serif;font-size:26px;color:var(--text);opacity:0.8;
+    transition:color .15s ease-out, opacity .15s ease-out;}
+  .rt-slot[data-kind="live"] .rt-letter{color:var(--accent-contrast, #fff);opacity:1;}
+  .rt-slot[data-kind="done"] .rt-letter{color:var(--accent-contrast, #fff);opacity:0;transition:opacity .1s ease-out;}
+  .rt-fuse{position:absolute;left:4px;right:4px;bottom:-15px;height:6px;border-radius:3px;overflow:hidden;opacity:0;
+    background:color-mix(in srgb, var(--text) 14%, transparent);transition:opacity .15s ease-out;}
+  .rt-fuse i{display:block;height:100%;border-radius:3px;background:var(--accent);transform-origin:left center;transition:background-color .2s ease;}
+  .rt-slot[data-kind="live"] .rt-fuse{opacity:1;}
+  .rt-slot[data-low="1"] .rt-fuse i{background:var(--text-dim);}
+  .rt-climber{width:84px;height:126px;left:50%;margin-left:-42px;bottom:8px;
+    transform:translate(var(--rx, 0px), var(--ry, 0px));transition:transform .2s cubic-bezier(.2,.8,.2,1);}
+  .rt-half{z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:var(--text);
+    overflow:hidden;touch-action:manipulation;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
+  .rt-half::before{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;background:color-mix(in srgb, var(--text) 10%, transparent);}
+  .rt-half[data-flash="hit"]::before{background:color-mix(in srgb, var(--send) 26%, transparent);animation:rt-flash .3s ease-out;}
+  .rt-half[data-flash="slip"]::before{background:color-mix(in srgb, var(--text-dim) 24%, transparent);animation:rt-flash .34s ease-out;}
+  .rt-half[data-flash="tap"]::before{animation:rt-flash .2s ease-out;}
+  @keyframes rt-flash{from{opacity:1;}to{opacity:0;}}
   .rt-half:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
-  .rt-half:active .rt-pad{transform:scale(0.96);}
-  .rt-pad{display:flex;align-items:center;gap:6px;min-width:76px;min-height:56px;padding:0 14px;box-sizing:border-box;justify-content:center;border-radius:28px;
-    border:2px solid color-mix(in srgb, var(--text) 30%, transparent);background:color-mix(in srgb, var(--surface) 70%, transparent);}
+  .rt-pad{position:relative;display:flex;align-items:center;gap:6px;min-width:76px;min-height:56px;padding:0 14px;box-sizing:border-box;justify-content:center;border-radius:28px;
+    border:2px solid color-mix(in srgb, var(--text) 30%, transparent);background:color-mix(in srgb, var(--surface) 78%, transparent);
+    transition:transform .12s ease-out, border-color .2s ease;}
+  .rt-half[data-want="1"] .rt-pad{border-color:color-mix(in srgb, var(--accent) 75%, transparent);}
+  .rt-half:active .rt-pad, .rt-half[data-flash] .rt-pad{transform:scale(0.95);}
   .rt-half-R .rt-pad{flex-direction:row-reverse;}
   .rt-pad b{font-family:"Bebas Neue",sans-serif;font-size:26px;font-weight:400;line-height:1;}
-  .rt-burst{position:absolute;top:176px;width:64px;height:64px;margin-left:-32px;border-radius:50%;box-sizing:border-box;animation:rt-burst .42s ease-out forwards;}
-  .rt-burst[data-side="L"]{left:25%;} .rt-burst[data-side="R"]{left:75%;}
-  .rt-burst-hit{border:5px solid var(--send);}
-  .rt-burst-slip{border:3px dashed var(--text-dim);}
-  @keyframes rt-burst{from{transform:scale(1);opacity:0.9;}to{transform:scale(1.5);opacity:0;}}
+  .rt-combo{position:absolute;left:50%;top:34px;transform:translateX(-50%);display:flex;align-items:baseline;gap:5px;padding:3px 11px;border-radius:14px;
+    background:color-mix(in srgb, var(--surface) 80%, transparent);border:1px solid color-mix(in srgb, var(--text) 18%, transparent);pointer-events:none;
+    opacity:0;transition:opacity .3s ease;white-space:nowrap;}
+  .rt-combo b{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:24px;line-height:1;font-variant-numeric:tabular-nums;}
+  .rt-combo b::before{content:"\00D7";font-size:16px;margin-right:1px;color:var(--text-dim);}
+  .rt-combo small{font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--text-dim);}
+  .rt-combo:not([data-tier="0"]){opacity:1;}
+  .rt-combo[data-tier="2"], .rt-combo[data-tier="3"]{border-color:var(--accent);}
+  .rt-combo[data-tier="3"]{background:color-mix(in srgb, var(--accent) 22%, var(--surface));}
+  .rt-combo-pop b{animation:rt-combo-pop .24s cubic-bezier(.2,.9,.3,1.4);}
+  @keyframes rt-combo-pop{from{transform:scale(1.35);}to{transform:scale(1);}}
+  @media (max-width: 370px){ .rt-combo small{display:none;} }
   @media (prefers-reduced-motion: reduce){
-    .rt-pop, .rt-burst{animation:none;} .rt-burst{opacity:0.7;}
-    .rt-climber, .rt-slot{transition:none;}
+    .rt-half::before, .rt-combo-pop b{animation:none;}
+    .rt-half[data-flash]::before{opacity:0.6;}
+    .rt-climber, .rt-slot, .rt-slot > .gm-art, .rt-mark, .rt-pad, .rt-letter, .rt-fuse{transition:none;}
   }
   /* per-game CSS lives in its own prefix: .cr- (Chalk Rhythm), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
     .gm-card:active{transform:none;}
     .modal-card.games-card{animation:none;}
+  }
+
+  /* ---- shell polish: sheet motion, cards, intro, end, HUD ---- */
+  body:has(#gamesOverlay:not([hidden])){overflow:hidden;}
+  .modal-overlay.games-overlay{animation:gmFade .2s ease;transition:opacity .11s ease;}
+  .modal-overlay.games-overlay.gm-closing{opacity:0;pointer-events:none;}
+  .modal-card.games-card{min-height:min(580px, calc(100dvh - 40px));animation:gmSheetIn .26s cubic-bezier(.2,.8,.2,1);
+    transition:transform .11s ease;overscroll-behavior:contain;}
+  .games-overlay.gm-closing .games-card{transform:translateY(12px);}
+  .modal-card.games-card:focus{outline:none;}
+  @keyframes gmFade{from{opacity:0;}to{opacity:1;}}
+  @keyframes gmSheetIn{from{transform:translateY(14px) scale(0.985);opacity:0;}to{transform:none;opacity:1;}}
+  @keyframes gmSheetUp{from{transform:translateY(36px);opacity:0.4;}to{transform:none;opacity:1;}}
+  @keyframes gmPanelIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @keyframes gmPanelFade{from{opacity:0;}to{opacity:1;}}
+  @media (max-width:520px){
+    .modal-overlay.games-overlay{align-items:flex-end;padding:0;}
+    .modal-card.games-card{max-width:none;border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:0;
+      padding:18px 18px calc(16px + env(safe-area-inset-bottom));
+      max-height:calc(100dvh - 12px - env(safe-area-inset-top));min-height:min(576px, calc(100dvh - 12px - env(safe-area-inset-top)));
+      animation:gmSheetUp .3s cubic-bezier(.2,.8,.2,1);}
+    .games-overlay.gm-closing .games-card{transform:translateY(28px);}
+  }
+  .games-card .modal-head{margin-bottom:10px;}
+  /* in a game the sheet hugs its content (no empty band under the hint); the menu keeps its steady height */
+  .modal-card.games-card:has(.gm-play:not([hidden])){min-height:0;}
+  .gm-menu:not([hidden]), .gm-play:not([hidden]){animation:gmPanelIn .18s ease;}
+  .gm-stage .gm-panel{animation:gmPanelFade .2s ease;}
+  .gm-stage .gm-panel.gm-end{animation:gmPanelFade .32s ease-out;}
+  @keyframes gmSwap{from{opacity:0.7;}to{opacity:1;}}
+  .gm-climber img.gm-swap{animation:gmSwap .1s ease-out;}
+  .gm-rest{margin:0 0 10px;padding:6px 12px;min-height:36px;box-sizing:border-box;}
+  .gm-menu{gap:8px;}
+  .gm-cards{gap:8px;}
+  .gm-card{min-height:76px;padding:10px 12px 10px 12px;gap:12px;}
+  .gm-card-main{flex:1;gap:1px;}
+  .gm-card-title{font-size:21px;}
+  .gm-card-sub{font-size:12.5px;line-height:1.3;}
+  .gm-card-best{font-size:11.5px;letter-spacing:0.03em;text-transform:none;font-weight:600;margin-top:2px;}
+  .gm-card-best b{color:var(--text);font-weight:800;}
+  .gm-card-best.gm-new{color:var(--accent);font-weight:700;}
+  .gm-card-go{width:18px;height:18px;flex-shrink:0;color:var(--text-dim);}
+  .gm-card:active .gm-card-go{transform:translateX(2px);}
+  .gm-sound{cursor:pointer;min-height:52px;padding:6px 2px;border-top:1px solid var(--border);margin-top:2px;}
+  .gm-sound .switch{flex-shrink:0;}
+  .gm-note{margin:0 2px;font-size:11.5px;}
+  .gm-intro{gap:12px;}
+  .gm-intro-best{margin:0;font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);}
+  .gm-intro .gm-panel-title{font-size:32px;line-height:1.05;}
+  .gm-howto{margin:0;font-size:15.5px;line-height:1.4;color:var(--text);max-width:270px;}
+  .gm-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  .gm-panel .gm-start{min-height:56px;width:100%;max-width:240px;font-size:17px;margin-top:6px;}
+  .gm-end{gap:6px;}
+  .gm-end .gm-climber-mid{position:relative;width:72px;height:108px;margin-bottom:2px;}
+  .gm-end .gm-panel-title{font-size:26px;}
+  .gm-best-line{margin:0;font-size:13px;font-weight:700;color:var(--text-dim);}
+  .gm-best-line.gm-best-new{color:var(--accent);}
+  .gm-end .gm-panel-text{min-height:0;}
+  .gm-end .gm-actions{margin-top:10px;}
+  .gm-end .gm-actions .btn{min-height:48px;}
+  .gm-end .gm-actions .btn-primary{flex:1.5;}
+  .gm-end .gm-actions .btn-ghost{flex:1;}
+  .play-rest-btn{width:100%;max-width:280px;min-height:48px;padding:0 16px;border-radius:999px;border:1px solid color-mix(in srgb, var(--send) 45%, var(--border));
+    background:color-mix(in srgb, var(--send) 12%, var(--surface-2));color:var(--text);font-weight:700;}
+  .play-rest-btn svg{color:var(--send);}
+  .dock-btn#openGamesBtn svg{color:#FBF6E8;}
+  @media (prefers-reduced-motion: reduce){
+    .modal-overlay.games-overlay, .modal-card.games-card, .gm-menu:not([hidden]), .gm-play:not([hidden]), .gm-stage .gm-panel, .gm-climber img.gm-swap{animation:none;}
+    .modal-overlay.games-overlay, .modal-card.games-card{transition:none;}
+    .games-overlay.gm-closing .games-card{transform:none;}
+    .gm-card:active .gm-card-go{transform:none;}
   }
 
   /* ================= FINISH SESSION ================= */
@@ -1500,7 +1655,7 @@
             <img data-ui="customize" alt="">
             <span class="dock-label">Customize</span>
           </button>
-          <button type="button" class="dock-btn" id="openGamesBtn" aria-haspopup="dialog">
+          <button type="button" class="dock-btn" id="openGamesBtn" aria-haspopup="dialog" aria-label="Play a game">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
             <span class="dock-label">Play</span>
           </button>
@@ -1637,7 +1792,7 @@
       </div>
       <div class="countdown" id="countdown">00:45</div>
       <div class="progress-track"><div class="progress-fill" id="timerFill" style="width:100%"></div></div>
-      <button type="button" class="link-btn play-rest-btn" id="playRestBtn" hidden>
+      <button type="button" class="link-btn play-rest-btn" id="playRestBtn" aria-haspopup="dialog" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
         <span>Play while you rest</span>
       </button>
@@ -1884,7 +2039,7 @@
 
 <!-- ==== GAMES (removable; see AGENTS.md "Games") ==== -->
 <div class="modal-overlay games-overlay" id="gamesOverlay" hidden>
-  <div class="modal-card games-card" role="dialog" aria-modal="true" aria-labelledby="gamesTitle">
+  <div class="modal-card games-card" id="gamesCard" role="dialog" aria-modal="true" aria-labelledby="gamesTitle">
     <div class="modal-head">
       <h2 id="gamesTitle">Play</h2>
       <button type="button" class="icon-btn" id="closeGamesBtn" aria-label="Close games">
@@ -1898,20 +2053,22 @@
     </div>
     <div class="gm-menu" id="gamesMenu">
       <div class="gm-cards" id="gmCards"></div>
-      <div class="switch-row gm-sound">
-        <div><div class="switch-label">Game sounds</div><div class="switch-desc">Soft ticks, never over the timer beeps</div></div>
-        <button type="button" class="switch" id="gmSoundSwitch" aria-pressed="true" aria-label="Game sounds"><span class="switch-thumb"></span></button>
+      <div class="switch-row gm-sound" id="gmSoundRow">
+        <div><div class="switch-label">Game sounds</div><div class="switch-desc" id="gmSoundDesc">On. Soft ticks, never over the timer beeps.</div></div>
+        <button type="button" class="switch" id="gmSoundSwitch" aria-pressed="true" aria-label="Game sounds" aria-describedby="gmSoundDesc"><span class="switch-thumb"></span></button>
       </div>
       <p class="gm-note">Just for fun. Games never change your XP, level, streak or Wall.</p>
     </div>
     <div class="gm-play" id="gamesPlay" hidden>
       <div class="gm-hud">
-        <button type="button" class="link-btn gm-back" id="gmBackBtn">Games</button>
-        <span class="gm-score" id="gmScore" aria-label="Score">0</span>
-        <span class="gm-line" id="gmLine"></span>
-        <span class="gm-time" id="gmTime"></span>
+        <button type="button" class="link-btn gm-back" id="gmBackBtn" aria-label="Back to all games">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 6 9 12 15 18"/></svg>
+          <span>Games</span>
+        </button>
+        <span class="gm-score" id="gmScore" role="img" aria-label="Score">0</span>
+        <span class="gm-meta"><span class="gm-line" id="gmLine"></span><span class="gm-time" id="gmTime"></span></span>
       </div>
-      <div class="gm-stage" id="gmStage"></div>
+      <div class="gm-stage" id="gmStage" tabindex="-1"></div>
       <p class="gm-hint" id="gmHint" aria-live="polite"></p>
     </div>
   </div>
@@ -7227,7 +7384,15 @@
   var gmKey = null, gmWatchId = null, gmOpener = null, gmFromRest = false, gmClosing = false;
   function gmEl(id){ return document.getElementById(id); }
   function gmSay(msg){ var h = gmEl("gmHint"); if(h) h.textContent = msg; }
-  function gmSetSrc(img, src){ if(img && img.getAttribute("src")!==src) img.src = src; }
+  // Pose swap with a quick opacity settle (skipped for reduced motion and for rapid frame cycling such as idle/step loops).
+  function gmSetSrc(img, src){
+    if(!img || img.getAttribute("src")===src) return;
+    var now = performance.now(), slow = !img._gmSwapAt || now-img._gmSwapAt>160;
+    img._gmSwapAt = now;
+    img.src = src;
+    if(!img._gmSwapEnd){ img._gmSwapEnd = true; img.addEventListener("animationend", function(e){ e.stopPropagation(); img.classList.remove("gm-swap"); }); }   // never let it reach a host's own animationend
+    if(slow && img.getAttribute("src") && !prefersReducedMotion){ img.classList.remove("gm-swap"); void img.offsetWidth; img.classList.add("gm-swap"); }
+  }
   function gmPreload(f){
     [].concat(f.idle, f.chalk, f.reachL, f.reachR, f.pull, f.clap, f.hit, f.cheer, f.step, f.jump, f.ledgeSit, f.ledgeLook, f.flag).forEach(function(s){ try{ var i = new Image(); i.src = s; }catch(e){} });
   }
@@ -7288,43 +7453,80 @@
   }
 
   function gamesBestLine(id){ var g = state.games && state.games[id] || { best:0, plays:0 }; return g.plays ? "Best "+g.best+" · played "+g.plays : "Not played yet"; }
-  function renderGamesMenu(){
+  var GM_CHEVRON = '<svg class="gm-card-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>';
+  function gmEsc(t){ return String(t==null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  // One line of how-to per game for the intro (the game's own intro.text stays as the spoken description).
+  var GM_HOWTO = {
+    chalkRhythm:"Tap when the ring meets the outline.",
+    routeRead:"Remember the numbered holds, then tap them in order.",
+    summitStack:"Tap to drop the block and stack it neatly.",
+    reachTimer:"Tap the side where the next hold is."
+  };
+  function gmHowto(d){ return GM_HOWTO[d.id] || (d.intro && d.intro.text) || d.blurb || ""; }
+  function gmSoundText(on){ return on ? "On. Soft ticks, never over the timer beeps." : "Off. Games stay silent."; }
+  function gmSyncSound(){
+    var sw = gmEl("gmSoundSwitch"), on = !!state.settings.gameSound;
+    if(sw) sw.setAttribute("aria-pressed", on ? "true" : "false");
+    var d = gmEl("gmSoundDesc"); if(d) d.textContent = gmSoundText(on);
+  }
+  function gmToggleSound(){ state.settings.gameSound = !state.settings.gameSound; saveState(); gmSyncSound(); }
+  // focusId: a game id to put focus back on (after Back), or null for the first card.
+  function renderGamesMenu(focusId){
     gm = null; stopGameLoop();
     gmEl("gamesMenu").hidden = false; gmEl("gamesPlay").hidden = true;
     gmEl("gamesTitle").textContent = "Play";
     gmEl("gmCards").innerHTML = gmList(true).map(function(d){
       var art = GAME_ART["card."+d.id], ic = art && art.src ? '<img src="'+art.src+'" alt="">' : (d.icon || "");
-      return '<button type="button" class="gm-card'+(d.soon ? ' gm-soon' : '')+'" id="gmCard_'+d.id+'" data-game="'+d.id+'"'+(d.soon ? ' disabled aria-disabled="true"' : '')+'>'
+      var g = state.games && state.games[d.id] || { best:0, plays:0 };
+      var line = d.soon ? '<span class="gm-card-best">Coming soon</span>'
+        : g.plays ? '<span class="gm-card-best"><b>Best '+g.best+'</b> · played '+g.plays+'</span>'
+        : '<span class="gm-card-best gm-new">Not played yet</span>';
+      var label = d.title+". "+d.blurb+" "+(d.soon ? "Coming soon." : g.plays ? "Best "+g.best+", played "+g.plays+(g.plays===1 ? " time." : " times.") : "Not played yet.");
+      return '<button type="button" class="gm-card'+(d.soon ? ' gm-soon' : '')+'" id="gmCard_'+d.id+'" data-game="'+d.id+'" aria-label="'+gmEsc(label)+'"'+(d.soon ? ' disabled aria-disabled="true"' : '')+'>'
         + '<span class="gm-card-ic" aria-hidden="true">'+ic+'</span>'
-        + '<span class="gm-card-main"><span class="gm-card-title">'+d.title+'</span><span class="gm-card-sub">'+d.blurb+'</span>'
-        + '<span class="gm-card-best">'+(d.soon ? "Coming soon" : gamesBestLine(d.id))+'</span></span></button>';
+        + '<span class="gm-card-main"><span class="gm-card-title">'+d.title+'</span><span class="gm-card-sub">'+d.blurb+'</span>'+line+'</span>'
+        + (d.soon ? '' : GM_CHEVRON)+'</button>';
     }).join("");
-    var sw = gmEl("gmSoundSwitch"); if(sw) sw.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
+    gmSyncSound();
+    var target = (focusId && gmEl("gmCard_"+focusId)) || document.querySelector("#gmCards .gm-card:not([disabled])");
+    if(target && !gmEl("gamesOverlay").hidden) try{ target.focus({ preventScroll:true }); }catch(e){}
   }
   var gmRaf = null, gmTimeouts = [];
+  // A game may make the whole sheet its tap target by setting gmSheetTap(e). Taps on the header, HUD, rest strip, buttons and switches are never taken.
+  var gmSheetTap = null;
   function stopGameLoop(){
+    gmSheetTap = null;
     if(gmKey){ document.removeEventListener("keydown", gmKey); gmKey = null; }
     if(gmRaf){ cancelAnimationFrame(gmRaf); gmRaf = null; }
     gmTimeouts.forEach(clearTimeout); gmTimeouts = [];
   }
   function gmLater(fn, ms){ var id = setTimeout(function(){ gmTimeouts = gmTimeouts.filter(function(x){ return x!==id; }); fn(); }, ms); gmTimeouts.push(id); }
-  function gmHud(score, line){ gmEl("gmScore").textContent = score; gmEl("gmLine").textContent = line; gmEl("gmTime").textContent = ""; }
+  // The clock belongs to the running round (its loop writes it); only the menu/intro/end panels blank it.
+  function gmHud(score, line){ gmEl("gmScore").textContent = score; gmEl("gmLine").textContent = line; if(!gm) gmEl("gmTime").textContent = ""; }
 
   // -- intro / over panels --
   // In the last 10 s of a rest no "Play again" / "Games" prompt is offered; the round that is running finishes by itself.
   function gmRestLow(){ if(!gmFromRest) return false; var r = gamesRestState(); return r.resting && r.ms<=10000; }
   function gmIntro(id){
     var d = GAMES[id]; if(!d || d.soon) return;
+    gmLastId = id;
     var intro = d.intro || {};
     gmEl("gamesTitle").textContent = d.title;
     gmEl("gamesMenu").hidden = true; gmEl("gamesPlay").hidden = false;
-    var best = state.games[id] ? state.games[id].best : 0;
+    var g = state.games[id] || { best:0, plays:0 }, best = g.best;
     gmHud(0, d.hud0 ? d.hud0(best) : "Best "+best);
-    gmEl("gmStage").innerHTML = '<div class="gm-panel"><p class="gm-panel-title">'+(intro.title || d.title)+'</p>'
-      + '<p class="gm-panel-text">'+(intro.text || d.blurb)+'</p>'
-      + '<button type="button" class="btn btn-primary" id="gmStartBtn">Start</button></div>';
+    gmEl("gmStage").innerHTML = '<div class="gm-panel gm-intro" role="group" aria-labelledby="gmIntroTitle" aria-describedby="gmIntroFull">'
+      + '<p class="gm-intro-best">'+(g.plays ? "Best "+best : "First time")+'</p>'
+      + '<p class="gm-panel-title" id="gmIntroTitle">'+(intro.title || d.title)+'</p>'
+      + '<p class="gm-howto">'+gmEsc(gmHowto(d))+'</p>'
+      + '<span class="gm-sr" id="gmIntroFull">'+gmEsc(intro.text || d.blurb || "")+'</span>'
+      + '<button type="button" class="btn btn-primary gm-start" id="gmStartBtn">Start</button></div>';
     gmSay(intro.hint || "No XP, just for fun.");
-    gmEl("gmStartBtn").addEventListener("click", function(){ d.start(); });
+    gmEl("gmStartBtn").addEventListener("click", function(){
+      d.start();
+      // the Start button is gone: keep focus inside the sheet (on the stage) so keys and Tab don't fall to the page
+      var st = gmEl("gmStage"); if(st && !st.contains(document.activeElement) && document.activeElement!==st){ try{ st.focus({ preventScroll:true }); }catch(e){} }
+    });
     gmEl("gmStartBtn").focus({ preventScroll:true });
   }
   // extra: { title, note, noButtons, actions, extra }. actions < 1 means the round isn't recorded (design doc 4.7).
@@ -7338,10 +7540,11 @@
     var low = gmRestLow();   // no "Play again" in the last 10 s of rest
     var noButtons = !!extra.noButtons || low;
     var note = low && !extra.noButtons ? (extra.note ? extra.note+" · " : "")+"Rest is almost over." : extra.note;
-    gmEl("gmStage").innerHTML = '<div class="gm-panel"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
+    gmEl("gmStage").innerHTML = '<div class="gm-panel gm-end"><div class="gm-climber gm-climber-mid" id="gmClimber"><img id="gmClimberImg" alt=""></div>'
       + '<p class="gm-panel-title">'+(extra.title||"Round over")+'</p>'
       + '<p class="gm-big" aria-live="polite">'+score+'</p>'
-      + '<p class="gm-panel-text">'+(rec.newBest ? "New personal best!" : "Best "+rec.best)+(note ? " · "+note : "")+'</p>'
+      + '<p class="gm-best-line'+(rec.newBest ? ' gm-best-new' : '')+'">'+(rec.newBest ? "New personal best." : "Best "+rec.best)+'</p>'
+      + (note ? '<p class="gm-panel-text">'+note+'</p>' : '')
       + (noButtons ? '' : '<div class="gm-actions"><button type="button" class="btn btn-primary" id="gmAgainBtn">Play again</button><button type="button" class="btn btn-ghost" id="gmMenuBtn">Games</button></div>')
       + '</div>';
     var fr = f || gmFrames();
@@ -7350,10 +7553,10 @@
     gmHud(score, rec.newBest ? "New best" : "Best "+rec.best);
     if(!noButtons){
       gmEl("gmAgainBtn").addEventListener("click", function(){ gmIntro(id); });
-      gmEl("gmMenuBtn").addEventListener("click", renderGamesMenu);
+      gmEl("gmMenuBtn").addEventListener("click", function(){ renderGamesMenu(id); });
       gmEl("gmAgainBtn").focus({ preventScroll:true });
     }
-    gmSay(rec.newBest ? "New personal best, "+score+"." : "Round over. Score "+score+".");
+    gmSay(noButtons ? "" : rec.newBest ? "A new high for you." : "Go again, or try another game.");
   }
 
   // Test hook (dev/tests.html). Created before the game regions; each region extends it with Object.assign(window.__cruxGames, {...}) inside `if(window.__cruxTest)`.
@@ -7363,8 +7566,10 @@
     art:GAME_ART, gmArt:gmArt, gmArtRegister:gmArtRegister, frames:gmFrames,
     soundOk:gmSoundOk, beep:gmBeep, beepCount:function(){ return gmBeeps; },
     paused:function(){ return !!(gm && gm.paused); }, current:function(){ return gm; },
-    open:function(o){ openGames(o); }, close:function(){ closeGames(); }
+    open:function(o){ openGames(o); }, close:function(){ closeGames(true); }
   };
+
+  if(window.__cruxTest) Object.assign(window.__cruxGames, { howto:gmHowto, esc:gmEsc });
 
   /* ==== chalkRhythm BEGIN (T1: replaces the legacy Chalk Up; the saved chalkUp data stays, its best was copied by gamesNormalize) ==== */
   // Rules: a ring grows toward a fixed outline once per beat; tap when it meets the outline. Fixed grid from round start,
@@ -7406,7 +7611,29 @@
     return { k:n-1, p:1 };
   }
   function chalkRingScale(p){ return 0.35+0.65*Math.max(0, Math.min(1, p)); }
-  function chalkRingOpacity(p){ return Math.min(1, 0.3+Math.max(0, p)*5); }   // fades in over the first ~14% of the beat, then stays full
+  function chalkRingOpacity(p){ return Math.min(1, Math.max(0, p)*5); }   // fades in from nothing over the first 20% of the beat, then stays full (no pop when the next ring starts)
+  var CR_ECHO_MS = 300;
+  function chalkEase(x){ x = Math.max(0, Math.min(1, x)); return 1-Math.pow(1-x, 3); }
+  // The ring that just met the outline keeps going for CR_ECHO_MS: it swells a touch past the outline and fades, so the beat "lands"
+  // instead of the ring snapping back to small. null when no beat landed in the last CR_ECHO_MS.
+  function chalkEcho(tMs){
+    var beats = chalkBeats(), k = -1;
+    for(var i=0;i<beats.length;i++){ if(beats[i]<=tMs) k = i; else break; }
+    if(k<0) return null;
+    var age = tMs-beats[k];
+    if(age>=CR_ECHO_MS) return null;
+    var e = chalkEase(age/CR_ECHO_MS);
+    return { k:k, age:age, scale:1+0.22*e, opacity:0.9*(1-e) };
+  }
+  // Which beat a tap belongs to uses the input event's own timestamp (when the finger landed), not when our handler got to run.
+  // Falls back to "now" if the stamp is missing or implausible (older than 250 ms, in the future, or on another clock).
+  function chalkTapTime(evStamp, now){
+    return (typeof evStamp==="number" && isFinite(evStamp) && evStamp>0 && evStamp<=now+1 && evStamp>=now-250) ? Math.min(evStamp, now) : now;
+  }
+  // "early" / "late" cue for a judged tap (null for Perfect: nothing to correct).
+  function chalkCue(label, deltaMs){ return label==="perfect" || label==="miss" ? null : (deltaMs<0 ? "early" : "late"); }
+  // Exponential smoothing step (timestamp based): how far a value moves toward its target in dt ms with time constant tau.
+  function chalkSmooth(cur, target, dtMs, tauMs){ return cur+(target-cur)*(1-Math.exp(-Math.max(0, dtMs)/tauMs)); }
   // Replays a list of tap times (ms from round start) through the same rules the game uses.
   function chalkSimulate(taps){
     var claimed = {}, score = 0, perfects = 0, hits = 0, labels = [];
@@ -7425,7 +7652,7 @@
   gmRegister({
     id:"chalkRhythm", title:"Chalk Rhythm", order:1, blurb:"A slow beat, a ring, a tap. Calm and forgiving.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9.5"/></svg>',
-    intro:{ title:"Breathe and tap", text:"Breathe in as the ring grows. Tap when it meets the outline. A missed beat just scores 0, the next one comes.", hint:"Tap anywhere. 45 seconds, no fail." },
+    intro:{ title:"Breathe and tap", text:"Breathe in as the ring grows, then tap the moment it meets the outline. Perfect 3, Good 2, Close 1. Miss one and the next is already coming.", hint:"Tap anywhere. 45 seconds, no fail." },
     hud0:function(best){ return "Best "+best; },
     start:function(){ chalkRhythmStart(); },
     state:function(){ var g = gm && gm.id==="chalkRhythm" ? gm : null; return { score:g ? g.score : 0, actions:g ? g.taps : 0, extra:{ perfectBest:g ? g.perfects : 0 } }; },
@@ -7435,70 +7662,99 @@
   });
   function chalkRhythmStart(){
     var f = gmFrames(); gmPreload(f);
-    var rm = crReduced(), outline = gmArt("cr.ring"), live = gmArt("cr.ring"), puff = gmArt("cr.puff");
-    outline.classList.add("cr-outline"); live.classList.add("cr-live"); live.id = "crRing"; puff.classList.add("cr-puff");
+    var rm = crReduced(), outline = gmArt("cr.ring"), live = gmArt("cr.ring"), echo = gmArt("cr.ring"), puff = gmArt("cr.puff");
+    outline.classList.add("cr-outline"); live.classList.add("cr-live"); live.id = "crRing"; echo.classList.add("cr-echo"); puff.classList.add("cr-puff");
+    var first = !(state.games.chalkRhythm && state.games.chalkRhythm.plays>0);   // first-ever round: say what to do on screen
     var stage = gmEl("gmStage");
     stage.innerHTML = '<div class="cr-field'+(rm ? ' cr-rm' : '')+'" id="crField" aria-hidden="true"></div>'
       + '<div class="gm-climber gm-climber-big" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
+      + '<p class="cr-teach" id="crTeach" aria-hidden="true">Tap when the ring meets the outline</p>'
       + '<div class="cr-label" id="crLabel" aria-hidden="true"></div>'
-      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap when the ring meets the outline"></button>';
+      + '<button type="button" class="gm-tap" id="gmTap" style="touch-action:manipulation" aria-label="Tap when the ring meets the outline"></button>';
     var field = gmEl("crField");
-    field.appendChild(outline); field.appendChild(live); field.appendChild(puff);
+    field.appendChild(outline); field.appendChild(echo); field.appendChild(live); field.appendChild(puff);
     field.insertAdjacentHTML("beforeend", '<div class="cr-bar"><i id="crBarFill"></i></div>');
-    var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
+    var img = gmEl("gmClimberImg"), host = gmEl("gmClimber"); outfitFollow(img, host); gmSetSrc(img, f.idle[0]);
     var beats = chalkBeats();
     var g = gmBegin("chalkRhythm", f, { claimed:{}, judged:-1, score:0, perfects:0, taps:0, streak:0, chalkUntil:0, clapFrom:0, clapUntil:0,
-      puffUntil:0, labelUntil:0, dimUntil:0, lastScale:-1, lastOp:-1, lastSec:-1 });
+      puffUntil:0, labelUntil:0, lastScale:-1, lastOp:-1, lastSec:-1, lastEcho:-1, breath:0, lastT:0, teachUntil:first ? 6500 : 0, hits:0 });
     gmHud(0, "Best "+state.games.chalkRhythm.best);
     gmSay("Go. Tap as the ring meets the outline.");
-    var label = gmEl("crLabel"), bar = gmEl("crBarFill");
-    function tap(){
+    var label = gmEl("crLabel"), bar = gmEl("crBarFill"), teach = gmEl("crTeach"), scoreEl = gmEl("gmScore");
+    if(first) teach.classList.add("on");
+    label.innerHTML = '<span>Breathe in</span>'; label.classList.add("on"); g.labelUntil = 900;
+    function restart(el, cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+    function tap(e){
       if(gm!==g || g.paused) return;
-      var t = performance.now()-g.t0;
+      var now = performance.now(), t = chalkTapTime(e && e.timeStamp, now)-g.t0;
       g.taps++;
       var r = chalkAttribute(t, g.claimed);
-      if(!r) return;                                   // between beats, or that beat is taken: nothing happens, nothing is lost
-      g.claimed[r.k] = true; g.score += chalkPoints(r.label);
+      if(!r){                                           // between beats, or that beat is taken: nothing is lost, but the tap still gets an answer
+        if(!rm) restart(host, "cr-hop-sm");
+        return;
+      }
+      g.claimed[r.k] = true; g.score += chalkPoints(r.label); g.hits++;
       g.streak++;
+      var cue = chalkCue(r.label, r.delta);
       if(r.label==="perfect"){
-        g.perfects++; g.chalkUntil = t+300; g.puffUntil = t+300;
-        if(!rm){ puff.classList.remove("go"); void puff.offsetWidth; puff.classList.add("go"); }
+        g.perfects++; g.chalkUntil = t+380; g.puffUntil = t+450;
+        if(!rm){ restart(puff, "go"); }
         gmBuzz(8);
       }
       if(r.label==="perfect" || r.label==="good") gmBeep(200, 60, 0.15);
       if(g.streak%8===0){ g.clapFrom = t; g.clapUntil = t+900; }
-      label.innerHTML = '<span class="cr-j cr-j-'+r.label+'" aria-hidden="true"></span><span>'+CR_LABEL[r.label]+'</span>';
-      label.classList.add("on"); g.labelUntil = t+650;
-      gmHud(g.score, "Best "+state.games.chalkRhythm.best);
-      gmSay(CR_LABEL[r.label]+". "+g.score+" points.");
+      if(!rm){
+        outline.classList.remove("cr-hit", "cr-hit-perfect"); void outline.offsetWidth;
+        outline.classList.add("cr-hit"); if(r.label==="perfect") outline.classList.add("cr-hit-perfect");
+        restart(host, r.label==="close" ? "cr-hop-sm" : "cr-hop");
+        restart(scoreEl, "cr-bump");
+      }
+      label.innerHTML = '<span class="cr-j cr-j-'+r.label+'" aria-hidden="true"></span><span>'+CR_LABEL[r.label]+'</span>'+(cue ? '<small>'+cue+'</small>' : '');
+      label.classList.add("on"); g.labelUntil = t+700;
+      teach.classList.remove("on"); g.teachUntil = 0;
+      gmHud(g.score, "Best "+Math.max(g.score, state.games.chalkRhythm.best));
+      g.lastSec = -1;                                   // gmHud blanks the clock; put it straight back on the next frame
+      gmSay(CR_LABEL[r.label]+(cue ? ", "+cue : "")+". "+g.score+" points.");
     }
-    gmEl("gmTap").addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
-    gmEl("gmTap").addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
-    gmEl("gmTap").focus({ preventScroll:true });
+    ["cr-hop", "cr-hop-sm"].forEach(function(c){ host.addEventListener("animationend", function(){ host.classList.remove(c); }); });
+    scoreEl.addEventListener("animationend", function(){ scoreEl.classList.remove("cr-bump"); });
+    var tapEl = gmEl("gmTap");
+    tapEl.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(e); });
+    tapEl.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(null); } });
+    tapEl.focus({ preventScroll:true });
     function frame(){
       if(gm!==g || g.paused) return;
-      var t = performance.now()-g.t0;
-      // a beat nobody claimed within its Close window is simply a 0
+      var t = performance.now()-g.t0, dt = Math.min(100, Math.max(0, t-g.lastT)); g.lastT = t;
+      // a beat nobody claimed within its Close window is simply a 0 (its echo is drawn fainter, nothing else changes)
       while(g.judged+1<beats.length && t>beats[g.judged+1]+CR_WIN.close){
         g.judged++;
-        if(!g.claimed[g.judged]){ g.streak = 0; g.dimUntil = t+250; }
+        if(!g.claimed[g.judged]) g.streak = 0;
       }
-      var ring = chalkRingAt(t);
+      var ring = chalkRingAt(t), over = t>beats[beats.length-1];
       if(rm){
         var w = (ring.p*100).toFixed(1)+"%"; if(bar.style.width!==w) bar.style.width = w;
       } else {
-        var s = chalkRingScale(ring.p), op = chalkRingOpacity(ring.p);
+        var s = chalkRingScale(ring.p), op = over ? 0 : chalkRingOpacity(ring.p);
         if(s!==g.lastScale){ live.style.transform = "scale("+s.toFixed(3)+")"; g.lastScale = s; }
         if(op!==g.lastOp){ live.style.opacity = op.toFixed(2); g.lastOp = op; }
-        live.classList.toggle("cr-dim", t<g.dimUntil);
+        var ec = chalkEcho(t);
+        if(ec){
+          echo.style.transform = "scale("+ec.scale.toFixed(3)+")";
+          echo.style.opacity = (ec.opacity*(g.claimed[ec.k] ? 1 : 0.45)).toFixed(2);
+          g.lastEcho = ec.k;
+        } else if(g.lastEcho>=0){ echo.style.opacity = "0"; g.lastEcho = -1; }
+        // the climber breathes in with the ring (smoothed, so the reset at each beat is an exhale rather than a snap)
+        g.breath = chalkSmooth(g.breath, chalkEase(ring.p)*(over ? 0 : 1), dt, 90);
+        host.style.scale = (1+0.03*g.breath).toFixed(4);
       }
       if(label.classList.contains("on") && t>=g.labelUntil) label.classList.remove("on");
+      if(g.teachUntil && t>=g.teachUntil){ teach.classList.remove("on"); g.teachUntil = 0; }
       var want = t<g.chalkUntil ? f.chalk : t<g.clapUntil ? f.clap[Math.floor((t-g.clapFrom)/300)%f.clap.length] : f.idle[0];
       gmSetSrc(img, want);
       var sec = Math.max(0, Math.ceil((CR_ROUND_MS-t)/1000));
       if(sec!==g.lastSec){ gmEl("gmTime").textContent = sec+"s"; g.lastSec = sec; }
       if(t>=CR_ROUND_MS){
-        gmOver("chalkRhythm", g.score, { title:"Nice breathing.", note:g.perfects+" perfect", actions:g.taps, extra:{ perfectBest:g.perfects } });
+        gmOver("chalkRhythm", g.score, { title:"Nice breathing.", note:g.perfects+" perfect · "+g.hits+" of "+beats.length+" beats", actions:g.taps, extra:{ perfectBest:g.perfects } });
         return;
       }
       gmRaf = requestAnimationFrame(frame);
@@ -7510,7 +7766,8 @@
     Object.assign(window.__cruxGames, {
       chalkBpm:chalkBpm, chalkBeatLen:chalkBeatLen, chalkBeats:chalkBeats, chalkWindow:chalkWindow, chalkPoints:chalkPoints,
       chalkAttribute:chalkAttribute, chalkRingAt:chalkRingAt, chalkRingScale:chalkRingScale, chalkRingOpacity:chalkRingOpacity,
-      chalkSimulate:chalkSimulate, chalkReduced:function(v){ crRMOverride = v; }
+      chalkSimulate:chalkSimulate, chalkEcho:chalkEcho, chalkEase:chalkEase, chalkTapTime:chalkTapTime, chalkCue:chalkCue, chalkSmooth:chalkSmooth,
+      chalkReduced:function(v){ crRMOverride = v; }
     });
   }
   /* ==== chalkRhythm END ==== */
@@ -7565,61 +7822,113 @@
     return route[n-1].row>=3;
   }
 
+  // Pure helpers for the polish pass (tested through __cruxGames).
+  function routeLift(row){ return Math.max(0, Math.min(RR_ROWS-1, Math.floor(Number(row)||0)))*10; }     // px the climber eases up with the last hold
+  function routeSummary(done, longest){
+    done = Math.max(0, Math.floor(Number(done))||0); longest = Math.max(0, Math.floor(Number(longest))||0);
+    if(!done) return { title:"Warm-up done.", note:"No routes yet, they come back easy" };
+    return { title:"Good reading.", note:done+(done===1 ? " route" : " routes")+" · longest "+longest };
+  }
+  function routeTone(step){ return 500+40*Math.max(0, Math.min(RR_MAX, Math.floor(Number(step))||0)); }    // soft rising tick per hold
+  function routeBarScale(t, start, ms){ return ms>0 ? Math.max(0, Math.min(1, 1-(t-start)/ms)) : 0; }
+
   function routeReadStart(){
     var f = gmFrames(); gmPreload(f);
     var stage = gmEl("gmStage");
     stage.innerHTML = '<div class="rr-stage'+(prefersReducedMotion ? ' rr-calm' : '')+'" id="rrStage">'
       + '<div class="gm-climber rr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
-      + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p>'
-      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div></div>';
+      + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p><div class="rr-pips" id="rrPips" aria-hidden="true"></div>'
+      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div>'
+      + '<div class="rr-bar" id="rrBar" aria-hidden="true"><i id="rrBarFill"></i></div></div>';
     var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
-    var wall = gmEl("rrWall"), cells = {};
+    var wall = gmEl("rrWall"), cells = {}, rrStage = gmEl("rrStage"), climber = gmEl("gmClimber"), bar = gmEl("rrBar"), barFill = gmEl("rrBarFill"), pips = gmEl("rrPips");
     for(var r=RR_ROWS-1;r>=0;r--) for(var c=0;c<RR_COLS;c++){
       var b = document.createElement("button"); b.type = "button"; b.className = "rr-cell"; b.id = "rrCell_"+r+"_"+c;
       b.setAttribute("data-row", r); b.setAttribute("data-col", c);
       b.setAttribute("aria-label", "Hold, row "+(r+1)+", column "+(c+1));
       b.appendChild(gmArt("rr.hold"));
       var ring = gmArt("rr.ring"); ring.classList.add("rr-ring"); b.appendChild(ring);
+      var spark = document.createElement("span"); spark.className = "rr-spark"; spark.setAttribute("aria-hidden", "true"); b.appendChild(spark);
       var badge = document.createElement("span"); badge.className = "rr-badge"; badge.setAttribute("aria-hidden", "true"); b.appendChild(badge);
       wall.appendChild(b); cells[r+","+c] = b;
     }
-    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false });
+    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, phaseStart:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false, paintId:0 });
     var bestBefore = state.games.routeRead ? state.games.routeRead.best : 0;
-    function pose(src){ gmSetSrc(img, src); }
+    var firstEver = !(state.games.routeRead && state.games.routeRead.plays>0);
+    function pose(src){
+      if(img.getAttribute("src")===src) return;
+      gmSetSrc(img, src);
+      if(!prefersReducedMotion){ climber.classList.remove("rr-swap"); void climber.offsetWidth; climber.classList.add("rr-swap"); }
+    }
+    function lift(row){ rrStage.style.setProperty("--rr-lift", prefersReducedMotion ? 0 : routeLift(row)); }
     function lineText(){ return "Route of "+g.N+" · Best "+Math.max(bestBefore, g.score); }
     function paint(showNums){
-      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.querySelector(".rr-badge").textContent = ""; el.classList.remove("rr-lit"); }
-      if(!showNums) return;
-      g.route.forEach(function(h, i){ var el = cells[h.row+","+h.col]; el.classList.add("rr-lit"); el.querySelector(".rr-badge").textContent = String(i+1); });
+      var id = ++g.paintId;
+      wall.classList.toggle("rr-showing", !!showNums);
+      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.classList.remove("rr-lit", "rr-pop"); if(showNums) el.querySelector(".rr-badge").textContent = ""; }
+      if(showNums){
+        g.route.forEach(function(h, i){
+          var el = cells[h.row+","+h.col], bd = el.querySelector(".rr-badge");
+          el.classList.add("rr-lit"); bd.style.setProperty("--i", i); bd.textContent = String(i+1);
+        });
+      } else {
+        // numbers fade out (CSS), then the text goes so nothing readable is left behind
+        gmLater(function(){
+          if(gm!==g || g.paintId!==id) return;
+          for(var k2 in cells) cells[k2].querySelector(".rr-badge").textContent = "";
+        }, prefersReducedMotion ? 110 : 190);
+      }
     }
     function label(txt){ gmEl("rrLabel").textContent = txt; }
+    function drawPips(){
+      var h = "", i;
+      for(i=0;i<g.N;i++) h += '<span class="rr-pip'+(i<g.step ? ' on' : '')+'"></span>';
+      pips.innerHTML = h;
+    }
+    function pipsTo(n){ var p = pips.children; for(var i=0;i<p.length;i++) p[i].classList.toggle("on", i<n); }
+    function barOn(on){ bar.classList.toggle("on", !!on); }
     function beginShow(t){
-      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseEnd = t+routeShowMs(g.N);
-      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]);
-      gmHud(g.score, lineText()); gmSay("Memorise the route. "+g.N+" holds, numbered in order.");
+      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseStart = t; g.phaseEnd = t+routeShowMs(g.N);
+      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]); lift(0); drawPips(); barOn(true);
+      gmHud(g.score, lineText());
+      gmSay(firstEver && g.done===0 ? "Watch the numbers. They fade, then tap 1, 2, 3 in order." : "Memorise the route. "+g.N+" holds, numbered in order.");
     }
     function beginInput(){
-      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]);
+      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false);
       gmSay("Your turn. Tap the holds in order, 1 of "+g.N+".");
     }
     function reachFor(h){ return h.col===0 ? g.frames.reachL : h.col===RR_COLS-1 ? g.frames.reachR : g.frames.pull; }
-    function tap(cell){
-      if(gm!==g || g.paused || g.phase!=="input") return;
+    // Phase changes happen here, from the frame loop AND from a tap, so a tap that lands a few ms after a deadline is never lost.
+    function advance(t){
+      if(t<g.phaseEnd) return;
+      if(g.phase==="show") beginInput();
+      else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false); pipsTo(0); gmSay("Try again from the start."); }
+      else if(g.phase==="between") beginShow(t);
+    }
+    function tap(cell, ts){
+      if(gm!==g || g.paused) return;
+      var now = performance.now();
+      if(!(ts>0 && ts<=now+5)) ts = now;                  // pointer timestamps share performance.now()'s clock; fall back if not
+      var t = ts-g.t0;
+      advance(t);
+      if(g.phase!=="input") return;
       var row = +cell.getAttribute("data-row"), col = +cell.getAttribute("data-col");
       if(cell.getAttribute("data-state")==="tapped") return;
       g.actions++;
-      var t = performance.now()-g.t0, want = g.route[g.step];
+      var want = g.route[g.step];
       if(want.row===row && want.col===col){
         cell.setAttribute("data-state", "tapped");
         cell.querySelector(".rr-badge").textContent = "";
-        g.step++;
-        gmBeep(600, 40, 0.06);
+        cell.classList.remove("rr-pop"); void cell.offsetWidth; cell.classList.add("rr-pop");
+        g.step++; pipsTo(g.step);
+        gmBeep(routeTone(g.step), 45, 0.06); gmBuzz(8);
+        lift(row);
         if(g.step>=g.N){
           g.score += g.N; g.done++; if(g.N>g.longest) g.longest = g.N;
           var wasMax = g.N===RR_MAX;
           g.N = routeNextLen(g.N, g.missed); g.missed = false;
           g.phase = "between"; g.phaseEnd = t+(wasMax ? RR_FLAG_MS : RR_BETWEEN_MS); g.flag = wasMax;
-          pose(wasMax ? g.frames.flag[0] : g.frames.pull);
+          pose(wasMax ? g.frames.flag[0] : g.frames.cheer[0]);
           label(wasMax ? "Top of the route." : "Nice. Next route.");
           gmHud(g.score, lineText()); gmSay("Route complete. "+g.score+" points.");
           [440, 554, 659].forEach(function(fq, i){ gmLater(function(){ gmBeep(fq, 80, 0.1); }, i*90); });
@@ -7630,31 +7939,40 @@
       } else {
         cell.setAttribute("data-state", "wrong");
         g.missed = true;
-        g.phase = "reshow"; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
+        g.phase = "reshow"; g.phaseStart = t; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
         gmSay("That was close, here it is.");
-        label("That was close, here it is");
-        pose(g.frames.hit);
+        label("Look again");
+        pose(g.frames.hit); lift(0);
+        gmBeep(262, 90, 0.05);
         // the route re-shows with numbers; the wrong hold keeps its X until then
         var wrong = cell;
-        paint(true); wrong.setAttribute("data-state", "wrong");
+        paint(true); wrong.setAttribute("data-state", "wrong"); pipsTo(0); barOn(true);
       }
     }
-    wall.addEventListener("click", function(e){ var b = e.target.closest ? e.target.closest(".rr-cell") : null; if(b) tap(b); });
+    // pointerdown for an instant response; a click with no pointer (keyboard, assistive tech, .click()) still works.
+    wall.addEventListener("pointerdown", function(e){
+      if(e.button>0) return;
+      var b = e.target.closest ? e.target.closest(".rr-cell") : null;
+      if(b){ g.lastDown = performance.now(); tap(b, e.timeStamp); }
+    });
+    wall.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".rr-cell") : null;
+      if(!b) return;
+      if(e.detail>0 && g.lastDown && performance.now()-g.lastDown<900) return;   // already handled on pointerdown
+      tap(b, performance.now());
+    });
     function frame(){
       if(gm!==g || g.paused) return;
       var t = performance.now()-g.t0;
       if(t>=RR_ROUND_MS){
-        var res = { actions:g.actions, extra:{ longest:g.longest } }, was = g.actions>=1 && g.score>bestBefore, fr = g.frames;
-        gmOver("routeRead", g.score, { title:"Good reading.", note:"Longest route "+g.longest, actions:res.actions, extra:res.extra });
+        var sum = routeSummary(g.done, g.longest), was = g.actions>=1 && g.score>bestBefore, fr = g.frames;
+        gmOver("routeRead", g.score, { title:sum.title, note:sum.note, actions:g.actions, extra:{ longest:g.longest } });
         if(!was){ var ci = gmEl("gmClimberImg"); if(ci) gmSetSrc(ci, fr.ledgeSit); }
         return;
       }
-      if(t>=g.phaseEnd){
-        if(g.phase==="show") beginInput();
-        else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); gmSay("Try again from the start."); }
-        else if(g.phase==="between") beginShow(t);
-      }
+      advance(t);
       if(g.phase==="between" && g.flag) pose(g.frames.flag[Math.floor(t/600)%g.frames.flag.length]);
+      if(g.phase==="show" || g.phase==="reshow") barFill.style.transform = "scaleX("+routeBarScale(t, g.phaseStart, g.phaseEnd-g.phaseStart).toFixed(3)+")";
       var sec = Math.max(0, Math.ceil((RR_ROUND_MS-t)/1000));
       if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
       gmRaf = requestAnimationFrame(frame);
@@ -7668,7 +7986,7 @@
   gmRegister({
     id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>',
-    intro:{ title:"Read, then climb", text:"A route lights up with numbers. They hide. Tap the holds in order from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
+    intro:{ title:"Read, then climb", text:"Numbered holds light up, then fade. Tap them in order, 1, 2, 3, from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
     hud0:function(best){ return "Route of 5 · Best "+best; },
     art:["rr.hold", "rr.ring", "card.routeRead"], frames:["idle", "reachL", "reachR", "pull", "hit", "cheer", "ledgeSit", "flag"],
     start:function(){ routeReadStart(); },
@@ -7677,6 +7995,7 @@
     resume:function(){ if(gm && gm.frame && !gmRaf) gmRaf = requestAnimationFrame(gm.frame); }
   });
   if(window.__cruxTest) Object.assign(window.__cruxGames, { routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
+    routeLift:routeLift, routeSummary:routeSummary, routeTone:routeTone, routeBarScale:routeBarScale,
     routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, reshowMs:RR_RESHOW_MS } });
   /* ==== routeRead END ==== */
   /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
@@ -7684,7 +8003,8 @@
   // Geometry is in "logical px" of a 360-wide world (a 320 px block is 100%); the world is scaled to the stage.
   var SS_BASE = 320, SS_FLOOR = 0.30*SS_BASE, SS_PERFECT_PX = 6, SS_REGAIN = 0.08*SS_BASE, SS_LEARN_BLOCKS = 4, SS_SUMMIT = 20;
   var SS_WORLD_W = 360, SS_CENTER = SS_WORLD_W/2, SS_TRAVEL = SS_BASE/2;       // the slider's centre sweeps SS_CENTER +- 160
-  var SS_ROUND_MS = 45000, SS_BLOCK_H = 28, SS_DROP_MS = 170, SS_FALL_MS = 420, SS_RISE = 118, SS_CLIMBER_H = 90;
+  var SS_ROUND_MS = 45000, SS_BLOCK_H = 28, SS_DROP_MS = 170, SS_FALL_MS = 380, SS_RISE = 118, SS_CLIMBER_H = 90;
+  var SS_HOP_MS = 240, SS_ENTER_MS = 140, SS_SQUASH_MS = 190, SS_FLAG_H = 54;
   // crossing time (edge to edge of the 320 lane) for block number n (1-based)
   function stackCross(n){ n = Math.max(1, Math.floor(Number(n))||1); return n<=4 ? 2400 : n<=9 ? 2100 : n<=14 ? 1800 : 1500; }
   // what a drop does. n = number of the block being dropped, prev = width of the block below, err = signed centre offset (px).
@@ -7710,6 +8030,24 @@
   // which pose the climber holds, ms after the last stack
   function stackPose(sinceMs, blocks){ return sinceMs<150 ? "jump" : sinceMs<330 ? "land" : sinceMs<600 ? "step" : (blocks>=SS_SUMMIT ? "flag" : "idle"); }
   function stackScore(blocks, perfects){ return blocks+perfects; }
+  // polish helpers (pure). Drop: a small head start so it reacts at once, then accelerates; p and result are 0..1.
+  function stackDropEase(p){ p = Math.max(0, Math.min(1, Number(p)||0)); return 0.2*p + 0.8*p*p; }
+  // a missed block's fall offset (px below the landing line) after d ms: gravity with a small initial push
+  function stackFallY(d){ d = Math.max(0, Number(d)||0); return 0.05*d + 0.0012*d*d; }
+  // squash of the settled block, sinceMs after landing: a quick dip and spring back. null when finished.
+  function stackSquash(sinceMs, amp){
+    sinceMs = Number(sinceMs)||0; amp = amp==null ? 0.14 : amp;
+    if(sinceMs<0 || sinceMs>=SS_SQUASH_MS) return null;
+    var u = sinceMs/SS_SQUASH_MS, w = Math.sin(Math.PI*u)*(1-0.5*u);
+    return { sy:1-amp*w, sx:1+amp*0.4*w };
+  }
+  // the moment the finger came down: the event's own timestamp when it is recent and sane, else now
+  function stackInputTime(evTs, now){
+    evTs = Number(evTs); now = Number(now)||0;
+    return isFinite(evTs) && evTs>0 && evTs<=now+1 && now-evTs<=120 ? Math.min(evTs, now) : now;
+  }
+  // the Perfect tick rises a semitone per consecutive Perfect (up to an octave-ish cap); a non-perfect resets it
+  function stackStreakFreq(streak){ var s = Math.max(1, Math.min(8, Math.floor(Number(streak))||1)); return 660*Math.pow(2, (s-1)/12); }
 
   gmRegister({
     id:"summitStack", title:"Summit Stack", order:3, blurb:"Drop each block on the last to build a tower.",
@@ -7721,7 +8059,7 @@
     rest:{ closeScore:function(){ return summitStackState(); } },
     resume:function(dt){
       if(!gm || gm.id!=="summitStack") return;
-      gm.blockT0 += dt; gm.dropAt += dt; gm.fallAt += dt; gm.poseAt += dt;
+      gm.blockT0 += dt; gm.dropAt += dt; gm.fallAt += dt; gm.poseAt += dt; gm.enterAt += dt; gm.sqAt += dt; gm.lastF += dt; if(gm.hop) gm.hop.at += dt;
       if(gm.frame) gmRaf = requestAnimationFrame(gm.frame);
     },
     art:["ss.ledge", "ss.block", "ss.flag", "ui.perfect", "ui.summit"], frames:["idle", "step", "jump", "hit", "flag", "ledgeSit", "cheer"]
@@ -7741,31 +8079,35 @@
     stage.innerHTML = '<div class="ss-time" id="ssTime" aria-hidden="true"></div>'
       + '<div class="ss-world" id="ssWorld" style="width:'+SS_WORLD_W+'px;height:'+lh+'px;left:'+((sw-SS_WORLD_W*k)/2)+'px;transform:scale('+k+')">'
       + '<div class="ss-cam" id="ssCam"><div id="ssTower"></div>'
-      + '<div class="ss-flag" id="ssFlag" hidden></div>'
+      + '<div class="ss-flag" id="ssFlag" hidden><i class="ss-pole"></i></div>'
       + '<div class="gm-climber ss-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
       + '<div id="ssSlider" class="ss-slider"></div></div></div>'
       + '<p class="ss-label" id="ssLabel" aria-hidden="true"></p>'
-      + '<button type="button" class="gm-tap" id="gmTap" aria-label="Tap anywhere to drop the block"></button>';
+      + '<button type="button" class="gm-tap ss-tap" id="gmTap" aria-label="Tap anywhere to drop the block"></button>';
     var cam = gmEl("ssCam"), tower = gmEl("ssTower"), slider = gmEl("ssSlider"), label = gmEl("ssLabel"), bar = gmEl("ssTime"), flagEl = gmEl("ssFlag");
     var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber");
     outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
-    flagEl.appendChild(gmArt("ss.flag")); var fa = flagEl.firstChild; fa.style.width = "26px"; fa.style.height = "38px";
+    flagEl.appendChild(gmArt("ss.flag")); var fa = flagEl.lastChild; fa.classList.add("ss-pennant"); fa.style.width = "24px"; fa.style.height = "16px";
     var ledge = gmArt("ss.ledge"); ledge.classList.add("ss-blk"); ledge.style.width = SS_BASE+"px"; ledge.style.height = SS_BLOCK_H+"px";
     ledge.style.left = (SS_CENTER-SS_BASE/2)+"px"; ledge.style.top = ground+"px"; tower.appendChild(ledge);
 
     var g = gmBegin("summitStack", f, { n:0, score:0, perfects:0, taps:0, topC:SS_CENTER, topW:SS_BASE, phase:"slide", blockT0:0, dropAt:0, fallAt:0,
-      poseAt:-1e9, side:1, cross:stackCross(1), ph:0, res:null, dropX:SS_CENTER, shift:0, lastBar:-1, lastSec:-1, flagged:false });
-    g.ph = g.rnd(); g.side = g.rnd()<0.5 ? -1 : 1; g.blockT0 = g.t0;
+      poseAt:-1e9, side:1, cross:stackCross(1), ph:0, res:null, dropX:SS_CENTER, shift:0, lastBar:-1, lastSec:-1, flagged:false,
+      streak:0, enterAt:-1e9, sqAt:-1e9, sqEl:null, sqAmp:0, hop:null, camY:0, laneY:0, dropFromY:0, lastF:0, cx:SS_CENTER-30, cy:0 });
+    g.ph = g.rnd(); g.side = g.rnd()<0.5 ? -1 : 1; g.blockT0 = g.t0; g.lastF = g.t0;
     function topY(){ return ground - g.n*SS_BLOCK_H; }
     function mkBlock(w){ var b = gmArt("ss.block"); b.classList.add("ss-blk"); b.style.width = w+"px"; b.style.height = SS_BLOCK_H+"px"; return b; }
-    function putClimber(){
-      climber.style.left = (g.topC-30)+"px"; climber.style.top = (topY()-SS_CLIMBER_H)+"px";
-      flagEl.style.left = (g.topC+22)+"px"; flagEl.style.top = (topY()-SS_CLIMBER_H-6)+"px";
+    function climberTop(n){ return ground - n*SS_BLOCK_H - SS_CLIMBER_H; }
+    function setClimber(x, y){ g.cx = x; g.cy = y; climber.style.transform = "translate3d("+x+"px,"+y+"px,0)"; }
+    function putFlag(){
+      var fx = g.topC + Math.min(g.topW/2 - 12, 44);
+      flagEl.style.left = fx+"px"; flagEl.style.top = (topY()-SS_FLAG_H)+"px";
     }
-    function setSlider(cx, y){ slider.style.transform = "translate3d("+(cx-g.topW/2)+"px,"+y+"px,0)"; }
-    function newSlider(){
-      g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = performance.now();
-      slider.innerHTML = ""; slider.style.opacity = "1"; slider.appendChild(mkBlock(g.topW));
+    function setSlider(cx, y, rot){ slider.style.transform = "translate3d("+(cx-g.topW/2)+"px,"+y+"px,0)"+(rot ? " rotate("+rot+"deg)" : ""); }
+    function newSlider(now){
+      g.phase = "slide"; g.cross = stackCross(g.n+1); g.side = -g.side; g.ph = g.rnd()*0.5; g.blockT0 = now; g.enterAt = now;
+      slider.innerHTML = ""; slider.style.opacity = prefersReducedMotion ? "1" : "0"; slider.style.transformOrigin = (g.topW/2)+"px "+(SS_BLOCK_H/2)+"px";
+      slider.appendChild(mkBlock(g.topW));
     }
     function say(text, perfect){
       label.innerHTML = (perfect ? gmArtHtml("ui.perfect") : "")+'<span>'+text+'</span>'; label.classList.add("on");
@@ -7773,69 +8115,117 @@
       gmLater(function(){ if(g.labelN===stamp) label.classList.remove("on"); }, 900);
     }
     g.labelN = 0;
-    function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, 0)); }
+    function hud(){ gmHud(g.score, "Blocks "+g.n+" · Best "+Math.max(state.games.summitStack.best, g.score)); }
     function chunk(left, y, w, dir){
       var c = mkBlock(w); c.classList.add("ss-chunk"); c.style.left = left+"px"; c.style.top = y+"px"; cam.appendChild(c);
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*18)+"px,150px) rotate("+(dir*14)+"deg)"; }); });
-      gmLater(function(){ c.remove(); }, 700);
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ c.classList.add("go"); c.style.transform = prefersReducedMotion ? "" : "translate("+(dir*30)+"px,200px) rotate("+(dir*26)+"deg)"; }); });
+      gmLater(function(){ c.remove(); }, 800);
+    }
+    function burst(cx, y, big){
+      if(prefersReducedMotion) return;
+      var r = document.createElement("div"); r.className = "ss-ring"+(big ? " big" : ""); r.style.left = cx+"px"; r.style.top = y+"px"; cam.appendChild(r);
+      gmLater(function(){ r.remove(); }, 650);
+      if(big){
+        for(var i=0;i<7;i++){
+          var s = document.createElement("i"); s.className = "ss-spark"; s.style.left = cx+"px"; s.style.top = (y+(i%2?6:-6))+"px";
+          s.style.setProperty("--dx", ((i-3)*11)+"px"); s.style.setProperty("--dy", (-46-(i*37%5)*10)+"px"); s.style.animationDelay = (i*40)+"ms"; cam.appendChild(s);
+          (function(el){ gmLater(function(){ el.remove(); }, 1300); })(s);
+        }
+      }
     }
     function land(now){
       var r = g.res, ty = topY();
-      if(r.miss){ g.phase = "fall"; g.fallAt = now; slider.style.opacity = "0"; say("Missed. Next block", false); gmSay("Missed the tower. Next block."); return; }
+      if(r.miss){ g.phase = "fall"; g.fallAt = now; g.streak = 0; say("Missed. Next block", false); gmSay("Missed the tower. Next block."); return; }
       var newC = g.topC + r.shift, b = mkBlock(r.width);
-      b.style.left = (newC-r.width/2)+"px"; b.style.top = (ty-SS_BLOCK_H)+"px"; tower.appendChild(b);
-      if(r.perfect && !prefersReducedMotion){ b.classList.add("ss-bob"); }
+      b.style.left = (newC-r.width/2)+"px"; b.style.top = (ty-SS_BLOCK_H)+"px"; b.style.transformOrigin = "50% 100%"; tower.appendChild(b);
+      g.sqEl = b; g.sqAt = now; g.sqAmp = r.perfect ? 0.1 : 0.16;
       if(r.over>0){
         var sign = g.dropX>g.topC ? 1 : -1, edge = g.topC + sign*g.topW/2;
         chunk(sign>0 ? edge : edge-r.over, ty-SS_BLOCK_H, r.over, sign);
       }
-      g.n++; g.topC = newC; g.topW = r.width; g.score += 1 + (r.perfect ? 1 : 0); if(r.perfect) g.perfects++;
-      g.poseAt = now;
-      // the camera: a transform on one element, the top block settles at 60% of the stage
-      var sh = Math.max(0, camLine - topY());
-      if(sh!==g.shift){ g.shift = sh; cam.style.transform = "translate3d(0,"+sh+"px,0)"; }
-      putClimber();
-      gmBeep(110, 70, 0.12);
-      if(r.perfect){ gmLater(function(){ if(gm===g) gmBeep(660, 60, 0.08); }, 75); gmBuzz(8); }
+      g.n++; g.topC = newC; g.topW = r.width; g.score += 1 + (r.perfect ? 1 : 0);
+      if(r.perfect){ g.perfects++; g.streak++; } else g.streak = 0;
       hud();
-      if(r.perfect) say("Perfect", true);
-      else say("Good", false);
-      if(g.n>=SS_SUMMIT && !g.flagged){ g.flagged = true; flagEl.hidden = false; say("Summit", false); }
+      gmBeep(110, 70, 0.12);
+      if(r.perfect){
+        var fq = stackStreakFreq(g.streak);
+        gmLater(function(){ if(gm===g) gmBeep(fq, 60, 0.08); }, 75); gmBuzz(8);
+        burst(newC, ty-SS_BLOCK_H+SS_BLOCK_H/2, false);
+        say(g.streak>=2 ? "Perfect ×"+g.streak : "Perfect", true);
+      } else say("Good", false);
+      if(g.n>=SS_SUMMIT && !g.flagged){
+        g.flagged = true; flagEl.hidden = false; flagEl.classList.add("up"); say("Summit", false);
+        burst(newC, topY()-SS_CLIMBER_H*0.6, true);
+      }
+      putFlag();
       gmSay((r.perfect ? "Perfect. " : "")+g.n+" blocks, score "+g.score+".");
-      newSlider();
+      newSlider(now);
     }
-    function tap(){
+    function tap(e){
       if(gm!==g || g.paused || g.phase!=="slide") return;
       var now = performance.now();
+      // use the moment the finger came down, not the moment this handler got to run
+      var at = Math.max(g.blockT0, stackInputTime(e && e.timeStamp, now));
       g.taps++;
-      var cx = SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side);
+      var cx = SS_CENTER + stackPos(at-g.blockT0, g.cross, g.ph, g.side);
       g.dropX = cx; g.res = stackDrop(g.n+1, g.topW, cx-g.topC);
-      g.phase = "drop"; g.dropAt = now;
+      g.phase = "drop"; g.dropAt = at; g.dropFromY = g.laneY;
+      if(!g.res.miss){      // the climber hops up onto the new block as it lands
+        var hopAt = at + SS_DROP_MS*0.5;
+        g.hop = { at:hopAt, fx:g.cx, fy:g.cy, tx:g.topC+g.res.shift-30, ty:climberTop(g.n+1) };
+        g.poseAt = hopAt + SS_HOP_MS - 150;
+      }
     }
     var tapBtn = gmEl("gmTap");
-    tapBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(); });
-    tapBtn.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(); } });
+    tapBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(e); });
+    tapBtn.addEventListener("keydown", function(e){ if(e.key===" " || e.key==="Enter"){ e.preventDefault(); if(!e.repeat) tap(null); } });
     tapBtn.focus({ preventScroll:true });
+    gmSheetTap = function(e){ tap(e); tapBtn.focus({ preventScroll:true }); };
 
     var lastKey = "";
     function frame(){
       if(gm!==g || g.paused) return;
       var now = performance.now(), t = now-g.t0, ty = topY(), restY = ty-SS_BLOCK_H, slideY = restY-SS_RISE;
       if(t>=SS_ROUND_MS){ summitStackFinish(g, f); return; }
+      var dt = Math.min(50, Math.max(0, now-g.lastF)); g.lastF = now;
       var fr = Math.max(0, 1-t/SS_ROUND_MS), q = Math.round(fr*500)/500;
       if(q!==g.lastBar){ g.lastBar = q; bar.style.transform = "scaleX("+q+")"; }
       var sec = Math.ceil((SS_ROUND_MS-t)/1000);
       if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      // smooth camera + lane: the same easing on both keeps the sliding block steady on screen
+      var a = prefersReducedMotion ? 1 : 1-Math.exp(-dt/110);
+      var camT = Math.max(0, camLine - ty);
+      g.camY += (camT-g.camY)*a; if(Math.abs(camT-g.camY)<0.05) g.camY = camT;
+      if(g.camY!==g.shift){ g.shift = g.camY; cam.style.transform = "translate3d(0,"+g.camY+"px,0)"; }
+      if(g.phase!=="drop") g.laneY += (slideY-g.laneY)*a;
       if(g.phase==="slide"){
-        setSlider(SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side), slideY);
+        setSlider(SS_CENTER + stackPos(now-g.blockT0, g.cross, g.ph, g.side), g.laneY, 0);
+        if(!prefersReducedMotion && now-g.enterAt<SS_ENTER_MS) slider.style.opacity = String(Math.max(0, (now-g.enterAt)/SS_ENTER_MS));
+        else if(slider.style.opacity!=="1") slider.style.opacity = "1";
       } else if(g.phase==="drop"){
-        var p = Math.min(1, (now-g.dropAt)/SS_DROP_MS);
-        setSlider(g.dropX, slideY + (restY-slideY)*p*p);
+        var p = Math.max(0, Math.min(1, (now-g.dropAt)/SS_DROP_MS));
+        setSlider(g.dropX, g.dropFromY + (restY-g.dropFromY)*stackDropEase(p), 0);
         if(p>=1) land(now);
       } else if(g.phase==="fall"){
-        var d = now-g.fallAt;
-        setSlider(g.dropX, restY + d*0.5);
-        if(d>=SS_FALL_MS) newSlider();
+        var d = now-g.fallAt, fy = stackFallY(d), dir = g.dropX>g.topC ? 1 : -1;
+        setSlider(g.dropX, restY + fy, prefersReducedMotion ? 0 : dir*d*0.05);
+        slider.style.opacity = String(Math.max(0, 1-Math.max(0, d-SS_FALL_MS*0.5)/(SS_FALL_MS*0.5)));
+        if(d>=SS_FALL_MS) newSlider(now);
+      }
+      // a tiny squash as the block settles
+      if(g.sqEl){
+        var sq = prefersReducedMotion ? null : stackSquash(now-g.sqAt, g.sqAmp);
+        if(sq){ g.sqEl.style.transform = "scale("+sq.sx+","+sq.sy+")"; }
+        else { g.sqEl.style.transform = ""; g.sqEl = null; }
+      }
+      // the climber hops block to block; between hops it rides the top
+      var hp = g.hop;
+      if(hp){
+        var u = Math.max(0, Math.min(1, (now-hp.at)/SS_HOP_MS)), e = 1-Math.pow(1-u, 3), arc = prefersReducedMotion ? 0 : Math.sin(Math.PI*u)*14;
+        var hx = hp.fx+(hp.tx-hp.fx)*e, hy = hp.fy+(hp.ty-hp.fy)*e-arc;
+        if(prefersReducedMotion && u<1){ hx = hp.fx; hy = hp.fy; }
+        setClimber(hx, hy);
+        if(u>=1) g.hop = null;
       }
       // the climber: step / jump / land on a stack, the summit flag after 20, otherwise idle
       var key = stackPose(now-g.poseAt, g.n), src;
@@ -7845,7 +8235,8 @@
       gmRaf = requestAnimationFrame(frame);
     }
     g.frame = frame;
-    putClimber(); newSlider(); hud();
+    g.laneY = ground - SS_BLOCK_H - SS_BLOCK_H - SS_RISE;
+    setClimber(SS_CENTER-30, climberTop(0)); newSlider(performance.now()); hud();
     gmSay("Go. Tap anywhere to drop the block.");
     gmRaf = requestAnimationFrame(frame);
   }
@@ -7856,13 +8247,16 @@
     if(!(s.actions>=1 && s.score>prevBest)){ var im = gmEl("gmClimberImg"); if(im) gmSetSrc(im, f.ledgeSit); }
   }
   if(window.__cruxTest) Object.assign(window.__cruxGames, { stackCross:stackCross, stackDrop:stackDrop, stackWidth:stackWidth, stackWindowMs:stackWindowMs, stackPos:stackPos, stackPose:stackPose, stackScore:stackScore,
+      stackDropEase:stackDropEase, stackFallY:stackFallY, stackSquash:stackSquash, stackInputTime:stackInputTime, stackStreakFreq:stackStreakFreq,
       stackConst:{ base:SS_BASE, floor:SS_FLOOR, perfectPx:SS_PERFECT_PX, regain:SS_REGAIN, center:SS_CENTER, travel:SS_TRAVEL, roundMs:SS_ROUND_MS, summit:SS_SUMMIT } });
   /* ==== summitStack END ==== */
   /* ==== reachTimer BEGIN (T4: reachTimer* functions, .rt- CSS, gmRegister({id:"reachTimer", ...})) ==== */
   // Reach Timer (design doc 2.4): one telegraphed target at a time on the left or right half; tap that half before it times out.
   // Hit = up one step, wrong half or timeout = down one step (floor 0). Score = peak height. Every time below is on the round clock
   // (performance.now() minus gm.t0), so pausing and resuming shifts it for free.
-  var RT_ROUND_MS = 45000, RT_FADE_MS = 150, RT_FIRST_MS = 600, RT_LADDER = 10, RT_MAX_SAME = 3;
+  var RT_ROUND_MS = 45000, RT_FADE_MS = 150, RT_FIRST_MS = 600, RT_LADDER = 10, RT_MAX_SAME = 3, RT_STEP_PX = 14;
+  // Polish: slot elements in rotation, how early (ms) a right-side tap is still taken, pose timings (reach, then pull/jump) per hit.
+  var RT_SLOTS = 5, RT_EARLY_MS = 150, RT_REACH_MS = 150, RT_PULL_MS = 250;
   // Pure rules. The dwell never drops below 1000 ms (design floor is 400 ms); the dwell timer starts once the target is fully visible.
   function reachPhase(t){
     t = Math.max(0, Number(t)||0);
@@ -7907,6 +8301,19 @@
     else { h = Math.max(0, h-1); streak = 0; }
     return { height:h, peak:peak, streak:streak, bestStreak:best };
   }
+  // Who answers a tap. st: "gap" | "in" | "live" for the target `want`. A tap on the right side in the last RT_EARLY_MS of the gap is taken
+  // (a player who anticipates is not punished); a wrong half only slips once the target is fully visible; everything else is ignored.
+  function reachJudge(st, side, want, t, appearAt){
+    if(st==="gap") return side===want && t>=appearAt-RT_EARLY_MS ? "hit" : "ignore";
+    if(side===want) return "hit";
+    return st==="live" ? "slip" : "ignore";
+  }
+  // Run counter: hidden under 2, then three calm tiers (2-4, 5-9, 10+).
+  function reachStreakTier(n){ n = Math.max(0, Math.floor(Number(n))||0); return n<2 ? 0 : n<5 ? 1 : n<10 ? 2 : 3; }
+  // Hit tone climbs a little with the run and stays soft (the shell caps volume).
+  function reachPitch(streak){ return 520+Math.min(Math.max(0, Math.floor(Number(streak))||0), 8)*14; }
+  // How far (px) the climber sits above the floor for a height; it stops with the ladder.
+  function reachRise(h){ return Math.min(Math.max(0, Math.floor(Number(h))||0), RT_LADDER)*RT_STEP_PX; }
   gmRegister({
     id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>',
@@ -7920,72 +8327,98 @@
   function reachStart(){
     var f = gmFrames(); gmPreload(f);
     var slots = "", ladder = "", k;
-    for(k=0;k<3;k++) slots += '<span class="rt-slot" data-k="'+k+'" data-kind="off" data-side="L" aria-hidden="true">'
+    for(k=0;k<RT_SLOTS;k++) slots += '<span class="rt-slot" data-k="'+Math.min(k,2)+'" data-kind="off" data-side="L" aria-hidden="true">'
       + gmArtHtml("rt.hold").replace('class="gm-art ', 'class="rt-art-hold gm-art ') + gmArtHtml("rt.ghost").replace('class="gm-art ', 'class="rt-art-ghost gm-art ')
-      + '<span class="rt-letter">L</span><span class="rt-fuse"></span></span>';
+      + '<span class="rt-letter">L</span><span class="rt-fuse"><i></i></span></span>';
     for(k=0;k<RT_LADDER;k++) ladder += '<span class="rt-mark"></span>';
     var pad = function(side, label, arrow){ return '<button type="button" class="gm-half rt-half rt-half-'+side+' gm-half-'+(side==="L" ? 0 : 1)+'" id="rt'+side+'" aria-label="'+label+'">'
       + '<span class="rt-pad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+arrow+'"/></svg><b>'+side+'</b></span></button>'; };
     gmEl("gmStage").innerHTML = '<div class="rt-ladder" aria-hidden="true">'+ladder+'</div><div class="rt-wall" id="rtWall">'+slots+'</div>'
+      + '<div class="rt-combo" id="rtCombo" data-tier="0" aria-hidden="true"><b>0</b><small>in a row</small></div>'
       + '<div class="gm-climber rt-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
       + pad("L", "Left hold", "M15 5l-7 7 7 7") + pad("R", "Right hold", "M9 5l7 7-7 7");
-    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber"); outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
-    var g = gmBegin("reachTimer", f, { seq:null, i:0, st:"gap", appearAt:0, liveAt:0, deadline:0, dwell:0, ahead:1, h:0, peak:0, streak:0, bestStreak:0, taps:0, pose:0, lastSec:-1 });
+    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber"), combo = gmEl("rtCombo"); outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
+    var g = gmBegin("reachTimer", f, { seq:null, i:0, st:"gap", appearAt:0, liveAt:0, deadline:0, dwell:0, ahead:1, h:0, peak:0, streak:0, bestStreak:0, taps:0, pose:0, lastSec:-1, lastN:-1, lastKind:"hit" });
     g.seq = reachSeq(g.seed, 90);
-    var slotEls = [].slice.call(gmEl("rtWall").children), marks = [].slice.call(document.querySelectorAll(".rt-mark"));
+    var slotEls = [].slice.call(gmEl("rtWall").children), marks = [].slice.call(document.querySelectorAll(".rt-mark")), lean = 0;
     function arm(appearT){ var tm = reachTimes(appearT); g.appearAt = tm.appearAt; g.liveAt = tm.liveAt; g.deadline = tm.deadline; g.dwell = tm.dwell; g.ahead = tm.ahead; g.st = "gap"; }
-    function setSlot(el, kind, side){
-      if(el.getAttribute("data-kind")!==kind) el.setAttribute("data-kind", kind);
-      if(side){ if(el.getAttribute("data-side")!==side){ el.setAttribute("data-side", side); el.querySelector(".rt-letter").textContent = side; } }
-    }
+    function attr(el, name, v){ if(el.getAttribute(name)!==v) el.setAttribute(name, v); }
+    // Slot elements keep their target: target n lives in element n % RT_SLOTS, so a ghost glides down into the live place
+    // instead of the letter changing in place. The one just answered stays as "done" and fades away.
     function paint(){
-      var live = g.st!=="gap";
-      for(var k=0;k<3;k++){
-        var s = g.seq[g.i+k];
-        if(live) setSlot(slotEls[k], k===0 ? "live" : (k<=g.ahead ? "ghost" : "off"), s);
-        else setSlot(slotEls[k], k<=g.ahead ? "ghost" : "off", s);
+      var base = g.i-1;
+      for(var idx=0;idx<RT_SLOTS;idx++){
+        var n = base+(((idx-base)%RT_SLOTS)+RT_SLOTS)%RT_SLOTS, el = slotEls[idx], kind, kk;
+        if(n<g.i){ kind = n===g.lastN ? "done" : "off"; kk = 0; }
+        else if(n===g.i){ kind = g.st==="gap" ? "ghost" : "live"; kk = 0; }
+        else if(n-g.i<=g.ahead){ kind = "ghost"; kk = n-g.i; }
+        else { kind = "off"; kk = Math.min(n-g.i, 2); }
+        var s = g.seq[n] || "L";
+        if(n>=0 && el.getAttribute("data-side")!==s){ el.setAttribute("data-side", s); el.querySelector(".rt-letter").textContent = s; }
+        attr(el, "data-k", String(kk)); attr(el, "data-kind", kind);
+        if(kind==="done") attr(el, "data-res", g.lastKind);
       }
+      var want = g.st!=="gap" ? g.seq[g.i] : "";
+      ["L", "R"].forEach(function(sd){ attr(gmEl("rt"+sd), "data-want", want===sd ? "1" : "0"); });
     }
     function pose(src, ms){
       var tok = ++g.pose; gmSetSrc(img, src);
       if(ms) gmLater(function(){ if(gm===g && g.pose===tok) gmSetSrc(img, g.frames.idle[0]); }, ms);
+      return tok;
     }
-    function burst(side, kind){
-      var b = document.createElement("span"); b.className = "rt-burst rt-burst-"+kind; b.setAttribute("data-side", side); b.setAttribute("aria-hidden", "true");
-      gmEl("rtWall").appendChild(b); gmLater(function(){ b.remove(); }, 460);
+    function shift(x, y){ climber.style.setProperty("--rx", x+"px"); climber.style.setProperty("--ry", y+"px"); }
+    function flash(side, kind){
+      var h = gmEl("rt"+side); h.removeAttribute("data-flash"); void h.offsetWidth; h.setAttribute("data-flash", kind);
+      gmLater(function(){ if(gm===g && h.getAttribute("data-flash")===kind) h.removeAttribute("data-flash"); }, 340);   // reduced motion: a still tint, then gone
+    }
+    function paintCombo(grew){
+      var tier = reachStreakTier(g.streak);
+      combo.querySelector("b").textContent = g.streak;
+      attr(combo, "data-tier", String(tier));
+      if(grew && tier>0){ combo.classList.remove("rt-combo-pop"); void combo.offsetWidth; combo.classList.add("rt-combo-pop"); }
     }
     function paintHeight(){
       var n = Math.min(g.h, RT_LADDER);
-      marks.forEach(function(m, idx){ m.setAttribute("data-on", idx<n ? "1" : "0"); });
-      climber.style.transform = "translateY("+(-n*8)+"px)";
-      gmHud(g.peak, "Height "+g.h+" · Best "+state.games.reachTimer.best);
-      g.lastSec = -1;
+      marks.forEach(function(m, idx){ attr(m, "data-on", idx<n ? "1" : "0"); });
+      gmHud(g.peak, "Height "+g.h+" · Best "+Math.max(g.peak, state.games.reachTimer.best));
+      g.lastSec = Math.max(0, Math.ceil((RT_ROUND_MS-(performance.now()-g.t0))/1000));
+      gmEl("gmTime").textContent = g.lastSec+"s";      // gmHud blanks it; put it straight back so it never flickers
     }
     function resolve(kind, side, t){
       var next = reachApply({ height:g.h, peak:g.peak, streak:g.streak, bestStreak:g.bestStreak }, kind);
       g.h = next.height; g.peak = next.peak; g.streak = next.streak; g.bestStreak = next.bestStreak;
-      burst(side, kind);
+      g.lastN = g.i; g.lastKind = kind;
+      var rise = reachRise(g.h);
       if(kind==="hit"){
-        gmBeep(520, 50, 0.08);
-        pose(side==="L" ? g.frames.reachL : g.frames.reachR, 140);
-        gmLater(function(){ if(gm===g) pose(g.h%5===0 ? g.frames.jump[0] : g.frames.pull, 260); }, 140);
-        gmSay("Up. Height "+g.h+".");
-      } else { pose(g.frames.hit, 420); gmSay("Slipped a step. Height "+g.h+"."); }
+        var fq = reachPitch(g.streak);
+        gmLater(function(){ if(gm===g){ gmBeep(fq, 50, 0.08); gmBuzz(8); } }, 30);   // after the frame with the pose and flash is out
+        var tok = pose(side==="L" ? g.frames.reachL : g.frames.reachR, RT_REACH_MS+RT_PULL_MS);
+        shift(side==="L" ? -14 : 14, -rise);
+        gmLater(function(){ if(gm===g && g.pose===tok){ gmSetSrc(img, g.h%5===0 ? g.frames.jump[0] : g.frames.pull); shift(0, -rise); } }, RT_REACH_MS);
+        gmSay(g.streak>=3 ? "Up. Height "+g.h+", "+g.streak+" in a row." : "Up. Height "+g.h+".");
+      } else {
+        gmLater(function(){ if(gm===g) gmBeep(260, 70, 0.05); }, 30);
+        pose(g.frames.hit, 380); shift(0, -rise+6);
+        gmLater(function(){ if(gm===g) shift(0, -rise); }, 260);
+        gmSay("Slipped a step. Height "+g.h+".");
+      }
+      paintCombo(kind==="hit");
       g.i++; arm(t+reachGap(t)); paint(); paintHeight();
     }
-    function tap(side){
+    function tap(side, ts){
       if(gm!==g || g.paused) return;
       g.taps++;
-      var t = performance.now()-g.t0;
-      if(g.st==="gap") return;                         // between targets nothing is judged
-      var want = g.seq[g.i];
-      if(side===want) resolve("hit", side, t);
-      else if(g.st==="live") resolve("slip", want, t); // the wrong half only counts once the target is fully visible
+      var now = performance.now(), at = ts>0 && ts<=now && ts>=now-300 ? ts : now;   // the event's own time, so a busy frame doesn't cost the player
+      var t = at-g.t0, want = g.seq[g.i], verdict = reachJudge(g.st, side, want, t, g.appearAt);
+      if(verdict==="hit") { flash(side, "hit"); resolve("hit", side, t); }
+      else if(verdict==="slip"){ flash(side, "slip"); resolve("slip", want, t); }   // the wrong half only counts once the target is fully visible
+      else flash(side, "tap");                                                           // acknowledged, never judged
     }
     ["L", "R"].forEach(function(s){
       var b = gmEl("rt"+s);
-      b.addEventListener("pointerdown", function(e){ e.preventDefault(); tap(s); });
-      b.addEventListener("click", function(e){ if(e.detail===0) tap(s); });   // keyboard Space/Enter
+      b.addEventListener("pointerdown", function(e){ if(e.button>0) return; e.preventDefault(); tap(s, e.timeStamp); });
+      b.addEventListener("click", function(e){ if(e.detail===0) tap(s); });   // keyboard Space/Enter; real taps already came in as pointerdown
+      b.addEventListener("contextmenu", function(e){ e.preventDefault(); });
     });
     gmKey = function(e){
       if(e.repeat) return;
@@ -7993,21 +8426,23 @@
     };
     document.addEventListener("keydown", gmKey);
     gmEl("rtL").focus({ preventScroll:true });
-    arm(RT_FIRST_MS); paint(); paintHeight();
+    shift(0, 0); arm(RT_FIRST_MS); paint(); paintHeight();
     gmSay("Go. Tap the side of the hold.");
-    var fuse = slotEls[0].querySelector(".rt-fuse");
     function frame(){
       if(gm!==g || g.paused) return;
       var t = performance.now()-g.t0;
       if(t>=RT_ROUND_MS){ reachFinish(g); return; }
+      var live = slotEls[g.i%RT_SLOTS], fuse = live.querySelector(".rt-fuse i");
       if(g.st==="gap" && t>=g.appearAt){
         g.st = "in"; paint();
-        slotEls[0].classList.remove("rt-pop"); void slotEls[0].offsetWidth; slotEls[0].classList.add("rt-pop");
+        fuse.style.transform = "scaleX(1)"; attr(live, "data-low", "0");
         gmSay("Reach "+(g.seq[g.i]==="L" ? "left" : "right")+".");
       }
       if(g.st==="in" && t>=g.liveAt) g.st = "live";
       if(g.st==="live"){
-        fuse.style.transform = "scaleX("+Math.max(0, Math.min(1, (g.deadline-t)/g.dwell)).toFixed(3)+")";
+        var left = Math.max(0, Math.min(1, (g.deadline-t)/g.dwell));
+        fuse.style.transform = "scaleX("+left.toFixed(3)+")";
+        attr(live, "data-low", left<0.35 ? "1" : "0");
         if(t>=g.deadline) resolve("slip", g.seq[g.i], t);   // timed out: down one step, the same sequence goes on
       }
       var sec = Math.max(0, Math.ceil((RT_ROUND_MS-t)/1000));
@@ -8023,7 +8458,8 @@
   }
   if(window.__cruxTest){
     Object.assign(window.__cruxGames, { reachPhase:reachPhase, reachDwell:reachDwell, reachGap:reachGap, reachGhosts:reachGhosts, reachSeq:reachSeq,
-      reachTimes:reachTimes, reachSchedule:reachSchedule, reachApply:reachApply, RT_ROUND_MS:RT_ROUND_MS, RT_FADE_MS:RT_FADE_MS });
+      reachTimes:reachTimes, reachSchedule:reachSchedule, reachApply:reachApply, RT_ROUND_MS:RT_ROUND_MS, RT_FADE_MS:RT_FADE_MS,
+      reachJudge:reachJudge, reachStreakTier:reachStreakTier, reachPitch:reachPitch, reachRise:reachRise, RT_EARLY_MS:RT_EARLY_MS });
   }
   /* ==== reachTimer END ==== */
 
@@ -8068,45 +8504,70 @@
   }
   function openGames(opts){
     var o = gmEl("gamesOverlay"); if(!o) return;
+    if(gmCloseTimer){ clearTimeout(gmCloseTimer); gmCloseTimer = null; }
+    o.classList.remove("gm-closing");
     gmClosing = false; gmFromRest = !!(opts && opts.fromRest);
-    gmOpener = document.activeElement;
+    if(o.hidden) gmOpener = document.activeElement;
     gmEl("gamesRest").classList.remove("back");
-    renderGamesMenu();
     o.hidden = false;
+    renderGamesMenu();
     gamesWatch();
     if(!gmWatchId) gmWatchId = setInterval(gamesWatch, 250);
-    gmEl("closeGamesBtn").focus({ preventScroll:true });
   }
   // Leaving a round by hand keeps what you scored, unless it is paused and never resumed (that records nothing).
   function gmBankRound(){
     if(!gm || gm.paused) return;
     var s = gmRoundState(); gamesRecordRound(gm.id, s);
   }
-  function closeGames(){
-    var o = gmEl("gamesOverlay"); if(!o || o.hidden) return;
+  var gmCloseTimer = null;
+  // The sheet fades down for ~110 ms before it hides (reduced motion, and the test hook, hide at once). All state is released right away.
+  function closeGames(now){
+    var o = gmEl("gamesOverlay"); if(!o || o.hidden || o.classList.contains("gm-closing")) return;
     gmBankRound();
     stopGameLoop(); gm = null; gmClosing = false;
     if(gmWatchId){ clearInterval(gmWatchId); gmWatchId = null; }
-    o.hidden = true;
-    gmEl("gmStage").innerHTML = "";
+    var finish = function(){ gmCloseTimer = null; o.classList.remove("gm-closing"); o.hidden = true; gmEl("gmStage").innerHTML = ""; };
+    if(now===true || prefersReducedMotion){ finish(); }
+    else { o.classList.add("gm-closing"); gmCloseTimer = setTimeout(finish, 110); }
     if(gmOpener && gmOpener.focus && gmOpener.isConnected && !gmOpener.hidden){ try{ gmOpener.focus({ preventScroll:true }); }catch(e){} }
     gmOpener = null; gmFromRest = false;
   }
   document.getElementById("openGamesBtn").addEventListener("click", function(){ openGames({ fromRest:false }); });
   document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
-  document.getElementById("closeGamesBtn").addEventListener("click", closeGames);
+  document.getElementById("closeGamesBtn").addEventListener("click", function(){ closeGames(); });
+  document.getElementById("gamesCard").addEventListener("pointerdown", function(e){
+    if(!gmSheetTap || e.button>0) return;
+    var t = e.target;
+    if(!t.closest || t.closest(".modal-head, .gm-hud, .gm-rest, .gm-stage, button, a, input, .switch-row")) return;   // the stage handles its own taps
+    e.preventDefault(); gmSheetTap(e);
+  });
   document.getElementById("gamesOverlay").addEventListener("click", function(e){ if(e.target.id==="gamesOverlay") closeGames(); });
   document.getElementById("gmCards").addEventListener("click", function(e){
     var b = e.target.closest(".gm-card"); if(!b || b.disabled) return;
     gmIntro(b.dataset.game);
   });
-  document.getElementById("gmSoundSwitch").addEventListener("click", function(){
-    state.settings.gameSound = !state.settings.gameSound; saveState();
-    this.setAttribute("aria-pressed", state.settings.gameSound ? "true" : "false");
+  // the whole row is the target (the switch alone is only 44 x 26); a click on the switch bubbles here too
+  document.getElementById("gmSoundRow").addEventListener("click", gmToggleSound);
+  document.getElementById("gmBackBtn").addEventListener("click", function(){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(gmLastId); });
+  var gmLastId = null;
+  function closeRoundToMenu(){ var id = gm && gm.id; gmBankRound(); renderGamesMenu(id); }
+  // Escape steps back one level: round or intro -> menu -> closed.
+  document.addEventListener("keydown", function(e){
+    var o = document.getElementById("gamesOverlay"); if(o.hidden) return;
+    if(e.key==="Escape"){
+      if(!gmEl("gamesPlay").hidden && !gmClosing){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(gmLastId); }
+      else closeGames();
+      return;
+    }
+    if(e.key==="Tab"){   // keep Tab inside the sheet
+      var f = Array.prototype.filter.call(gmEl("gamesCard").querySelectorAll("button:not([disabled]), [tabindex]:not([tabindex='-1'])"), function(b){ return b.offsetParent!==null; });
+      if(!f.length) return;
+      var first = f[0], last = f[f.length-1], a = document.activeElement;
+      if(!gmEl("gamesCard").contains(a)){ e.preventDefault(); first.focus(); }
+      else if(e.shiftKey && a===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && a===last){ e.preventDefault(); first.focus(); }
+    }
   });
-  document.getElementById("gmBackBtn").addEventListener("click", function(){ if(gm){ closeRoundToMenu(); } else renderGamesMenu(); });
-  function closeRoundToMenu(){ gmBankRound(); renderGamesMenu(); }
-  document.addEventListener("keydown", function(e){ if(e.key==="Escape" && !document.getElementById("gamesOverlay").hidden) closeGames(); });
   // A hidden page can't keep a fair clock: the round pauses (the timer carries on by itself) and a tap resumes it.
   document.addEventListener("visibilitychange", function(){ if(document.hidden && gm && !document.getElementById("gamesOverlay").hidden) gmPause(); });
   /* ==== END GAMES ==== */
