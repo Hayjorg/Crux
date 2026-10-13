@@ -1038,7 +1038,7 @@
   .wr-lane:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
   .wr-pad{position:absolute;left:50%;bottom:10px;margin-left:-28px;width:56px;height:56px;border-radius:28px;box-sizing:border-box;display:grid;place-items:center;
     border:2px solid color-mix(in srgb, var(--text) 25%, transparent);background:color-mix(in srgb, var(--surface) 70%, transparent);}
-  .wr-lane-1 .wr-pad{bottom:140px;}
+  .wr-lane-1 .wr-pad{bottom:8px;opacity:0.55;}
   .wr-pad b{font-family:"Bebas Neue",sans-serif;font-size:24px;font-weight:400;line-height:1;}
   .wr-slip{position:absolute;left:50%;top:64px;transform:translateX(-50%);padding:5px 14px;border-radius:16px;z-index:3;pointer-events:none;
     font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.04em;color:var(--text);background:var(--surface);border:2px solid var(--text-dim);opacity:0;}
@@ -8531,25 +8531,33 @@
   // Wall Run: the climber ascends; holds come down the wall in three lanes (left / middle / right) and you tap each hold's lane as it
   // reaches the climber's hands. A hit climbs one move; a miss, a late tap or a stray tap slips one move (floor 0), no fail state, the
   // round goes on. Score = highest point reached. Everything is on the round clock (performance.now() minus gm.t0), so pausing is free.
-  var WR_ROUND_MS = 45000, WR_RAMP_MS = 40000, WR_FIRST_MS = 2200, WR_MAX_RUN = 3, WR_SLIP_COOLDOWN = 350, WR_POOL = 12, WR_STEP_PX = 26;
+  var WR_ROUND_MS = 45000, WR_RAMP_MS = 25000, WR_FIRST_MS = 2200, WR_MAX_RUN = 3, WR_SLIP_COOLDOWN = 350, WR_POOL = 12, WR_STEP_PX = 26;
   /*WALLRUN-PURE-BEGIN*/
-  // gap = mean time between holds, look = how long a hold is on the wall before it is due, half = tap tolerance either side of due.
-  // Linear ramp over WR_RAMP_MS, then a plateau. Top speed: window 2*half = 400 ms, a hold is visible for 1000 ms (800 ms before its window opens).
+  // gap = mean time between holds, look = how long a hold is on the wall before it is due. A hold can be taken from `early` ms before it is due
+  // (reach for it as it comes) to `late` ms after (it slides past your hands). half = (early+late)/2, so 2*half is the whole window.
+  // Linear ramp over WR_RAMP_MS (25 s), then a plateau. Top speed: window 400 ms (260 early, 140 late), a hold is visible for 900 ms (650 ms before its window opens).
   function wallPhase(t){
     t = Math.max(0, Number(t)||0);
     var u = Math.min(1, t/WR_RAMP_MS), mix = function(a, b){ return Math.round(a+(b-a)*u); };
-    return { u:u, gap:mix(950, 400), look:mix(2200, 1000), half:mix(300, 200) };
+    var early = mix(350, 260), late = mix(250, 140);
+    return { u:u, gap:mix(950, 400), look:mix(2000, 900), early:early, late:late, half:Math.round((early+late)/2) };
   }
   // Fair minimum time from one hold to the next by lane distance (0 same lane, 1 next lane, 2 across the wall).
   var WR_FLOOR = [280, 340, 420];
-  var WR_CELLS = [1, 1, 1, 0.75, 0.75, 1.5, 0.6];
+  var WR_CELLS = [1, 1, 0.75, 0.75, 1.5, 0.6];
+  var WR_BURST_P = 0.22;   // chance that a hold starts a short run (2 to 4 holds) at the fastest fair spacing
   // Seeded hold sequence: [{ i, lane (0|1|2), due (ms on the round clock) }]. Same seed, same wall.
   function wallNotes(seed, maxT){
     var rnd = mulberry32((seed>>>0) ^ 0x57414c4c), end = maxT==null ? WR_ROUND_MS+3000 : maxT;
-    var out = [], lane = Math.floor(rnd()*3), due = WR_FIRST_MS, run = 1;
+    var out = [], lane = Math.floor(rnd()*3), due = WR_FIRST_MS, run = 1, burst = 0;
     while(due<end && out.length<400){
       out.push({ i:out.length, lane:lane, due:due });
-      var ph = wallPhase(due), want = Math.max(WR_FLOOR[0], Math.round(ph.gap*WR_CELLS[Math.floor(rnd()*WR_CELLS.length)]));
+      var ph = wallPhase(due), want;
+      if(burst>0){ burst--; want = Math.max(WR_FLOOR[0], Math.round(ph.gap*0.55)); }
+      else {
+        want = Math.max(WR_FLOOR[0], Math.round(ph.gap*WR_CELLS[Math.floor(rnd()*WR_CELLS.length)]));
+        if(ph.u>0.12 && rnd()<WR_BURST_P){ burst = 1+Math.floor(rnd()*3); want = Math.max(WR_FLOOR[0], Math.round(ph.gap*0.55)); }
+      }
       var cand = [];
       for(var l=0;l<3;l++){ var d = Math.abs(l-lane); if(WR_FLOOR[d]<=want && !(d===0 && run>=WR_MAX_RUN)) cand.push(l); }
       if(!cand.length){ want = WR_FLOOR[1]; cand = lane===1 ? [0, 2] : [1]; }
@@ -8562,6 +8570,8 @@
     return out;
   }
   function wallHalf(note){ return wallPhase(note.due).half; }
+  function wallEarly(note){ return wallPhase(note.due).early; }
+  function wallLate(note){ return wallPhase(note.due).late; }
   function wallLook(note){ return wallPhase(note.due).look; }
   function wallNew(){ return { h:0, peak:0, hits:0, slips:0, streak:0, bestRun:0, lastSlip:-1e9, done:{} }; }
   function wallHit(st, i){ st.done[i] = 1; st.h++; st.hits++; st.streak++; if(st.h>st.peak) st.peak = st.h; if(st.streak>st.bestRun) st.bestRun = st.streak; }
@@ -8571,8 +8581,8 @@
     var out = [];
     for(var i=Math.max(0, from||0);i<notes.length;i++){
       var n = notes[i];
-      if(n.due-wallHalf(n)>t) break;                       // notes are in due order; the rest are still ahead
-      if(!st.done[i] && t>n.due+wallHalf(n)){ st.done[i] = 2; wallSlip(st, n.due+wallHalf(n)); out.push(i); }
+      if(n.due-wallEarly(n)>t) break;                      // notes are in due order; the rest are still ahead
+      if(!st.done[i] && t>n.due+wallLate(n)){ st.done[i] = 2; wallSlip(st, n.due+wallLate(n)); out.push(i); }
     }
     return out;
   }
@@ -8582,8 +8592,8 @@
     wallSweep(st, notes, t, from);
     for(var i=Math.max(0, from||0);i<notes.length;i++){
       var n = notes[i];
-      if(n.due-wallHalf(n)>t) break;
-      if(n.lane===lane && !st.done[i] && Math.abs(t-n.due)<=wallHalf(n)){ wallHit(st, i); return { verdict:"hit", i:i }; }
+      if(n.due-wallEarly(n)>t) break;
+      if(n.lane===lane && !st.done[i] && t>=n.due-wallEarly(n) && t<=n.due+wallLate(n)){ wallHit(st, i); return { verdict:"hit", i:i }; }
     }
     if(t-st.lastSlip>=WR_SLIP_COOLDOWN){ wallSlip(st, t); return { verdict:"slip", i:-1 }; }
     return { verdict:"ignore", i:-1 };
@@ -8710,7 +8720,7 @@
       if(t>=WR_ROUND_MS){ wallRunFinish(g); return; }
       var missed = wallSweep(g.st, g.notes, t, g.lo);
       if(missed.length) onSlip("Slip \u00B7 missed", missed[missed.length-1]);
-      while(g.lo<g.notes.length && (g.st.done[g.lo] && g.shown[g.lo]!=null && performance.now()-g.shown[g.lo]>420) && g.notes[g.lo].due+wallHalf(g.notes[g.lo])<t) g.lo++;
+      while(g.lo<g.notes.length && (g.st.done[g.lo] && g.shown[g.lo]!=null && performance.now()-g.shown[g.lo]>420) && g.notes[g.lo].due+wallLate(g.notes[g.lo])<t) g.lo++;
       // draw: holds i in [lo, ...) that have appeared. Normal motion slides them down; reduced motion keeps the next three in fixed rows.
       var used = {}, rank = 0, now = performance.now(), rm = wrReduced();
       for(var i=g.lo;i<g.notes.length;i++){
@@ -8721,7 +8731,7 @@
         if(fin>380) continue;                                   // answered and faded out
         used[i%WR_POOL] = 1;
         var y, state;
-        if(g.st.done[i]===1) state = "hit"; else if(g.st.done[i]===2) state = "miss"; else state = p>=1-wallHalf(n)/wallLook(n) ? "live" : "come";
+        if(g.st.done[i]===1) state = "hit"; else if(g.st.done[i]===2) state = "miss"; else state = p>=1-wallEarly(n)/wallLook(n) ? "live" : "come";
         if(rm){
           if(g.st.done[i]){ y = rowY[0]; } else { if(rank>=3){ used[i%WR_POOL] = 0; continue; } y = rowY[rank]; rank++; }
         } else y = TOP_Y+(LINE_Y-TOP_Y)*p;
@@ -8748,7 +8758,7 @@
   }
   if(window.__cruxTest){
     Object.assign(window.__cruxGames, { wallPhase:wallPhase, wallNotes:wallNotes, wallNew:wallNew, wallTap:wallTap, wallSweep:wallSweep, wallRound:wallRound,
-      wallHalf:wallHalf, wallLook:wallLook, wallProgress:wallProgress, wallRunTier:wallRunTier, WR_ROUND_MS:WR_ROUND_MS, WR_FLOOR:WR_FLOOR, WR_MAX_RUN:WR_MAX_RUN,
+      wallHalf:wallHalf, wallEarly:wallEarly, wallLate:wallLate, wallLook:wallLook, wallProgress:wallProgress, wallRunTier:wallRunTier, WR_ROUND_MS:WR_ROUND_MS, WR_FLOOR:WR_FLOOR, WR_MAX_RUN:WR_MAX_RUN,
       WR_SLIP_COOLDOWN:WR_SLIP_COOLDOWN, wallReduced:function(v){ wrReducedOverride = v; } });
   }
   /* ==== wallRun END ==== */

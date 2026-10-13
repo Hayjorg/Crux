@@ -2324,21 +2324,23 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(typeof G.wallPhase==="function" && typeof G.wallNotes==="function" && typeof G.wallRound==="function", "wall run rules missing from the test hook");
     var p0 = G.wallPhase(0), p1 = G.wallPhase(20000), pT = G.wallPhase(40000), pE = G.wallPhase(90000);
     expect(p0.gap>p1.gap && p1.gap>pT.gap && p0.half>p1.half && p1.half>=pT.half && p0.look>pT.look, "ramp should speed up: "+JSON.stringify([p0, p1, pT]));
-    expect(JSON.stringify(pT)===JSON.stringify(pE), "plateau after the ramp");
+    expect(JSON.stringify(pT)===JSON.stringify(pE) && JSON.stringify(G.wallPhase(25000))===JSON.stringify(pE), "plateau from 25 s on");
+    expect(pE.early+pE.late>=400 && pE.look-pE.early>=600, "top speed keeps a 400 ms window and 600 ms of sight: "+JSON.stringify(pE));
     var notes = [{ i:0, lane:0, due:2000 }, { i:1, lane:2, due:3000 }, { i:2, lane:1, due:4000 }, { i:3, lane:1, due:5000 }];
-    var half = G.wallHalf(notes[0]);
-    var st = G.wallNew(), r = G.wallTap(st, notes, 0, 2000+half);
+    var late0 = G.wallLate(notes[0]), early1 = G.wallEarly(notes[1]);
+    expect(G.wallEarly(notes[0])>G.wallLate(notes[0]) && G.wallEarly(notes[0])+late0===2*G.wallHalf(notes[0]), "window is early-heavy: you reach for a hold as it comes");
+    var st = G.wallNew(), r = G.wallTap(st, notes, 0, 2000+late0);
     expect(r.verdict==="hit" && r.i===0 && st.h===1 && st.peak===1 && st.streak===1, "hit at the window edge: "+JSON.stringify(r));
-    r = G.wallTap(st, notes, 2, 3000-half-1);
+    r = G.wallTap(st, notes, 2, 3000-early1-1);
     expect(r.verdict==="slip" && st.h===0 && st.peak===1 && st.slips===1 && st.streak===0, "a tap just before the window is a stray slip, floor 0: "+JSON.stringify(st));
-    r = G.wallTap(st, notes, 2, 3000-half);
-    expect(r.verdict==="ignore" && st.slips===1, "a second stray within the cooldown is one slip, not two (it is also inside the window of hold 1... checked next)");
+    r = G.wallTap(st, notes, 1, 3000-early1);
+    expect(r.verdict==="ignore" && st.slips===1, "a second stray within the cooldown is one slip, not two");
     // wrong lane inside another hold's window: stray; right lane after cooldown: hit
     st = G.wallNew(); G.wallTap(st, notes, 0, 2000);
     expect(G.wallTap(st, notes, 1, 2800).verdict==="slip" && G.wallTap(st, notes, 2, 3000).verdict==="hit", "wrong lane slips, and the right lane still hits right after (the cooldown only limits strays)");
     // a hold left alone slips exactly once when its window closes, and a late tap right after is not a second slip
     st = G.wallNew(); G.wallTap(st, notes, 0, 2000);
-    var late = 3000+G.wallHalf(notes[1])+40;
+    var late = 3000+G.wallLate(notes[1])+40;
     r = G.wallTap(st, notes, 2, late);
     expect(r.verdict==="ignore" && st.slips===1 && st.h===0 && st.done[1]===2, "late tap after a miss: one slip total: "+JSON.stringify(st));
     // same lane twice in a row: earliest unanswered hold is taken
@@ -2358,13 +2360,13 @@ and the project rules. It runs on its own private copy of the data, never your r
     var prev = G.wallPhase(0), mono = true, minWin = 1e9, minSeen = 1e9;
     for(var t=0;t<=70000;t+=250){
       var ph = G.wallPhase(t);
-      if(ph.gap>prev.gap || ph.look>prev.look || ph.half>prev.half) mono = false;
-      minWin = Math.min(minWin, ph.half*2); minSeen = Math.min(minSeen, ph.look-ph.half); prev = ph;
+      if(ph.gap>prev.gap || ph.look>prev.look || ph.half>prev.half || ph.early>prev.early || ph.late>prev.late) mono = false;
+      minWin = Math.min(minWin, ph.half*2); minSeen = Math.min(minSeen, ph.look-ph.early); prev = ph;
     }
     expect(mono, "difficulty must not ease off during the round");
     expect(minWin>=400, "tap window dips below 400 ms: "+minWin);
-    expect(minSeen>=400, "a hold is visible less than 400 ms before its window opens: "+minSeen);
-    var worstRepeat = 0, minN = 1e9, laneUse = [0, 0, 0], jumpsAtSpeed = 0, nullSlipsOk = true, floorsOk = 0;
+    expect(minSeen>=600, "a hold is visible less than 600 ms before its window opens: "+minSeen);
+    var burstsSeen = 0, worstRepeat = 0, minN = 1e9, laneUse = [0, 0, 0], jumpsAtSpeed = 0, nullSlipsOk = true, floorsOk = 0;
     for(var sd=1;sd<=500;sd++){
       var s = sd*7919, notes = G.wallNotes(s), again = G.wallNotes(s);
       expect(JSON.stringify(notes)===JSON.stringify(again), "not seeded, seed "+sd);
@@ -2379,12 +2381,13 @@ and the project rules. It runs on its own private copy of the data, never your r
         var pn = notes[i-1], gap = n.due-pn.due, d = Math.abs(n.lane-pn.lane);
         if(gap<F[d]) floorsOk++;                       // an unfair lane change for the time given
         if(d===2 && n.due>30000) jumpsAtSpeed++;
+        if(i>=2 && gap<=F[0]+90 && pn.due-notes[i-2].due<=F[0]+90 && n.due>12000) burstsSeen++;
         run = n.lane===pn.lane ? run+1 : 1; if(run>worstRepeat) worstRepeat = run;
       }
       // perfect play and the three fairest edges of the window are all clean
       [0, 1, -1].forEach(function(e){
-        var fair = live.filter(function(n){ return n.due+G.wallHalf(n)<R; });   // the round clock ends the last window
-        var taps = fair.map(function(n){ return { t:n.due+e*G.wallHalf(n), lane:n.lane }; });
+        var fair = live.filter(function(n){ return n.due+G.wallLate(n)<R; });   // the round clock ends the last window
+        var taps = fair.map(function(n){ return { t:n.due+(e>0 ? G.wallLate(n) : e<0 ? -G.wallEarly(n) : 0), lane:n.lane }; });
         var res = G.wallRound(notes, taps);
         expect(fair.length>=live.length-1 && res.peak===fair.length && res.slips===0 && res.hits===fair.length, "unsolvable edge "+e+" seed "+sd+": "+JSON.stringify([res.peak, res.slips, fair.length]));
       });
@@ -2392,13 +2395,14 @@ and the project rules. It runs on its own private copy of the data, never your r
       var nul = G.wallRound(notes, []);
       if(nul.peak!==0 || nul.hits!==0 || nul.h!==0) nullSlipsOk = false;
       // always 150 ms past the window (it can only land on a later hold of the same lane): most holds are missed
-      var offs = G.wallRound(notes, live.map(function(n){ return { t:n.due+G.wallHalf(n)+150, lane:n.lane }; }));
+      var offs = G.wallRound(notes, live.map(function(n){ return { t:n.due+G.wallLate(n)+150, lane:n.lane }; }));
       expect(offs.peak<live.length*0.4, "taps outside the window climb too well, seed "+sd+": "+offs.peak+" of "+live.length);
     }
     expect(floorsOk===0, floorsOk+" lane changes were closer than the fair floor");
     expect(worstRepeat<=G.WR_MAX_RUN, "same lane "+worstRepeat+" times in a row");
     expect(nullSlipsOk, "a null player moved");
     expect(laneUse.every(function(c){ return c>0.2*(laneUse[0]+laneUse[1]+laneUse[2]); }), "lanes unevenly used: "+laneUse);
+    expect(burstsSeen>=300, "too few quick runs of 3+ holds at the floor spacing: "+burstsSeen);
     expect(jumpsAtSpeed>0, "no across-the-wall jumps late in the round: too easy");
   });
 
@@ -2451,7 +2455,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     press((n0.lane+1)%3); await wait(40);
     expect(g.st.h===0 && g.st.peak===1 && g.st.slips===1 && /slip/i.test($("wrSlip").textContent) && $("wrSlip").classList.contains("wr-slip-on"), "stray tap should slip with a visible label: h="+g.st.h);
     expect(+$("gmScore").textContent===1, "score stays the peak");
-    await until(n1.due+G.wallHalf(n1)+120);             // a hold left alone slips by itself; height floors at 0
+    await until(n1.due+G.wallLate(n1)+120);             // a hold left alone slips by itself; height floors at 0
     expect(g.st.done[1]===2 && g.st.h===0 && g.st.slips===2, "unanswered hold: "+JSON.stringify([g.st.done[1], g.st.h, g.st.slips]));
     expect(qa(".wr-hold[data-state='miss']").length>=1, "the missed hold should show as missed");
     // a ghost click (detail 1) after a pointer tap is not a second tap; Space/Enter (detail 0) is

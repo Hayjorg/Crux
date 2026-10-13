@@ -164,10 +164,12 @@ A small, optional play area for rest times, using the player's own climber. Remo
   3. **Summit Stack** `summitStack`, 45 s. A block slides over the tower; tap to drop; overhang is trimmed (never below 30 % width);
      Perfect (<= 6 px) gives +1 and regains width; a total miss just drops the block. Flag at 20 blocks. `{best, plays, tallest, perfects}`.
   4. **Wall Run** `wallRun`, 45 s (replaces Reach Timer, V2). Holds come down a three-lane wall in a seeded sequence; tap a hold's lane as it
-     reaches the climber's hands. Window +-300 -> +-200 ms (>= 400 ms total at top speed), a hold is on the wall 2.2 -> 1.0 s, mean gap
-     950 -> 400 ms, floors by lane distance (280/340/420 ms), same lane <= 3 in a row. A hit climbs one move; a miss, a late tap or a stray
-     tap slips one move (floor 0, one stray slip per 350 ms, round goes on). Score = peak height. Reduced motion: next three holds in
-     fixed rows with a fuse bar. `{best, plays, longestRun}`. Bot: `node dev/wallrun-bot.js`.
+     reaches the climber's hands. Window is early-heavy: 350/250 ms early/late at the start -> 260/140 ms at top (400 ms total, reached by
+     25 s then a plateau); a hold is on the wall 2.0 -> 0.9 s (>= 600 ms of sight before its window), mean gap 950 -> 400 ms with doubles and
+     short runs (2-4 holds at ~0.55 x gap), floors by lane distance (280/340/420 ms), same lane <= 3 in a row. A hit climbs one move; a miss,
+     a late tap or a stray tap slips one move (floor 0, one stray slip per 350 ms, round goes on). Score = peak height. Reduced motion: next
+     three holds in fixed rows with a fuse bar. `{best, plays, longestRun}`. Bot: `node dev/wallrun-bot.js` (hardest-quarter item pass:
+     beginner ~69 %, average ~84 %, strong ~96 %).
   Reach Timer is retired from the menu (unregistered; its pure rules, `GAME_ART` slots and saved `reachTimer` data are kept).
   Hold Hop is retired from the menu; its saved `holdHop` data is kept. Legacy Chalk Up is removed; its best is copied to Chalk Rhythm
   once (`_meta.chalkMigrated`) and the `chalkUp` key is kept.
