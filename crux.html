@@ -869,44 +869,62 @@
   .cr-j-close{width:10px;height:10px;border:2px solid var(--text-dim);margin:0 3px;}
   /* ==== .cr- Chalk Rhythm CSS END ==== */
   /* .rr- Route Read */
-  .rr-stage{position:absolute;inset:0;--rr-lift:0;}
-  .rr-climber{left:2px;bottom:14px;width:92px;height:138px;translate:0 calc(var(--rr-lift)*-1px);transition:translate .38s cubic-bezier(.2,.8,.3,1);}
+  .rr-stage{position:absolute;inset:0;}
+  .rr-climber{left:6px;top:4px;width:36px;height:54px;}
   .rr-climber.rr-swap{animation:rr-swap .16s ease-out;}
   @keyframes rr-swap{from{opacity:0.65;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
-  .rr-label{position:absolute;left:8px;top:12px;width:88px;min-height:34px;margin:0;font-size:13px;font-weight:700;line-height:1.3;color:var(--text);}
-  .rr-pips{position:absolute;left:8px;top:62px;width:84px;display:flex;flex-wrap:wrap;gap:5px;}
+  .rr-label{position:absolute;left:50px;right:8px;top:6px;height:34px;margin:0;font-size:13px;line-height:1.3;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .rr-label b{font-weight:700;}
+  .rr-key{display:inline-block;width:15px;height:15px;flex:none;background:var(--rr-c, var(--accent));border-radius:50%;}
+  .rr-key[data-shape="square"]{border-radius:3px;}
+  .rr-key[data-shape="triangle"]{border-radius:0;clip-path:polygon(50% 4%,98% 94%,2% 94%);}
+  .rr-key[data-shape="diamond"]{border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  .rr-pips{position:absolute;left:50px;right:8px;top:40px;height:14px;display:flex;flex-wrap:nowrap;gap:5px;align-items:center;}
   .rr-pip{width:11px;height:11px;box-sizing:border-box;border-radius:50%;border:2px solid var(--text-dim);background:transparent;transition:background .15s ease, border-color .15s ease;}
   .rr-pip.on{background:var(--send);border-color:var(--send);}
-  .rr-wall{position:absolute;right:8px;top:16px;width:192px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:64px;border-radius:14px;background:color-mix(in srgb, var(--text) 5%, transparent);}
-  .rr-bar{position:absolute;right:8px;bottom:6px;width:192px;height:5px;border-radius:3px;background:color-mix(in srgb, var(--text) 10%, transparent);overflow:hidden;opacity:0;transition:opacity .15s ease;}
+  .rr-wall{position:absolute;left:4px;right:4px;top:58px;bottom:12px;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);border-radius:14px;
+    background:color-mix(in srgb, var(--text) 6%, transparent);background-image:radial-gradient(color-mix(in srgb, var(--text) 14%, transparent) 1px, transparent 1.5px);background-size:14px 14px;}
+  .rr-bar{position:absolute;left:8px;right:8px;bottom:4px;height:5px;border-radius:3px;background:color-mix(in srgb, var(--text) 10%, transparent);overflow:hidden;opacity:0;transition:opacity .15s ease;}
   .rr-bar.on{opacity:1;}
   .rr-bar i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:0 50%;transform:scaleX(1);}
-  .rr-cell{position:relative;display:grid;place-items:center;min-height:64px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
+  .rr-cell{position:relative;display:grid;place-items:center;min-width:0;min-height:56px;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
+  .rr-cell[hidden]{display:block;visibility:hidden;pointer-events:none;}
   .rr-cell:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:12px;}
-  .rr-cell .gm-art{grid-area:1/1;opacity:0.9;transition:opacity .2s ease, transform .2s ease, box-shadow .2s ease;}
-  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .15s ease;border-color:var(--text);}
+  .rr-cell .gm-art{grid-area:1/1;transition:opacity .2s ease, transform .2s ease, background-color .2s ease;}
+  .rr-cell .rr-hold{translate:var(--rr-dx, 0) var(--rr-dy, 0);rotate:var(--rr-rot, 0deg);opacity:1;border-radius:50%;
+    background:color-mix(in srgb, var(--text) 34%, var(--surface-2, #888));box-shadow:0 2px 0 color-mix(in srgb, var(--text) 24%, transparent);}
+  .rr-cell .rr-hold[data-blob="1"]{border-radius:42% 58% 52% 48% / 56% 44% 56% 44%;}
+  .rr-cell .rr-hold[data-blob="2"]{border-radius:30%;}
+  .rr-cell .rr-hold[data-blob="3"]{border-radius:62% 38% 34% 66% / 48% 62% 38% 52%;}
+  .rr-cell .rr-ring{grid-area:1/1;opacity:0;transition:opacity .15s ease;border-color:var(--text);translate:var(--rr-dx, 0) var(--rr-dy, 0);}
   .rr-cell[data-state="tapped"] .rr-ring{opacity:1;}
-  .rr-cell[data-state="tapped"] .gm-art-circle{opacity:1;}
-  .rr-wall.rr-showing .rr-cell:not(.rr-lit) .gm-art-circle{opacity:0.28;transform:scale(0.86);}
-  .rr-wall.rr-showing .rr-cell.rr-lit .gm-art-circle{opacity:1;transform:scale(1.04);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 38%, transparent);}
-  .rr-badge{grid-area:1/1;z-index:1;min-width:28px;height:28px;border-radius:14px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;
-    font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;opacity:0;transform:scale(0.7);transition:opacity .18s ease, transform .18s ease;}
+  .rr-cell[data-state="tapped"] .rr-hold{background:color-mix(in srgb, var(--text) 52%, var(--surface-2, #888));}
+  /* the coded look: colour AND shape, only while a route is lit */
+  .rr-wall.rr-showing .rr-cell .rr-hold{opacity:0.5;transform:scale(0.9);}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape]{background:var(--rr-c);border-radius:50%;box-shadow:none;}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape="square"]{border-radius:16%;}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape="triangle"]{border-radius:0;clip-path:polygon(50% 4%,98% 94%,2% 94%);}
+  .rr-wall.rr-showing .rr-cell .rr-hold[data-shape="diamond"]{border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  .rr-wall.rr-showing .rr-cell.rr-lit .rr-hold{opacity:1;transform:scale(1.12);}
+  .rr-wall.rr-showing .rr-cell.rr-lit-d .rr-hold{opacity:0.8;transform:scale(0.96);}
+  .rr-badge{grid-area:1/1;z-index:1;min-width:24px;height:24px;border-radius:12px;padding:0 5px;box-sizing:border-box;display:grid;place-items:center;
+    font-family:"Bebas Neue",sans-serif;font-size:18px;line-height:1;color:var(--bg, #fff);background:var(--text);pointer-events:none;opacity:0;transform:scale(0.7);transition:opacity .18s ease, transform .18s ease;}
   .rr-wall.rr-showing .rr-badge{opacity:1;transform:scale(1);transition-delay:calc(var(--i, 0)*55ms);}
   .rr-cell:not([data-state="wrong"]) .rr-badge:empty{opacity:0;}
-  .rr-cell[data-state="tapped"]::after{content:"\2713";position:absolute;z-index:2;right:10px;top:8px;width:18px;height:18px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;line-height:1;color:var(--bg, #fff);background:var(--send);pointer-events:none;}
+  .rr-cell[data-state="tapped"]::after{content:"\2713";position:absolute;z-index:2;right:6px;top:4px;width:16px;height:16px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:800;line-height:1;color:var(--bg, #fff);background:var(--send);pointer-events:none;}
   .rr-cell[data-state="wrong"] .rr-badge{display:grid;opacity:1;transform:scale(1);}
   .rr-cell[data-state="wrong"] .rr-badge::before{content:"\00D7";}
-  .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .gm-art{animation:rr-wob .32s ease;}
+  .rr-stage:not(.rr-calm) .rr-cell[data-state="wrong"] .rr-hold{animation:rr-wob .32s ease;}
   @keyframes rr-wob{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
   .rr-spark{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;pointer-events:none;opacity:0;color:var(--accent);
-    box-shadow:0 -25px 0 0 currentColor, 18px -18px 0 0 currentColor, 25px 0 0 0 currentColor, 18px 18px 0 0 currentColor, 0 25px 0 0 currentColor, -18px 18px 0 0 currentColor, -25px 0 0 0 currentColor, -18px -18px 0 0 currentColor;}
+    box-shadow:0 -23px 0 0 currentColor, 16px -16px 0 0 currentColor, 23px 0 0 0 currentColor, 16px 16px 0 0 currentColor, 0 23px 0 0 currentColor, -16px 16px 0 0 currentColor, -23px 0 0 0 currentColor, -16px -16px 0 0 currentColor;}
   .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-spark{animation:rr-spark .42s ease-out;}
   .rr-stage:not(.rr-calm) .rr-cell.rr-pop .rr-ring{animation:rr-ring .3s ease-out;}
   @keyframes rr-spark{0%{opacity:0.95;transform:scale(0.35);}100%{opacity:0;transform:scale(1.15);}}
   @keyframes rr-ring{0%{transform:scale(0.8);}60%{transform:scale(1.18);}100%{transform:scale(1);}}
-  .rr-stage.rr-calm .rr-climber{transition:none;}
   .rr-stage.rr-calm .rr-cell .gm-art, .rr-stage.rr-calm .rr-badge, .rr-stage.rr-calm .rr-ring{transition-duration:.1s;}
   .rr-stage.rr-calm .rr-wall.rr-showing .rr-badge{transition-delay:0s;}
+  .rr-stage.rr-calm .rr-wall.rr-showing .rr-cell .rr-hold{transform:none;}
   /* summitStack (.ss-) */
   .ss-world{position:absolute;top:0;transform-origin:0 0;pointer-events:none;}
   .ss-cam{position:absolute;inset:0;will-change:transform;}
@@ -7772,13 +7790,23 @@
   }
   /* ==== chalkRhythm END ==== */
   /* ==== routeRead BEGIN (T2: routeRead* functions, .rr- CSS, gmRegister({id:"routeRead", ...})) ==== */
-  // Route Read (design doc 2.2): a 3 x 5 wall, a route lights up with numbers, then hides; tap the holds in order from memory.
-  // Rule functions are pure (rows count up from the bottom, row 0 = bottom). Cells are {row, col}.
-  var RR_COLS = 3, RR_ROWS = 5, RR_START = 5, RR_MIN = 4, RR_MAX = 8, RR_ROUND_MS = 60000, RR_BETWEEN_MS = 800, RR_RESHOW_MS = 1500, RR_FLAG_MS = 1200;
+  // Route Read, spray-wall edition: a 5 x 5 wall of irregular holds. Two routes light up at once, each a colour AND a shape
+  // ("read the green circles"); only the called route is numbered. Then everything goes neutral and you tap it from memory.
+  // A wrong tap loses that route (the answer is shown), the next one is shorter. Rows count up from the bottom (row 0).
+  /*ROUTE-PURE-BEGIN*/
+  var RR_COLS = 5, RR_ROWS = 5, RR_START = 5, RR_MIN = 4, RR_MAX = 10, RR_ROUND_MS = 60000, RR_BETWEEN_MS = 800, RR_REVEAL_MS = 1800, RR_FLAG_MS = 1200;
+  // colour AND shape: the shape alone identifies a route, so colour is never the only signal
+  var RR_CODES = [
+    { id:"g", name:"green circles",   one:"green circle",   shape:"circle",   color:"#2f9e63" },
+    { id:"a", name:"amber triangles", one:"amber triangle", shape:"triangle", color:"#d98a1f" },
+    { id:"b", name:"blue squares",    one:"blue square",    shape:"square",   color:"#3b78d8" },
+    { id:"r", name:"rose diamonds",   one:"rose diamond",   shape:"diamond",  color:"#cc3f78" }
+  ];
   function routeLen(n){ n = Math.floor(Number(n)); if(!isFinite(n)) n = RR_START; return Math.max(RR_MIN, Math.min(RR_MAX, n)); }
-  function routeShowMs(n){ return [2600, 3000, 3400, 3800, 4200][routeLen(n)-RR_MIN]; }
+  function routeShowMs(n){ return 900+560*routeLen(n); }                         // 3140 ms for 4 holds up to 6500 ms for 10
   function routeNextLen(n, missed){ n = routeLen(n); return routeLen(missed ? n-1 : n+1); }
-  function routeGen(seed, n){
+  function routeDecoyLen(n){ return Math.max(3, Math.min(7, routeLen(n)-2)); }
+  function routeGen(seed, n){                                                      // the called route on its own (target of routeWall)
     n = routeLen(n);
     var rnd = mulberry32(seed), counts = [1, 1, 1, 1, 1], r, i;
     if(n>RR_ROWS){
@@ -7786,14 +7814,14 @@
       for(i=rows.length-1;i>0;i--){ var j = Math.floor(rnd()*(i+1)), t = rows[i]; rows[i] = rows[j]; rows[j] = t; }
       for(i=0;i<n-RR_ROWS;i++) counts[rows[i]] = 2;
     } else if(n<RR_ROWS){
-      counts[1+Math.floor(rnd()*4)] = 0;     // skip one row above the bottom: never a gap wider than one row
+      counts[1+Math.floor(rnd()*3)] = 0;     // skip one middle row: never a gap wider than one row, and the top row is always used
     }
     var route = [], prev = -1;
     for(r=0;r<RR_ROWS;r++){
       for(i=0;i<counts[r];i++){
         var opts = [];
         for(var c=0;c<RR_COLS;c++){
-          if(prev>=0 && (Math.abs(c-prev)>1 || (i>0 && c===prev))) continue;
+          if(prev>=0 && (Math.abs(c-prev)>2 || (i>0 && c===prev))) continue;
           opts.push(c);
         }
         var col = opts[Math.floor(rnd()*opts.length)];
@@ -7802,7 +7830,7 @@
     }
     return route;
   }
-  // The rules a route must satisfy; also the property-test oracle.
+  // The rules the called route must satisfy; also the property-test oracle.
   function routeCheck(route, n){
     n = routeLen(n);
     if(!Array.isArray(route) || route.length!==n) return false;
@@ -7814,16 +7842,83 @@
       perRow[h.row] = (perRow[h.row]||0)+1;
       if(i===0){ if(h.row!==0) return false; continue; }
       var p = route[i-1], dr = h.row-p.row, dc = Math.abs(h.col-p.col);
-      if(dr<0 || dr>2 || dc>1) return false;
+      if(dr<0 || dr>2 || dc>2) return false;             // never a gap wider than one empty row, reach at most two columns
       if(dr===0 && dc===0) return false;
-      if(n<=RR_ROWS && dr<1) return false;                 // up to 5 holds: strictly ascending
+      if(n<=RR_ROWS && dr<1) return false;               // up to 5 holds: strictly ascending
     }
     for(var rr in perRow) if(perRow[rr]>2) return false;
     return route[n-1].row>=3;
   }
+  // The second route: ascending too, but it may skip rows, and each hold hugs the called route so the two interleave.
+  function routeDecoy(rnd, m, target){
+    var taken = {}, i, bag = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];
+    target.forEach(function(h){ taken[h.row+","+h.col] = 1; });
+    for(var attempt=0;attempt<40;attempt++){
+      var b = bag.slice();
+      for(i=b.length-1;i>0;i--){ var j = Math.floor(rnd()*(i+1)), t = b[i]; b[i] = b[j]; b[j] = t; }
+      var rows = b.slice(0, m).sort(function(x, y){ return x-y; }), out = [], used = {}, prev = -1, ok = true;
+      for(i=0;i<m && ok;i++){
+        var r = rows[i], best = [], bestD = 99;
+        for(var c=0;c<RR_COLS;c++){
+          var key = r+","+c;
+          if(taken[key] || used[key]) continue;
+          if(prev>=0 && Math.abs(c-prev)>2 && attempt<30) continue;
+          var d = 9;
+          target.forEach(function(h){ if(Math.abs(h.row-r)<=1) d = Math.min(d, Math.abs(h.col-c)+Math.abs(h.row-r)); });
+          if(d<bestD){ bestD = d; best = [c]; } else if(d===bestD) best.push(c);
+        }
+        if(!best.length){ ok = false; break; }
+        var col = best[Math.floor(rnd()*best.length)];
+        used[r+","+col] = 1; out.push({ row:r, col:col }); prev = col;
+      }
+      if(ok) return out;
+    }
+    // never reached for a valid target (<= 2 holds per row), but stay solvable: any free cells, ascending
+    var free = [];
+    for(var rw=0;rw<RR_ROWS;rw++) for(var cl=0;cl<RR_COLS;cl++) if(!taken[rw+","+cl]) free.push({ row:rw, col:cl });
+    return free.slice(0, m);
+  }
+  // The whole wall for one route: { n, m, codeT, codeD, target[], decoy[], holds[] (every cell that has a hold, with its look) }.
+  function routeWall(seed, n){
+    n = routeLen(n);
+    var rnd = mulberry32((seed>>>0) ^ 0x5bd1e995), target = routeGen((seed>>>0), n), m = routeDecoyLen(n);
+    var decoy = routeDecoy(rnd, m, target);
+    var ci = Math.floor(rnd()*RR_CODES.length), di = (ci+1+Math.floor(rnd()*(RR_CODES.length-1)))%RR_CODES.length;
+    var kind = {};
+    target.forEach(function(h){ kind[h.row+","+h.col] = "t"; });
+    decoy.forEach(function(h){ kind[h.row+","+h.col] = "d"; });
+    var spare = [], r, c;
+    for(r=0;r<RR_ROWS;r++) for(c=0;c<RR_COLS;c++) if(!kind[r+","+c]) spare.push(r+","+c);
+    var empties = Math.min(spare.length, 2+Math.floor(rnd()*3)), gone = {}, e;
+    for(e=0;e<empties;e++){ var at = Math.floor(rnd()*spare.length); gone[spare[at]] = 1; spare.splice(at, 1); }
+    var holds = [];
+    for(r=0;r<RR_ROWS;r++) for(c=0;c<RR_COLS;c++){
+      var k = r+","+c; if(gone[k]) continue;
+      holds.push({ row:r, col:c, kind:kind[k] || "n", sz:Math.floor(rnd()*3), blob:Math.floor(rnd()*4), fx:Math.round((rnd()*2-1)*100)/100, fy:Math.round((rnd()*2-1)*100)/100, rot:Math.round((rnd()*2-1)*24) });
+    }
+    return { n:n, m:m, codeT:ci, codeD:di, target:target, decoy:decoy, holds:holds };
+  }
+  // Property-test oracle for a wall.
+  function routeWallCheck(w){
+    if(!w || !routeCheck(w.target, w.n) || w.decoy.length!==routeDecoyLen(w.n)) return false;
+    if(w.codeT===w.codeD || !RR_CODES[w.codeT] || !RR_CODES[w.codeD]) return false;
+    if(RR_CODES[w.codeT].shape===RR_CODES[w.codeD].shape || RR_CODES[w.codeT].color===RR_CODES[w.codeD].color) return false;
+    var has = {}, i;
+    w.holds.forEach(function(h){ has[h.row+","+h.col] = h.kind; });
+    var seen = {};
+    for(i=0;i<w.target.length;i++){ var a = w.target[i].row+","+w.target[i].col; if(has[a]!=="t") return false; seen[a] = 1; }
+    for(i=0;i<w.decoy.length;i++){ var b = w.decoy[i].row+","+w.decoy[i].col; if(seen[b] || has[b]!=="d") return false; seen[b] = 1; }
+    return w.holds.length>=Math.min(25, w.n+w.decoy.length) && w.holds.length<=25;
+  }
+  // How many called holds have a decoy hold touching them (same or next row, within one column): the interleave.
+  function routeClutter(w){
+    var c = 0;
+    w.target.forEach(function(h){ if(w.decoy.some(function(d){ return Math.abs(d.row-h.row)<=1 && Math.abs(d.col-h.col)<=1; })) c++; });
+    return c;
+  }
+  /*ROUTE-PURE-END*/
 
   // Pure helpers for the polish pass (tested through __cruxGames).
-  function routeLift(row){ return Math.max(0, Math.min(RR_ROWS-1, Math.floor(Number(row)||0)))*10; }     // px the climber eases up with the last hold
   function routeSummary(done, longest){
     done = Math.max(0, Math.floor(Number(done))||0); longest = Math.max(0, Math.floor(Number(longest))||0);
     if(!done) return { title:"Warm-up done.", note:"No routes yet, they come back easy" };
@@ -7831,55 +7926,90 @@
   }
   function routeTone(step){ return 500+40*Math.max(0, Math.min(RR_MAX, Math.floor(Number(step))||0)); }    // soft rising tick per hold
   function routeBarScale(t, start, ms){ return ms>0 ? Math.max(0, Math.min(1, 1-(t-start)/ms)) : 0; }
+  function routeHoldPx(sz){ return [34, 44, 52][Math.max(0, Math.min(2, Math.floor(Number(sz))||0))]; }
 
+  var rrRMOverride = null;    // tests flip this; null follows the system setting
+  function rrRM(){ return rrRMOverride===null ? prefersReducedMotion : !!rrRMOverride; }
   function routeReadStart(){
     var f = gmFrames(); gmPreload(f);
     var stage = gmEl("gmStage");
-    stage.innerHTML = '<div class="rr-stage'+(prefersReducedMotion ? ' rr-calm' : '')+'" id="rrStage">'
+    stage.innerHTML = '<div class="rr-stage'+(rrRM() ? ' rr-calm' : '')+'" id="rrStage">'
       + '<div class="gm-climber rr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>'
       + '<p class="rr-label" id="rrLabel" aria-hidden="true"></p><div class="rr-pips" id="rrPips" aria-hidden="true"></div>'
-      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Hold wall, three columns by five rows"></div>'
+      + '<div class="rr-wall" id="rrWall" role="group" aria-label="Spray wall, five columns by five rows"></div>'
       + '<div class="rr-bar" id="rrBar" aria-hidden="true"><i id="rrBarFill"></i></div></div>';
     var img = gmEl("gmClimberImg"); outfitFollow(img, gmEl("gmClimber")); gmSetSrc(img, f.idle[0]);
     var wall = gmEl("rrWall"), cells = {}, rrStage = gmEl("rrStage"), climber = gmEl("gmClimber"), bar = gmEl("rrBar"), barFill = gmEl("rrBarFill"), pips = gmEl("rrPips");
     for(var r=RR_ROWS-1;r>=0;r--) for(var c=0;c<RR_COLS;c++){
       var b = document.createElement("button"); b.type = "button"; b.className = "rr-cell"; b.id = "rrCell_"+r+"_"+c;
-      b.setAttribute("data-row", r); b.setAttribute("data-col", c);
+      b.setAttribute("data-row", r); b.setAttribute("data-col", c); b.setAttribute("data-kind", "e");
       b.setAttribute("aria-label", "Hold, row "+(r+1)+", column "+(c+1));
-      b.appendChild(gmArt("rr.hold"));
+      var hold = gmArt("rr.hold"); hold.classList.add("rr-hold"); b.appendChild(hold);
       var ring = gmArt("rr.ring"); ring.classList.add("rr-ring"); b.appendChild(ring);
       var spark = document.createElement("span"); spark.className = "rr-spark"; spark.setAttribute("aria-hidden", "true"); b.appendChild(spark);
       var badge = document.createElement("span"); badge.className = "rr-badge"; badge.setAttribute("aria-hidden", "true"); b.appendChild(badge);
       wall.appendChild(b); cells[r+","+c] = b;
     }
-    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, phase:"show", phaseEnd:0, phaseStart:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false, paintId:0 });
+    var g = gmBegin("routeRead", f, { N:RR_START, missed:false, route:null, wallDef:null, phase:"show", phaseEnd:0, phaseStart:0, step:0, score:0, longest:0, done:0, poseUntil:0, lastSec:-1, cells:cells, img:img, flag:false, paintId:0, failed:0 });
     var bestBefore = state.games.routeRead ? state.games.routeRead.best : 0;
     var firstEver = !(state.games.routeRead && state.games.routeRead.plays>0);
     function pose(src){
       if(img.getAttribute("src")===src) return;
       gmSetSrc(img, src);
-      if(!prefersReducedMotion){ climber.classList.remove("rr-swap"); void climber.offsetWidth; climber.classList.add("rr-swap"); }
+      if(!rrRM()){ climber.classList.remove("rr-swap"); void climber.offsetWidth; climber.classList.add("rr-swap"); }
     }
-    function lift(row){ rrStage.style.setProperty("--rr-lift", prefersReducedMotion ? 0 : routeLift(row)); }
+    function code(){ return RR_CODES[g.wallDef.codeT]; }
     function lineText(){ return "Route of "+g.N+" · Best "+Math.max(bestBefore, g.score); }
+    function keyHtml(cd){ return '<i class="rr-key" data-shape="'+cd.shape+'" style="--rr-c:'+cd.color+'"></i>'; }
+    // lay the holds out: size, blob and jitter are fixed per wall; the coded look only exists while the routes are lit
+    function layout(w){
+      var have = {};
+      w.holds.forEach(function(h){ have[h.row+","+h.col] = h; });
+      var cw = wall.clientWidth/RR_COLS || 62, ch = wall.clientHeight/RR_ROWS || 56;
+      for(var k in cells){
+        var el = cells[k], h = have[k], hd = el.querySelector(".rr-hold");
+        el.hidden = !h; el.setAttribute("data-kind", h ? h.kind : "e");
+        if(!h) continue;
+        var px = routeHoldPx(h.sz);
+        hd.style.width = px+"px"; hd.style.height = px+"px";
+        hd.style.setProperty("--rr-dx", (h.fx*Math.max(0, (cw-px)/2-4)).toFixed(1)+"px");
+        hd.style.setProperty("--rr-dy", (h.fy*Math.max(0, (ch-px)/2-3)).toFixed(1)+"px");
+        hd.style.setProperty("--rr-rot", h.rot+"deg");
+        hd.setAttribute("data-blob", h.blob);
+      }
+    }
     function paint(showNums){
-      var id = ++g.paintId;
+      var id = ++g.paintId, w = g.wallDef;
       wall.classList.toggle("rr-showing", !!showNums);
-      for(var k in cells){ var el = cells[k]; el.setAttribute("data-state", ""); el.classList.remove("rr-lit", "rr-pop"); if(showNums) el.querySelector(".rr-badge").textContent = ""; }
+      for(var k in cells){
+        var el = cells[k], hd = el.querySelector(".rr-hold");
+        el.setAttribute("data-state", ""); el.classList.remove("rr-lit", "rr-lit-d", "rr-pop");
+        hd.removeAttribute("data-shape"); hd.style.removeProperty("--rr-c");
+        el.setAttribute("aria-label", "Hold, row "+(+el.getAttribute("data-row")+1)+", column "+(+el.getAttribute("data-col")+1));
+        if(showNums) el.querySelector(".rr-badge").textContent = "";
+      }
       if(showNums){
-        g.route.forEach(function(h, i){
-          var el = cells[h.row+","+h.col], bd = el.querySelector(".rr-badge");
-          el.classList.add("rr-lit"); bd.style.setProperty("--i", i); bd.textContent = String(i+1);
+        function light(h, cd, cls){
+          var el = cells[h.row+","+h.col], hd = el.querySelector(".rr-hold");
+          el.classList.add(cls); hd.setAttribute("data-shape", cd.shape); hd.style.setProperty("--rr-c", cd.color);
+          return el;
+        }
+        var cdT = RR_CODES[w.codeT], cdD = RR_CODES[w.codeD];
+        w.decoy.forEach(function(h){ var el = light(h, cdD, "rr-lit-d"); el.setAttribute("aria-label", "Other route, "+cdD.one); });
+        w.target.forEach(function(h, i){
+          var el = light(h, cdT, "rr-lit"), bd = el.querySelector(".rr-badge");
+          bd.style.setProperty("--i", i); bd.textContent = String(i+1);
+          el.setAttribute("aria-label", "Hold "+(i+1)+" of "+w.n+", "+cdT.one);
         });
       } else {
         // numbers fade out (CSS), then the text goes so nothing readable is left behind
         gmLater(function(){
           if(gm!==g || g.paintId!==id) return;
           for(var k2 in cells) cells[k2].querySelector(".rr-badge").textContent = "";
-        }, prefersReducedMotion ? 110 : 190);
+        }, rrRM() ? 110 : 190);
       }
     }
-    function label(txt){ gmEl("rrLabel").textContent = txt; }
+    function label(html){ gmEl("rrLabel").innerHTML = html; }
     function drawPips(){
       var h = "", i;
       for(i=0;i<g.N;i++) h += '<span class="rr-pip'+(i<g.step ? ' on' : '')+'"></span>';
@@ -7888,22 +8018,26 @@
     function pipsTo(n){ var p = pips.children; for(var i=0;i<p.length;i++) p[i].classList.toggle("on", i<n); }
     function barOn(on){ bar.classList.toggle("on", !!on); }
     function beginShow(t){
-      g.route = routeGen((g.rnd()*4294967296)>>>0, g.N); g.step = 0; g.phase = "show"; g.phaseStart = t; g.phaseEnd = t+routeShowMs(g.N);
-      paint(true); label("Memorise "+g.N+" holds"); pose(g.frames.idle[0]); lift(0); drawPips(); barOn(true);
+      g.wallDef = routeWall((g.rnd()*4294967296)>>>0, g.N); g.route = g.wallDef.target;
+      g.step = 0; g.phase = "show"; g.phaseStart = t; g.phaseEnd = t+routeShowMs(g.N);
+      layout(g.wallDef); paint(true); pose(g.frames.idle[0]); drawPips(); barOn(true);
+      label('Read the '+keyHtml(code())+'<b>'+code().name+'</b> · '+g.N+' holds');
       gmHud(g.score, lineText());
-      gmSay(firstEver && g.done===0 ? "Watch the numbers. They fade, then tap 1, 2, 3 in order." : "Memorise the route. "+g.N+" holds, numbered in order.");
+      gmSay(firstEver && g.done===0 && g.failed===0
+        ? "Two routes light up. Remember the numbered "+code().name+", then tap them in order."
+        : "Read the "+code().name+". "+g.N+" holds, numbered. The other route is a distraction.");
     }
+    function inputLabel(){ label('Tap the '+keyHtml(code())+'<b>'+code().name+'</b> · '+(g.step+1)+' of '+g.N); }
     function beginInput(){
-      g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false);
-      gmSay("Your turn. Tap the holds in order, 1 of "+g.N+".");
+      g.phase = "input"; paint(false); inputLabel(); pose(g.frames.idle[0]); barOn(false);
+      gmSay("Your turn. Tap the "+code().name+" in order, 1 of "+g.N+".");
     }
-    function reachFor(h){ return h.col===0 ? g.frames.reachL : h.col===RR_COLS-1 ? g.frames.reachR : g.frames.pull; }
+    function reachFor(h){ return h.col<=1 ? g.frames.reachL : h.col>=RR_COLS-2 ? g.frames.reachR : g.frames.pull; }
     // Phase changes happen here, from the frame loop AND from a tap, so a tap that lands a few ms after a deadline is never lost.
     function advance(t){
       if(t<g.phaseEnd) return;
       if(g.phase==="show") beginInput();
-      else if(g.phase==="reshow"){ g.phase = "input"; paint(false); label("Tap hold 1 of "+g.N); pose(g.frames.idle[0]); barOn(false); pipsTo(0); gmSay("Try again from the start."); }
-      else if(g.phase==="between") beginShow(t);
+      else if(g.phase==="reshow" || g.phase==="between") beginShow(t);
     }
     function tap(cell, ts){
       if(gm!==g || g.paused) return;
@@ -7922,31 +8056,32 @@
         cell.classList.remove("rr-pop"); void cell.offsetWidth; cell.classList.add("rr-pop");
         g.step++; pipsTo(g.step);
         gmBeep(routeTone(g.step), 45, 0.06); gmBuzz(8);
-        lift(row);
         if(g.step>=g.N){
           g.score += g.N; g.done++; if(g.N>g.longest) g.longest = g.N;
           var wasMax = g.N===RR_MAX;
           g.N = routeNextLen(g.N, g.missed); g.missed = false;
           g.phase = "between"; g.phaseEnd = t+(wasMax ? RR_FLAG_MS : RR_BETWEEN_MS); g.flag = wasMax;
           pose(wasMax ? g.frames.flag[0] : g.frames.cheer[0]);
-          label(wasMax ? "Top of the route." : "Nice. Next route.");
+          label(wasMax ? "Top of the wall." : "Nice. Next route.");
           gmHud(g.score, lineText()); gmSay("Route complete. "+g.score+" points.");
           [440, 554, 659].forEach(function(fq, i){ gmLater(function(){ gmBeep(fq, 80, 0.1); }, i*90); });
         } else {
-          label("Tap hold "+(g.step+1)+" of "+g.N); pose(reachFor(g.route[g.step]));
+          inputLabel(); pose(reachFor(g.route[g.step]));
           gmSay("Good. "+g.step+" of "+g.N+".");
         }
       } else {
+        // a wrong hold (the other route, or a hold that was never lit) loses this route; the answer is shown, then a shorter one
         cell.setAttribute("data-state", "wrong");
-        g.missed = true;
-        g.phase = "reshow"; g.phaseStart = t; g.phaseEnd = t+RR_RESHOW_MS; g.step = 0;
-        gmSay("That was close, here it is.");
-        label("Look again");
-        pose(g.frames.hit); lift(0);
+        g.failed++; g.missed = false;
+        g.N = routeNextLen(g.N, true);
+        g.phase = "reshow"; g.phaseStart = t; g.phaseEnd = t+RR_REVEAL_MS; g.step = 0;
+        gmSay("Not that one. Here is the route, next one is shorter.");
+        label("Look, that route is gone");
+        pose(g.frames.hit);
         gmBeep(262, 90, 0.05);
-        // the route re-shows with numbers; the wrong hold keeps its X until then
         var wrong = cell;
         paint(true); wrong.setAttribute("data-state", "wrong"); pipsTo(0); barOn(true);
+        gmHud(g.score, lineText());
       }
     }
     // pointerdown for an instant response; a click with no pointer (keyboard, assistive tech, .click()) still works.
@@ -7984,9 +8119,9 @@
   }
   function routeReadState(){ return { score:gm ? gm.score : 0, actions:gm ? gm.actions : 0, extra:{ longest:gm ? gm.longest : 0 } }; }
   gmRegister({
-    id:"routeRead", title:"Route Read", order:2, blurb:"Read the route, then climb it from memory.",
+    id:"routeRead", title:"Route Read", order:2, blurb:"Read the route on the spray wall, then climb it from memory.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="17" r="2.5"/><circle cx="15" cy="12" r="2.5"/><circle cx="9" cy="6" r="2.5"/></svg>',
-    intro:{ title:"Read, then climb", text:"Numbered holds light up, then fade. Tap them in order, 1, 2, 3, from memory. Slip and you see it again, no penalty.", hint:"No rush on each tap. 60 seconds." },
+    intro:{ title:"Read the wall", text:"Two routes light up, each its own colour and shape. Remember the numbered one, then tap it in order from memory. A wrong hold loses that route.", hint:"No rush on each tap. 60 seconds." },
     hud0:function(best){ return "Route of 5 · Best "+best; },
     art:["rr.hold", "rr.ring", "card.routeRead"], frames:["idle", "reachL", "reachR", "pull", "hit", "cheer", "ledgeSit", "flag"],
     start:function(){ routeReadStart(); },
@@ -7995,8 +8130,9 @@
     resume:function(){ if(gm && gm.frame && !gmRaf) gmRaf = requestAnimationFrame(gm.frame); }
   });
   if(window.__cruxTest) Object.assign(window.__cruxGames, { routeGen:routeGen, routeShowMs:routeShowMs, routeNextLen:routeNextLen, routeCheck:routeCheck, routeLen:routeLen,
-    routeLift:routeLift, routeSummary:routeSummary, routeTone:routeTone, routeBarScale:routeBarScale,
-    routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, reshowMs:RR_RESHOW_MS } });
+    routeWall:routeWall, routeWallCheck:routeWallCheck, routeClutter:routeClutter, routeDecoyLen:routeDecoyLen, routeCodes:RR_CODES, routeHoldPx:routeHoldPx,
+    routeReduced:function(v){ rrRMOverride = v; }, routeSummary:routeSummary, routeTone:routeTone, routeBarScale:routeBarScale,
+    routeConst:{ cols:RR_COLS, rows:RR_ROWS, start:RR_START, min:RR_MIN, max:RR_MAX, roundMs:RR_ROUND_MS, betweenMs:RR_BETWEEN_MS, revealMs:RR_REVEAL_MS } });
   /* ==== routeRead END ==== */
   /* ==== summitStack BEGIN (T3: summitStack* functions, .ss- CSS, gmRegister({id:"summitStack", ...})) ==== */
   // Summit Stack (design doc 2.3). A block slides over the tower, tap drops it, the overlap stays. No fail state.
