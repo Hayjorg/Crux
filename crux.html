@@ -1012,7 +1012,68 @@
     .rt-half[data-flash]::before{opacity:0.6;}
     .rt-climber, .rt-slot, .rt-slot > .gm-art, .rt-mark, .rt-pad, .rt-letter, .rt-fuse{transition:none;}
   }
-  /* per-game CSS lives in its own prefix: .dy- (Dyno), .rr- (Route Read), .ss- (Summit Stack), .rt- (Reach Timer) */
+  /* ==== .wr- Wall Run CSS BEGIN ==== */
+  .wr-wall{position:absolute;inset:0;pointer-events:none;--wy:0px;
+    background:repeating-linear-gradient(180deg, transparent 0 25px, color-mix(in srgb, var(--text) 9%, transparent) 25px 26px);
+    background-position:0 var(--wy);transition:background-position .18s cubic-bezier(.2,.8,.2,1);}
+  .wr-div{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed color-mix(in srgb, var(--text) 16%, transparent);pointer-events:none;}
+  .wr-div-1{left:33.333%;} .wr-div-2{left:66.666%;}
+  .wr-line{position:absolute;left:0;right:0;top:245px;height:0;border-top:3px solid color-mix(in srgb, var(--accent) 55%, transparent);pointer-events:none;}
+  .wr-holds{position:absolute;inset:0;pointer-events:none;}
+  .wr-hold{position:absolute;top:0;width:64px;height:64px;opacity:0;will-change:transform;}
+  .wr-hold[data-lane="0"]{left:calc(16.667% - 32px);} .wr-hold[data-lane="1"]{left:calc(50% - 32px);} .wr-hold[data-lane="2"]{left:calc(83.333% - 32px);}
+  .wr-hold > .gm-art{position:absolute;left:0;top:0;transition:transform .15s ease-out, opacity .2s ease-out;}
+  .wr-hold[data-state="come"]{opacity:0.8;}
+  .wr-hold[data-state="live"]{opacity:1;}
+  .wr-hold[data-state="live"] > .gm-art{box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);}
+  .wr-hold[data-state="hit"]{opacity:0;transition:opacity .3s ease-out;}
+  .wr-hold[data-state="hit"] > .gm-art{transform:scale(1.25);}
+  .wr-hold[data-state="miss"]{opacity:0.9;transition:opacity .35s ease-out;}
+  .wr-hold[data-state="miss"] > .gm-art{background:var(--text-dim);border-color:var(--text-dim);box-shadow:none;transform:scale(0.9);}
+  .wr-x{position:absolute;inset:0;display:grid;place-items:center;font-family:"Bebas Neue",sans-serif;font-size:34px;color:var(--surface);opacity:0;}
+  .wr-hold[data-state="miss"] .wr-x{opacity:1;}
+  .wr-fuse{position:absolute;left:6px;right:6px;bottom:-12px;height:5px;border-radius:3px;overflow:hidden;opacity:0;background:color-mix(in srgb, var(--text) 14%, transparent);}
+  .wr-fuse i{display:block;height:100%;background:var(--accent);transform-origin:left center;}
+  .wr-climber{width:84px;height:126px;left:50%;margin-left:-42px;bottom:8px;z-index:1;
+    transform:translate(var(--rx, 0px), var(--ry, 0px));transition:transform .2s cubic-bezier(.2,.8,.2,1);}
+  .wr-lane{position:absolute;top:0;bottom:0;width:33.333%;z-index:2;border:0;padding:0;cursor:pointer;background:transparent;color:var(--text);
+    touch-action:manipulation;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;overflow:hidden;}
+  .wr-lane-0{left:0;} .wr-lane-1{left:33.333%;} .wr-lane-2{left:66.666%;}
+  .wr-lane::before{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;background:color-mix(in srgb, var(--text) 10%, transparent);}
+  .wr-lane[data-flash="hit"]::before{background:color-mix(in srgb, var(--send) 26%, transparent);animation:wr-flash .3s ease-out;}
+  .wr-lane[data-flash="slip"]::before{background:color-mix(in srgb, var(--text-dim) 30%, transparent);animation:wr-flash .36s ease-out;}
+  .wr-lane[data-flash="tap"]::before{animation:wr-flash .2s ease-out;}
+  .wr-lane:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
+  .wr-pad{position:absolute;left:50%;bottom:10px;margin-left:-28px;width:56px;height:56px;border-radius:28px;box-sizing:border-box;display:grid;place-items:center;
+    border:2px solid color-mix(in srgb, var(--text) 25%, transparent);background:color-mix(in srgb, var(--surface) 70%, transparent);}
+  .wr-lane-1 .wr-pad{bottom:8px;opacity:0.55;}
+  .wr-pad b{font-family:"Bebas Neue",sans-serif;font-size:24px;font-weight:400;line-height:1;}
+  .wr-slip{position:absolute;left:50%;top:64px;transform:translateX(-50%);padding:5px 14px;border-radius:16px;z-index:3;pointer-events:none;
+    font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:0.04em;color:var(--text);background:var(--surface);border:2px solid var(--text-dim);opacity:0;}
+  .wr-slip-on{opacity:1;animation:wr-slip .7s ease-out both;}
+  .wr-run{position:absolute;left:8px;top:8px;display:flex;align-items:baseline;gap:5px;padding:3px 11px;border-radius:14px;z-index:3;pointer-events:none;
+    background:var(--surface);border:1px solid var(--border);opacity:0;transition:opacity .2s ease;}
+  .wr-run b{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:24px;line-height:1;font-variant-numeric:tabular-nums;}
+  .wr-run small{font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--text-dim);}
+  .wr-run:not([data-tier="0"]){opacity:1;}
+  .wr-run[data-tier="2"], .wr-run[data-tier="3"]{border-color:var(--accent);}
+  .wr-run-pop b{animation:wr-pop .24s cubic-bezier(.2,.9,.3,1.4);}
+  @keyframes wr-flash{from{opacity:1;}to{opacity:0;}}
+  @keyframes wr-pop{from{transform:scale(1.35);}to{transform:scale(1);}}
+  @keyframes wr-slip{0%{transform:translateX(-50%) translateY(-6px);}20%{transform:translateX(-50%) translateY(0);}100%{transform:translateX(-50%) translateY(0);opacity:0.9;}}
+  .wr-rm .wr-lane::before, .wr-rm .wr-run-pop b, .wr-rm .wr-slip-on{animation:none;}
+  .wr-rm .wr-wall, .wr-rm .wr-climber, .wr-rm .wr-hold, .wr-rm .wr-hold > .gm-art, .wr-rm .wr-run{transition:none;}
+  .wr-rm .wr-fuse{opacity:1;}
+  @media (prefers-reduced-motion: reduce){
+    .wr-lane::before, .wr-run-pop b, .wr-slip-on{animation:none;}
+    .wr-lane[data-flash]::before{opacity:0.6;}
+    .wr-wall, .wr-climber, .wr-hold, .wr-hold > .gm-art, .wr-run{transition:none;}
+    .wr-hold[data-state="hit"] > .gm-art{transform:none;}
+    .wr-fuse{opacity:1;}
+    .wr-hold[data-state="hit"], .wr-hold[data-state="miss"]{transition:none;}
+  }
+  /* ==== .wr- Wall Run CSS END ==== */
+  /* per-game CSS lives in its own prefix: .dy- (Dyno), .rr- (Route Read), .ss- (Summit Stack), .wr- (Wall Run), .rt- (Reach Timer, retired) */
   @media (prefers-reduced-motion: reduce){
     .gm-climber-hop, .gm-row, .gm-card{transition:none;}
     .gm-card:active{transform:none;}
@@ -2813,6 +2874,7 @@
       // GAMES (Play): only a best score and a play count per game. Never touches XP, levels, streaks or holds.
       games:{ chalkUp:{ best:0, plays:0 }, holdHop:{ best:0, plays:0 }, chalkRhythm:{ best:0, plays:0, perfectBest:0 }, dyno:{ best:0, plays:0, cleanBest:0 },
               routeRead:{ best:0, plays:0, longest:0 }, summitStack:{ best:0, plays:0, tallest:0, perfects:0 }, reachTimer:{ best:0, plays:0, bestStreak:0 },
+              wallRun:{ best:0, plays:0, longestRun:0 },
               _meta:{ playDays:[], chalkMigrated:false } },
       activeSessionId:null
     };
@@ -2823,7 +2885,7 @@
   var GAMES_FIELDS = {
     chalkUp:{}, holdHop:{},                     // legacy: preserved (holdHop and chalkRhythm are no longer on the menu)
     chalkRhythm:{ perfectBest:9999 }, dyno:{ cleanBest:9999 }, routeRead:{ longest:9999 },
-    summitStack:{ tallest:9999, perfects:999999 }, reachTimer:{ bestStreak:9999 }
+    summitStack:{ tallest:9999, perfects:999999 }, reachTimer:{ bestStreak:9999 }, wallRun:{ longestRun:9999 }
   };
   function gamesClamp(v, max){ var n = Math.floor(Number(v)); return isFinite(n) && n>0 ? Math.min(n, max) : 0; }
   function gamesNormalize(g){
@@ -7352,7 +7414,8 @@
     "rt.hold":{ src:null, w:64, h:64, shape:"circle" }, "rt.ghost":{ src:null, w:64, h:64, shape:"ring" },
     "ui.perfect":{ src:null, w:28, h:28, shape:"ring" }, "ui.good":{ src:null, w:28, h:28, shape:"circle" }, "ui.best":{ src:null, w:28, h:28, shape:"rect" }, "ui.summit":{ src:null, w:28, h:28, shape:"flag" },
     "card.dyno":{ src:null, w:44, h:44, shape:"rect" }, "card.routeRead":{ src:null, w:44, h:44, shape:"circle" },
-    "card.summitStack":{ src:null, w:44, h:44, shape:"rect" }, "card.reachTimer":{ src:null, w:44, h:44, shape:"circle" }
+    "card.summitStack":{ src:null, w:44, h:44, shape:"rect" }, "card.reachTimer":{ src:null, w:44, h:44, shape:"circle" },
+    "wr.hold":{ src:null, w:64, h:64, shape:"circle" }, "card.wallRun":{ src:null, w:44, h:44, shape:"circle" }
   };
   // The override hook. file is relative to assets/ (e.g. "games/ss-block.png"); blobId is its upload id (see asset()).
   // New PNGs need this (or an IMG entry) so the Artifact build can serve them; no art files ship with the shell.
@@ -7466,10 +7529,13 @@
   // One line of how-to per game for the intro (the game's own intro.text stays as the spoken description).
   var GM_HOWTO = {
     dyno:"Hold to charge, let go with the bar in the band.",
-    routeRead:"Remember the numbered holds, then tap them in order.",
+    routeRead:"Read the called route by colour and shape, then tap its holds in order.",
     summitStack:"Tap to drop the block and stack it neatly.",
-    reachTimer:"Tap the side where the next hold is."
+    reachTimer:"Tap the side where the next hold is.",
+    wallRun:"Tap each hold's lane as it reaches your hands."
   };
+  // Shared reduced-motion check: a game passes its test override (null/undefined follows the system setting).
+  function gmReducedWith(ov){ return ov==null ? !!prefersReducedMotion : !!ov; }
   function gmHowto(d){ return GM_HOWTO[d.id] || (d.intro && d.intro.text) || d.blurb || ""; }
   function gmSoundText(on){ return on ? "On. Soft ticks, never over the timer beeps." : "Off. Games stay silent."; }
   function gmSyncSound(){
@@ -7644,7 +7710,7 @@
   /*DYNO-PURE-END*/
 
   var dyRMOverride = null;   // tests only
-  function dyReduced(){ return dyRMOverride===null ? !!prefersReducedMotion : dyRMOverride; }
+  function dyReduced(){ return gmReducedWith(dyRMOverride); }
   var DY_LABEL = { latch:"Latched", short:"Short", over:"Over" };
   gmRegister({
     id:"dyno", title:"Dyno", order:1, blurb:"Hold to charge, let go to leap. Land the hold or drop a ledge.",
@@ -7955,7 +8021,7 @@
   function routeHoldPx(sz){ return [34, 44, 52][Math.max(0, Math.min(2, Math.floor(Number(sz))||0))]; }
 
   var rrRMOverride = null;    // tests flip this; null follows the system setting
-  function rrRM(){ return rrRMOverride===null ? prefersReducedMotion : !!rrRMOverride; }
+  function rrRM(){ return gmReducedWith(rrRMOverride); }
   function routeReadStart(){
     var f = gmFrames(); gmPreload(f);
     var stage = gmEl("gmStage");
@@ -8511,8 +8577,9 @@
   function reachPitch(streak){ return 520+Math.min(Math.max(0, Math.floor(Number(streak))||0), 8)*14; }
   // How far (px) the climber sits above the floor for a height; it stops with the ladder.
   function reachRise(h){ return Math.min(Math.max(0, Math.floor(Number(h))||0), RT_LADDER)*RT_STEP_PX; }
-  gmRegister({
-    id:"reachTimer", title:"Reach Timer", order:4, blurb:"Reach the left or right hold before it fades.",
+  // Retired from the menu (V2: Wall Run replaces it). Not registered; saved games.reachTimer data is kept by gamesNormalize.
+  var RT_RETIRED_DEF = ({
+    id:"reachTimer", title:"Reach Timer", order:9, blurb:"Reach the left or right hold before it fades.",
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M7 10l5-5 5 5"/></svg>',
     intro:{ title:"Reach for it", text:"A hold appears on the left or right. Tap that side to climb a step. A faint ring shows what comes next. Climb as high as you can in 45 seconds.", hint:"Calm, no pressure." },
     hud0:function(best){ return "Height 0 · Best "+best; },
@@ -8659,6 +8726,241 @@
       reachJudge:reachJudge, reachStreakTier:reachStreakTier, reachPitch:reachPitch, reachRise:reachRise, RT_EARLY_MS:RT_EARLY_MS });
   }
   /* ==== reachTimer END ==== */
+  /* ==== wallRun BEGIN (V2: replaces Reach Timer on the menu; wallRun* functions, .wr- CSS, gmRegister({id:"wallRun", ...})) ==== */
+  // Wall Run: the climber ascends; holds come down the wall in three lanes (left / middle / right) and you tap each hold's lane as it
+  // reaches the climber's hands. A hit climbs one move; a miss, a late tap or a stray tap slips one move (floor 0), no fail state, the
+  // round goes on. Score = highest point reached. Everything is on the round clock (performance.now() minus gm.t0), so pausing is free.
+  var WR_ROUND_MS = 45000, WR_RAMP_MS = 25000, WR_FIRST_MS = 2200, WR_MAX_RUN = 3, WR_SLIP_COOLDOWN = 350, WR_POOL = 12, WR_STEP_PX = 26;
+  /*WALLRUN-PURE-BEGIN*/
+  // gap = mean time between holds, look = how long a hold is on the wall before it is due. A hold can be taken from `early` ms before it is due
+  // (reach for it as it comes) to `late` ms after (it slides past your hands). half = (early+late)/2, so 2*half is the whole window.
+  // Linear ramp over WR_RAMP_MS (25 s), then a plateau. Top speed: window 400 ms (260 early, 140 late), a hold is visible for 900 ms (650 ms before its window opens).
+  function wallPhase(t){
+    t = Math.max(0, Number(t)||0);
+    var u = Math.min(1, t/WR_RAMP_MS), mix = function(a, b){ return Math.round(a+(b-a)*u); };
+    var early = mix(350, 260), late = mix(250, 140);
+    return { u:u, gap:mix(950, 400), look:mix(2000, 900), early:early, late:late, half:Math.round((early+late)/2) };
+  }
+  // Fair minimum time from one hold to the next by lane distance (0 same lane, 1 next lane, 2 across the wall).
+  var WR_FLOOR = [280, 340, 420];
+  var WR_CELLS = [1, 1, 0.75, 0.75, 1.5, 0.6];
+  var WR_BURST_P = 0.22;   // chance that a hold starts a short run (2 to 4 holds) at the fastest fair spacing
+  // Seeded hold sequence: [{ i, lane (0|1|2), due (ms on the round clock) }]. Same seed, same wall.
+  function wallNotes(seed, maxT){
+    var rnd = mulberry32((seed>>>0) ^ 0x57414c4c), end = maxT==null ? WR_ROUND_MS+3000 : maxT;
+    var out = [], lane = Math.floor(rnd()*3), due = WR_FIRST_MS, run = 1, burst = 0;
+    while(due<end && out.length<400){
+      out.push({ i:out.length, lane:lane, due:due });
+      var ph = wallPhase(due), want;
+      if(burst>0){ burst--; want = Math.max(WR_FLOOR[0], Math.round(ph.gap*0.55)); }
+      else {
+        want = Math.max(WR_FLOOR[0], Math.round(ph.gap*WR_CELLS[Math.floor(rnd()*WR_CELLS.length)]));
+        if(ph.u>0.12 && rnd()<WR_BURST_P){ burst = 1+Math.floor(rnd()*3); want = Math.max(WR_FLOOR[0], Math.round(ph.gap*0.55)); }
+      }
+      var cand = [];
+      for(var l=0;l<3;l++){ var d = Math.abs(l-lane); if(WR_FLOOR[d]<=want && !(d===0 && run>=WR_MAX_RUN)) cand.push(l); }
+      if(!cand.length){ want = WR_FLOOR[1]; cand = lane===1 ? [0, 2] : [1]; }
+      // lane changes are likelier than repeats, the middle is a stepping stone
+      var wsum = 0, ws = cand.map(function(c){ var w = c===lane ? 1 : Math.abs(c-lane)===1 ? 2 : 1.4; wsum += w; return w; });
+      var r = rnd()*wsum, pick = cand[cand.length-1];
+      for(var k=0;k<cand.length;k++){ r -= ws[k]; if(r<0){ pick = cand[k]; break; } }
+      run = pick===lane ? run+1 : 1; lane = pick; due += want;
+    }
+    return out;
+  }
+  function wallHalf(note){ return wallPhase(note.due).half; }
+  function wallEarly(note){ return wallPhase(note.due).early; }
+  function wallLate(note){ return wallPhase(note.due).late; }
+  function wallLook(note){ return wallPhase(note.due).look; }
+  function wallNew(){ return { h:0, peak:0, hits:0, slips:0, streak:0, bestRun:0, lastSlip:-1e9, done:{} }; }
+  function wallHit(st, i){ st.done[i] = 1; st.h++; st.hits++; st.streak++; if(st.h>st.peak) st.peak = st.h; if(st.streak>st.bestRun) st.bestRun = st.streak; }
+  function wallSlip(st, t){ st.h = Math.max(0, st.h-1); st.slips++; st.streak = 0; st.lastSlip = t; }
+  // Holds whose window has closed unanswered each cost one move. Returns their indexes (mutates st).
+  function wallSweep(st, notes, t, from){
+    var out = [];
+    for(var i=Math.max(0, from||0);i<notes.length;i++){
+      var n = notes[i];
+      if(n.due-wallEarly(n)>t) break;                      // notes are in due order; the rest are still ahead
+      if(!st.done[i] && t>n.due+wallLate(n)){ st.done[i] = 2; wallSlip(st, n.due+wallLate(n)); out.push(i); }
+    }
+    return out;
+  }
+  // One tap in `lane` at time t. The earliest unanswered hold in that lane whose window holds t is taken. Otherwise it is a stray tap:
+  // one slip, but never more than one per WR_SLIP_COOLDOWN (a miss and the late tap that follows it are one slip). Mutates st.
+  function wallTap(st, notes, lane, t, from){
+    wallSweep(st, notes, t, from);
+    for(var i=Math.max(0, from||0);i<notes.length;i++){
+      var n = notes[i];
+      if(n.due-wallEarly(n)>t) break;
+      if(n.lane===lane && !st.done[i] && t>=n.due-wallEarly(n) && t<=n.due+wallLate(n)){ wallHit(st, i); return { verdict:"hit", i:i }; }
+    }
+    if(t-st.lastSlip>=WR_SLIP_COOLDOWN){ wallSlip(st, t); return { verdict:"slip", i:-1 }; }
+    return { verdict:"ignore", i:-1 };
+  }
+  // Replay a whole round: taps = [{ t, lane }]. Pure, used by tests and the bot.
+  function wallRound(notes, taps, endT){
+    var st = wallNew(), end = endT==null ? WR_ROUND_MS : endT;
+    var ts = taps.slice().sort(function(a, b){ return a.t-b.t; });
+    for(var k=0;k<ts.length;k++){ if(ts[k].t>=end) break; wallTap(st, notes, ts[k].lane, ts[k].t); }
+    wallSweep(st, notes.filter(function(n){ return n.due<end; }), end, 0);
+    return st;
+  }
+  // Where a hold is on its way down, 0 = just appeared at the top, 1 = at the climber's hands (due).
+  function wallProgress(note, t){ return 1-(note.due-t)/wallLook(note); }
+  function wallRunTier(n){ n = Math.max(0, Math.floor(Number(n))||0); return n<3 ? 0 : n<8 ? 1 : n<15 ? 2 : 3; }
+  /*WALLRUN-PURE-END*/
+  var wrReducedOverride = null;   // tests only
+  function wrReduced(){ return gmReducedWith(wrReducedOverride); }
+  var WR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="8" r="2"/><circle cx="12" cy="15" r="2"/><circle cx="18" cy="6" r="2"/><path d="M12 3v3M6 20h12"/></svg>';
+  gmRegister({
+    id:"wallRun", title:"Wall Run", order:4, blurb:"Tap each hold's lane as the wall rushes down.",
+    icon:WR_ICON,
+    intro:{ title:"Wall Run", text:"Holds come down the wall in three lanes. Tap the lane of each hold as it reaches your hands to climb a move. A miss slips you one move and the climb goes on. The wall speeds up for 45 seconds. Score is your highest point.", hint:"Calm, no pressure. A slip is just a move." },
+    hud0:function(best){ return "Height 0 · Best "+best; },
+    start:function(){ wallRunStart(); },
+    state:function(){ return { score:gm.peak||0, actions:gm.taps||0, extra:{ longestRun:gm.bestRun||0 } }; },
+    pause:function(){},
+    resume:function(){ if(gm && gm.frame) gmRaf = requestAnimationFrame(gm.frame); }
+  });
+  function wallRunStart(){
+    var f = gmFrames(); gmPreload(f);
+    var holds = "", k, lanes = "", names = ["Left lane", "Middle lane", "Right lane"], keys = ["L", "M", "R"];
+    for(k=0;k<WR_POOL;k++) holds += '<span class="wr-hold" data-state="off" data-lane="0" aria-hidden="true">'+gmArtHtml("wr.hold").replace('class="gm-art ', 'class="wr-art gm-art ')
+      + '<span class="wr-x">×</span><span class="wr-fuse"><i></i></span></span>';
+    for(k=0;k<3;k++) lanes += '<button type="button" class="wr-lane wr-lane-'+k+'" id="wr'+keys[k]+'" data-lane="'+k+'" aria-label="'+names[k]+'"><span class="wr-pad"><b>'+keys[k]+'</b></span></button>';
+    gmEl("gmStage").innerHTML = '<div class="wr-wall" id="wrWall" aria-hidden="true"></div><div class="wr-div wr-div-1" aria-hidden="true"></div><div class="wr-div wr-div-2" aria-hidden="true"></div>'
+      + '<div class="wr-line" aria-hidden="true"></div><div class="wr-holds" id="wrHolds">'+holds+'</div>'
+      + '<div class="wr-slip" id="wrSlip" aria-hidden="true"></div>'
+      + '<div class="wr-run" id="wrRun" data-tier="0" aria-hidden="true"><b>0</b><small>clean</small></div>'
+      + '<div class="gm-climber wr-climber" id="gmClimber"><img id="gmClimberImg" alt="Your climber"></div>' + lanes;
+    var img = gmEl("gmClimberImg"), climber = gmEl("gmClimber"), wall = gmEl("wrWall"), runEl = gmEl("wrRun"), slipEl = gmEl("wrSlip");
+    outfitFollow(img, climber); gmSetSrc(img, f.idle[0]);
+    var g = gmBegin("wallRun", f, { notes:null, st:wallNew(), lo:0, peak:0, bestRun:0, taps:0, pose:0, lastSec:-1, shown:{} });
+    g.notes = wallNotes(g.seed);
+    var els = [].slice.call(gmEl("wrHolds").children), laneEls = keys.map(function(c){ return gmEl("wr"+c); });
+    var STAGE_H = 352, LINE_Y = 214, TOP_Y = -64;     // a hold's top edge: from TOP_Y to LINE_Y (its middle meets the climber's hands)
+    var rowY = [LINE_Y, LINE_Y-78, LINE_Y-150];       // reduced motion: the next three holds wait in fixed rows
+    function attr(el, name, v){ if(el.getAttribute(name)!==v) el.setAttribute(name, v); }
+    function paintHeight(){
+      gmHud(g.peak, "Height "+g.st.h+" · Best "+Math.max(g.peak, state.games.wallRun.best));
+      g.lastSec = Math.max(0, Math.ceil((WR_ROUND_MS-(performance.now()-g.t0))/1000));
+      gmEl("gmTime").textContent = g.lastSec+"s";
+      wall.style.setProperty("--wy", (g.st.h*WR_STEP_PX)+"px");
+      climber.style.setProperty("--ry", "0px");
+    }
+    function paintRun(grew){
+      attr(runEl, "data-tier", String(wallRunTier(g.st.streak))); runEl.querySelector("b").textContent = g.st.streak;
+      if(grew && g.st.streak>=3){ runEl.classList.remove("wr-run-pop"); void runEl.offsetWidth; runEl.classList.add("wr-run-pop"); }
+    }
+    function pose(src, ms){
+      var tok = ++g.pose; gmSetSrc(img, src);
+      if(ms) gmLater(function(){ if(gm===g && g.pose===tok) gmSetSrc(img, g.frames.idle[0]); }, ms);
+      return tok;
+    }
+    function lean(lane){ climber.style.setProperty("--rx", (lane-1)*30+"px"); }
+    function flash(lane, kind){
+      var b = laneEls[lane]; b.removeAttribute("data-flash"); void b.offsetWidth; b.setAttribute("data-flash", kind);
+      gmLater(function(){ if(gm===g && b.getAttribute("data-flash")===kind) b.removeAttribute("data-flash"); }, 340);
+    }
+    function showSlip(why){
+      slipEl.textContent = why; slipEl.classList.remove("wr-slip-on"); void slipEl.offsetWidth; slipEl.classList.add("wr-slip-on");
+      gmLater(function(){ if(gm===g) slipEl.classList.remove("wr-slip-on"); }, 700);
+    }
+    function onHit(i, lane){
+      g.peak = g.st.peak; g.bestRun = g.st.bestRun; g.shown[i] = performance.now();
+      var fq = 440+lane*70+Math.min(g.st.streak, 8)*8;
+      gmLater(function(){ if(gm===g){ gmBeep(fq, 50, 0.08); gmBuzz(8); } }, 30);
+      var tok = pose(lane===0 ? g.frames.reachL : lane===2 ? g.frames.reachR : g.frames.pull, 380);
+      lean(lane);
+      gmLater(function(){ if(gm===g && g.pose===tok) lean(1); }, 200);
+      gmSay(g.st.streak>=4 ? "Up. Height "+g.st.h+", "+g.st.streak+" clean." : "Up. Height "+g.st.h+".");
+      paintRun(true); paintHeight();
+    }
+    function onSlip(why, noteIdx){
+      if(noteIdx!=null && noteIdx>=0) g.shown[noteIdx] = performance.now();
+      gmLater(function(){ if(gm===g) gmBeep(250, 70, 0.05); }, 30);
+      pose(g.frames.hit, 420); lean(1);
+      climber.style.setProperty("--ry", "22px");
+      gmLater(function(){ if(gm===g) climber.style.setProperty("--ry", "0px"); }, 300);
+      showSlip(why);
+      gmSay("Slipped a move. Height "+g.st.h+".");
+      paintRun(false); paintHeight();
+    }
+    function judgeTap(lane, ts){
+      if(gm!==g || g.paused) return;
+      g.taps++;
+      var now = performance.now(), at = ts>0 && ts<=now && ts>=now-300 ? ts : now;
+      var t = at-g.t0, before = g.st.slips;
+      var res = wallTap(g.st, g.notes, lane, t, g.lo);
+      // holds that expired just before this tap were already slipped in the sweep; show the miss for the last one
+      if(res.verdict==="hit"){ flash(lane, "hit"); onHit(res.i, lane); }
+      else if(res.verdict==="slip"){ flash(lane, "slip"); onSlip(g.st.slips-before>1 ? "Slip \u00B7 missed" : "Slip \u00B7 wrong lane"); }
+      else flash(lane, "tap");
+      if(res.verdict!=="slip" && g.st.slips-before>0) onSlip("Slip \u00B7 missed");   // a hold expired in the same instant as this tap
+    }
+    laneEls.forEach(function(b, lane){
+      b.addEventListener("pointerdown", function(e){ if(e.button>0) return; e.preventDefault(); judgeTap(lane, e.timeStamp); });
+      b.addEventListener("click", function(e){ if(e.detail===0) judgeTap(lane); });
+      b.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+    });
+    gmKey = function(e){
+      if(e.repeat) return;
+      var k = e.key, lane = k==="ArrowLeft" || k==="a" || k==="A" ? 0 : k==="ArrowUp" || k==="ArrowDown" || k==="s" || k==="S" ? 1 : k==="ArrowRight" || k==="d" || k==="D" ? 2 : -1;
+      if(lane>=0){ e.preventDefault(); judgeTap(lane); }
+    };
+    document.addEventListener("keydown", gmKey);
+    laneEls[1].focus({ preventScroll:true });
+    if(wrReduced()) gmEl("gmStage").classList.add("wr-rm");
+    lean(1); paintHeight(); paintRun(false);
+    gmSay("Go. Tap the lane of the hold.");
+    function frame(){
+      if(gm!==g || g.paused) return;
+      var t = performance.now()-g.t0;
+      if(t>=WR_ROUND_MS){ wallRunFinish(g); return; }
+      var missed = wallSweep(g.st, g.notes, t, g.lo);
+      if(missed.length) onSlip("Slip \u00B7 missed", missed[missed.length-1]);
+      while(g.lo<g.notes.length && (g.st.done[g.lo] && g.shown[g.lo]!=null && performance.now()-g.shown[g.lo]>420) && g.notes[g.lo].due+wallLate(g.notes[g.lo])<t) g.lo++;
+      // draw: holds i in [lo, ...) that have appeared. Normal motion slides them down; reduced motion keeps the next three in fixed rows.
+      var used = {}, rank = 0, now = performance.now(), rm = wrReduced();
+      for(var i=g.lo;i<g.notes.length;i++){
+        var n = g.notes[i], p = wallProgress(n, t);
+        if(p<0) break;
+        if(g.st.done[i] && g.shown[i]==null) g.shown[i] = now;
+        var el = els[i%WR_POOL], fin = g.st.done[i] ? now-g.shown[i] : -1;
+        if(fin>380) continue;                                   // answered and faded out
+        used[i%WR_POOL] = 1;
+        var y, state;
+        if(g.st.done[i]===1) state = "hit"; else if(g.st.done[i]===2) state = "miss"; else state = p>=1-wallEarly(n)/wallLook(n) ? "live" : "come";
+        if(rm){
+          if(g.st.done[i]){ y = rowY[0]; } else { if(rank>=3){ used[i%WR_POOL] = 0; continue; } y = rowY[rank]; rank++; }
+        } else y = TOP_Y+(LINE_Y-TOP_Y)*p;
+        if(el._n!==i){ el._n = i; attr(el, "data-lane", String(n.lane)); }
+        attr(el, "data-state", state);
+        el.style.transform = "translateY("+Math.round(y)+"px)";
+        var fz = el.querySelector(".wr-fuse i");
+        if(fz && state!=="hit" && state!=="miss") fz.style.transform = "scaleX("+Math.max(0, Math.min(1, (n.due-t)/Math.min(wallLook(n), 1200))).toFixed(3)+")";
+      }
+      for(var e2=0;e2<WR_POOL;e2++) if(!used[e2] && els[e2].getAttribute("data-state")!=="off"){ attr(els[e2], "data-state", "off"); els[e2]._n = -1; }
+      var sec = Math.max(0, Math.ceil((WR_ROUND_MS-t)/1000));
+      if(sec!==g.lastSec){ g.lastSec = sec; gmEl("gmTime").textContent = sec+"s"; }
+      gmRaf = requestAnimationFrame(frame);
+    }
+    g.frame = frame;
+    gmRaf = requestAnimationFrame(frame);
+  }
+  function wallRunFinish(g){
+    wallSweep(g.st, g.notes, WR_ROUND_MS, g.lo);
+    var parts = [];
+    if(g.st.bestRun>1) parts.push("Longest clean run "+g.st.bestRun);
+    parts.push(g.st.slips+(g.st.slips===1 ? " slip" : " slips"));
+    gmOver("wallRun", g.peak, { title:"Good climb.", note:parts.join(" · "), actions:g.taps, extra:{ longestRun:g.st.bestRun } });
+  }
+  if(window.__cruxTest){
+    Object.assign(window.__cruxGames, { wallPhase:wallPhase, wallNotes:wallNotes, wallNew:wallNew, wallTap:wallTap, wallSweep:wallSweep, wallRound:wallRound,
+      wallHalf:wallHalf, wallEarly:wallEarly, wallLate:wallLate, wallLook:wallLook, wallProgress:wallProgress, wallRunTier:wallRunTier, WR_ROUND_MS:WR_ROUND_MS, WR_FLOOR:WR_FLOOR, WR_MAX_RUN:WR_MAX_RUN,
+      WR_SLIP_COOLDOWN:WR_SLIP_COOLDOWN, wallReduced:function(v){ wrReducedOverride = v; } });
+  }
+  /* ==== wallRun END ==== */
 
 
   /* ---- the overlay: open, close, rest strip ---- */
