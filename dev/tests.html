@@ -637,6 +637,53 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect($("countdown").textContent==="00:45" && $("phaseLabel").textContent==="READY", "reset: "+$("countdown").textContent);
   });
 
+  test("Timer builder: compileTimerConfig phases, totals, lead-in and no trailing rest", async function(){
+    await boot(workoutSave());
+    var C = W.__cruxTimer.compile;
+    function total(p){ return p.reduce(function(n, x){ return n + x.ms; }, 0); }
+    // 6 reps x 7/3, 3 sets, 60 s set rest, 10 s get ready
+    var p = C({ work:7, reps:6, repRest:3, sets:3, setRest:60, leadIn:10 });
+    expect(p.length===36 && total(p)===301000, "repeaters: "+p.length+" phases, "+total(p)+" ms");
+    expect(p[0].kind==="rest" && p[0].label==="GET READY" && p[0].ms===10000, "lead-in is not phase 0: "+JSON.stringify(p[0]));
+    expect(p[p.length-1].kind==="work" && p[p.length-1].tag==="REP 6/6 \u00b7 SET 3/3", "ends on: "+JSON.stringify(p[p.length-1]));
+    expect(p[1].tag==="REP 1/6 \u00b7 SET 1/3" && p[1].label==="WORK", "first rep: "+JSON.stringify(p[1]));
+    var sr = p.filter(function(x){ return x.label==="SET REST"; });
+    expect(sr.length===2 && sr.every(function(x){ return x.ms===60000; }), "set rests: "+sr.length);
+    var i6 = p.findIndex(function(x){ return x.tag==="REP 6/6 \u00b7 SET 1/3" && x.kind==="work"; });
+    expect(p[i6+1].label==="SET REST" && p[i6+2].tag==="REP 1/6 \u00b7 SET 2/3", "set rest doesn't replace the rep rest");
+    // 4x4s: 4 reps of 240/240, one set
+    p = C({ work:240, reps:4, repRest:240, sets:1, setRest:0, leadIn:10 });
+    expect(p.length===8 && total(p)===10000+4*240000+3*240000 && p[p.length-1].kind==="work", "4x4s: "+p.length+", "+total(p));
+    // 10/50 x6
+    p = C({ work:10, reps:6, repRest:50, sets:1, setRest:0, leadIn:10 });
+    expect(p.length===12 && total(p)===10000+60000+250000 && p[p.length-1].kind==="work", "10/50: "+p.length+", "+total(p));
+    // no lead-in, and clamping
+    p = C({ work:10, reps:2, repRest:5, sets:1, setRest:0, leadIn:0 });
+    expect(p.length===3 && p[0].kind==="work", "leadIn 0 should add no phase");
+    p = C({ work:1, reps:500, repRest:5000, sets:-3, setRest:0, leadIn:10 });
+    expect(p[1].ms===3000 && p.filter(function(x){ return x.kind==="work"; }).length===99 && p[2].ms===1800000, "clamp: "+JSON.stringify(p.slice(0, 3)));
+    expect(C({}).length>=1 && C(null).length>=1, "garbage in gave no program");
+  });
+
+  test("Timer builder: loads a custom program, Reset keeps it, Clear returns to free mode", async function(){
+    await boot(workoutSave()); await startOrResume();
+    expect(!$("tbClearBtn").offsetParent || $("tbClearBtn").hidden, "Clear shows with nothing loaded");
+    $("timerSettings").open = true;
+    var f = {tbWork:"7", tbRepRest:"3", tbReps:"2", tbSets:"2", tbSetRest:"20", tbLeadIn:"5"};
+    Object.keys(f).forEach(function(id){ $(id).value = f[id]; fire($(id), "change"); });
+    expect(/4 work intervals/.test($("tbTotal").textContent), "total: "+$("tbTotal").textContent);
+    await click("tbLoadBtn", 300);
+    expect($("phaseLabel").textContent==="READY \u00b7 GET READY" && $("countdown").textContent==="00:05", "after load: "+$("phaseLabel").textContent+" "+$("countdown").textContent);
+    expect($("workInput").disabled && !$("tbClearBtn").hidden, "free steppers should be disabled and Clear shown");
+    await click("startBtn", 300); await click("resetBtn", 300);
+    expect($("countdown").textContent==="00:05" && $("workInput").disabled && !$("tbClearBtn").hidden, "Reset dropped the custom program");
+    await click("tbClearBtn", 300);
+    expect($("phaseLabel").textContent==="READY" && !$("workInput").disabled && $("countdown").textContent==="00:45" && $("tbClearBtn").hidden, "Clear: "+$("phaseLabel").textContent);
+    // finishing a custom program must not touch a workout
+    await click("startBtn", 200); await click("resetBtn", 200);
+    expect($("phaseLabel").textContent==="READY", "plain timer after Clear");
+  });
+
   test("Workouts: build, edit and delete your own in Advanced; Simple can only run them", async function(){
     await boot(workoutSave()); await toTrain(); await click("openWorkoutsBtn");
     await click("newWorkoutBtn");

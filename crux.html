@@ -1377,6 +1377,14 @@
   .timer-settings-summary .chev{width:16px;height:16px;transition:transform .2s ease;flex:none;}
   .timer-settings[open] .timer-settings-summary .chev{transform:rotate(180deg);}
   .timer-settings[open] .timer-config{margin-top:8px;}
+  .timer-builder{margin-top:16px;padding-top:14px;border-top:1px dashed var(--border);text-align:center;}
+  .timer-builder-title{font-size:13px;font-weight:600;color:var(--text);margin:0 0 2px;}
+  .timer-builder-sub,.timer-builder-note{font-size:12px;color:var(--text-dim);margin:0 0 12px;}
+  .timer-builder-note{margin:10px 0 0;}
+  .timer-builder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px 10px;justify-items:center;align-items:end;}
+  .timer-builder .field label{text-align:center;}
+  .timer-builder-total{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);margin:14px 0 10px;}
+  .timer-builder-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 
   /* A small climber who watches you log. Head-and-shoulders crop of the full sprite. */
   .log-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px;}
@@ -1904,6 +1912,30 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         What are these workouts for?
       </button>
+      <div class="timer-builder" id="timerBuilder">
+        <p class="timer-builder-title">Build your own interval workout</p>
+        <p class="timer-builder-sub">Set the work, rest, reps and sets, then load it onto the timer.</p>
+        <div class="timer-builder-grid">
+          <div class="field"><label for="tbWork">Work (sec)</label>
+            <div class="stepper"><button type="button" data-tb="work" data-d="-5" aria-label="Decrease work seconds">–</button><input type="number" id="tbWork" min="3" max="1800" value="7" inputmode="numeric"><button type="button" data-tb="work" data-d="5" aria-label="Increase work seconds">+</button></div></div>
+          <div class="field"><label for="tbRepRest">Rest between reps (sec)</label>
+            <div class="stepper"><button type="button" data-tb="repRest" data-d="-5" aria-label="Decrease rest between reps">–</button><input type="number" id="tbRepRest" min="0" max="1800" value="3" inputmode="numeric"><button type="button" data-tb="repRest" data-d="5" aria-label="Increase rest between reps">+</button></div></div>
+          <div class="field"><label for="tbReps">Reps per set</label>
+            <div class="stepper"><button type="button" data-tb="reps" data-d="-1" aria-label="Fewer reps">–</button><input type="number" id="tbReps" min="1" max="99" value="6" inputmode="numeric"><button type="button" data-tb="reps" data-d="1" aria-label="More reps">+</button></div></div>
+          <div class="field"><label for="tbSets">Sets</label>
+            <div class="stepper"><button type="button" data-tb="sets" data-d="-1" aria-label="Fewer sets">–</button><input type="number" id="tbSets" min="1" max="99" value="3" inputmode="numeric"><button type="button" data-tb="sets" data-d="1" aria-label="More sets">+</button></div></div>
+          <div class="field"><label for="tbSetRest">Rest between sets (sec)</label>
+            <div class="stepper"><button type="button" data-tb="setRest" data-d="-15" aria-label="Decrease rest between sets">–</button><input type="number" id="tbSetRest" min="0" max="1800" value="60" inputmode="numeric"><button type="button" data-tb="setRest" data-d="15" aria-label="Increase rest between sets">+</button></div></div>
+          <div class="field"><label for="tbLeadIn">Get ready (sec)</label>
+            <div class="stepper"><button type="button" data-tb="leadIn" data-d="-5" aria-label="Decrease get ready seconds">–</button><input type="number" id="tbLeadIn" min="0" max="300" value="10" inputmode="numeric"><button type="button" data-tb="leadIn" data-d="5" aria-label="Increase get ready seconds">+</button></div></div>
+        </div>
+        <p class="timer-builder-total" id="tbTotal" aria-live="polite"></p>
+        <div class="timer-builder-actions">
+          <button type="button" class="btn btn-primary" id="tbLoadBtn">Load onto timer</button>
+          <button type="button" class="btn btn-ghost" id="tbClearBtn" hidden>Clear</button>
+        </div>
+        <p class="timer-builder-note" id="tbNote" hidden>This workout is loaded. Clear it to go back to the simple work/rest timer.</p>
+      </div>
       </details>
     </section>
 
@@ -3735,10 +3767,11 @@
   function resetTimer(){
     stopTimerTicking();
     // Reset inside a running workout restarts the current step's program; anywhere else (a new
-    // or finished session, an import, Reset progress) it clears the program as before.
+    // or finished session, an import, Reset progress) it clears the program as before. A program
+    // loaded from the timer builder is kept (restarted); its Clear button is what unloads it.
     var prog = timer.program, meta = timer.programMeta, s = getActiveSession();
     timer = idleTimer();
-    if(prog && s && s.workout){ timer.program = prog; timer.pIndex = 0; timer.programMeta = meta; timer.remainingMs = prog[0].ms; }
+    if(prog && ((s && s.workout) || (meta && meta.kind==="custom"))){ timer.program = prog; timer.pIndex = 0; timer.programMeta = meta; timer.remainingMs = prog[0].ms; }
     persistTimer();
     renderTimer();
   }
@@ -3781,6 +3814,31 @@
     document.getElementById("restInput").disabled = !idle;
     ["workMinus","workPlus","restMinus","restPlus"].forEach(function(id){ document.getElementById(id).disabled = !idle; });
     document.querySelectorAll("#presets .chip").forEach(function(c){ c.disabled = !idle; });
+    var custom = customProgramLoaded();
+    document.getElementById("tbLoadBtn").disabled = timer.running || !(idle || custom);
+    document.getElementById("tbClearBtn").hidden = !custom;
+    document.getElementById("tbClearBtn").disabled = timer.running;
+    document.getElementById("tbNote").hidden = !custom;
+    document.getElementById("timerSettingsNow").textContent = custom ? "Custom workout loaded" :
+      state.timerDefaults.workSec+"s work · "+state.timerDefaults.restSec+"s rest";
+  }
+  function customProgramLoaded(){ return !!(timer.program && timer.programMeta && timer.programMeta.kind==="custom"); }
+  var TB_IDS = { tbWork:"work", tbRepRest:"repRest", tbReps:"reps", tbSets:"sets", tbSetRest:"setRest", tbLeadIn:"leadIn" };
+  function readTimerBuilder(){
+    var o = {};
+    Object.keys(TB_IDS).forEach(function(id){ o[TB_IDS[id]] = parseInt(document.getElementById(id).value, 10); });
+    return o;
+  }
+  // Clamp what's in the boxes (same rules as compileTimerConfig) and show the result back.
+  function cleanTimerBuilder(){
+    var c = normTimerConfig(readTimerBuilder());
+    Object.keys(TB_IDS).forEach(function(id){ document.getElementById(id).value = c[TB_IDS[id]]; });
+    renderTimerBuilderTotal();
+  }
+  function renderTimerBuilderTotal(){
+    var prog = compileTimerConfig(readTimerBuilder()), ms = 0, work = 0;
+    prog.forEach(function(p){ ms += p.ms; if(p.kind==="work") work++; });
+    document.getElementById("tbTotal").textContent = work+" work intervals · "+fmtDur(Math.round(ms/1000))+" in total";
   }
 
   /* ---------------- screen wake lock ---------------- */
@@ -4755,6 +4813,32 @@
     }
     return out;
   }
+  // The timer builder's program (pure). cfg = {work, reps, repRest, sets, setRest, leadIn} in seconds.
+  // Inputs are clamped: work 3-1800; rests 0 (none) or 3-1800; reps and sets 1-99; leadIn 0 (none) or 3-300.
+  // Phase 0 is the "GET READY" lead-in. A set rest replaces the rep rest between sets, and nothing follows the final rep.
+  function normTimerConfig(cfg){
+    cfg = cfg || {};
+    function num(v, def){ v = Math.round(Number(v)); return isFinite(v) ? v : def; }
+    function sec(v, def, allowZero, max){ v = num(v, def); if(allowZero && v<=0) return 0; return Math.max(3, Math.min(max||1800, v)); }
+    function cnt(v, def){ return Math.max(1, Math.min(99, num(v, def))); }
+    return { work:sec(cfg.work, 45), reps:cnt(cfg.reps, 1), repRest:sec(cfg.repRest, 0, true),
+      sets:cnt(cfg.sets, 1), setRest:sec(cfg.setRest, 0, true), leadIn:sec(cfg.leadIn==null ? 10 : cfg.leadIn, 10, true, 300) };
+  }
+  function compileTimerConfig(cfg){
+    var c = normTimerConfig(cfg), work = c.work, reps = c.reps, repRest = c.repRest, sets = c.sets, setRest = c.setRest, leadIn = c.leadIn;
+    function tagFor(r, s){ return "REP "+r+"/"+reps+" · SET "+s+"/"+sets; }
+    var out = [];
+    if(leadIn>0) out.push({ kind:"rest", label:"GET READY", ms:leadIn*1000, tag:tagFor(1, 1) });
+    for(var s=1; s<=sets; s++){
+      for(var r=1; r<=reps; r++){
+        out.push({ kind:"work", label:"WORK", ms:work*1000, tag:tagFor(r, s) });
+        if(r<reps){ if(repRest>0) out.push({ kind:"rest", label:"REST", ms:repRest*1000, tag:tagFor(r, s) }); }
+        else if(s<sets && setRest>0) out.push({ kind:"rest", label:"SET REST", ms:setRest*1000, tag:tagFor(r, s) });
+      }
+    }
+    return out;
+  }
+  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig }; // dev/tests.html only
   function restProgram(sec, tag){ return [{ kind:"rest", label:"REST", ms:sec*1000, tag:tag||"" }]; }
 
   // ---- the runner ----
@@ -4835,7 +4919,7 @@
   // between climbing goes or sets just ends.
   timerProgramDoneHook = function(meta){
     var s = getActiveSession();
-    if(!s || !s.workout || !meta) return;
+    if(!s || !s.workout || !meta || meta.kind==="custom") return; // a timer-builder program isn't part of a workout
     var step = workoutStep(s.workout);
     if(meta.kind==="step" && step && step.id===meta.stepId){
       var res = stepRes(s.workout, step);
@@ -5205,7 +5289,7 @@
 
     document.getElementById("workInput").value = state.timerDefaults.workSec;
     document.getElementById("restInput").value = state.timerDefaults.restSec;
-    document.getElementById("timerSettingsNow").textContent =
+    document.getElementById("timerSettingsNow").textContent = customProgramLoaded() ? "Custom workout loaded" :
       state.timerDefaults.workSec+"s work · "+state.timerDefaults.restSec+"s rest";
     if(!buddyTimer) setBuddy("logBuddy", "focused");
 
@@ -9424,6 +9508,29 @@
     setWork(parseInt(chip.dataset.work,10));
     setRest(parseInt(chip.dataset.rest,10));
   });
+
+  // Timer builder: steppers and inputs re-total; the button loads the program, Clear unloads it.
+  document.querySelectorAll("#timerBuilder [data-tb]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var input = b.parentNode.querySelector("input");
+      input.value = (parseInt(input.value, 10)||0) + parseInt(b.dataset.d, 10);
+      cleanTimerBuilder();
+    });
+  });
+  document.getElementById("timerBuilder").addEventListener("input", renderTimerBuilderTotal);
+  document.getElementById("timerBuilder").addEventListener("change", cleanTimerBuilder);
+  document.getElementById("tbLoadBtn").addEventListener("click", function(){
+    if(document.getElementById("tbLoadBtn").disabled) return;
+    cleanTimerBuilder();
+    loadTimerProgram(compileTimerConfig(readTimerBuilder()), { kind:"custom" });
+    document.getElementById("timerSettings").open = false;
+    showToast("Workout loaded. Tap Start when you're ready.");
+  });
+  document.getElementById("tbClearBtn").addEventListener("click", function(){
+    if(timer.running) return;
+    loadTimerProgram(null);
+  });
+  cleanTimerBuilder();
 
   document.getElementById("planToggle").addEventListener("click", function(){
     var s = getActiveSession();
