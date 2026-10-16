@@ -616,6 +616,10 @@
   .progress-fill{height:100%;border-radius:999px;background:var(--text-dim);transition:width 1s linear, background .3s ease;}
   .phase-work .progress-fill{background:var(--accent);} .phase-rest .progress-fill{background:var(--send);}
   .timer-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+  .timer-skip-row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin:-8px 0 18px;}
+  .timer-skip-row[hidden], .timer-skip-row [hidden]{display:none;}
+  .timer-skip-btn{min-height:44px;min-width:44px;padding:10px 14px;font-size:13px;}
+  .timer-skip-chip{min-height:44px;min-width:44px;padding:8px 16px;font-size:13px;}
   .timer-config{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;padding-top:16px;border-top:1px dashed var(--border);}
   .field{display:flex;flex-direction:column;align-items:center;gap:4px;}
   .field label{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);}
@@ -1876,6 +1880,11 @@
       <div class="timer-controls">
         <button class="btn btn-primary" id="startBtn">Start</button>
         <button class="btn btn-ghost" id="resetBtn">Reset</button>
+      </div>
+      <div class="timer-skip-row" id="timerSkipRow" hidden>
+        <button type="button" class="btn btn-ghost timer-skip-btn" id="timerBackBtn" aria-label="Previous phase (or restart this one)">&#9664;&#9664; Back</button>
+        <button type="button" class="chip timer-skip-chip" id="timerAddBtn" aria-label="Add 15 seconds to the rest" hidden>+15s</button>
+        <button type="button" class="btn btn-ghost timer-skip-btn" id="timerSkipBtn" aria-label="Skip to the next phase">Skip &#9654;&#9654;</button>
       </div>
       <details class="timer-settings" id="timerSettings">
       <summary class="timer-settings-summary">
@@ -3685,10 +3694,7 @@
         changed = true;
         if(timer.pIndex >= timer.program.length-1){
           // the last phase is over: stop, and tell the runner (after this sync has finished)
-          var meta = timer.programMeta;
-          timer.running = false; timer.phaseEndsAt = null; timer.remainingMs = 0; timer.phase = "done";
-          stopTimerTicking();
-          setTimeout(function(){ if(timerProgramDoneHook) timerProgramDoneHook(meta); }, 0);
+          finishTimerProgram();
           break;
         }
         timer.pIndex += 1;
@@ -3703,6 +3709,46 @@
       changed = true;
     }
     return changed;
+  }
+  function finishTimerProgram(){
+    var meta = timer.programMeta;
+    timer.running = false; timer.phaseEndsAt = null; timer.remainingMs = 0; timer.phase = "done";
+    stopTimerTicking();
+    setTimeout(function(){ if(timerProgramDoneHook) timerProgramDoneHook(meta); }, 0);
+  }
+  // ---- skip / back / +15s (program only; free mode never calls these) ----
+  // They only move pIndex / phaseEndsAt (or remainingMs when paused), so the engine stays timestamp-driven.
+  var TIMER_RESTART_MS = 2000;   // Back inside the first 2 s of a phase goes to the previous one
+  function timerSkipOk(){ return !!timer.program && (timer.phase==="work" || timer.phase==="rest"); }
+  function workPhasesBefore(i){
+    var n = 0;
+    for(var k=0;k<i;k++){ if(timer.program[k].kind==="work") n++; }
+    return n;
+  }
+  function timerSkip(dir){
+    if(!timerSkipOk()) return;
+    var now = Date.now();
+    if(timer.running){ syncTimer(now); if(!timerSkipOk()) { persistTimer(); renderTimer(); return; } }
+    var prog = timer.program, i = timer.pIndex, elapsed = prog[i].ms - timerRemainingMs(now), to;
+    if(dir>0){
+      if(i >= prog.length-1){
+        timer.round = workPhasesBefore(prog.length) ;
+        finishTimerProgram(); persistTimer(); renderTimer(); return;
+      }
+      to = i+1;
+    } else {
+      to = (i>0 && elapsed < TIMER_RESTART_MS) ? i-1 : i;
+    }
+    timer.pIndex = to; timer.phase = prog[to].kind; timer.round = workPhasesBefore(to);
+    if(timer.running) timer.phaseEndsAt = now + prog[to].ms; else timer.remainingMs = prog[to].ms;
+    beep(520, 80, 0.05);
+    persistTimer(); renderTimer();
+  }
+  function timerAddMs(ms){
+    if(!timer.program || timer.phase!=="rest") return;
+    if(timer.running){ syncTimer(Date.now()); if(timer.phase!=="rest") { renderTimer(); return; } timer.phaseEndsAt += ms; }
+    else timer.remainingMs += ms;
+    persistTimer(); renderTimer();
   }
   function startTimerTicking(){ if(!timerTickId) timerTickId = setInterval(tick, TIMER_TICK_MS); }
   function stopTimerTicking(){ if(timerTickId){ clearInterval(timerTickId); timerTickId = null; } }
@@ -3808,6 +3854,8 @@
     document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : timer.phase==="done" ? "Done" : "Resume");
     document.getElementById("startBtn").disabled = timer.phase==="done";
     document.getElementById("playRestBtn").hidden = timer.phase!=="rest"; // GAMES hook
+    document.getElementById("timerSkipRow").hidden = !timerSkipOk();
+    document.getElementById("timerAddBtn").hidden = !(timerSkipOk() && timer.phase==="rest");
     // A workout step's program owns the timer; the free work/rest settings wait until it's unloaded.
     var idle = timer.phase==="idle" && !timer.program;
     document.getElementById("workInput").disabled = !idle;
@@ -4838,7 +4886,7 @@
     }
     return out;
   }
-  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig }; // dev/tests.html only
+  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig, skip:timerSkip, add:timerAddMs, get:function(){ return timer; }, load:loadTimerProgram }; // dev/tests.html only
   function restProgram(sec, tag){ return [{ kind:"rest", label:"REST", ms:sec*1000, tag:tag||"" }]; }
 
   // ---- the runner ----
@@ -9494,6 +9542,9 @@
     if(timer.running) pauseTimer(); else { startTimer(); document.getElementById("timerSettings").open = false; }
   });
   document.getElementById("resetBtn").addEventListener("click", resetTimer);
+  document.getElementById("timerBackBtn").addEventListener("click", function(){ timerSkip(-1); });
+  document.getElementById("timerSkipBtn").addEventListener("click", function(){ timerSkip(1); });
+  document.getElementById("timerAddBtn").addEventListener("click", function(){ timerAddMs(15000); });
 
   document.getElementById("workInput").addEventListener("change", function(e){ setWork(e.target.value); });
   document.getElementById("restInput").addEventListener("change", function(e){ setRest(e.target.value); });

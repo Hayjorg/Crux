@@ -684,6 +684,131 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect($("phaseLabel").textContent==="READY", "plain timer after Clear");
   });
 
+  // ---- timer skip / back / +15s ----
+  function ph(kind, ms, label){ return { kind:kind, label:label||kind.toUpperCase(), ms:ms, tag:"" }; }
+  var SKIP_PROG = function(){ return [ph("work",20000), ph("rest",10000), ph("work",20000), ph("rest",10000), ph("work",20000)]; };
+  function T(){ return W.__cruxTimer.get(); }
+  function loadCustom(prog){ W.__cruxTimer.load(prog, { kind:"custom" }); }
+
+  test("Timer skip: free mode shows no skip controls and ignores skip / +15s", async function(){
+    await boot(workoutSave()); await startOrResume();
+    expect($("timerSkipRow").hidden && $("timerAddBtn").hidden, "controls visible while idle in free mode");
+    await click("startBtn", 300);
+    expect($("phaseLabel").textContent==="WORK" && $("timerSkipRow").hidden, "controls visible in free mode while running");
+    var ends = T().phaseEndsAt;
+    W.__cruxTimer.skip(1); W.__cruxTimer.skip(-1); W.__cruxTimer.add(15000);
+    expect(T().phase==="work" && T().phaseEndsAt===ends && !T().program, "free mode changed by skip: "+T().phase);
+    await click("resetBtn", 200);
+    expect($("countdown").textContent==="00:45" && $("timerSkipRow").hidden, "reset in free mode");
+  });
+
+  test("Timer skip: skip and back move the phase, recompute round, and survive a reload", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom(SKIP_PROG());
+    expect($("timerSkipRow").hidden, "skip row shown before the program starts");
+    await click("startBtn", 300);
+    expect(!$("timerSkipRow").hidden && $("timerAddBtn").hidden, "work phase: row shown, +15s must be hidden");
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===1 && T().phase==="rest" && T().round===1 && !$("timerAddBtn").hidden, "after skip: "+T().pIndex+" "+T().phase+" r"+T().round);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===2 && T().phase==="work" && T().round===1, "second skip: "+T().pIndex+" r"+T().round);
+    await click("timerSkipBtn", 100); await click("timerSkipBtn", 100);
+    expect(T().pIndex===4 && T().round===2, "round after skips: "+T().pIndex+" r"+T().round);
+    await click("timerBackBtn", 100);   // <2 s in: previous phase
+    expect(T().pIndex===3 && T().phase==="rest" && T().round===2, "back: "+T().pIndex+" r"+T().round);
+    var before = { p:T().pIndex, ph:T().phase, ends:T().phaseEndsAt, round:T().round };
+    expect(Math.abs((before.ends-Date.now()) - 10000) < 400, "full phase length after skip: "+(before.ends-Date.now()));
+    var s = active().timerState;
+    expect(s.pIndex===3 && s.phaseEndsAt===before.ends, "not persisted");
+    await boot();
+    expect(T().pIndex===before.p && T().phase===before.ph && T().phaseEndsAt===before.ends && T().round===before.round && T().running, "after reload: "+T().pIndex+" "+T().phase);
+    expect(Math.abs(parseInt($("countdown").textContent.slice(3), 10) - 10) <= 1, "time left after reload: "+$("countdown").textContent);
+  });
+
+  test("Timer skip: skip and back while paused adjust remainingMs, and survive a reload", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom(SKIP_PROG());
+    await click("startBtn", 300); await click("startBtn", 100);   // pause
+    expect(!T().running && T().phaseEndsAt===null, "not paused");
+    await click("timerSkipBtn", 100);
+    expect(!T().running && T().phaseEndsAt===null && T().pIndex===1 && T().remainingMs===10000 && $("countdown").textContent==="00:10", "paused skip: "+JSON.stringify([T().running, T().pIndex, T().remainingMs]));
+    expect($("startBtn").textContent==="Resume", "should still be paused");
+    W.__cruxTimer.add(15000);
+    expect(T().remainingMs===25000 && !T().running, "paused +15s: "+T().remainingMs);
+    await boot();
+    expect(!T().running && T().pIndex===1 && T().phase==="rest" && T().remainingMs===25000 && $("countdown").textContent==="00:25", "paused reload: "+T().pIndex+" "+T().remainingMs);
+    await click("timerBackBtn", 100);   // at the start of phase 1 (0 s elapsed): previous
+    expect(T().pIndex===0 && T().remainingMs===20000 && T().round===0, "paused back: "+T().pIndex+" "+T().remainingMs);
+    await click("startBtn", 200);
+    expect(T().running && Math.abs(T().phaseEndsAt-Date.now()-20000) < 400, "resume after paused skip");
+  });
+
+  test("Timer skip: back restarts the current phase (phase 0, or more than 2 s in)", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom(SKIP_PROG());
+    await click("startBtn", 1200);
+    var left = T().phaseEndsAt - Date.now();
+    expect(left < 19000, "phase 0 hasn't run: "+left);
+    await click("timerBackBtn", 50);
+    expect(T().pIndex===0 && T().phaseEndsAt-Date.now() > 19500, "back from phase 0 should restart it: "+(T().phaseEndsAt-Date.now()));
+    await click("timerSkipBtn", 50);
+    await wait(2200);
+    await click("timerBackBtn", 50);
+    expect(T().pIndex===1 && T().phaseEndsAt-Date.now() > 9500, "back >2 s in should restart phase 1: "+T().pIndex+" "+(T().phaseEndsAt-Date.now()));
+  });
+
+  test("Timer skip: +15s only in rest, adds exactly 15 s each time, and the phase still ends on time", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom([ph("work",20000), ph("rest",1500), ph("work",20000)]);
+    await click("startBtn", 200);
+    W.__cruxTimer.add(15000);
+    expect(T().phase==="work" && Math.abs(T().phaseEndsAt-Date.now()-19800) < 400, "+15s worked outside rest");
+    await click("timerSkipBtn", 50);
+    expect(T().phase==="rest" && !$("timerAddBtn").hidden, "+15s chip missing in rest");
+    var e0 = T().phaseEndsAt;
+    await click("timerAddBtn", 50); await click("timerAddBtn", 50); await click("timerAddBtn", 50);
+    expect(T().phaseEndsAt===e0+45000, "3x +15s moved the end by "+(T().phaseEndsAt-e0));
+    expect(Math.abs(parseInt($("countdown").textContent.slice(3), 10) - 46) <= 1, "clock: "+$("countdown").textContent);
+    // the extended end instant is what the engine obeys: before it we stay in rest, at it we move on
+    W.__cruxTimer.get().phaseEndsAt = Date.now() + 700;   // jump near the end (engine is timestamp-driven)
+    await wait(300); expect(T().phase==="rest", "ended early");
+    await wait(900); expect(T().phase==="work" && T().pIndex===2, "didn't end at the instant: "+T().phase);
+  });
+
+  test("Timer skip: past the last phase a custom program is done and never touches the workout runner", async function(){
+    await boot(workoutSave()); await startQuick();
+    var idx0 = activeWorkout().index, st0 = JSON.stringify(activeWorkout().steps);
+    loadCustom([ph("work",20000), ph("rest",10000)]);
+    await click("startBtn", 200);
+    await click("timerSkipBtn", 50); await click("timerSkipBtn", 200);
+    expect(T().phase==="done" && !T().running && $("phaseLabel").textContent==="DONE" && $("timerSkipRow").hidden, "not done: "+T().phase);
+    expect(T().round===1, "round at done: "+T().round);
+    expect(activeWorkout().index===idx0 && JSON.stringify(activeWorkout().steps)===st0, "custom skip advanced the workout");
+    await click("resetBtn", 200);
+    expect(T().phase==="idle" && T().program, "reset should keep the custom program");
+    // running a custom program to natural completion must not call the runner either
+    loadCustom([ph("work",700), ph("rest",600)]);
+    await click("startBtn", 1700);
+    expect(T().phase==="done" && activeWorkout().index===idx0 && JSON.stringify(activeWorkout().steps)===st0, "natural completion touched the runner: "+T().phase);
+  });
+
+  test("Timer skip: inside a workout step, skip keeps the round right and skipping past the end advances the runner", async function(){
+    await boot(workoutSave()); await startQuick();
+    await click("startBtn", 150); await click("timerSkipBtn", 400);   // s1 (single phase) -> done, runner on to s2
+    expect(stepStatus("s1")==="done" && activeWorkout().index===1, "step 1 not advanced by skipping its last phase");
+    var n = T().program.length;
+    expect(/PULLS|READY/.test($("phaseLabel").textContent), "s2 not loaded: "+$("phaseLabel").textContent);
+    await click("startBtn", 150);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===1 && T().round===1, "s2 after one skip: "+T().pIndex+" r"+T().round);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===2 && T().round===1 && T().phase==="work", "s2 second skip: "+T().pIndex+" r"+T().round);
+    await click("timerBackBtn", 100);
+    expect(T().pIndex===1 && T().round===1, "s2 back: "+T().pIndex+" r"+T().round);
+    await click("timerSkipBtn", 100); await click("timerSkipBtn", 400);
+    expect(stepStatus("s2")==="done" && activeWorkout().index===2, "step 2 not advanced: idx "+activeWorkout().index);
+  });
+
   test("Workouts: build, edit and delete your own in Advanced; Simple can only run them", async function(){
     await boot(workoutSave()); await toTrain(); await click("openWorkoutsBtn");
     await click("newWorkoutBtn");
