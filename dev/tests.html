@@ -2476,7 +2476,11 @@ and the project rules. It runs on its own private copy of the data, never your r
     var g = saved().games;
     expect(g.chalkRhythm.best===31 && g.chalkRhythm.plays===9 && g.chalkRhythm.perfectBest===6 && g.chalkUp.best===5 && g.holdHop.best===4 && g.futureGame.shiny==="x", "legacy ids lost: "+JSON.stringify(g));
     expect(g.dyno.best===0 && g.dyno.plays===0 && g.dyno.cleanBest===0, "dyno defaults: "+JSON.stringify(g.dyno));
-    await dyOpen(); await dyLatch(G); await wait(60);
+    await dyOpen();
+    // The band is only ~400 ms wide and a hold is timed with setTimeout, so a stalled test frame can turn one latch into a fall
+    // (that made this test fail once, then pass on reruns). What is under test is the legacy data, so retry until a hold latches.
+    for(var k=0; k<4 && !(G.current().h>=1); k++){ await dyReady(G); await dyLatch(G); await wait(80); }
+    expect(G.current().h>=1, "could not latch a hold");
     await click("closeGamesBtn", 250);
     g = saved().games;
     expect(g.dyno.plays===1 && g.dyno.best===1 && g.chalkRhythm.best===31 && g.chalkRhythm.plays===9 && g.chalkRhythm.perfectBest===6 && g.futureGame.best===3, "a Dyno round touched other games: "+JSON.stringify(g));
@@ -3272,6 +3276,150 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("playRestBtn", 300);
     expect(!$("gamesOverlay").hidden, "Games didn't open from rest");
   });
+
+  // ---- saved custom timers ----
+  var CFG_A = { work:7, reps:6, repRest:3, sets:3, setRest:60, leadIn:10 }, CFG_B = { work:30, reps:4, repRest:20, sets:2, setRest:90, leadIn:5 };
+  function ctSave(mode, list){ var s = workoutSave(mode); s.customTimers = list; return s; }
+  function ctEntry(id, name, cfg, pinned){ return { id:id, name:name, cfg:cfg, pinned:!!pinned, createdAt:1000 }; }
+  function setBuilder(cfg){ var m = { tbWork:"work", tbRepRest:"repRest", tbReps:"reps", tbSets:"sets", tbSetRest:"setRest", tbLeadIn:"leadIn" };
+    Object.keys(m).forEach(function(id){ $(id).value = cfg[m[id]]; fire($(id), "change"); }); }
+  function savedRow(name){ return qa("#tbSaved li").find(function(li){ return li.querySelector(".tb-saved-name") && li.querySelector(".tb-saved-name").firstChild.textContent===name; }); }
+  function rowBtn(name, key){ var li = savedRow(name); expect(li, "no saved row "+name); var b = li.querySelector("["+key+"]") ; expect(b, "no "+key+" on "+name); return b; }
+
+  test("Saved timers: save, rename, pin, delete with Undo", async function(){
+    await boot(workoutSave()); await startOrResume();
+    $("timerSettings").open = true;
+    expect(visible("tbSaveBtn"), "no Save as button in Advanced");
+    await click("tbSaveBtn", 100);
+    expect((saved().customTimers||[]).length===0, "saved with no name");
+    setBuilder(CFG_A); await type($("tbSaveName"), "My hangs"); await click("tbSaveBtn", 200);
+    var s = saved();
+    expect(s.customTimers.length===1 && s.customTimers[0].name==="My hangs" && JSON.stringify(s.customTimers[0].cfg)===JSON.stringify(CFG_A) && s.customTimers[0].pinned===false && typeof s.customTimers[0].id==="string", "saved: "+JSON.stringify(s.customTimers));
+    setBuilder(CFG_B); await type($("tbSaveName"), "x".repeat(60)); await click("tbSaveBtn", 200);
+    s = saved(); expect(s.customTimers.length===2 && s.customTimers[1].name.length===40, "name cap: "+s.customTimers[1].name.length);
+    expect(qa("#tbSaved li").length===2, "list rows");
+    // rename
+    await click(rowBtn("My hangs", "data-rename"), 150);
+    var inp = q("#tbSaved li input"); inp.value = "Renamed"; await click(q("#tbSaved [data-rename-ok]"), 200);
+    expect(saved().customTimers[0].name==="Renamed" && savedRow("Renamed"), "rename: "+saved().customTimers[0].name);
+    // pin / unpin
+    await click(rowBtn("Renamed", "data-pin"), 150);
+    expect(saved().customTimers[0].pinned===true && qa("#presets .preset-pinned").length===1, "pin");
+    await click(rowBtn("Renamed", "data-pin"), 150);
+    expect(saved().customTimers[0].pinned===false && qa("#presets .preset-pinned").length===0, "unpin");
+    // delete + Undo
+    await click(rowBtn("Renamed", "data-delete"), 150);
+    expect(saved().customTimers.length===1 && !savedRow("Renamed"), "delete");
+    await click(q("#toastStack .toast-action"), 200);
+    s = saved(); expect(s.customTimers.length===2 && s.customTimers[0].name==="Renamed", "undo restore: "+JSON.stringify(s.customTimers.map(function(t){ return t.name; })));
+    await click(rowBtn("Renamed", "data-delete"), 150);
+    expect(saved().customTimers.length===1, "delete again");
+    // cap at 30
+    var many = []; for(var i=0;i<30;i++) many.push(ctEntry("m"+i, "T"+i, CFG_A));
+    await boot(ctSave("advanced", many)); await startOrResume(); $("timerSettings").open = true;
+    await type($("tbSaveName"), "one too many"); await click("tbSaveBtn", 200);
+    expect(saved().customTimers.length===30, "cap exceeded: "+saved().customTimers.length);
+  });
+
+  test("Saved timers: reload keeps them; backup export+import round-trips; an old backup gets []", async function(){
+    var list = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", CFG_B, false)];
+    await boot(ctSave("advanced", list)); await goHome();
+    expect(JSON.stringify(saved().customTimers)===JSON.stringify(list), "reload changed them: "+JSON.stringify(saved().customTimers));
+    await boot(); await startOrResume();
+    expect(qa("#tbSaved li").length===2 && qa("#presets .preset-pinned").length===1, "UI after reload");
+    var json = await exportJson();
+    expect(JSON.parse(json).data.customTimers.length===2, "export lacks customTimers");
+    await boot(TEMPLATE); await importText(json, true);
+    expect(JSON.stringify(saved().customTimers)===JSON.stringify(list), "import round-trip: "+JSON.stringify(saved().customTimers));
+    await startOrResume();
+    expect(qa("#presets .preset-pinned").length===1, "pinned chip not drawn after import");
+    var old = oldFormatSave(); delete old.customTimers;
+    await boot(TEMPLATE); await importText(JSON.stringify(old), true);
+    expect(Array.isArray(saved().customTimers) && saved().customTimers.length===0, "old backup: "+JSON.stringify(saved().customTimers));
+    await boot(old); await goHome();
+    expect(Array.isArray(saved().customTimers) && saved().customTimers.length===0, "old save");
+  });
+
+  test("Saved timers: malformed entries are dropped without throwing; good ones are repaired", async function(){
+    var bad = ctSave("advanced", [ null, 5, "x", { id:7, name:"n", cfg:CFG_A }, { id:"a", name:"", cfg:CFG_A }, { id:"b", name:"nocfg" },
+      { id:"c", name:"Good", cfg:{ work:1, reps:500, repRest:"zz", sets:-2, setRest:5000, leadIn:null }, pinned:"yes", createdAt:"no" },
+      { id:"c", name:"Dup id", cfg:CFG_B, pinned:true }, { id:"d", name:"y".repeat(80), cfg:CFG_B, pinned:true } ]);
+    await boot(bad); await startOrResume();
+    var l = saved().customTimers;
+    expect(l.length===3, "kept "+l.length+": "+JSON.stringify(l.map(function(t){ return t.name; })));
+    var g = l[0]; expect(g.name==="Good" && g.pinned===false && g.createdAt===0 && JSON.stringify(g.cfg)===JSON.stringify(W.__cruxTimer.norm(g.cfg)) && g.cfg.work===3 && g.cfg.reps===99, "repair: "+JSON.stringify(g));
+    expect(l[1].id!=="c" && l[1].name==="Dup id", "duplicate id kept: "+l[1].id);
+    expect(l[2].name.length===40, "name cap");
+    expect(qa("#presets .preset-pinned").length===2, "pinned chips");
+    await boot({ settings:{} , sessions:[], customTimers:"nope" }); 
+    expect(Array.isArray(saved().customTimers), "non-array list");
+    var huge = []; for(var i=0;i<80;i++) huge.push(ctEntry("h"+i, "H"+i, CFG_A));
+    await boot(ctSave("advanced", huge)); await goHome();
+    expect(saved().customTimers.length===30, "list cap: "+saved().customTimers.length);
+  });
+
+  test("Saved timers: pinned chips come first, load the right program, obey the guards; fixed presets unchanged", async function(){
+    var list = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", CFG_B, true), ctEntry("t3", "Gamma", CFG_A, false)];
+    await boot(ctSave("advanced", list)); await startOrResume(); $("timerSettings").open = true;
+    var chips = qa("#presets .chip");
+    expect(chips.length===7 && chips[0].textContent==="Alpha" && chips[1].textContent==="Beta" && chips[2].textContent==="Max Hangs 10/50", "order: "+chips.map(function(c){ return c.textContent; }).join("|"));
+    expect(/in total/.test(chips[0].title) && /in total/.test(chips[0].getAttribute("aria-label")), "no total in title/aria");
+    await click(chips[1], 300);
+    var T_ = W.__cruxTimer.get(), want = W.__cruxTimer.compile(CFG_B);
+    expect(T_.program && JSON.stringify(T_.program)===JSON.stringify(want) && T_.programMeta.kind==="custom" && T_.programMeta.timerId==="t2", "loaded program differs");
+    // another chip while custom is loaded (not running) swaps programs
+    await click(qa("#presets .preset-pinned")[0], 300);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===JSON.stringify(W.__cruxTimer.compile(CFG_A)), "swap while idle");
+    // running: disabled and ignored
+    await click("startBtn", 300);
+    qa("#presets .chip").forEach(function(c){ expect(c.disabled, c.textContent+" enabled while running"); });
+    var before = JSON.stringify(W.__cruxTimer.get().program);
+    qa("#presets .preset-pinned")[1].click(); qa("#tbSaved [data-load]")[1].click(); await wait(150);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===before, "program changed while running");
+    await click("resetBtn", 200);
+    // a fixed preset still works (after clearing the custom program)
+    await click("tbClearBtn", 200);
+    await click(qa("#presets .chip").find(function(c){ return /Max Hangs/.test(c.textContent); }), 200);
+    expect(saved().timerDefaults.workSec===10 && saved().timerDefaults.restSec===50, "fixed preset broke");
+    // Load button in the list
+    await click(rowBtn("Gamma", "data-load"), 300);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===JSON.stringify(W.__cruxTimer.compile(CFG_A)) && W.__cruxTimer.get().programMeta.timerId==="t3", "list Load");
+  });
+
+  test("Saved timers: a workout step owns the timer, so chips and Load stay disabled", async function(){
+    var s = ctSave("advanced", [ctEntry("t1", "Alpha", CFG_A, true)]);
+    await boot(s); await startQuick();
+    var steps = 0;
+    for(var i=0;i<4 && !W.__cruxTimer.get().program;i++){ await wait(200); }
+    var T_ = W.__cruxTimer.get();
+    if(!T_.program) return;   // this quick workout opens on a non-timer step: nothing to guard
+    expect(T_.programMeta.kind!=="custom", "setup");
+    var chip = q("#presets .preset-pinned"); expect(chip && chip.disabled, "chip enabled while a workout owns the timer");
+    var before = JSON.stringify(T_.program); chip.click(); await wait(100);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===before, "workout program replaced");
+  });
+
+  test("Saved timers: Simple mode shows pinned chips but none of the builder", async function(){
+    var list = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", CFG_B, false)];
+    await boot(ctSave("simple", list)); await startOrResume(); $("timerSettings").open = true;
+    expect(qa("#presets .preset-pinned").length===1 && $("presets").firstElementChild.textContent==="Alpha", "pinned chip missing in Simple");
+    expect(!visible("timerBuilder") && !$("tbSaveBtn").offsetParent && !$("tbLoadBtn").offsetParent && !$("tbSaved").offsetParent, "builder controls visible in Simple");
+    await click(q("#presets .preset-pinned"), 300);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===JSON.stringify(W.__cruxTimer.compile(CFG_A)), "Simple chip didn't load");
+    expect(!$("tbClearBtn").hidden && $("tbClearBtn").offsetParent, "Clear should be reachable when a custom program is loaded");
+    expect(!$("tbSaveBtn").offsetParent, "save control showed with a program loaded");
+    await setMode("advanced"); await startOrResume(); $("timerSettings").open = true;
+    expect(visible("timerBuilder") && $("tbSaveBtn").offsetParent && qa("#tbSaved li").length===2, "Advanced lost the builder");
+  });
+
+  test("Saved timers: Today's plan is identical with and without saved timers", async function(){
+    var spec = [{ daysAgo:3, attempts:[["send","V5"],["fall"]] }], plain = planSave(spec), withT = planSave(spec);
+    withT.customTimers = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", { work:10, reps:6, repRest:50, sets:1, setRest:0, leadIn:10 }, true)];
+    await boot(plain); await startOrResume(); var a = planText();
+    await boot(withT); await startOrResume(); var b = planText();
+    expect(a.body && a.body===b.body && a.why===b.why, "plan changed: "+JSON.stringify(a)+" vs "+JSON.stringify(b));
+  });
+  // ---- end saved custom timers ----
 
   /* ---------- runner ---------- */
   var running = false;

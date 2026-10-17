@@ -1440,6 +1440,19 @@
   .timer-builder .field label{text-align:center;}
   .timer-builder-total{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);margin:14px 0 10px;}
   .timer-builder-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .timer-builder.tb-simple .tb-adv{display:none;}
+  .tb-save{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:14px;}
+  .tb-save input{flex:1 1 140px;min-width:0;max-width:240px;min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;}
+  .tb-saved-title{font-size:13px;font-weight:600;margin:18px 0 6px;}
+  .tb-saved-empty{font-size:12px;color:var(--text-dim);margin:0;}
+  .tb-saved{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;text-align:left;}
+  .tb-saved li{border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+  .tb-saved-name{font-size:14px;font-weight:600;overflow-wrap:anywhere;}
+  .tb-saved-meta{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-dim);font-weight:400;margin-left:6px;}
+  .tb-saved-btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .tb-saved-btns .chip,.tb-saved input{min-height:44px;}
+  .tb-saved input{flex:1;min-width:0;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;}
+  .presets .chip.preset-pinned{border-style:solid;font-weight:600;}
 
   /* A small climber who watches you log. Head-and-shoulders crop of the full sprite. */
   .log-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px;}
@@ -1979,9 +1992,9 @@
         What are these workouts for?
       </button>
       <div class="timer-builder" id="timerBuilder">
-        <p class="timer-builder-title">Build your own interval workout</p>
-        <p class="timer-builder-sub">Set the work, rest, reps and sets, then load it onto the timer.</p>
-        <div class="timer-builder-grid">
+        <p class="timer-builder-title tb-adv">Build your own interval workout</p>
+        <p class="timer-builder-sub tb-adv">Set the work, rest, reps and sets, then load it onto the timer.</p>
+        <div class="timer-builder-grid tb-adv">
           <div class="field"><label for="tbWork">Work (sec)</label>
             <div class="stepper"><button type="button" data-tb="work" data-d="-5" aria-label="Decrease work seconds">–</button><input type="number" id="tbWork" min="3" max="1800" value="7" inputmode="numeric"><button type="button" data-tb="work" data-d="5" aria-label="Increase work seconds">+</button></div></div>
           <div class="field"><label for="tbRepRest">Rest between reps (sec)</label>
@@ -1995,10 +2008,19 @@
           <div class="field"><label for="tbLeadIn">Get ready (sec)</label>
             <div class="stepper"><button type="button" data-tb="leadIn" data-d="-5" aria-label="Decrease get ready seconds">–</button><input type="number" id="tbLeadIn" min="0" max="300" value="10" inputmode="numeric"><button type="button" data-tb="leadIn" data-d="5" aria-label="Increase get ready seconds">+</button></div></div>
         </div>
-        <p class="timer-builder-total" id="tbTotal" aria-live="polite"></p>
+        <p class="timer-builder-total tb-adv" id="tbTotal" aria-live="polite"></p>
         <div class="timer-builder-actions">
-          <button type="button" class="btn btn-primary" id="tbLoadBtn">Load onto timer</button>
+          <button type="button" class="btn btn-primary tb-adv" id="tbLoadBtn">Load onto timer</button>
           <button type="button" class="btn btn-ghost" id="tbClearBtn" hidden>Clear</button>
+        </div>
+        <div class="tb-save tb-adv">
+          <input type="text" id="tbSaveName" maxlength="40" placeholder="Name this workout" aria-label="Name for the saved workout" autocomplete="off">
+          <button type="button" class="btn btn-ghost" id="tbSaveBtn">Save as...</button>
+        </div>
+        <div class="tb-adv" id="tbSavedWrap">
+          <p class="tb-saved-title">Saved workouts</p>
+          <p class="tb-saved-empty" id="tbSavedEmpty">Nothing saved yet. Set up a workout, name it and tap Save as.</p>
+          <ul class="tb-saved" id="tbSaved"></ul>
         </div>
         <p class="timer-builder-note" id="tbNote" hidden>This workout is loaded. Clear it to go back to the simple work/rest timer.</p>
       </div>
@@ -2986,6 +3008,7 @@
       projects:[],
       // Your own workouts (Workout document v1, docs/coaching/DESIGN.md section 5): {id, workout, createdAt, updatedAt}.
       workouts:[],
+      customTimers:[],
       // THE WALL (removable): rest days you logged (local day numbers), and how many holds you have
       // already watched your climber reach (null until you first open The Wall).
       restDays:[], wallSeen:null,
@@ -3086,6 +3109,24 @@
   }
   // Shared by loadState and backup import: brings any saved shape (pre-sessions legacy data,
   // older settings versions, or a current save) up to today's state shape.
+  // Saved custom timers (the timer builder's "Save as"): [{id, name, cfg, pinned, createdAt}]. Older saves have none.
+  // Only malformed entries are dropped; a duplicate id is renamed, not lost. Nothing else (plan, XP, history) reads this list.
+  var MAX_CUSTOM_TIMERS = 30;
+  function normCustomTimers(list){
+    var out = [], seen = {};
+    if(!Array.isArray(list)) return out;
+    for(var i=0; i<list.length && out.length<MAX_CUSTOM_TIMERS; i++){
+      var t = list[i];
+      if(!t || typeof t!=="object" || typeof t.id!=="string" || !t.id || typeof t.name!=="string") continue;
+      var name = t.name.trim().slice(0, 40);
+      if(!name || !t.cfg || typeof t.cfg!=="object" || Array.isArray(t.cfg)) continue;
+      var id = t.id; while(seen[id]) id += "-"+i;
+      seen[id] = true;
+      var at = Number(t.createdAt);
+      out.push({ id:id, name:name, cfg:normTimerConfig(t.cfg), pinned:t.pinned===true, createdAt:isFinite(at) ? at : 0 });
+    }
+    return out;
+  }
   function normalizeState(parsed){
     var migrated = migrateIfNeeded(parsed);
     var base = defaultState();
@@ -3098,6 +3139,7 @@
       sessions: Array.isArray(migrated.sessions)?migrated.sessions:[],
       projects: Array.isArray(migrated.projects)?migrated.projects:[],
       workouts: Array.isArray(migrated.workouts)?migrated.workouts.filter(function(w){ return w && typeof w==="object"; }):[],
+      customTimers: normCustomTimers(migrated.customTimers),
       restDays: Array.isArray(migrated.restDays)?migrated.restDays.filter(function(d){ return typeof d==="number" && isFinite(d); }):[],
       games: gamesNormalize(migrated.games)
     });
@@ -4011,12 +4053,114 @@
     ["workMinus","workPlus","restMinus","restPlus"].forEach(function(id){ document.getElementById(id).disabled = !idle; });
     document.querySelectorAll("#presets .chip").forEach(function(c){ c.disabled = !idle; });
     var custom = customProgramLoaded();
+    var canLoad = !timer.running && (idle || custom); // same guard as the builder's Load button
+    document.querySelectorAll("#presets .preset-pinned").forEach(function(c){ c.disabled = !canLoad; });
+    document.querySelectorAll("#tbSaved [data-load]").forEach(function(c){ c.disabled = !canLoad; });
+    var advancedMode = state.settings.mode==="advanced";
+    var builderEl = document.getElementById("timerBuilder");
+    builderEl.classList.toggle("tb-simple", !advancedMode);
+    builderEl.hidden = !advancedMode && !custom; // Simple mode: only the loaded note + Clear, never the builder
     document.getElementById("tbLoadBtn").disabled = timer.running || !(idle || custom);
     document.getElementById("tbClearBtn").hidden = !custom;
     document.getElementById("tbClearBtn").disabled = timer.running;
     document.getElementById("tbNote").hidden = !custom;
     document.getElementById("timerSettingsNow").textContent = custom ? "Custom workout loaded" :
       state.timerDefaults.workSec+"s work · "+state.timerDefaults.restSec+"s rest";
+  }
+  // ---- saved custom timers (state.customTimers) ----
+  var renamingTimerId = null;
+  function timerCfgMs(cfg){ var ms = 0; compileTimerConfig(cfg).forEach(function(p){ ms += p.ms; }); return ms; }
+  function timerCfgSummary(cfg){ var c = normTimerConfig(cfg); return c.work+"s x "+c.reps+(c.sets>1 ? " x "+c.sets+" sets" : "")+" \u00b7 "+fmtDur(Math.round(timerCfgMs(c)/1000)); }
+  function findCustomTimer(id){ return (state.customTimers||[]).find(function(t){ return t.id===id; }); }
+  function renderSavedTimers(){
+    var list = state.customTimers || [];
+    // Pinned chips go first in #presets (Simple and Advanced); the fixed presets follow, unchanged.
+    var presets = document.getElementById("presets");
+    presets.querySelectorAll(".preset-pinned").forEach(function(c){ c.remove(); });
+    list.filter(function(t){ return t.pinned; }).reverse().forEach(function(t){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip preset-pinned"; b.dataset.timerId = t.id;
+      b.textContent = t.name;
+      var total = fmtDur(Math.round(timerCfgMs(t.cfg)/1000));
+      b.title = t.name+" \u00b7 "+total+" in total"; b.setAttribute("aria-label", t.name+", "+total+" in total");
+      presets.insertBefore(b, presets.firstChild);
+    });
+    var ul = document.getElementById("tbSaved");
+    ul.innerHTML = "";
+    document.getElementById("tbSavedEmpty").hidden = list.length>0;
+    list.forEach(function(t){
+      var li = document.createElement("li"); li.dataset.timerId = t.id;
+      if(renamingTimerId===t.id){
+        var inp = document.createElement("input");
+        inp.type = "text"; inp.maxLength = 40; inp.value = t.name; inp.setAttribute("aria-label", "New name");
+        var row = document.createElement("div"); row.className = "tb-saved-btns";
+        row.appendChild(inp);
+        [["rename-ok","Save"],["rename-cancel","Cancel"]].forEach(function(a){
+          var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset[a[0]===("rename-ok") ? "renameOk" : "renameCancel"] = "1"; b.textContent = a[1]; row.appendChild(b);
+        });
+        li.appendChild(row);
+        setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 0);
+      } else {
+        var nm = document.createElement("div"); nm.className = "tb-saved-name"; nm.textContent = t.name;
+        var meta = document.createElement("span"); meta.className = "tb-saved-meta"; meta.textContent = timerCfgSummary(t.cfg);
+        nm.appendChild(meta);
+        li.appendChild(nm);
+        var btns = document.createElement("div"); btns.className = "tb-saved-btns";
+        [["load","Load"],["pin",t.pinned ? "Unpin" : "Pin"],["rename","Rename"],["delete","Delete"]].forEach(function(a){
+          var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset[a[0]] = "1"; b.textContent = a[1];
+          b.setAttribute("aria-label", a[1]+" "+t.name);
+          if(a[0]==="pin") b.setAttribute("aria-pressed", t.pinned ? "true" : "false");
+          btns.appendChild(b);
+        });
+        li.appendChild(btns);
+      }
+      ul.appendChild(li);
+    });
+    renderTimer();
+  }
+  function timerLoadAllowed(){ return !timer.running && ((timer.phase==="idle" && !timer.program) || customProgramLoaded()); }
+  function loadSavedTimer(id){
+    var t = findCustomTimer(id);
+    if(!t || !timerLoadAllowed()) return;
+    var c = normTimerConfig(t.cfg);
+    Object.keys(TB_IDS).forEach(function(bid){ document.getElementById(bid).value = c[TB_IDS[bid]]; });
+    renderTimerBuilderTotal();
+    loadTimerProgram(compileTimerConfig(c), { kind:"custom", timerId:t.id });
+    document.getElementById("timerSettings").open = false;
+    showToast(t.name+" loaded. Tap Start when you're ready.");
+  }
+  function saveCustomTimer(){
+    var inp = document.getElementById("tbSaveName"), name = inp.value.trim().slice(0, 40);
+    if(!name){ showToast("Give the workout a name first"); return; }
+    if(state.customTimers.length>=MAX_CUSTOM_TIMERS){ showToast("You can save up to "+MAX_CUSTOM_TIMERS+" workouts. Delete one first."); return; }
+    cleanTimerBuilder();
+    state.customTimers.push({ id:uid(), name:name, cfg:normTimerConfig(readTimerBuilder()), pinned:false, createdAt:Date.now() });
+    inp.value = "";
+    saveState(); renderSavedTimers();
+    showToast("Saved \u201c"+name+"\u201d");
+  }
+  function savedTimerAction(e){
+    var btn = e.target.closest("button"); if(!btn) return;
+    var li = btn.closest("li"); if(!li) return;
+    var id = li.dataset.timerId, t = findCustomTimer(id); if(!t) return;
+    if(btn.dataset.load){ loadSavedTimer(id); }
+    else if(btn.dataset.pin){ t.pinned = !t.pinned; saveState(); renderSavedTimers(); }
+    else if(btn.dataset.rename){ renamingTimerId = id; renderSavedTimers(); }
+    else if(btn.dataset.renameCancel){ renamingTimerId = null; renderSavedTimers(); }
+    else if(btn.dataset.renameOk){ finishRename(li, t); }
+    else if(btn.dataset.delete){
+      var idx = state.customTimers.indexOf(t);
+      state.customTimers.splice(idx, 1); saveState(); renderSavedTimers();
+      showToast("Deleted \u201c"+t.name+"\u201d", { label:"Undo", fn:function(){
+        if(findCustomTimer(t.id) || state.customTimers.length>=MAX_CUSTOM_TIMERS) return;
+        state.customTimers.splice(Math.min(idx, state.customTimers.length), 0, t); saveState(); renderSavedTimers();
+      } });
+    }
+  }
+  function finishRename(li, t){
+    var name = li.querySelector("input").value.trim().slice(0, 40);
+    if(!name){ showToast("A name can't be empty"); return; }
+    t.name = name; renamingTimerId = null; saveState(); renderSavedTimers();
   }
   function customProgramLoaded(){ return !!(timer.program && timer.programMeta && timer.programMeta.kind==="custom"); }
   var TB_IDS = { tbWork:"work", tbRepRest:"repRest", tbReps:"reps", tbSets:"sets", tbSetRest:"setRest", tbLeadIn:"leadIn" };
@@ -5035,7 +5179,7 @@
     return out;
   }
   if(window.__cruxTest) window.__cruxSound = { beep:beep, ensureAudio:ensureAudio, buzz:timerBuzz }; // dev/tests.html only
-  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig, skip:timerSkip, add:timerAddMs, get:function(){ return timer; }, load:loadTimerProgram, next:timerNextText, counters:timerCounters }; // dev/tests.html only
+  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig, skip:timerSkip, add:timerAddMs, get:function(){ return timer; }, load:loadTimerProgram, next:timerNextText, counters:timerCounters, saved:function(){ return state.customTimers; } }; // dev/tests.html only
   function restProgram(sec, tag){ return [{ kind:"rest", label:"REST", ms:sec*1000, tag:tag||"" }]; }
 
   // ---- the runner ----
@@ -9653,7 +9797,7 @@
     var chip = e.target.closest(".chip");
     if(!chip) return;
     state.settings.mode = chip.dataset.modeVal;
-    saveState(); renderSettingsModal();
+    saveState(); renderSettingsModal(); renderTimer();
     if(!document.getElementById("view-home").hidden) renderHome();
   });
   document.getElementById("historyExpandBtn").addEventListener("click", function(){
@@ -9724,6 +9868,7 @@
   document.getElementById("presets").addEventListener("click", function(e){
     var chip = e.target.closest(".chip");
     if(!chip || chip.disabled) return;
+    if(chip.dataset.timerId){ loadSavedTimer(chip.dataset.timerId); return; } // a pinned saved timer
     setWork(parseInt(chip.dataset.work,10));
     setRest(parseInt(chip.dataset.rest,10));
   });
@@ -9750,6 +9895,16 @@
     loadTimerProgram(null);
   });
   cleanTimerBuilder();
+  document.getElementById("tbSaveBtn").addEventListener("click", saveCustomTimer);
+  document.getElementById("tbSaveName").addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); saveCustomTimer(); } });
+  document.getElementById("tbSaved").addEventListener("click", savedTimerAction);
+  document.getElementById("tbSaved").addEventListener("keydown", function(e){
+    var li = e.target.closest && e.target.closest("li"); if(!li || e.target.tagName!=="INPUT") return;
+    var t = findCustomTimer(li.dataset.timerId); if(!t) return;
+    if(e.key==="Enter"){ e.preventDefault(); finishRename(li, t); }
+    else if(e.key==="Escape"){ renamingTimerId = null; renderSavedTimers(); }
+  });
+  renderSavedTimers();
 
   document.getElementById("planToggle").addEventListener("click", function(){
     var s = getActiveSession();
@@ -10063,6 +10218,7 @@
     saveState();
     applyTheme();
     restoreTimer();
+    renderSavedTimers();
     updateWakeLock();
     document.getElementById("importConfirm").hidden = true;
     closeSettings();
@@ -10108,6 +10264,7 @@
     saveState();
     applyTheme();
     resetTimer();
+    renderSavedTimers();
     updateWakeLock();
     closeSettings();
     showToast("All data reset");
