@@ -1,0 +1,583 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Climb lab</title>
+<!-- Dev-only prototype: drag the climber up a route of holds on the Home Wall board, using ONLY existing frames.
+     Not part of the app, never published, touches no other file. Open via a static server (frames load by plain ../assets/ paths). -->
+<style>
+  body{margin:0;padding:10px;font:13px system-ui,sans-serif;background:#F3EEE2;color:#221E19;}
+  h1{font-size:16px;margin:0 0 2px;} p.note{margin:0 0 8px;color:#6d655a;max-width:700px;font-size:12px;}
+  .wrap{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;}
+  #scene{position:relative;width:375px;height:450px;overflow:hidden;border-radius:10px;background:#3a2c20;flex:none;user-select:none;-webkit-user-select:none;}
+  #scene img.bg{position:absolute;left:0;width:375px;display:block;pointer-events:none;}
+  #holds,#dbg{position:absolute;left:0;top:0;width:375px;height:450px;pointer-events:none;}
+  #holds img{position:absolute;pointer-events:none;transform-origin:50% 50%;}
+  #holds img.foot{transform-origin:50% 0;}
+  #holds.above{z-index:5;}
+  #dbg{z-index:9;}
+  #climber{position:absolute;touch-action:none;cursor:grab;z-index:3;}
+  #climber .inner{position:absolute;left:0;top:0;width:100%;height:100%;}
+  #climber img{position:absolute;left:0;top:0;width:100%;height:100%;display:none;pointer-events:none;-webkit-user-drag:none;}
+  #shadow{position:absolute;z-index:2;border-radius:50%;background:rgba(20,10,5,.35);display:none;pointer-events:none;}
+  .controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0;max-width:375px;}
+  button,select{font:inherit;padding:6px 10px;border-radius:999px;border:1px solid #cdbf9f;background:#fff;cursor:pointer;color:inherit;}
+  button.on{background:#0FB8A6;color:#fff;border-color:transparent;}
+  label{display:flex;gap:4px;align-items:center;font-size:12px;}
+  .panel{background:#fff;border:1px solid #E3DAC5;border-radius:10px;padding:8px;font-size:11px;max-width:560px;}
+  pre{margin:0;white-space:pre-wrap;font:11px/1.35 ui-monospace,Menlo,monospace;max-height:260px;overflow:auto;}
+  #meas{display:flex;flex-wrap:wrap}#meas canvas{border:1px solid #ddd;margin:2px;background:#222;}
+  table{border-collapse:collapse;font-size:10.5px;} td,th{border:1px solid #e3dac5;padding:1px 4px;text-align:right;}
+</style></head><body>
+<h1>Climb lab</h1>
+<p class="note">Drag the climber up or down on the board (one move per 48 px). A fast downward fling or dragging 40 px off the board is a fall. Wait 3 s for the chalk rest. Drag the floor climber onto the board (or press Mount) to jump on.</p>
+<div class="wrap">
+<div>
+  <div id="scene">
+    <img class="bg" id="bg" alt="" src="../assets/rooms/homewall/background.jpg">
+    <div id="holds"></div>
+    <div id="shadow"></div>
+    <div id="climber"><div class="inner" id="inner"></div></div>
+    <svg id="dbg" viewBox="0 0 375 450"></svg>
+  </div>
+  <div class="controls" id="stances"></div>
+  <div class="controls">
+    <button id="bChalk">Chalk</button><button id="bFall">Fall</button><button id="bMount">Mount</button><button id="bFloor">To floor</button>
+    <label>size <input type="range" id="sc" min="0.07" max="0.16" step="0.005" value="0.11"><span id="scv">0.110</span></label>
+  </div>
+  <div class="controls">
+    <select id="variant"><option>default</option><option>slate</option><option>sandstone</option><option>moss</option></select>
+    <select id="outfit"><option value="">no outfit</option><option value="teal-knit">teal-knit</option><option value="shirt">shirt</option><option value="headlamp">headlamp</option></select>
+    <label><input type="checkbox" id="cMirror">mirror</label>
+    <label title="in-between frame during a move; default art, no outfit">mid frame <select id="sMid"><option value="v3">v2 right + left-v2 (no mirror)</option><option value="v2">v2 right + left v1 (no mirror)</option><option value="v1">v1 mirrored</option><option value="off">off</option></select></label>
+    <label><input type="checkbox" id="cAlign" checked>aligned swing</label><label><input type="checkbox" id="cReduced">reduced motion</label>
+    <label><input type="checkbox" id="cOutline" checked>board outline</label>
+    <label><input type="checkbox" id="cContacts">contacts</label>
+    <label><input type="checkbox" id="cAbove">holds in front</label>
+    <button id="bSeed">reseed jitter</button>
+  </div>
+</div>
+<div style="flex:1;min-width:300px">
+  <div class="panel"><b>Log</b><pre id="log"></pre></div>
+  <div class="panel" style="margin-top:8px"><b>Measurement</b> (frame px in 1024x1536 space; red = high fist, blue = low fist, green = soles, yellow = head / torso)<div id="meas"></div><div id="mtab"></div></div>
+</div>
+</div>
+<script>
+"use strict";
+/* ---------- constants ---------- */
+var BASE = "../assets/mascot/climber/";
+var FN = { RL:"climb/climb-reach-left", RR:"climb/climb-reach-right", CH:"climb/climb-chalk-up",
+           MD:"MID", M2:"MID2", ML:"MIDL", M3:"MIDL2", J1:"jump/jump-01", J2:"jump/jump-02", J3:"jump/jump-03", L1:"land/land-01", L2:"land/land-02", ID:"idle/idle-01" };
+var KEYS = Object.keys(FN);
+var VARIANTS = ["default","slate","sandstone","moss"];
+var MIDFILE = { MD:"climb-mid-reach-right", M2:"climb-mid-reach-right-v2", ML:"climb-mid-reach-left", M3:"climb-mid-reach-left-v2" };
+function frameURL(key, variant){ if(MIDFILE[key]) return "climb-frames/"+MIDFILE[key]+".png";   // dev-only in-between frame, default colours only (not in assets/)
+  return variant==="default" ? BASE+"default/"+FN[key]+".png" : BASE+"variants/"+variant+"/"+FN[key]+".png"; }
+function outfitURL(art, key){ if(MIDFILE[key]) return null; return "../assets/outfit/"+art+"/"+FN[key]+".png"; }
+var K = 375/1024, YOFF = 360 - 1095*K;           // paintedRoomSVG: floor line 1095 lands on 80% of the 450 scene
+var FLOOR_Y = 380, FLOOR_S = 0.2, FLOOR_X = 270;
+var BOARD_PX = [[45,1060],[235,1060],[570,130],[150,0]];
+var BOARD = BOARD_PX.map(function(p){ return [p[0]*K, p[1]*K+YOFF]; });
+var EST = { RL:{hi:[174,200],lo:[688,560],fa:[808,928],fb:[504,1264]},
+            RR:{hi:[870,323],lo:[352,608],fa:[264,872],fb:[632,1280]},
+            CH:{hi:[872,400],fa:[440,1290],fb:[792,1090]},
+            MD:{hi:[179,205],fa:[340,1400],fb:[830,1010]},
+            M2:{hi:[215,129],fa:[495,1403],fb:[819,922]}, ML:{hi:[837,115],fa:[613,1464],fb:[205,963]}, M3:{hi:[915,291],fa:[582,1352],fb:[224,928]} };   // MD = climb-mid-reach-right: gripping (high left) fist, soles; head/torso are measured like the others
+var LMEST = { RL:{head:[528,312]}, RR:{head:[512,376]}, CH:{head:[515,432]} };
+var HOLD_HAND = ["h_jug","r2_hold_red","h2_jug","r2_hold_blue","r2_hold_yellow","h2_jug","r2_hold_grey","h_jug","r2_hold_sand"];
+var HOLD_FOOT = ["h_foot","h2_chip"];
+var WALL_HOLD_SHAPE = { h_jug:0.72, h_foot:0.71, h2_jug:0.98, h2_chip:0.86, r2_hold_red:0.98, r2_hold_sand:0.96, r2_hold_yellow:0.92, r2_hold_grey:0.98, r2_hold_blue:0.87 };
+function wallHoldSize(k){ var r = WALL_HOLD_SHAPE[k] || 0.9; return Math.round(Math.max(46, Math.min(70, 47/Math.sqrt(r)))); } // same proportion idea as crux.html
+var HOLD_PX = 14/58;           // crux.html sizes are for the full-screen Wall; here the same proportions at ~14 px hand / ~8 px foot
+var MIDK = 1;   // 1 = rotate fully to follow the head/torso point, 0 = just the stance lean
+var MIDW = 0.7;   // 1 = align the mid frame by head, 0 = by torso
+var RISE = 48, STEP_GAP = 250, TWEEN_MS = 120, REST_MS = 3000, EXTRA_ROT = 14, PREVIEW_MIN = 0.08;
+
+var S = { mid:"v3", s:0.11, lean:12, mirror:false, variant:"default", reduced:false, outfit:"", seed:7, align:true, debug:true, contacts:false };
+var M = {};            // measurements, M[variant][key]
+var R = null;          // route
+var G = { mode:"floor", idx:0, desired:0, f:0, busy:false, dragging:false, lastStep:0, cur:null, fx:FLOOR_X };
+var LOG = [];
+function L(msg){ LOG.push(msg); var el = document.getElementById("log"); el.textContent += msg+"\n"; el.scrollTop = el.scrollHeight; }
+function $(id){ return document.getElementById(id); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function rot(v, deg){ var t = deg*Math.PI/180, c = Math.cos(t), s = Math.sin(t); return [v[0]*c - v[1]*s, v[0]*s + v[1]*c]; }
+function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+function fl(q){ return S.mirror ? [1024-q[0], q[1]] : q; }          // mirrored frame coordinates
+function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a>>>15, 1|a); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14)>>>0)/4294967296; }; }
+
+/* ---------- image loading + measuring (STEP 1) ---------- */
+var IMGS = {};   // IMGS[variant][key] = Image
+function loadImg(url){ return new Promise(function(res,rej){ var im = new Image(); im.onload = function(){ res(im); }; im.onerror = function(){ rej(new Error("load "+url)); }; im.src = url; }); }
+function pixels(im){ var c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; var x = c.getContext("2d"); x.drawImage(im,0,0); return { d:x.getImageData(0,0,c.width,c.height).data, w:c.width, h:c.height, sc:1024/c.width }; }
+function skin(d,i){ var r = d[i], g = d[i+1], b = d[i+2]; return d[i+3]>128 && r>165 && g>120 && b>80 && r-b>35 && r-b<115 && g-b>20 && g-b<80; }
+function meanShift(P, cx, cy, rad, test){      // cx, cy, rad in 1024 space; returns 1024-space centroid of matching pixels within rad
+  var w = P.w, h = P.h, sc = P.sc, x = cx/sc, y = cy/sc, r = rad/sc;
+  for(var it=0; it<5; it++){
+    var sx = 0, sy = 0, n = 0;
+    for(var py=Math.max(0,Math.floor(y-r)); py<=Math.min(h-1,Math.ceil(y+r)); py++){
+      for(var px=Math.max(0,Math.floor(x-r)); px<=Math.min(w-1,Math.ceil(x+r)); px++){
+        if((px-x)*(px-x)+(py-y)*(py-y) > r*r) continue;
+        if(test(P.d,(py*w+px)*4)){ sx += px; sy += py; n++; }
+      }
+    }
+    if(!n) break; var nx = sx/n, ny = sy/n; if(Math.abs(nx-x)<0.05 && Math.abs(ny-y)<0.05){ x = nx; y = ny; break; } x = nx; y = ny;
+  }
+  return [x*sc, y*sc];
+}
+function sole(P, ex, ey){   // lowest opaque run in a window around the estimate: returns [x of the bottom band, bottom y]
+  var sc = P.sc, w = P.w, h = P.h, x0 = Math.max(0,Math.floor((ex-130)/sc)), x1 = Math.min(w-1,Math.ceil((ex+130)/sc));
+  var y0 = Math.max(0,Math.floor((ey-140)/sc)), y1 = Math.min(h-1,Math.ceil((ey+200)/sc)), bot = -1;
+  for(var y=y1; y>=y0 && bot<0; y--) for(var x=x0; x<=x1; x++) if(P.d[(y*w+x)*4+3]>128){ bot = y; break; }
+  if(bot<0) return [ex,ey];
+  var sx = 0, n = 0, band = Math.round(14/sc);
+  for(var y=bot; y>bot-band; y--) for(var x=x0; x<=x1; x++) if(P.d[(y*w+x)*4+3]>128){ sx += x; n++; }
+  return [sx/n*sc, (bot+1)*sc];
+}
+function bbox(P){ var w = P.w, h = P.h, x0 = w, x1 = -1, y0 = h, y1 = -1;
+  for(var y=0; y<h; y++) for(var x=0; x<w; x++) if(P.d[(y*w+x)*4+3]>128){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  var sc = P.sc; return { x0:x0*sc, x1:(x1+1)*sc, y0:y0*sc, y1:(y1+1)*sc, cx:(x0+x1+1)/2*sc, cy:(y0+y1+1)/2*sc }; }
+function distTransform(P){   // chamfer 3-4 distance to nearest transparent pixel (natural px)
+  var w = P.w, h = P.h, D = new Float32Array(w*h), INF = 1e9;
+  for(var i=0; i<w*h; i++) D[i] = P.d[i*4+3]>128 ? INF : 0;
+  for(var y=0; y<h; y++) for(var x=0; x<w; x++){ var i = y*w+x; if(!D[i]) continue; var v = D[i];
+    if(x>0) v = Math.min(v, D[i-1]+3); if(y>0){ v = Math.min(v, D[i-w]+3); if(x>0) v = Math.min(v, D[i-w-1]+4); if(x<w-1) v = Math.min(v, D[i-w+1]+4); } D[i] = v; }
+  for(var y=h-1; y>=0; y--) for(var x=w-1; x>=0; x--){ var i = y*w+x; if(!D[i]) continue; var v = D[i];
+    if(x<w-1) v = Math.min(v, D[i+1]+3); if(y<h-1){ v = Math.min(v, D[i+w]+3); if(x<w-1) v = Math.min(v, D[i+w+1]+4); if(x>0) v = Math.min(v, D[i+w-1]+4); } D[i] = v; }
+  return D;
+}
+function bigCircle(P, D, x0,x1,y0,y1){ var best = -1, bx = 0, by = 0, w = P.w;
+  for(var y=Math.max(0,Math.floor(y0/P.sc)); y<Math.min(P.h,y1/P.sc); y+=2) for(var x=Math.max(0,Math.floor(x0/P.sc)); x<Math.min(w,x1/P.sc); x+=2){ var v = D[y*w+x]; if(v>best){ best = v; bx = x; by = y; } }
+  return { c:[bx*P.sc, by*P.sc], r:best/3*P.sc };
+}
+function measureFrame(key, P, withFists){
+  var out = { bb:bbox(P) }, e = EST[key];
+  if(e){
+    if(withFists){ out.hi = meanShift(P, e.hi[0], e.hi[1], 40, skin); if(e.lo) out.lo = meanShift(P, e.lo[0], e.lo[1], 40, skin); }
+    out.fa = sole(P, e.fa[0], e.fa[1]); out.fb = sole(P, e.fb[0], e.fb[1]);
+    var D = distTransform(P), head = bigCircle(P, D, 150, 880, 100, 780);        // head = biggest inscribed circle in the upper frame
+    var tor = bigCircle(P, D, 250, 800, head.c[1]+head.r*0.9, head.c[1]+head.r*0.9+420);
+    out.head = head.c; out.headR = head.r; out.torso = tor.c; out.torsoR = tor.r;
+  }
+  return out;
+}
+function alphaDiff(P, Q){ var n = 0, len = P.d.length; if(P.w!==Q.w || P.h!==Q.h) return -1; for(var i=3; i<len; i+=4) if((P.d[i]>128) !== (Q.d[i]>128)) n++; return n; }
+
+function measureAll(){
+  var pD = {}, report = [];
+  M.default = {};
+  KEYS.forEach(function(k){ pD[k] = pixels(IMGS.default[k]); M.default[k] = measureFrame(k, pD[k], true); });
+  VARIANTS.slice(1).forEach(function(v){
+    M[v] = {};
+    ["RL","RR","CH"].forEach(function(k){
+      var P = pixels(IMGS[v][k]); var m = measureFrame(k, P, false); M[v][k] = m;
+      m.alphaDiff = alphaDiff(pD[k], P);
+    });
+  });
+  ["RL","RR","CH","MD","M2","ML","M3"].forEach(function(k){
+    var m = M.default[k], e = EST[k], line = k+": ";
+    ["hi","lo","fa","fb"].forEach(function(n){ if(!m[n]) return;
+      var d = dist(m[n], e[n]); line += n+" ("+Math.round(m[n][0])+","+Math.round(m[n][1])+") est ("+e[n][0]+","+e[n][1]+") d="+d.toFixed(0)+(d>15?" **>15**":"")+"  ";
+    });
+    L(line);
+  });
+  VARIANTS.slice(1).forEach(function(v){
+    var line = v+": ";
+    ["RL","RR","CH"].forEach(function(k){ var m = M[v][k], d = M.default[k]; line += k+" alphaDiff="+m.alphaDiff+" soles d="+Math.max(dist(m.fa,d.fa),dist(m.fb,d.fb)).toFixed(1)+"  "; });
+    L(line);
+  });
+}
+function drawMeasure(){
+  var host = $("meas"); host.innerHTML = "";
+  ["RL","RR","CH","MD","M2","ML","M3"].forEach(function(k){
+    var im = IMGS[S.variant][k], c = document.createElement("canvas"), w = 190, h = 285, sc = w/1024; c.width = w; c.height = h;
+    var x = c.getContext("2d"); x.drawImage(im,0,0,w,h);
+    function cross(p,col){ if(!p) return; var px = p[0]*sc, py = p[1]*sc; x.strokeStyle = col; x.lineWidth = 1; x.beginPath(); x.moveTo(px-6,py); x.lineTo(px+6,py); x.moveTo(px,py-6); x.lineTo(px,py+6); x.stroke(); x.beginPath(); x.arc(px,py,3,0,7); x.stroke(); }
+    var m = M.default[k]; cross(m.hi,"#f33"); cross(m.lo,"#39f"); cross(m.fa,"#2e2"); cross(m.fb,"#2e2"); cross(m.head,"#fd0"); cross(m.torso,"#fd0");
+    host.appendChild(c);
+  });
+  var t = "<table><tr><th>frame</th><th>hi</th><th>lo</th><th>foot a</th><th>foot b</th><th>head</th><th>torso</th></tr>";
+  ["RL","RR","CH","MD","M2","ML","M3"].forEach(function(k){ var m = M.default[k];
+    function f(p){ return p ? Math.round(p[0])+","+Math.round(p[1]) : "-"; }
+    t += "<tr><td>"+k+"</td><td>"+f(m.hi)+"</td><td>"+f(m.lo)+"</td><td>"+f(m.fa)+"</td><td>"+f(m.fb)+"</td><td>"+f(m.head)+"</td><td>"+f(m.torso)+"</td></tr>"; });
+  $("mtab").innerHTML = t+"</table>";
+}
+
+/* ---------- geometry: board, route (STEP 2) ---------- */
+function insideMargin(p){      // distance to the nearest board edge, negative if outside
+  var inside = false, md = 1e9, n = BOARD.length;
+  for(var i=0, j=n-1; i<n; j=i++){
+    var a = BOARD[i], b = BOARD[j];
+    if(((a[1]>p[1]) !== (b[1]>p[1])) && (p[0] < (b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1]) + a[0])) inside = !inside;
+    var dx = b[0]-a[0], dy = b[1]-a[1], t = clamp(((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy),0,1);
+    md = Math.min(md, Math.hypot(p[0]-a[0]-t*dx, p[1]-a[1]-t*dy));
+  }
+  return inside ? md : -md;
+}
+function anchors(key){
+  var m = M.default[key], o = {}; ["hi","lo","fa","fb","head","torso"].forEach(function(n){ if(m[n]) o[n] = m[n]; }); return o;   // unflipped
+}
+function scr(sp, q){      // pure math: where frame point q (unflipped frame coords) lands on screen
+  var a = sp.mir ? [1024-sp.a[0], sp.a[1]] : sp.a, p = sp.mir ? [1024-q[0], q[1]] : q;
+  var v = rot([(p[0]-a[0])*sp.s, (p[1]-a[1])*sp.s], sp.th);
+  return [sp.P[0]+v[0], sp.P[1]+v[1]];
+}
+function buildRoute(){
+  var rnd = mulberry(S.seed), st = [], rel = [[0,0]], i;
+  for(i=0; i<8; i++){
+    var key = i%2===0 ? "RL" : "RR", a = anchors(key), jit = (rnd()*2-1)*8, th = S.lean + jit;
+    var d = rot([(fl(a.hi)[0]-fl(a.lo)[0])*S.s, (fl(a.hi)[1]-fl(a.lo)[1])*S.s], th);
+    st.push({ key:key, a:a, th:th, jit:jit, hrot:(rnd()*2-1)*8, hk:HOLD_HAND[i], d:d });
+    rel.push([rel[i][0]+d[0], rel[i][1]+d[1]]);       // rel[0] = start hold under the first low fist; rel[i+1] = hold i
+  }
+  var ty = 16, oy = ty - rel[8][1], best = -1e9, ox = 0, x;
+  for(x=20; x<340; x+=1){
+    var mn = 1e9;
+    rel.forEach(function(p){ mn = Math.min(mn, insideMargin([x+p[0], oy+p[1]])); });
+    if(mn>best){ best = mn; ox = x; }
+  }
+  R = { st:st, S:[ox+rel[0][0], oy+rel[0][1]], hold:[], foot:[], margin:best, seed:S.seed };
+  for(i=0; i<8; i++){
+    R.hold.push([ox+rel[i+1][0], oy+rel[i+1][1]]);
+    var sp = { a:st[i].a.hi, P:R.hold[i], th:st[i].th, s:S.s, mir:S.mirror };
+    R.foot.push([scr(sp, st[i].a.fa), scr(sp, st[i].a.fb)]);
+  }
+  checkRoute();
+}
+function checkRoute(){
+  var bad = [], names = "ABCDEFGH", all = [];
+  all.push(["S(start)", R.S]);
+  R.hold.forEach(function(p,i){ all.push([names[i], p]); });
+  R.foot.forEach(function(f,i){ all.push(["foot"+names[i]+"1", f[0]]); all.push(["foot"+names[i]+"2", f[1]]); });
+  all.forEach(function(e){ var m = insideMargin(e[1]); if(m<6) bad.push(e[0]+" margin "+m.toFixed(1)); if(e[1][1]<10) bad.push(e[0]+" y="+e[1][1].toFixed(0)+"<10"); });
+  var hm = Math.min.apply(null, R.hold.map(insideMargin));
+  L("route s="+S.s.toFixed(3)+" lean="+S.lean+" mirror="+S.mirror+" seed="+S.seed+": holds "+R.hold.map(function(p,i){ return names[i]+"("+p[0].toFixed(0)+","+p[1].toFixed(0)+")"; }).join(" ")+" | min hand-hold margin "+hm.toFixed(1)+" px | "+(bad.length ? "VIOLATIONS: "+bad.join("; ") : "no violations"));
+}
+
+/* ---------- scene drawing ---------- */
+var el = $("climber"), inner = $("inner"), imgEls = {}, olEls = {};
+function buildClimberImgs(){
+  inner.innerHTML = ""; imgEls = {}; olEls = {};
+  KEYS.forEach(function(k){
+    var im = document.createElement("img"); im.alt = ""; im.draggable = false; imgEls[k] = im; inner.appendChild(im);
+  });
+  KEYS.forEach(function(k){
+    var im = document.createElement("img"); im.alt = ""; im.draggable = false; im.onerror = function(){ im._bad = true; }; olEls[k] = im; inner.appendChild(im);
+  });
+  setSources();
+}
+function setSources(){
+  KEYS.forEach(function(k){
+    imgEls[k].src = frameURL(k, S.variant);
+    var o = olEls[k]; o._bad = false; o.removeAttribute("src"); if(S.outfit && !MIDFILE[k]) o.src = outfitURL(S.outfit, k);
+  });
+}
+function draw(sp){
+  G.cur = sp;
+  var s = sp.s, W = 1024*s, H = 1536*s, a = sp.mir ? [1024-sp.a[0], sp.a[1]] : sp.a, ax = a[0]*s, ay = a[1]*s;
+  el.style.left = (sp.P[0]-ax)+"px"; el.style.top = (sp.P[1]-ay)+"px"; el.style.width = W+"px"; el.style.height = H+"px";
+  el.style.transformOrigin = ax+"px "+ay+"px"; el.style.transform = "rotate("+sp.th+"deg)";
+  inner.style.transform = sp.mir ? "scaleX(-1)" : "";
+  KEYS.forEach(function(k){ imgEls[k].style.display = k===sp.key ? "block" : "none"; olEls[k].style.display = (k===sp.key && S.outfit && !olEls[k]._bad) ? "block" : "none"; });
+  var sh = $("shadow");
+  if(G.mode==="floor" || sp.floor){ sh.style.display = "block"; var sw = 150*sp.s/FLOOR_S*0.9; sh.style.width = sw+"px"; sh.style.height = sw*0.18+"px"; sh.style.left = (sp.floorX-sw/2)+"px"; sh.style.top = (FLOOR_Y-sw*0.09)+"px"; }
+  else sh.style.display = "none";
+  drawContacts();
+}
+function applyEl(e, p){      // apply an element's computed transform (about its computed origin) to point p
+  var cs = getComputedStyle(e), o = cs.transformOrigin.split(" ").map(parseFloat), m = new DOMMatrix(cs.transform==="none" ? undefined : cs.transform);
+  var q = m.transformPoint(new DOMPoint(p[0]-o[0], p[1]-o[1])); return [q.x+o[0], q.y+o[1]];
+}
+function domPoint(q){        // where the browser really puts a frame point (unflipped frame coords), scene px
+  var s = G.cur.s, p = applyEl(inner, [q[0]*s, q[1]*s]); p = applyEl(el, p); return [p[0]+parseFloat(el.style.left), p[1]+parseFloat(el.style.top)];
+}
+function holdBox(hk, cx, cy, rotDeg, foot){
+  var im = document.createElement("img"); im.src = "../assets/wall/"+hk+".png"; im.alt = "";
+  var sz = wallHoldSize(hk)*HOLD_PX*(foot ? 8/14 : 1); if(foot) im.className = "foot";
+  im.style.width = sz+"px"; im.dataset.cx = cx; im.dataset.cy = cy;
+  im.onload = function(){ var h = sz*im.naturalHeight/im.naturalWidth; im.style.left = (cx-sz/2)+"px"; im.style.top = (foot ? cy-1 : cy-h/2)+"px"; im.dataset.h = h; };
+  im.style.transform = "rotate("+rotDeg+"deg)"; $("holds").appendChild(im); return im;
+}
+var CHALK_FEET = [];
+function drawHolds(){
+  var host = $("holds"); host.innerHTML = ""; CHALK_FEET = [];
+  var rnd = mulberry(S.seed+99);
+  holdBox(HOLD_HAND[8], R.S[0], R.S[1], S.lean+(rnd()*2-1)*8, false).dataset.name = "S";
+  R.hold.forEach(function(p,i){ holdBox(R.st[i].hk, p[0], p[1], S.lean+R.st[i].hrot, false).dataset.name = "ABCDEFGH"[i]; });
+  R.foot.forEach(function(f,i){ f.forEach(function(q,j){ var h = holdBox(HOLD_FOOT[(i+j)%2], q[0], q[1], S.lean*0.5+(rnd()*2-1)*8, true); h.dataset.name = "f"+i+j; }); });
+  [0,1].forEach(function(){ var h = holdBox("h_foot", -50, -50, 0, true); h.style.display = "none"; CHALK_FEET.push(h); });
+  drawContacts();
+}
+function drawContacts(){
+  var svg = $("dbg"), h = "";
+  if($("cOutline").checked){ h += '<polygon points="'+BOARD.map(function(p){ return p[0].toFixed(1)+","+p[1].toFixed(1); }).join(" ")+'" fill="none" stroke="#0ff" stroke-width="1" stroke-dasharray="4 3"/>'; }
+  if(S.contacts && R){
+    R.hold.forEach(function(p){ h += '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="none" stroke="#f33" stroke-width=".8"/>'; });
+    R.foot.forEach(function(f){ f.forEach(function(p){ h += '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="2.5" fill="none" stroke="#2e2" stroke-width=".8"/>'; }); });
+    if(G.cur && G.cur.key in EST){
+      var m = M.default[G.cur.key], cols = { hi:"#f33", lo:"#39f", fa:"#2e2", fb:"#2e2" };
+      Object.keys(cols).forEach(function(n){ if(!m[n]) return; var p = scr(G.cur, m[n]); h += '<path d="M'+(p[0]-4)+' '+p[1]+'h8M'+p[0]+' '+(p[1]-4)+'v8" stroke="'+cols[n]+'" stroke-width="1"/>'; });
+    }
+  }
+  svg.innerHTML = h;
+}
+
+/* ---------- stances and previews (STEPS 3, 4) ---------- */
+function stanceSpec(i){ var r = R.st[i]; return { key:r.key, a:r.a.hi, P:R.hold[i], th:r.th, s:S.s, mir:S.mirror }; }
+function swingAngle(i, dir){      // rotation about the pinned fist that puts the new torso where the old one was (degrees)
+  var j = i+dir, r = R.st[j], o = stanceSpec(i), pin = dir>0 ? R.hold[i] : R.hold[j];
+  var nsp = dir>0 ? { key:r.key, a:r.a.lo, P:pin, th:r.th, s:S.s, mir:S.mirror } : { key:r.key, a:r.a.hi, P:pin, th:r.th, s:S.s, mir:S.mirror };
+  var vo = scr(o, R.st[i].a.torso), vn = scr(nsp, r.a.torso);
+  var ao = Math.atan2(vo[1]-pin[1], vo[0]-pin[0]), an = Math.atan2(vn[1]-pin[1], vn[0]-pin[0]), d = (ao-an)*180/Math.PI;
+  while(d>180) d -= 360; while(d<-180) d += 360; return d;
+}
+function midOn(){ return S.mid!=="off" && S.variant==="default" && !S.outfit && M.default.MD && M.default.M2 && M.default.ML && M.default.M3; }   // the mid frame has default art only
+function angLerp(a, b, t){ var d = b-a; while(d>Math.PI) d -= 2*Math.PI; while(d<-Math.PI) d += 2*Math.PI; return a+d*t; }
+function midKey(i, dir){ var hk = dir>0 ? R.st[i].key : R.st[i+dir].key; return S.mid==="v3" ? (hk==="RL" ? "M2" : "M3") : S.mid==="v2" ? (hk==="RL" ? "M2" : "ML") : "MD"; }
+function midSpec(i, dir, p){      // in-between frame, pinned about its gripping (high left) fist on the hold that stays held; mirrored when that fist is the right one
+  var j = i+dir, ri = R.st[i], rj = R.st[j], heldKey = dir>0 ? ri.key : rj.key, v2 = S.mid!=="v1";
+  var mkey = midKey(i, dir), mir = v2 ? S.mirror : ((heldKey==="RR") !== S.mirror);   // v2: a real frame per side; v1: one frame mirrored
+  var pin = dir>0 ? R.hold[i] : R.hold[j], m = M.default[mkey];
+  var nsp = dir>0 ? { key:rj.key, a:rj.a.lo, P:pin, th:rj.th, s:S.s, mir:S.mirror } : { key:rj.key, a:rj.a.hi, P:pin, th:rj.th, s:S.s, mir:S.mirror };
+  function bl(a){ return [a.head[0]*MIDW+a.torso[0]*(1-MIDW), a.head[1]*MIDW+a.torso[1]*(1-MIDW)]; }      // alignment point: head, torso or a blend
+  var vo = scr(stanceSpec(i), bl(ri.a)), vn = scr(nsp, bl(rj.a));
+  var ao = Math.atan2(vo[1]-pin[1], vo[0]-pin[0]), an = Math.atan2(vn[1]-pin[1], vn[0]-pin[0]);
+  var u = clamp((p-PREVIEW_MIN)/(1-PREVIEW_MIN),0,1); u = u*u*(3-2*u);
+  var sp = { key:mkey, a:m.hi, P:pin, th:0, s:S.s, mir:mir }, hv = scr(sp, bl(m)), a0 = Math.atan2(hv[1]-pin[1], hv[0]-pin[0]);
+  var thS = (angLerp(ao, an, u)-a0)*180/Math.PI, thL = (ri.th+rj.th)/2; sp.th = thL+MIDK*(thS-thL);     // direction from the fist to the head/torso point eases from the old stance's to the new stance's
+  return sp;
+}
+function pinAnchor(i, dir){ return midOn() ? M.default[midKey(i, dir)].hi : R.st[i+dir].a[dir>0 ? "lo" : "hi"]; }   // the frame point that must sit on the held hold
+function previewSpec(i, dir, p){      // body moving from stance i toward stance i+dir, drawn pinned about the fist that stays on a hold
+  if(midOn()) return midSpec(i, dir, p);
+  var j = i+dir, r = R.st[j], ex;
+  if(S.reduced) ex = 0;
+  else if(S.align) ex = swingAngle(i, dir)*(1-clamp((p-PREVIEW_MIN)/(1-PREVIEW_MIN),0,1));
+  else ex = (1-p)*EXTRA_ROT;
+  return dir>0 ? { key:r.key, a:r.a.lo, P:R.hold[i], th:r.th+ex, s:S.s, mir:S.mirror }
+               : { key:r.key, a:r.a.hi, P:R.hold[j], th:r.th+ex, s:S.s, mir:S.mirror };
+}
+function loadSpec(i, deg){ var sp = stanceSpec(i); sp.th += deg; return sp; }   // 60 ms swing about the high fist, which stays pinned
+var restTimer = 0;
+function disarmRest(){ clearTimeout(restTimer); restTimer = 0; hideChalkFeet(); }
+function armRest(){ clearTimeout(restTimer); restTimer = setTimeout(function(){ if(G.mode==="wall" && !G.busy && !G.dragging) showChalk(); }, REST_MS); }
+function showStance(i){
+  disarmRest(); G.mode = "wall"; G.idx = i; G.desired = i; G.f = 0; G.busy = false; draw(stanceSpec(i)); armRest();
+}
+function stanceErrors(i){
+  showStance(i); var r = R.st[i], hi = domPoint(r.a.hi), lo = domPoint(r.a.lo), fa = domPoint(r.a.fa), fb = domPoint(r.a.fb);
+  var holds = $("holds").children, byName = {}; for(var k=0; k<holds.length; k++) byName[holds[k].dataset.name] = holds[k];
+  function c(name, top){ var e = byName[name]; var cx = +e.dataset.cx, cy = +e.dataset.cy; return top ? [cx, cy] : [cx, cy]; }   // foot: top-centre contact == cy (top edge sits at cy-1+1)
+  var prev = i>0 ? R.hold[i-1] : R.S;
+  var e = { fist:dist(hi, c("ABCDEFGH"[i])), lowFist:dist(lo, prev), foot1:dist(fa, c("f"+i+"0",1)), foot2:dist(fb, c("f"+i+"1",1)) };
+  return e;
+}
+function logStances(){
+  var mx = 0, line;
+  for(var i=0; i<8; i++){ var e = stanceErrors(i); mx = Math.max(mx, e.fist, e.lowFist, e.foot1, e.foot2);
+    L("stance "+"ABCDEFGH"[i]+" ("+R.st[i].key+") errors px: pinned fist "+e.fist.toFixed(2)+", other fist "+e.lowFist.toFixed(2)+", foot1 "+e.foot1.toFixed(2)+", foot2 "+e.foot2.toFixed(2)+(e.fist>3||e.foot1>4||e.foot2>4?"  **OVER**":"")); }
+  L("max stance error "+mx.toFixed(2)+" px (fist limit 3, foot limit 4)");
+  showStance(0);
+}
+function lmScreen(){ var m = M.default[G.cur.key]; return { head:domPoint(m.head), torso:domPoint(m.torso) }; }
+function popStats(){      // head/torso jump (screen px) at the two frame swaps of every move: old stance -> preview (p=PREVIEW_MIN), preview (p=1) -> new stance
+  function pop(a, b){ draw(a); var A = lmScreen(); draw(b); var B = lmScreen(); return { h:Math.hypot(B.head[0]-A.head[0], B.head[1]-A.head[1]), t:Math.hypot(B.torso[0]-A.torso[0], B.torso[1]-A.torso[1]) }; }
+  var out = { s1:{h:[],t:[]}, s2:{h:[],t:[]}, travel:[], held:[] };
+  for(var i=0; i<8; i++) [1,-1].forEach(function(dir){ if(i+dir<0 || i+dir>7) return;
+    var a = pop(stanceSpec(i), previewSpec(i, dir, PREVIEW_MIN)), b = pop(previewSpec(i, dir, 1), stanceSpec(i+dir));
+    out.s1.h.push(a.h); out.s1.t.push(a.t); out.s2.h.push(b.h); out.s2.t.push(b.t); out.travel.push(pop(stanceSpec(i), stanceSpec(i+dir)).h); out.held.push(dir>0 ? R.st[i].key : R.st[i+dir].key);
+  });
+  showStance(G.idx); return out;
+}
+function popReport(){
+  function mean(v){ return v.reduce(function(a,b){ return a+b; },0)/v.length; } function mx(v){ return Math.max.apply(null,v); }
+  var keep = S.mid, rows = {};
+  [["no mid frame, "+(S.align?"aligned swing":"fixed swing"),"off"],["mid v1 (mirrored)","v1"],["mid v2 (right v2 + left v1)","v2"],["mid v3 (right v2 + left v2)","v3"]].forEach(function(c){
+    S.mid = c[1]; if(c[1]!=="off" && !midOn()){ L("pop: mid frame unavailable (variant/outfit/not loaded)"); return; }
+    var o = popStats(); rows[c[0]] = o; var wm = c[1]!=="off";
+    function side(sel){ return ["s1","s2"].map(function(k){ return k+" head "+mean(sel(o[k].h)).toFixed(1)+"/"+mx(sel(o[k].h)).toFixed(1)+" torso "+mean(sel(o[k].t)).toFixed(1)+"/"+mx(sel(o[k].t)).toFixed(1); }).join(" | "); }
+    L("pop ["+c[0]+"] all moves: "+side(function(v){ return v; })+" (mean/max px)");
+    if(wm){ L("   right moves (held RL): "+side(function(v){ return v.filter(function(_,n){ return o.held[n]==="RL"; }); })); L("   left moves (held RR): "+side(function(v){ return v.filter(function(_,n){ return o.held[n]==="RR"; }); })); }
+  });
+  S.mid = keep; showStance(G.idx); return rows;
+}
+
+/* ---------- tween helper ---------- */
+function anim(ms, fn, done){      // rAF with a timer fallback so headless/background tabs finish
+  var t0 = performance.now(), fin = false, id, tm;
+  function finish(){ if(fin) return; fin = true; cancelAnimationFrame(id); clearTimeout(tm); fn(1); done && done(); }
+  function tick(){ if(fin) return; var t = clamp((performance.now()-t0)/ms,0,1); if(t>=1){ finish(); return; } fn(t); id = requestAnimationFrame(tick); }
+  if(S.reduced || ms<=0){ finish(); return { cancel:function(){ fin = true; } }; }
+  id = requestAnimationFrame(tick); tm = setTimeout(finish, ms+120);
+  return { cancel:function(){ fin = true; cancelAnimationFrame(id); clearTimeout(tm); } };
+}
+var driftMax = 0, driftN = 0;
+
+/* ---------- drag (STEP 4) ---------- */
+var drag = null, stepAnim = null;
+function canMove(dir){ return G.idx+dir>=0 && G.idx+dir<=7; }
+function sceneXY(e){ var r = $("scene").getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
+function stepTo(dir, p0){
+  G.busy = true; var i = G.idx, pin = dir>0 ? R.hold[i] : R.hold[i+dir], pinA = dir>0 ? "lo" : "hi";
+  stepAnim = anim(TWEEN_MS*(1-p0*0.5), function(t){
+    var p = p0+(1-p0)*t; draw(previewSpec(i, dir, p));
+    var d = dist(domPoint(pinAnchor(i, dir)), pin); driftMax = Math.max(driftMax, d);
+  }, function(){ G.idx = i+dir; G.busy = false; G.f = 0; G.lastStep = performance.now(); draw(stanceSpec(G.idx)); pump(); });
+}
+function showPreview(){
+  var f = G.f, dir = f>0 ? 1 : -1, p = Math.abs(f);
+  if(p<PREVIEW_MIN || !canMove(dir)){ G.loadT0 = 0; draw(stanceSpec(G.idx)); return; }
+  var now = performance.now();
+  if(!G.loadT0) G.loadT0 = now;
+  if(!S.reduced && now-G.loadT0<60){ var k = (now-G.loadT0)/60; draw(loadSpec(G.idx, -5*Math.sin(k*Math.PI/2)*(dir>0?1:-1)*(R.st[G.idx].key==="RL"?1:-1))); setTimeout(function(){ if(G.dragging && !G.busy) showPreview(); }, 62-(now-G.loadT0)); return; }
+  draw(previewSpec(G.idx, dir, p));
+  var i = G.idx, pin = dir>0 ? R.hold[i] : R.hold[i+dir], pinA = dir>0 ? "lo" : "hi";
+  driftMax = Math.max(driftMax, dist(domPoint(pinAnchor(i, dir)), pin));
+}
+function pump(){
+  if(G.busy || (G.mode!=="wall")) return;
+  var now = performance.now(), gap = S.reduced ? 334 : STEP_GAP;
+  if(G.idx!==G.desired){
+    var wait = G.lastStep+gap-now;
+    if(wait>0){ setTimeout(pump, wait+1); return; }
+    var dir = G.desired>G.idx ? 1 : -1; var p0 = (G.dragging && G.f*dir>0) ? Math.abs(G.f) : 0; stepTo(dir, p0); return;
+  }
+  if(G.dragging){ showPreview(); return; }
+  var dirR = G.f>0 ? 1 : -1;
+  if(Math.abs(G.f)>=0.5 && canMove(dirR)){ var p0r = Math.abs(G.f); G.desired = G.idx+dirR; G.f = 0; stepTo(dirR, p0r); return; }
+  if(Math.abs(G.f)>PREVIEW_MIN && canMove(dirR)){      // spring back
+    G.busy = true; var from = Math.abs(G.f), i = G.idx;
+    anim(100, function(t){ draw(previewSpec(i, dirR, from*(1-t))); }, function(){ G.busy = false; G.f = 0; G.loadT0 = 0; draw(stanceSpec(G.idx)); armRest(); });
+    return;
+  }
+  G.f = 0; G.loadT0 = 0; draw(stanceSpec(G.idx)); armRest();
+}
+var samples = [];
+function velocityY(){ var n = samples.length; if(n<2) return 0; var b = samples[n-1], a = b; for(var i=n-2; i>=0; i--){ if(b.t-samples[i].t>=16){ a = samples[i]; break; } a = samples[i]; } return b.t===a.t ? 0 : (b.y-a.y)/(b.t-a.t); }
+el.addEventListener("pointerdown", function(e){
+  if(G.busy && G.mode!=="floor") return;
+  var xy = sceneXY(e); samples = [{t:e.timeStamp, y:xy[1]}];
+  if(G.mode==="chalk") { exitChalk(); }
+  if(G.mode==="wall"){
+    disarmRest(); drag = { x0:xy[0], y0:xy[1], idx0:G.idx, id:e.pointerId }; G.dragging = true; G.f = 0; G.loadT0 = 0; driftMax = 0;
+    try{ el.setPointerCapture(e.pointerId); }catch(_){}
+  } else if(G.mode==="floor"){
+    drag = { floor:true, id:e.pointerId }; try{ el.setPointerCapture(e.pointerId); }catch(_){}
+  }
+  e.preventDefault();
+});
+el.addEventListener("pointermove", function(e){
+  if(!drag) return; var xy = sceneXY(e); samples.push({t:e.timeStamp, y:xy[1]}); if(samples.length>12) samples.shift();
+  if(drag.floor){ floorDragTo(xy); return; }
+  if(insideMargin(xy) < -40 || velocityY()>1.2){ var why = insideMargin(xy) < -40 ? "40 px off the board" : "fling "+velocityY().toFixed(2)+" px/ms"; drag = null; G.dragging = false; L("fall: "+why); doFall(); return; }
+  var raw = (drag.y0-xy[1])/RISE, n = raw<0 ? Math.ceil(raw) : Math.floor(raw), f = raw-n;      // sideways ignored: only y is read
+  var want = clamp(drag.idx0+n, 0, 7); if(want!==drag.idx0+n) f = 0;
+  G.desired = want; G.f = f; pump();
+});
+function endDrag(e){
+  if(!drag) return; var d = drag; drag = null;
+  if(d.floor){ floorDrop(sceneXY(e)); return; }
+  G.dragging = false; if(!G.busy) pump(); if(driftMax>0) L("pinned fist max drift this drag: "+driftMax.toFixed(3)+" px");
+}
+el.addEventListener("pointerup", endDrag); el.addEventListener("pointercancel", endDrag);
+
+/* ---------- chalk rest (STEP 5) ---------- */
+function hideChalkFeet(){ CHALK_FEET.forEach(function(h){ h.style.display = "none"; }); }
+function showChalk(){
+  var i = G.idx, r = R.st[i], leftHigh = (r.key==="RL") !== S.mirror;       // chalk frame's high hand is the right: mirror it when the high hand is left
+  var sp = { key:"CH", a:EST.CH.hi && M.default.CH.hi, P:R.hold[i], th:r.th, s:S.s, mir:leftHigh };
+  G.mode = "chalk"; draw(sp);
+  var m = M.default.CH; [m.fa, m.fb].forEach(function(q,j){ var p = scr(sp, q), h = CHALK_FEET[j]; h.style.display = "block"; h.dataset.cx = p[0]; h.dataset.cy = p[1];
+    var sz = parseFloat(h.style.width), hh = sz*(h.naturalHeight/h.naturalWidth||0.7); h.style.left = (p[0]-sz/2)+"px"; h.style.top = (p[1]-1)+"px"; });
+  L("chalk rest on "+"ABCDEFGH"[i]+" mirror="+leftHigh+" fist error "+dist(domPoint(m.hi), R.hold[i]).toFixed(2)+" px");
+}
+function exitChalk(){ hideChalkFeet(); G.mode = "wall"; draw(stanceSpec(G.idx)); }
+
+/* ---------- floor, fall, mount (STEP 5) ---------- */
+function floorSpec(key, x, s, lift){      // frame stands with the bottom of its opaque pixels on the floor
+  var bb = M.default[key].bb; return { key:key, a:[bb.cx, bb.y1], P:[x, FLOOR_Y-(lift||0)], th:0, s:s, mir:false, floor:true, floorX:x };
+}
+function showFloor(x){ disarmRest(); G.mode = "floor"; G.fx = x==null ? G.fx : x; draw(floorSpec("ID", G.fx, FLOOR_S)); }
+function floorDragTo(xy){ var sp = floorSpec("ID", xy[0], FLOOR_S); sp.P = [xy[0], xy[1]+90]; sp.floor = false; el.style.zIndex = 8; draw(sp); $("shadow").style.display = "none"; }
+function floorDrop(xy){
+  el.style.zIndex = "";
+  if(insideMargin(xy)>0){ L("drop on the board at "+xy.map(Math.round)+": mount"); doMount(clamp(xy[0],40,335)); }
+  else { G.fx = clamp(xy[0],40,335); showFloor(); }
+}
+function doFall(){
+  var sp0 = G.cur, bb0 = M.default[sp0.key].bb; disarmRest(); hideChalkFeet(); G.mode = "fall"; G.busy = true; G.dragging = false;
+  var from = domPoint([bb0.cx, bb0.cy]), x1 = clamp(from[0], 50, 325), bb = M.default.J2.bb;
+  var cOff = bb.cy - bb.y1;      // centre is above the bottom
+  if(S.reduced){ finishFall(x1); return; }
+  var s0 = S.s, y0 = from[1], g = 0.0016, total = Math.sqrt(2*(FLOOR_Y-(bb.y1-bb.cy)*s0-y0)/g)+1, t0 = performance.now(), landed = false;
+  var tm;
+  function frame(){
+    var t = performance.now()-t0, y = y0 + 0.5*g*t*t, tt = clamp(t/total,0,1), s = s0+(FLOOR_S-s0)*tt*tt, x = from[0]+(x1-from[0])*tt;
+    var bottom = y + (bb.y1-bb.cy)*s;
+    if(bottom>=FLOOR_Y || t>3000){ finishFall(x1); return; }
+    draw({ key:"J2", a:[bb.cx,bb.cy], P:[x,y], th:S.lean*(1-tt), s:s, mir:false });
+    requestAnimationFrame(frame); tm = setTimeout(frame, 40);
+  }
+  frame();
+  function finishFall(x){ if(landed) return; landed = true; clearTimeout(tm);
+    G.mode = "floor"; draw(floorSpec("L1", x, FLOOR_S));
+    setTimeout(function(){ draw(floorSpec("L2", x, FLOOR_S)); setTimeout(function(){ G.busy = false; showFloor(x); L("fall done, back on the floor at scale "+FLOOR_S); }, S.reduced?0:110); }, S.reduced?0:90);
+  }
+}
+function doMount(x){
+  if(G.busy) return; disarmRest(); G.busy = true; G.mode = "mount"; G.fx = x==null ? G.fx : x; x = G.fx;
+  var tgtSp = stanceSpec(0), bbT = M.default.RL.bb, end = scr(tgtSp, [bbT.cx, bbT.cy]), j3 = M.default.J3.bb, j1 = floorSpec("J1", x, FLOOR_S);
+  function finish(){
+    var last = G.cur, a = scr(last, [j3.cx, j3.cy]);
+    G.busy = false; showStance(0); L("mount: J3 to stance A swap, body-centre snap "+dist(a, end).toFixed(1)+" px");
+  }
+  if(S.reduced){ finish(); return; }
+  draw(j1); G.mode = "mount";
+  setTimeout(function(){
+    var c0 = [x, FLOOR_Y-(j3.y1-j3.cy)*FLOOR_S-8];
+    anim(430, function(t){
+      var s = FLOOR_S+(S.s-FLOOR_S)*t, arc = Math.sin(t*Math.PI)*70, c = [c0[0]+(end[0]-c0[0])*t, c0[1]+(end[1]-c0[1])*t-arc];
+      draw({ key:"J3", a:[j3.cx,j3.cy], P:c, th:S.lean*t, s:s, mir:false });
+    }, finish);
+  }, 140);
+}
+
+/* ---------- controls ---------- */
+function rebuild(redrawAt){
+  buildRoute(); drawHolds(); drawMeasure();
+  if(G.mode==="floor") showFloor(); else showStance(redrawAt==null ? G.idx : redrawAt);
+}
+function init(){
+  var bg = $("bg"); bg.style.top = YOFF+"px";
+  var st = $("stances"); "ABCDEFGH".split("").forEach(function(c,i){ var b = document.createElement("button"); b.textContent = c; b.onclick = function(){ if(G.busy) return; showStance(i); }; st.appendChild(b); });
+  $("sc").oninput = function(){ S.s = +this.value; $("scv").textContent = S.s.toFixed(3); rebuild(); };
+  $("variant").onchange = function(){ S.variant = this.value; setSources(); drawMeasure(); showCurrent(); };
+  $("outfit").onchange = function(){ S.outfit = this.value; setSources(); setTimeout(showCurrent, 120); };
+  $("cMirror").onchange = function(){ S.mirror = this.checked; rebuild(); };
+  $("sMid").onchange = function(){ S.mid = this.value; };
+  $("cAlign").onchange = function(){ S.align = this.checked; };
+  $("cReduced").onchange = function(){ S.reduced = this.checked; };
+  $("cOutline").onchange = drawContacts;
+  $("cContacts").onchange = function(){ S.contacts = this.checked; drawContacts(); };
+  $("cAbove").onchange = function(){ $("holds").classList.toggle("above", this.checked); };
+  $("bSeed").onclick = function(){ S.seed++; rebuild(); };
+  $("bChalk").onclick = function(){ if(G.mode==="wall") showChalk(); };
+  $("bFall").onclick = function(){ if(G.mode==="wall"||G.mode==="chalk") doFall(); };
+  $("bMount").onclick = function(){ if(G.mode==="floor") doMount(); };
+  $("bFloor").onclick = function(){ if(!G.busy){ showFloor(); } };
+}
+function showCurrent(){ if(G.mode==="floor") showFloor(); else if(G.mode==="chalk") showChalk(); else if(G.mode==="wall") draw(G.cur); }
+
+var ready = (function(){
+  init();
+  var jobs = [];
+  VARIANTS.forEach(function(v){ IMGS[v] = {}; KEYS.forEach(function(k){ if(v!=="default" && !(k in EST)) return; jobs.push(loadImg(frameURL(k,v)).then(function(im){ IMGS[v][k] = im; })); }); });
+  return Promise.all(jobs).then(function(){
+    measureAll(); buildClimberImgs();
+    buildRoute(); drawHolds(); drawMeasure(); showFloor(FLOOR_X);
+    L("ready. floor climber scale "+FLOOR_S+", wall scale "+S.s);
+  }).catch(function(e){ L("ERROR "+e.message); });
+})();
+window.lab = { S:S, G:G, M:M, LOG:LOG, ready:ready, get R(){ return R; }, showStance:showStance, stanceErrors:stanceErrors, logStances:logStances, popReport:popReport, popStats:popStats, setMIDW:function(w){ MIDW = w; }, setMIDK:function(k){ MIDK = k; }, midOn:midOn, previewSpec:previewSpec, stanceSpec:stanceSpec,
+  showChalk:showChalk, doFall:doFall, doMount:doMount, showFloor:showFloor, rebuild:rebuild, setSources:setSources, domPoint:domPoint, get drift(){ return driftMax; }, drawMeasure:drawMeasure,
+  scr:scr, anim:anim };
+</script>
+</body></html>

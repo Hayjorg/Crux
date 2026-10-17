@@ -4149,6 +4149,376 @@ and the project rules. It runs on its own private copy of the data, never your r
     await click("arrangeToggleBtn", 300);
   });
   // ---- end Home perch part 2 ----
+  // ---- Home climb tests (the HOME CLIMB block: drag onto the Home Wall board and climb) ----
+  async function climbBoot(extra, noDecor){
+    if(!ACC_IDS_FOR_PERCH){ await boot(clone(TEMPLATE)); ACC_IDS_FOR_PERCH = W.__cruxPerch.accessories.map(function(a){ return a.id; }); }
+    var s = clone(TEMPLATE); s.settings.devPreviewGyms = true; s.settings.devLevel = 40;
+    s.character.selectedEnvironmentId = "homewall"; s.character.decorations = noDecor===false ? ACC_IDS_FOR_PERCH.slice() : [];
+    if(extra) extra(s);
+    await boot(s); await ackSafety(); await goHome(); await wait(500);
+  }
+  // a client point on the board, well clear of the two gear holds (a drop near them still perches there)
+  function boardPoint(){
+    var P = W.__cruxPerch, C = W.__cruxClimb, g = C.geo(), L = C.limits(), sc = $("characterScene").getBoundingClientRect(), ts = P.targets("homewall", P.sceneBox()), best = null;
+    for(var y = L.yLo+10; y < g.floorY-70; y += 6) for(var x = L.xLo+10; x < L.xHi-10; x += 6){
+      if(C.inside(C.boardPx(), [x, y])<14) continue;
+      var d = Math.min.apply(null, ts.map(function(t){ var dx = Math.max(t.x-x, 0, x-(t.x+t.w)), dy = Math.max(t.y-y, 0, y-(t.y+t.h)); return Math.hypot(dx, dy); }).concat([999]));
+      if(d>0.12*g.W+4 && (!best || d>best.d)) best = { d:d, x:sc.left+x, y:sc.top+y };
+    }
+    expect(best, "no free point on the board"); return best;
+  }
+  async function climbOn(){ // press, hold, drop on the board: waits until he hangs on the first hold
+    var C = W.__cruxClimb, pt = boardPoint();
+    await dragDrop("mouse", pt);
+    await until(function(){ var st = C.state(); return st && st.mode==="wall"; }, 4000, "the climber to reach the first hold");
+  }
+  function climbDragUp(px, ms){ // press on him and pull up px (8 px per move, ~18 ms apart); returns when released
+    var c = stageCenter(), steps = Math.ceil(px/8);
+    ptr("pointerdown", "mouse", c.x, c.y);
+    return (async function(){ for(var i=1;i<=steps;i++){ ptr("pointermove", "mouse", c.x, c.y-Math.min(px, i*8)); await wait(ms||18); } ptr("pointerup", "mouse", c.x, c.y-px); })();
+  }
+  function climbStageCenter(){ var r = $("characterStage").getBoundingClientRect(); return { x:r.left+r.width/2, y:r.top+r.height/2 }; }
+  function dev_frameName(){ return fileOf(stageSrc()); }
+  var CLIMB_FRAME_RE = /^mascot\/climber\/(default|variants\/[a-z]+)\/(climb|jump|land|idle)\/[a-z0-9-]+\.png$/;
+
+  test("Home climb: pressing, holding and dropping on the board mounts the climber on the first hold (reach frame, holds drawn, ring while aiming)", async function(){
+    await climbBoot();
+    var P = W.__cruxPerch, C = W.__cruxClimb, c = stageCenter(), pt = boardPoint();
+    expect(C.state()===null, "climbing before any drop");
+    ptr("pointerdown", "mouse", c.x, c.y); await wait(420);
+    ptr("pointermove", "mouse", pt.x, pt.y); await wait(30);
+    expect(P.gesture()==="aiming", "not aiming over the board: "+P.gesture());
+    var ring = D.getElementById("perchRing");
+    expect(ring && /dashed/.test(W.getComputedStyle(ring).outlineStyle), "no dashed ring over the board");
+    ptr("pointerup", "mouse", pt.x, pt.y); await wait(60);
+    expect(!D.getElementById("perchRing"), "the ring stayed after release");
+    expect(C.state() && C.state().mode==="mount", "release over the board didn't start the mount: "+JSON.stringify(C.state()));
+    await until(function(){ return C.state() && C.state().mode==="wall"; }, 4000, "the climber to reach the first hold");
+    var st = C.state(), R = C.route();
+    expect(st.idx===0 && st.key==="RL" && /climb\/climb-reach-left\.png$/.test(dev_frameName()), "not on the first stance frame: "+st.key+" "+dev_frameName());
+    expect(R.n>=3 && R.n<=8 && R.hold.length===R.n, "route length "+R.n);
+    expect(qa("#climbHolds img").length>=R.n*3, "holds weren't drawn: "+qa("#climbHolds img").length);
+    expect(P.state()===null, "a perch was set for the climb");
+    var w = $("characterWander");
+    expect(w.classList.contains("climbing") && /scale\(/.test(w.style.transform) && /rotate\(/.test(w.style.transform), "no climb transform: "+w.style.transform);
+    var scl = parseFloat(/scale\(([-\d.]+)/.exec(w.style.transform)[1]);
+    expect(scl>0.3 && scl<0.55, "the wall scale should be about 0.4 of the floor climber, got "+scl);
+    expect($("characterShadow").style.opacity==="0", "the floor shadow should be hidden on the wall");
+    expect(qa("#characterBody img.outfit-layer").every(function(l){ return l.hidden; }) || qa("#characterBody img.outfit-layer").length===0, "outfit layers on a plain climber");
+    expect(!$("characterFace") || $("characterFace").hidden, "face overlay over a climb frame");
+  });
+
+  test("Home climb: dragging up climbs one hold per 48 px; the pinned fist stays on its hold (maths and real DOM); down climbs back", async function(){
+    await climbBoot();
+    var C = W.__cruxClimb; await climbOn();
+    var R = C.route(), g = C.geo();
+    // every stance: the real DOM puts the gripping fist on its hold, all contacts are on the board and in the visible window
+    for(var i=0;i<R.n;i++){
+      C.stance(i); await wait(40);
+      var st = C.state(), sp = st.spec, hi = C.dom(C.anchors[st.key].hi);
+      expect(Math.hypot(hi[0]-R.hold[i][0], hi[1]-R.hold[i][1])<0.6, "stance "+i+": fist "+hi.map(Math.round)+" is off its hold "+R.hold[i].map(Math.round));
+      var m = C.scr(sp, C.anchors[st.key].hi); expect(Math.hypot(m[0]-hi[0], m[1]-hi[1])<0.6, "stance "+i+": maths and DOM disagree");
+    }
+    var L = C.limits(), poly = C.boardPx();
+    [R.S].concat(R.hold, R.foot[0], R.foot.slice(1).reduce(function(a, f){ return a.concat(f); }, [])).forEach(function(p, k){
+      expect(C.inside(poly, p)>=4, "contact "+k+" at "+p.map(Math.round)+" is off the board (margin "+C.inside(poly, p).toFixed(1)+")");
+      expect(p[0]>=L.xLo-1 && p[0]<=L.xHi+1 && p[1]>=L.yLo-1, "contact "+k+" is outside the visible window");
+    });
+    C.stance(0); await wait(40); C.resetDrift();
+    await climbDragUp(100); await wait(500);
+    expect(C.state().idx===2, "100 px of drag should climb two holds, on hold "+C.state().idx);
+    var key2 = C.state().key; expect(key2==="RL", "stance 2 is a left-hand stance, got "+key2);
+    expect(C.drift()<0.6, "the pinned fist moved: max drift "+C.drift().toFixed(3)+" px");
+    // a long pull stops at the top; and a pull down (slowly) climbs back
+    await climbDragUp((R.n-3)*48+40); await wait(900);
+    expect(C.state() && C.state().idx===R.n-1, "didn't stop on the top hold: "+C.state().idx+" of "+R.n);
+    var c = climbStageCenter(); ptr("pointerdown", "mouse", c.x, c.y);
+    for(var k=1;k<=5;k++){ ptr("pointermove", "mouse", c.x, c.y+k*8); await wait(40); }
+    ptr("pointerup", "mouse", c.x, c.y+40); await wait(800);
+    expect(C.state().mode==="wall" && C.state().idx<R.n-1 && C.state().idx>=R.n-2, "a slow pull down should climb back one hold: "+JSON.stringify(C.state().idx));
+    expect(C.drift()<0.6, "the pinned fist moved on the way down: "+C.drift().toFixed(3));
+    expect(C.pending()<=1, "timers left running: "+C.pending()); // (only the rest timer)
+  });
+
+  test("Home climb: the in-between frames are used for the default climber with no outfit, and skipped for another colour or any outfit", async function(){
+    async function runMove(){ // drag halfway up and then let go, sampling the frame every ~12 ms
+      var C = W.__cruxClimb; await climbOn(); var seen = {}, running = true;
+      (async function(){ while(running){ seen[dev_frameName()] = 1; await wait(12); } })();
+      await climbDragUp(100, 40); await wait(700); running = false; await wait(30);
+      return Object.keys(seen);
+    }
+    await climbBoot();
+    var C = W.__cruxClimb;
+    expect(C.midOn()===true, "mid frames should be on for the default climber");
+    var seen = await runMove();
+    expect(seen.some(function(f){ return /climb-mid-reach-right-v2\.png$/.test(f); }) && seen.some(function(f){ return /climb\/climb-reach-right\.png$/.test(f); }), "default: no right-hand mid frame during a two-hold climb: "+seen.join());
+    expect(seen.every(function(f){ return CLIMB_FRAME_RE.test(f); }), "a frame outside the climber art was shown: "+seen.join());
+    C.end(); await wait(100);
+    var sp = (await (async function(){ await climbOn(); return C.preview(0, 1, 0.5); })()), f1 = dev_frameName();
+    expect(sp.key==="M2" && /climb-mid-reach-right-v2\.png$/.test(f1), "preview of a right-hand move should be the right mid frame: "+sp.key+" "+f1);
+    sp = C.preview(1, 1, 0.5); expect(sp.key==="M3" && /climb-mid-reach-left-v2\.png$/.test(dev_frameName()), "preview of a left-hand move should be the left mid frame: "+sp.key);
+    expect(qa("#characterBody img.outfit-layer").every(function(l){ return l.hidden; }), "outfit layer on a mid frame");
+    // another colour: no mid frame, the variant's own stance frames
+    await climbBoot(function(s){ s.character.variant = "slate"; });
+    C = W.__cruxClimb; expect(C.midOn()===false, "mid frames must be off for a recoloured climber");
+    seen = await runMove();
+    expect(!seen.some(function(f){ return /climb-mid/.test(f); }), "variant: a mid frame was drawn: "+seen.join());
+    expect(seen.some(function(f){ return /variants\/slate\/climb\/climb-reach-right\.png$/.test(f); }), "variant: no slate stance frame during the move: "+seen.join());
+    expect(seen.every(function(f){ return /variants\/slate\//.test(f); }), "variant: a default-colour frame appeared: "+seen.join());
+    C.end(); await wait(100);
+    // an outfit on the default colours: no mid frame, outfit layers follow the stance frame
+    await climbBoot(function(s){ s.character.outfit = { headband:"teal-knit", chalkbag:"teal" }; });
+    C = W.__cruxClimb; expect(C.outfitted() && C.midOn()===false, "mid frames must be off with an outfit");
+    seen = await runMove();
+    expect(!seen.some(function(f){ return /climb-mid/.test(f); }), "outfit: a mid frame was drawn: "+seen.join());
+    C.stance(1); await wait(120);
+    var layers = qa("#characterBody img.outfit-layer"); // (their pictures may be missing blobs locally and hide themselves: the address is what counts)
+    expect(C.state() && layers.length>=1, "outfit: climb state "+JSON.stringify(C.state() && C.state().mode)+" layers "+layers.length+" src "+stageSrc());
+    expect(layers.length>=1 && layers.every(function(l){ return /^[a-z-]+\/climb\/climb-reach-(left|right)$/.test(layerKey(l)); }), "outfit layers aren't on the stance frame: "+layers.map(layerKey).join());
+    expect(layers.every(function(l){ return l.previousElementSibling && (l.previousElementSibling.id==="characterStage" || l.previousElementSibling.classList.contains("outfit-layer")); }), "outfit layers aren't stacked right after the sprite");
+  });
+
+  test("Home climb: the in-between frames are real runtime assets (640x960 RGBA, in the preload list) and the chalk rest uses the chalk frame", async function(){
+    await climbBoot();
+    var C = W.__cruxClimb;
+    ["climb-mid-reach-right-v2", "climb-mid-reach-left-v2"].forEach(function(n){ expect(SRC.indexOf('mascot/climber/default/climb/'+n+'.png')>0, n+" isn't an asset() address in crux.html (build-site.ps1 ships every asset(...) address)"); });
+    for(var n of ["climb-mid-reach-right-v2", "climb-mid-reach-left-v2"]){
+      var im = await new Promise(function(res){ var i = new W.Image(); i.onload = function(){ res(i); }; i.onerror = function(){ res(null); }; i.src = "/assets/mascot/climber/default/climb/"+n+".png"; });
+      expect(im && im.naturalWidth===640 && im.naturalHeight===960, n+": not a 640x960 picture");
+      var cv = D.createElement("canvas"); cv.width = 640; cv.height = 960; var cx = cv.getContext("2d"); cx.drawImage(im, 0, 0);
+      var d = cx.getImageData(0, 0, 640, 960).data, clear = 0, solid = 0; for(var k=3;k<d.length;k+=4){ if(d[k]===0) clear++; else if(d[k]>200) solid++; }
+      expect(clear>640*960*0.4 && solid>640*960*0.1, n+": no transparent background / body (clear "+clear+", solid "+solid+")");
+    }
+    await climbOn();
+    C.stance(1); C.chalk(); await wait(80);
+    expect(C.state().mode==="chalk" && C.state().key==="CH" && /climb\/climb-chalk-up\.png$/.test(dev_frameName()), "chalk rest frame: "+dev_frameName());
+    expect(qa("#climbHolds img").filter(function(i){ return i.style.display==="block"; }).length===2, "the two chalk-rest footholds aren't shown");
+    // pressing him in the chalk rest brings the stance back and he can climb on
+    await climbDragUp(50); await wait(600);
+    expect(C.state().mode==="wall" && C.state().idx===2, "didn't climb on from the chalk rest: "+JSON.stringify(C.state()));
+  });
+
+  test("Home climb: a fast fling down (or 40 px off the board) is a fall that lands on the floor; he can mount again", async function(){
+    await climbBoot();
+    var C = W.__cruxClimb, P = W.__cruxPerch; await climbOn();
+    await climbDragUp(100); await wait(600);
+    expect(C.state().idx>=2, "didn't climb before falling");
+    var c = climbStageCenter();
+    ptr("pointerdown", "mouse", c.x, c.y); ptr("pointermove", "mouse", c.x, c.y+30); await wait(20); ptr("pointermove", "mouse", c.x, c.y+95); await wait(20);
+    expect(C.state() && C.state().mode==="fall", "a fling down didn't start a fall: "+JSON.stringify(C.state() && C.state().mode));
+    var seen = {}; var t0 = Date.now(); while(C.state() && Date.now()-t0<3000){ seen[dev_frameName()] = 1; await wait(15); }
+    ptr("pointerup", "mouse", c.x, c.y+95);
+    expect(C.state()===null, "the fall never ended");
+    var names = Object.keys(seen).join();
+    expect(/jump\/jump-02\.png/.test(names), "no jump frame during the fall: "+names);
+    expect(/idle\/idle-01\.png$/.test(dev_frameName()) && P.state()===null && P.offsetY()===0, "didn't end standing on the floor: "+dev_frameName());
+    var w = $("characterWander");
+    expect(!w.classList.contains("climbing") && !w.classList.contains("in-motion") && w.style.transformOrigin==="" && w.style.height==="" && /^translate\(.*\) scaleX\(1\)$/.test(w.style.transform), "the sprite wasn't handed back cleanly: "+w.style.transform+" | "+w.className);
+    expect(!D.getElementById("climbHolds") && $("characterShadow").style.opacity==="" && C.pending()===0, "holds, shadow or timers left behind");
+    await wait(400); // and the ordinary floor climber still works (a tap steps)
+    var c2 = stageCenter(); ptr("pointerdown", "mouse", c2.x, c2.y); ptr("pointerup", "mouse", c2.x, c2.y); $("characterStage").click(); await wait(130);
+    expect(/\/step\//.test(dev_frameName()), "the floor climber doesn't step after a fall: "+dev_frameName());
+    await wait(900);
+    // mount again, then drag well off the board: also a fall
+    await climbOn();
+    var c3 = climbStageCenter(), poly = C.boardPx(), far = Math.max.apply(null, poly.map(function(p){ return p[0]; }));
+    var sc = $("characterScene").getBoundingClientRect();
+    ptr("pointerdown", "mouse", c3.x, c3.y); ptr("pointermove", "mouse", sc.left+far+60, c3.y); await wait(20);
+    expect(C.state() && C.state().mode==="fall", "dragging 40+ px off the board should fall: "+JSON.stringify(C.state() && C.state().mode));
+    ptr("pointerup", "mouse", sc.left+far+60, c3.y);
+    await until(function(){ return C.state()===null; }, 3000, "the second fall to end");
+    expect(/idle\/idle-01\.png$/.test(dev_frameName()), "second fall: not on the floor");
+  });
+
+  test("Home climb: a tap on the board is not a tap-hop; leaving Home, Arrange, a room change and a level-up put him on the floor", async function(){
+    await climbBoot(function(s){ s.character.decorations = ["wallshelf"]; });
+    var C = W.__cruxClimb, P = W.__cruxPerch; await climbOn();
+    var c = climbStageCenter(); ptr("pointerdown", "mouse", c.x, c.y); ptr("pointerup", "mouse", c.x, c.y); $("characterStage").click(); await wait(150);
+    expect(C.state() && C.state().mode==="wall" && C.state().idx===0, "a tap on the board changed something: "+JSON.stringify(C.state()));
+    await click("navTrainBtn", 250);
+    expect(C.state()===null && /idle\/idle-01\.png$/.test(dev_frameName()) && !D.getElementById("climbHolds"), "leaving Home didn't put him on the floor");
+    await goHome(); await wait(300);
+    await climbOn(); await click("arrangeToggleBtn", 300);
+    expect(C.state()===null && !D.getElementById("climbHolds"), "Arrange didn't dismount the climb");
+    await click("arrangeToggleBtn", 300);
+    await climbOn(); P.levelUp(); await wait(200);
+    expect(C.state()===null && $("characterWander").style.transformOrigin==="", "a level-up didn't dismount the climb");
+    await wait(2200);
+    expect(P.state()===null && C.pending()===0, "state after the level-up jump");
+    // a different room: no board, no climb; same drop is a plain tap
+    await climbBoot(function(s){ s.character.selectedEnvironmentId = "garage"; });
+    var c4 = stageCenter(); ptr("pointerdown", "mouse", c4.x, c4.y); await wait(420); ptr("pointermove", "mouse", 40, 200); await wait(30); ptr("pointerup", "mouse", 40, 200); await wait(80);
+    expect(W.__cruxClimb.state()===null && !D.getElementById("climbHolds") && !P.running(), "the Garage has no board but a climb started");
+  });
+
+  test("Home climb: dropping on a decoration or hold still perches; a drop off the board is a tap; a decoration near the finger wins over the board", async function(){
+    await climbBoot(null, false);
+    var P = W.__cruxPerch, C = W.__cruxClimb;
+    // on the board but right on a gear hold: the hang perch, not the climb
+    var tp = await targetXY("gearHoldA", "homewall"), want = P.live(tp.t);
+    await dragDrop("mouse", tp); await wait(80);
+    expect(C.state()===null && P.running(), "a drop on a hold should travel to it, not climb: "+JSON.stringify(C.state()));
+    await settleRun(6000);
+    if(want.kind==="beside") expect(P.state()===null, "a beside landing leaves no perch"); else expect(P.state() && P.state().id==="gearHoldA", "a drop on the gear hold didn't perch there ("+want.kind+"): "+JSON.stringify(P.state()));
+    expect(C.state()===null && !D.getElementById("climbHolds"), "a climb started after the hold drop");
+    P.dismount(); await wait(200);
+    // a shelf: unchanged sit perch
+    var sh = await targetXY("wallshelf", "homewall"); await dragDrop("mouse", sh); await settleRun(6000);
+    expect(C.state()===null && P.state() && P.state().id==="wallshelf", "the shelf perch changed: "+JSON.stringify(P.state()));
+    P.dismount(); await wait(200);
+    // off the board (the room on the right) and nowhere near a target: just a tap
+    var sc = $("characterScene").getBoundingClientRect(), vis = P.vis();
+    var cx = stageCenter(); ptr("pointerdown", "mouse", cx.x, cx.y); await wait(420); ptr("pointermove", "mouse", sc.left+sc.width*0.9, sc.top+sc.height*0.3); await wait(30);
+    expect(P.gesture()==="armed" && !D.getElementById("perchRing"), "off the board, far from targets, should only be armed: "+P.gesture());
+    ptr("pointerup", "mouse", sc.left+sc.width*0.9, sc.top+sc.height*0.3); await wait(100);
+    expect(C.state()===null && P.state()===null && !P.running(), "a drop off the board started something");
+  });
+
+  test("Home climb: the route fits the board and the visible window at phone, small phone and tablet sizes", async function(){
+    var frame = document.getElementById("app"), w0 = frame.style.width, h0 = frame.style.height;
+    try{
+      for(var wh of [[390, 760], [360, 640], [430, 932], [768, 900]]){
+        frame.style.width = wh[0]+"px"; frame.style.height = wh[1]+"px";
+        await climbBoot(); await wait(300);
+        var C = W.__cruxClimb; expect(W.innerWidth===wh[0], "the iframe didn't resize: "+W.innerWidth);
+        expect(C.mount()===true, wh+": mount refused");
+        var R = C.route(), poly = C.boardPx(), L = C.limits(), tag = wh.join("x");
+        expect(R.n>=3, tag+": only "+R.n+" holds");
+        var pts = [R.S].concat(R.hold); R.foot.forEach(function(f){ pts.push(f[0], f[1]); });
+        pts.forEach(function(p, k){ expect(C.inside(poly, p)>=3, tag+": contact "+k+" off the board ("+C.inside(poly, p).toFixed(1)+")"); expect(p[0]>=L.xLo-1 && p[0]<=L.xHi+1 && p[1]>=L.yLo-1, tag+": contact "+k+" outside the visible window"); });
+        await until(function(){ return C.state() && C.state().mode==="wall"; }, 4000, tag+": reach the first hold");
+        var hi = C.dom(C.anchors.RL.hi); expect(Math.hypot(hi[0]-R.hold[0][0], hi[1]-R.hold[0][1])<0.6, tag+": fist off the first hold");
+        C.end(); await wait(100);
+      }
+    } finally { frame.style.width = w0; frame.style.height = h0; }
+  });
+
+  test("Home climb: a resize re-fits the route and keeps him on the same hold", async function(){
+    var frame = document.getElementById("app"), w0 = frame.style.width, h0 = frame.style.height;
+    try{
+      await climbBoot(); var C = W.__cruxClimb; await climbOn();
+      C.stance(2); await wait(60);
+      frame.style.width = "340px"; await wait(600);
+      var st = C.state(); expect(st && st.mode==="wall", "the climb ended on resize: "+JSON.stringify(st));
+      var R = C.route(), i = st.idx; expect(i===Math.min(2, R.n-1), "stance changed on resize: "+i);
+      var hi = C.dom(C.anchors[st.key].hi); expect(Math.hypot(hi[0]-R.hold[i][0], hi[1]-R.hold[i][1])<0.6, "fist off the hold after a resize");
+    } finally { frame.style.width = w0; frame.style.height = h0; }
+  });
+
+  function climbHidden(){ Object.defineProperty(D, "visibilityState", { configurable:true, get:function(){ return "hidden"; } }); try{ D.dispatchEvent(new W.Event("visibilitychange")); } finally { delete D.visibilityState; } }
+
+  test("Home climb: a resize during a step or spring-back drops the in-flight move (no throw, idx stays on the route, nothing left running)", async function(){
+    var frame = document.getElementById("app"), w0 = frame.style.width, h0 = frame.style.height, errs = [];
+    function onErr(e){ errs.push(String(e.message||e)); } W.addEventListener("error", onErr);
+    try{
+      await climbBoot(); var C = W.__cruxClimb; await climbOn();
+      C.stance(Math.min(3, C.route().n-1)); await wait(60);
+      var i0 = C.state().idx, c = climbStageCenter();
+      ptr("pointerdown", "mouse", c.x, c.y); ptr("pointermove", "mouse", c.x, c.y-60); await wait(30);
+      expect(C.state().busy, "a step should be in flight before the resize");
+      frame.style.width = "330px"; C.relayout(); await wait(500); // re-fit now, while the step is still in flight
+      var st = C.state(); expect(st, "the climb ended on resize");
+      expect(!st.busy && st.idx===Math.min(i0, st.n-1) && st.desired===st.idx, "the old step survived the resize: "+JSON.stringify({ busy:st.busy, idx:st.idx, desired:st.desired, n:st.n }));
+      var R = C.route(), hi = C.dom(C.anchors[st.key].hi); expect(Math.hypot(hi[0]-R.hold[st.idx][0], hi[1]-R.hold[st.idx][1])<0.6, "fist off the hold after the resize");
+      ptr("pointerup", "mouse", c.x, c.y-60); await wait(500);
+      expect(C.state().idx<=C.state().n-1 && !C.state().busy, "idx off the route after release");
+      expect(errs.length===0, "errors after a resize mid-step: "+errs.join(" | "));
+    } finally { W.removeEventListener("error", onErr); frame.style.width = w0; frame.style.height = h0; }
+  });
+
+  test("Home climb: a drag left over from a lost pointerup is cleared by a hidden tab and replaced by the next press", async function(){
+    await climbBoot(); var C = W.__cruxClimb; await climbOn();
+    var c = climbStageCenter();
+    ptr("pointerdown", "mouse", c.x, c.y, 1); expect(C.state().dragging && C.state().drag, "the press didn't start a drag");
+    climbHidden(); expect(!C.state().dragging && !C.state().drag, "a hidden tab left the drag set");
+    ptr("pointerdown", "mouse", c.x, c.y, 1); expect(C.state().drag, "no drag after backgrounding");
+    ptr("pointerdown", "mouse", c.x, c.y, 2);   // pointerup for 1 never came: the new pointer takes over
+    expect(C.state().drag, "a press with a different pointer id was ignored");
+    for(var k=1;k<=10;k++){ ptr("pointermove", "mouse", c.x, c.y-k*8, 2); await wait(18); }
+    expect(C.state().desired>=1, "the new drag doesn't move him: "+JSON.stringify(C.state()));
+    ptr("pointerup", "mouse", c.x, c.y-80, 2); await wait(500);
+    expect(!C.state().dragging && !C.state().drag, "release left the drag set");
+  });
+
+  test("Home climb: the click after a fall (fling, drag off, reduced motion) is not a tap-hop", async function(){
+    await climbBoot(); var C = W.__cruxClimb, P = W.__cruxPerch;
+    async function fallThenClick(label){
+      await climbOn(); await wait(200);
+      var c = climbStageCenter();
+      ptr("pointerdown", "mouse", c.x, c.y); ptr("pointermove", "mouse", c.x, c.y+30); await wait(20); ptr("pointermove", "mouse", c.x, c.y+95); await wait(20);
+      await until(function(){ return C.state()===null; }, 3500, label+": the fall to end");
+      await wait(300); // longer than the swallow window: the release comes late
+      ptr("pointerup", "mouse", c.x, c.y+95); $("characterStage").click(); await wait(130);
+      expect(!/\/step\//.test(dev_frameName()), label+": the click after a fall hopped: "+dev_frameName());
+      await wait(900);
+    }
+    await fallThenClick("fling");
+    P.reduced(true);
+    try{ await fallThenClick("reduced motion"); } finally { P.reduced(false); }
+    // and an ordinary tap afterwards still hops
+    await wait(400); var c2 = stageCenter(); ptr("pointerdown", "mouse", c2.x, c2.y); ptr("pointerup", "mouse", c2.x, c2.y); $("characterStage").click(); await wait(130);
+    expect(/\/step\//.test(dev_frameName()), "a later tap doesn't hop: "+dev_frameName());
+  });
+
+  test("Home climb: a late preload callback cannot start the jump after the mount was finished", async function(){
+    await climbBoot(); var C = W.__cruxClimb, Orig = W.Image;
+    W.Image = function(){ var self = { complete:false, onload:null, onerror:null }; Object.defineProperty(self, "src", { set:function(){ setTimeout(function(){ self.onload && self.onload(); }, 350); } }); return self; };
+    try{
+      expect(C.mount()===true, "mount refused"); C.finish();
+      expect(C.state().mode==="wall" && C.state().idx===0, "finish didn't land on stance A: "+JSON.stringify(C.state()));
+      var seen = {}, t0 = Date.now(); while(Date.now()-t0<700){ seen[dev_frameName()] = 1; await wait(20); }
+      expect(!Object.keys(seen).some(function(f){ return /jump\//.test(f); }), "a late preload started the jump: "+Object.keys(seen).join());
+      expect(C.state().mode==="wall", "mode changed: "+C.state().mode);
+    } finally { W.Image = Orig; C.end(); }
+  });
+
+  test("Home climb: reduced motion places him directly: no mount or fall animation, no swing, no mid frames, no timers", async function(){
+    await climbBoot();
+    var C = W.__cruxClimb, P = W.__cruxPerch; P.reduced(true);
+    try{
+      var pt = boardPoint(); await dragDrop("mouse", pt);
+      await until(function(){ return C.state() && C.state().mode==="wall"; }, 3000, "reduced-motion mount");
+      expect(!/jump\//.test(dev_frameName()) && C.state().idx===0 && C.state().key==="RL", "reduced-motion mount should place him on the first hold: "+dev_frameName());
+      await wait(200); expect(C.pending()===0, "reduced motion left timers running: "+C.pending());
+      var seen = {}, running = true; (async function(){ while(running){ seen[dev_frameName()] = 1; await wait(8); } })();
+      await climbDragUp(100, 30); await wait(150); running = false;
+      expect(C.state().idx===2 && C.state().mode==="wall", "reduced motion didn't climb two holds: "+JSON.stringify(C.state()));
+      var names = Object.keys(seen);
+      expect(!names.some(function(f){ return /climb-mid/.test(f); }), "reduced motion drew a mid frame: "+names.join());
+      expect(names.every(function(f){ return /climb\/climb-reach-(left|right)\.png$/.test(f); }), "reduced motion should only show stance frames: "+names.join());
+      expect(C.pending()===0, "timers left after reduced-motion climbing: "+C.pending());
+      var hi = C.dom(C.anchors.RL.hi), R = C.route(); expect(Math.hypot(hi[0]-R.hold[2][0], hi[1]-R.hold[2][1])<0.6, "fist off the hold");
+      await wait(3300); expect(C.state().mode==="wall", "reduced motion should never go into the chalk rest on its own: "+C.state().mode);
+      // a fall is immediate
+      var c = climbStageCenter(); ptr("pointerdown", "mouse", c.x, c.y); ptr("pointermove", "mouse", c.x, c.y+30); await wait(25); ptr("pointermove", "mouse", c.x, c.y+95);
+      expect(C.state()===null && /idle\/idle-01\.png$/.test(dev_frameName()) && C.pending()===0, "reduced-motion fall should end at once: "+JSON.stringify(C.state()));
+      ptr("pointerup", "mouse", c.x, c.y+95);
+    } finally { P.reduced(false); }
+  });
+
+  test("Home climb: nothing is saved (no new localStorage keys, saved data identical) and a backup round trip is unaffected", async function(){
+    await climbBoot(); var C = W.__cruxClimb;
+    var keysBefore = Object.keys(STORE).sort().join(), before = JSON.stringify(saved());
+    await climbOn(); await climbDragUp(100); await wait(600); C.chalk(); await wait(100);
+    var c = climbStageCenter(); ptr("pointerdown", "mouse", c.x, c.y); await wait(20); ptr("pointermove", "mouse", c.x, c.y+30); await wait(25); ptr("pointermove", "mouse", c.x, c.y+95); ptr("pointerup", "mouse", c.x, c.y+95);
+    await until(function(){ return C.state()===null; }, 3000, "the fall to end"); await wait(200);
+    expect(Object.keys(STORE).sort().join()===keysBefore, "new localStorage keys: "+Object.keys(STORE).join());
+    expect(JSON.stringify(saved())===before, "climbing changed the saved data");
+    expect(!/homeClimb|climbHolds|climbBoard|wanderOffset/.test(STORE[KEY]), "a climb key reached the save");
+    // export while he is on the wall, then import it back
+    await climbOn();
+    var json = await exportJson(), wrapped = JSON.parse(json);
+    expect(wrapped.kind==="crux-backup" && !/homeClimb|climbHolds|climbBoard/.test(JSON.stringify(wrapped.data)), "the backup carries climb data or isn't a backup");
+    var snap = STORE[KEY];
+    var msg = await importText(json); expect(/Replace everything/.test(msg), "no import confirmation");
+    function noView(t){ var o = JSON.parse(t); delete o.lastView; return JSON.stringify(o); }
+    expect(noView(STORE[KEY])===noView(snap), "a backup round trip changed the data");
+    expect(Object.keys(STORE).sort().join()===keysBefore, "the import left extra localStorage keys: "+Object.keys(STORE).join());
+    await wait(300);
+    var st = W.__cruxClimb.state(); if(st){ W.__cruxClimb.end(); }
+    expect(D.documentElement.scrollWidth<=W.innerWidth, "horizontal scroll");
+  });
+
   // ---- end Home perch tests ----
 
   /* ---------- runner ---------- */

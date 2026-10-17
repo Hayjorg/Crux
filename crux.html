@@ -398,6 +398,13 @@
      for props underneath and turned them into taps. While arranging, the climber ignores input. */
   .scene-layers.arrange-mode ~ .character-wander{pointer-events:none;}
   /* Home perch: the ring on the target you would drop the climber on (same look as Arrange) */
+  /* Home climb: the route's holds sit between the room and the climber; while he is on the board the sprite is dragged (no page scroll) */
+  .climb-holds{position:absolute;inset:0;pointer-events:none;}
+  .climb-holds img{position:absolute;display:block;max-width:none;height:auto;pointer-events:none;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,0.45));animation:climbHoldIn .25s ease-out;}
+  .climb-holds img.foot{transform-origin:50% 0;}
+  @keyframes climbHoldIn{from{opacity:0;}to{opacity:1;}}
+  @media (prefers-reduced-motion:reduce){ .climb-holds img{animation:none;} }
+  .character-wander.climbing img{touch-action:none;cursor:grab;}
   .perch-ring{position:absolute;pointer-events:none;box-sizing:content-box;outline:2px dashed color-mix(in srgb, var(--accent) 65%, transparent);outline-offset:3px;border-radius:6px;}
   /* ---- Room Lab: temporary placement-testing squares, see ROOM_SURFACES in the script ----
      The surfaces themselves (climbing wall / back wall / floor) are intentionally invisible
@@ -6405,6 +6412,9 @@
         asset("mascot/climber/default/summit/summit-flag-2.png", "1e9f2544284d6abd7ba625c919f5ed14")
       ],
       cl_chalk: asset("mascot/climber/default/climb/climb-chalk-up.png", "812ef9e49ac1541e71982f508aaf5c1f"),
+      // Home climb in-between frames (default colours only; blob ids empty until Claude uploads them, rule 2)
+      cl_mid_r2: asset("mascot/climber/default/climb/climb-mid-reach-right-v2.png"),
+      cl_mid_l2: asset("mascot/climber/default/climb/climb-mid-reach-left-v2.png"),
       cl_sit_look: asset("mascot/climber/default/sit/ledge-sit-look.png", "d3d70eb4a651ac9ac3529b091ce65d46"),
       cl_rest: asset("mascot/climber/default/rest/rest-day.png", "b2094ad56215a3bc50ea204099d40a4f"),
       moves: {
@@ -6791,6 +6801,7 @@
       fx:{ glows:[{ x:76, y:3 }], motes:[12,30,54,72,90] } },
     { id:"homewall", name:"Home Wall",       minLevel:8,  artReady:true, wallColor:"#A8763F", floorColor:"#6B5744", wallHold:21,
       bg:{ img:IMG.rooms.homewall.bg, floor:1095 }, thumb:IMG.rooms.homewall.thumb, props:[],
+      climbBoard:[[45,1060],[235,1060],[570,130],[150,0]], // the painted leaning board, as a polygon in painting pixels (Home climb)
       fx:{ glows:[{ x:72, y:11, w:44, h:36, c:"255,200,120" }], motes:[14,38,60,82], moteColor:"255,225,170" } },
     { id:"local",    name:"The Local",       minLevel:15, artReady:true, wallColor:"#B8AFA0", floorColor:"#3E3A35",
       bg:{ img:IMG.rooms.local.bg, floor:1105 }, thumb:IMG.rooms.local.thumb, props:[],
@@ -7242,6 +7253,7 @@
     return mascotClip(kind);
   }
   function playHop(){
+    if(homeClimb) return; // HOME CLIMB hook: a tap on the board does not hop him down (a fall is a drag off or a fling)
     if(homePerch){ dismountHome(); playMascotMoods([["stoked",1800]]); return; } // a tap while perched hops back to the floor
     playMotion(motionClipFor("tap")); playMascotMoods([["stoked",1800]]);
   }
@@ -7516,6 +7528,7 @@
     if(!document.getElementById("characterScene").offsetWidth) return false;
     var env = selectedEnvironment(), t = perchFind(id, env.id);
     if(!t) return false;
+    if(homeClimb) climbEnd(); // HOME CLIMB hook
     perchPreload(function(){
       if(arrangeMode || document.getElementById("view-home").hidden || selectedEnvironment().id!==env.id || !document.getElementById("characterScene").offsetWidth) return;
       var t2 = perchFind(id, env.id); if(t2) perchApply(t2);
@@ -7524,6 +7537,7 @@
   }
   // Back to the floor, at the same x as the perch (clamped like a step is). Also ends a travel half way (see perchCancelRun).
   function dismountHome(){
+    if(homeClimb) climbEnd(); // HOME CLIMB hook
     if(perchRun) perchCancelRun();
     if(!homePerch) return;
     var wander = document.getElementById("characterWander"), scene = document.getElementById("characterScene");
@@ -7541,6 +7555,7 @@
   // Called at the end of every renderSceneEnvironment: the decorations were just rebuilt, so re-seat the climber on the
   // fresh target, or drop to the floor if the room changed, Arrange is on, or the target is gone / no longer fits.
   function perchSync(env){
+    if(homeClimb){ climbRelayout(env); return; } // HOME CLIMB hook
     if(perchRun){ if(env.id!==perchRun.envId || arrangeMode) perchCancelRun(); return; }
     if(!homePerch) return;
     if(env.id!==perchEnvId || arrangeMode){ dismountHome(); return; }
@@ -7602,6 +7617,7 @@
   function perchTravel(id){
     if(arrangeMode || document.getElementById("view-home").hidden || !document.getElementById("characterScene").offsetWidth) return false;
     if(perchRun) perchFinishRun();
+    if(homeClimb) climbEnd(); // HOME CLIMB hook
     if(prefersReducedMotion){ return perchTo(id); }
     var env = selectedEnvironment(), t0 = perchFind(id, env.id);
     if(!t0) return false;
@@ -7691,7 +7707,7 @@
 
   perchPreload(function(){}); // warm the climb / sit frames at start (6 small images), so a drop never waits
   /* ---- the pick-up gesture on the climber: idle -> pressed -> armed -> aiming -> travelling -> perched ---- */
-  var PERCH_SWALLOW_MS = 250, PERCH_HOLD_MS = 350, PERCH_MOUSE_PX = 8, PERCH_TOUCH_PX = 10, PERCH_NEAR = 0.12;
+  var PERCH_SWALLOW_MS = 250, PERCH_HOLD_MS = 350, PERCH_MOUSE_PX = 8, PERCH_TOUCH_PX = 10, PERCH_NEAR = 0.12, PERCH_NEAR_BOARD = 0.04;
   var perchG = null;            // { pointerId, type, x0, y0, x, y, state, timer, targets, aim }
   var perchSwallowUntil = 0;    // the click that follows an armed gesture is not a tap
   function perchRing(t){
@@ -7704,15 +7720,16 @@
   }
   function perchAim(){
     var g = perchG; if(!g || g.state==="pressed") return;
-    var rect = document.getElementById("characterScene").getBoundingClientRect(), px = g.x - rect.left, py = g.y - rect.top, near = PERCH_NEAR*rect.width, best = null;
+    var rect = document.getElementById("characterScene").getBoundingClientRect(), px = g.x - rect.left, py = g.y - rect.top, onBoard = climbHit(px, py), near = (onBoard ? PERCH_NEAR_BOARD : PERCH_NEAR)*rect.width, best = null; // HOME CLIMB hook: on the board a decoration only wins when the finger is nearly on it
     g.targets.forEach(function(t){ // distance from the finger to the target's box (0 inside); the closest wins, the nearer centre on a tie
       var dx = Math.max(t.x - px, 0, px - (t.x + t.w)), dy = Math.max(t.y - py, 0, py - (t.y + t.h)), d = Math.sqrt(dx*dx + dy*dy);
       var c = Math.hypot(px - (t.x + t.w/2), py - (t.y + t.h/2));
       if(d <= near && (!best || d < best.d - 0.5 || (Math.abs(d-best.d) <= 0.5 && c < best.c))) best = { t:t, d:d, c:c };
     });
     g.aim = best ? best.t : null;
-    g.state = g.aim ? "aiming" : "armed";
-    perchRing(g.aim);
+    g.board = !g.aim && onBoard; // HOME CLIMB hook: no decoration near, but the finger is on the Home Wall board
+    g.state = (g.aim || g.board) ? "aiming" : "armed";
+    perchRing(g.aim || (g.board ? climbRingBox(selectedEnvironment(), climbGeo()) : null));
   }
   function perchArm(){
     var g = perchG; if(!g || g.state!=="pressed") return;
@@ -7734,18 +7751,20 @@
   }
   function perchRelease(){
     var g = perchG; if(!g) return;
-    var armed = g.state!=="pressed", t = g.aim;
+    var armed = g.state!=="pressed", t = g.aim, onBoard = g.board;
     perchAbort();
     if(!armed) return;
     perchSwallowUntil = Date.now() + PERCH_SWALLOW_MS;
     if(t) perchTravel(t.id);
+    else if(onBoard && climbMount()) return; // HOME CLIMB hook
     else playHop(); // armed but released over nothing: still answer the press (a step, or down off the perch)
   }
   (function perchWire(){
     var stage = document.getElementById("characterStage");
     stage.addEventListener("pointerdown", function(e){
       if(e.pointerType==="mouse" && e.button!==0) return;
-      perchSwallowUntil = 0; // a new press is never the tail of an old gesture
+      if(homeClimb){ climbDown(e); return; } // HOME CLIMB hook: on the board a press is a climb drag
+      perchSwallowUntil = 0; climbSwallowNext = false; // a new press is never the tail of an old gesture
       if(perchRun){ perchFinishRun(); perchSwallowUntil = Date.now() + PERCH_SWALLOW_MS; return; } // a second press: it lands now
       if(arrangeMode || perchG || motionPlaying) { if(perchG && e.pointerId!==perchG.pointerId) perchAbort(); return; }
       perchG = { pointerId:e.pointerId, type:e.pointerType, x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, state:"pressed", timer:(perchTimerCount++, setTimeout(perchArm, PERCH_HOLD_MS)), targets:[], aim:null };
@@ -7788,6 +7807,460 @@
     state:function(){ return homePerch; }, offsetY:function(){ return wanderOffsetY; }, frames:PERCH_FRAME, feet:PERCH_FEET, seat:PERCH_SEAT,
     frameAddr:perchFrameAddr, idleFrame:perchIdleFrame, sceneBox:perchSceneBox, accessories:ACCESSORIES, gearHolds:PERCH_GEAR_HOLDS, autoHop:autoHopOnce, levelUp:celebrateLevelUp, offsetX:function(){ return wanderOffsetX; }, vis:sceneVisible };
   /* ==== END HOME PERCH ==== */
+
+  /* ==== HOME CLIMB (drag the climber onto the Home Wall board and he climbs hold to hold) ===========
+     Ported from the dev prototype dev/climb-lab.html. Press and hold the Home climber, drag onto the painted
+     board in the Home Wall room (a drop near a decoration still perches there, see HOME PERCH) and let go:
+     he jumps on, a route of holds appears, and dragging him up or down climbs one hold per CLIMB_RISE px.
+     Existing frames only (climb-reach-left / right / chalk-up, jump, land) plus the two in-between frames
+     (climb-mid-reach-right-v2 / -left-v2, default colours and no outfit only; any other variant or outfit takes
+     the no-mid path). Each stance frame is drawn on the climber's own #characterStage, so variants and outfit
+     layers follow (climberFrame / outfitFollow); the sprite is placed by one CSS transform (translate, rotate,
+     scale) that pins a chosen frame point (the fist that holds on) to a screen point.
+     IN MEMORY ONLY: nothing here is saved. Remove: delete this block, the `climbBoard` row of ENVIRONMENTS, the
+     `.climb-holds` CSS, the `cl_mid_*` rows of IMG.wall, the hooks marked `// HOME CLIMB hook`, and the "Home climb:" tests. */
+  var CLIMB_REL = 0.09;     // wall scale: px per 1024-frame unit on a 375 px wide scene (0.11 in the lab; smaller reads more solid)
+  var CLIMB_RISE = 48, CLIMB_STEP_GAP = 250, CLIMB_TWEEN_MS = 120, CLIMB_REST_MS = 3000, CLIMB_PREVIEW_MIN = 0.08;
+  var CLIMB_LEAN = 12, CLIMB_SEED = 7, CLIMB_MIDW = 0.7, CLIMB_MAX_HOLDS = 8, CLIMB_MIN_HOLDS = 3;
+  // Measured once on the runtime frames, in 1024x1536 frame units: hi / lo = gripping fists (hi is the one that holds on),
+  // fa / fb = soles, head / torso = alignment points, bb = opaque box (cx, cy, y1 = bottom).
+  var CLIMB_A = {
+    RL:{ hi:[186.8,185.7], lo:[700,571.6], fa:[774.4,1008], fb:[487.9,1344], head:[520,339.2], torso:[441.6,712], bb:{cx:499.2,cy:734.4,y1:1344} },
+    RR:{ hi:[872.1,334.8], lo:[338,630.4], fa:[306.6,953.6], fb:[622.2,1344], head:[529.6,400], torso:[569.6,792], bb:{cx:561.6,cy:768.8,y1:1344} },
+    CH:{ hi:[878.3,402.6], fa:[463.1,1344], fb:[753.2,1142.4], head:[497.6,499.2], torso:[515.2,843.2], bb:{cx:589.6,cy:805.6,y1:1344} },
+    M2:{ hi:[215,128.4], fa:[494,1404.8], fb:[778.3,1024], head:[529.6,374.4], torso:[470.4,737.6], bb:{cx:522.4,cy:742.4,y1:1404.8} },  // mid, right-hand move (held fist is the left one)
+    M3:{ hi:[913.6,277.7], fa:[581,1353.6], fb:[266.4,1014.4], head:[513.6,361.6], torso:[515.2,772.8], bb:{cx:548,cy:756,y1:1353.6} }, // mid, left-hand move
+    J1:{ bb:{cx:510.4,cy:878.4,y1:1344} }, J2:{ bb:{cx:544.8,cy:814.4,y1:1344} }, J3:{ bb:{cx:504.8,cy:852,y1:1320} },
+    L1:{ bb:{cx:527.2,cy:887.2,y1:1344} }, L2:{ bb:{cx:512,cy:872,y1:1344} }, ID:{ bb:{cx:512,cy:864,y1:1344} }
+  };
+  var CLIMB_HOLD_HAND = ["h_jug","r2_hold_red","h2_jug","r2_hold_blue","r2_hold_yellow","h2_jug","r2_hold_grey","h_jug","r2_hold_sand"];
+  var CLIMB_HOLD_FOOT = ["h_foot","h2_chip"];
+  var homeClimb = null;      // { envId, g, s, R, mode: mount|wall|chalk|fall, idx, desired, f, busy, dragging, ... } while he is on the board
+  var climbTimerCount = 0, climbDriftMax = 0, climbFramesReady = false, climbSwallowNext = false, climbMidBad = false;
+
+  function climbRot(v, deg){ var t = deg*Math.PI/180, c = Math.cos(t), s = Math.sin(t); return [v[0]*c - v[1]*s, v[0]*s + v[1]*c]; }
+  function climbDist(a, b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+  function climbClamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function climbAngLerp(a, b, t){ var d = b-a; while(d>Math.PI) d -= 2*Math.PI; while(d<-Math.PI) d += 2*Math.PI; return a+d*t; }
+  function climbAddr(k){
+    var w = IMG.wall, m = IMG.mascot;
+    return k==="RL" ? w.cl_reach_l : k==="RR" ? w.cl_reach_r : k==="CH" ? w.cl_chalk : k==="M2" ? w.cl_mid_r2 : k==="M3" ? w.cl_mid_l2 :
+      k==="J1" ? m.jump[0] : k==="J2" ? m.jump[1] : k==="J3" ? m.jump[2] : k==="L1" ? m.land[0] : k==="L2" ? m.land[1] : m.idle[0];
+  }
+  function climbSrc(k){ return climberFrame(climbAddr(k)); } // the mid frames only ever draw on the default variant (climbMidOn), where this is the address itself
+  function climbOutfitted(){ // any equipped, unlocked outfit piece (the in-between frames have no outfit art)
+    var o = state.character && state.character.outfit; if(!o) return false;
+    return OUTFIT_SLOTS.some(function(slot){ var id = o[slot], it = id && OUTFIT_ITEMS[id]; return !!it && it.slot===slot && outfitUnlocked(it, state.level, outfitHolds); });
+  }
+  function climbMidOn(){ return climberVariantId()==="default" && !climbOutfitted() && !!IMG.wall.cl_mid_r2 && !!IMG.wall.cl_mid_l2 && !climbMidBad; }
+  function climbArt(){ return perchWallArt() && Array.isArray(IMG.mascot.jump) && IMG.mascot.jump.length>2 && Array.isArray(IMG.mascot.land) && IMG.mascot.land.length>1; }
+  function climbGeo(){
+    var sc = document.getElementById("characterScene"), W = sc.offsetWidth, H = sc.offsetHeight, boxW = W*0.6, boxH = boxW*1.5; // .character-wander: 60% wide, 2:3, bottom 7%
+    var top0 = H*0.93 - boxH;
+    return { W:W, H:H, boxW:boxW, boxH:boxH, left0:(W-boxW)/2, top0:top0, k:boxW/1024, floorY:top0 + PERCH_FEET*boxH, vis:sceneVisible() };
+  }
+  // The painted board as a polygon in scene px (same mapping as paintedRoomSVG), or null when this room has no board.
+  function climbBoardPx(env, g){
+    if(!env || !env.climbBoard || !env.bg) return null;
+    var k = ROOM_VB_W/1024, yoff = Math.min(0, Math.max(ROOM_VB_H - 1536*k, ROOM_FLOOR_Y - env.bg.floor*k));
+    return env.climbBoard.map(function(p){ return [p[0]*k*g.W/ROOM_VB_W, (p[1]*k + yoff)*g.H/ROOM_VB_H]; });
+  }
+  function climbInside(poly, p){ // distance to the nearest edge, negative when outside
+    var inside = false, md = 1e9, n = poly.length;
+    for(var i=0, j=n-1; i<n; j=i++){
+      var a = poly[i], b = poly[j];
+      if(((a[1]>p[1]) !== (b[1]>p[1])) && (p[0] < (b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1]) + a[0])) inside = !inside;
+      var dx = b[0]-a[0], dy = b[1]-a[1], t = climbClamp(((p[0]-a[0])*dx + (p[1]-a[1])*dy)/(dx*dx + dy*dy), 0, 1);
+      md = Math.min(md, Math.hypot(p[0]-a[0]-t*dx, p[1]-a[1]-t*dy));
+    }
+    return inside ? md : -md;
+  }
+  // The part of the board people can actually see and reach (inside the visible window, below the top chips), in scene px.
+  function climbLimits(g){
+    var hero = document.getElementById("homeHero").getBoundingClientRect(), sc = document.getElementById("characterScene").getBoundingClientRect();
+    return { xLo:g.vis.x/100*g.W + 6, xHi:g.W - g.vis.x/100*g.W - 6, yLo:Math.max(g.vis.y/100*g.H + 4, hero.top + 72 - sc.top) };
+  }
+  function climbRingBox(env, g){
+    var poly = climbBoardPx(env, g); if(!poly) return null;
+    var L = climbLimits(g), xs = poly.map(function(p){ return p[0]; }), ys = poly.map(function(p){ return p[1]; });
+    var x0 = Math.max(L.xLo-6, Math.min.apply(null, xs)), x1 = Math.min(L.xHi+6, Math.max.apply(null, xs)), y0 = Math.max(L.yLo-30, Math.min.apply(null, ys)), y1 = Math.min(g.floorY, Math.max.apply(null, ys));
+    return { x:x0, y:y0, w:Math.max(0, x1-x0), h:Math.max(0, y1-y0) };
+  }
+  // Is a finger at scene px (px, py) on the board (and is a climb possible here at all)?
+  function climbHit(px, py){
+    if(homeClimb || !climbArt()) return false;
+    var env = selectedEnvironment(), g = climbGeo(), poly = climbBoardPx(env, g); if(!poly) return false;
+    var L = climbLimits(g);
+    return px>=L.xLo-6 && px<=L.xHi+6 && py>=L.yLo-30 && py<=g.floorY && climbInside(poly, [px, py])>2;
+  }
+
+  /* ---- frame-point maths ---- */
+  // spec = { key, a: frame point (1024 units), P: where it lands (scene px), th: degrees, s: px per frame unit, mir }
+  function climbScr(sp, q){ // where frame point q lands on screen (pure maths)
+    var a = sp.mir ? [1024-sp.a[0], sp.a[1]] : sp.a, p = sp.mir ? [1024-q[0], q[1]] : q;
+    var v = climbRot([(p[0]-a[0])*sp.s, (p[1]-a[1])*sp.s], sp.th);
+    return [sp.P[0]+v[0], sp.P[1]+v[1]];
+  }
+  function climbStanceSpec(c, i){ var r = c.R.st[i]; return { key:r.key, a:r.a.hi, P:c.R.hold[i], th:r.th, s:c.s, mir:false }; }
+  function climbSwingAngle(c, i, dir){ // rotation about the pinned fist that puts the new torso where the old one was (degrees)
+    var R = c.R, j = i+dir, r = R.st[j], o = climbStanceSpec(c, i), pin = dir>0 ? R.hold[i] : R.hold[j];
+    var nsp = { key:r.key, a:dir>0 ? r.a.lo : r.a.hi, P:pin, th:r.th, s:c.s, mir:false };
+    var vo = climbScr(o, R.st[i].a.torso), vn = climbScr(nsp, r.a.torso);
+    var d = (Math.atan2(vo[1]-pin[1], vo[0]-pin[0]) - Math.atan2(vn[1]-pin[1], vn[0]-pin[0]))*180/Math.PI;
+    while(d>180) d -= 360; while(d<-180) d += 360; return d;
+  }
+  function climbMidKey(c, i, dir){ return (dir>0 ? c.R.st[i].key : c.R.st[i+dir].key)==="RL" ? "M2" : "M3"; }
+  function climbMidSpec(c, i, dir, p){ // in-between frame pinned about its gripping fist on the hold that stays held; the head/torso direction eases old stance -> new stance
+    var R = c.R, j = i+dir, ri = R.st[i], rj = R.st[j], mkey = climbMidKey(c, i, dir), pin = dir>0 ? R.hold[i] : R.hold[j], m = CLIMB_A[mkey];
+    var nsp = { key:rj.key, a:dir>0 ? rj.a.lo : rj.a.hi, P:pin, th:rj.th, s:c.s, mir:false };
+    function bl(a){ return [a.head[0]*CLIMB_MIDW + a.torso[0]*(1-CLIMB_MIDW), a.head[1]*CLIMB_MIDW + a.torso[1]*(1-CLIMB_MIDW)]; }
+    var vo = climbScr(climbStanceSpec(c, i), bl(ri.a)), vn = climbScr(nsp, bl(rj.a));
+    var ao = Math.atan2(vo[1]-pin[1], vo[0]-pin[0]), an = Math.atan2(vn[1]-pin[1], vn[0]-pin[0]);
+    var u = climbClamp((p-CLIMB_PREVIEW_MIN)/(1-CLIMB_PREVIEW_MIN), 0, 1); u = u*u*(3-2*u);
+    var sp = { key:mkey, a:m.hi, P:pin, th:0, s:c.s, mir:false }, hv = climbScr(sp, bl(m)), a0 = Math.atan2(hv[1]-pin[1], hv[0]-pin[0]);
+    sp.th = (climbAngLerp(ao, an, u) - a0)*180/Math.PI;
+    return sp;
+  }
+  function climbPinAnchor(c, i, dir){ return c.mid ? CLIMB_A[climbMidKey(c, i, dir)].hi : c.R.st[i+dir].a[dir>0 ? "lo" : "hi"]; } // the frame point that must sit on the held hold
+  function climbPreviewSpec(c, i, dir, p){ // body moving from stance i toward stance i+dir, pinned about the fist that stays on a hold
+    if(c.mid) return climbMidSpec(c, i, dir, p);
+    var j = i+dir, r = c.R.st[j], ex = prefersReducedMotion ? 0 : climbSwingAngle(c, i, dir)*(1 - climbClamp((p-CLIMB_PREVIEW_MIN)/(1-CLIMB_PREVIEW_MIN), 0, 1));
+    return { key:r.key, a:dir>0 ? r.a.lo : r.a.hi, P:dir>0 ? c.R.hold[i] : c.R.hold[j], th:r.th+ex, s:c.s, mir:false };
+  }
+  function climbFloorSpec(c, key, x, s){ var bb = CLIMB_A[key].bb; return { key:key, a:[bb.cx, bb.y1], P:[x, c.g.floorY], th:0, s:s==null ? c.g.k : s, mir:false, floor:true }; }
+
+  /* ---- the route: holds and footholds for the current scene size ---- */
+  function climbBuildRoute(env, g, s){
+    var poly = climbBoardPx(env, g), L = climbLimits(g), rnd = mulberry32(CLIMB_SEED), st = [], rel = [[0, 0]], i;
+    for(i=0; i<CLIMB_MAX_HOLDS; i++){
+      var key = i%2===0 ? "RL" : "RR", a = CLIMB_A[key], jit = (rnd()*2-1)*8, th = CLIMB_LEAN + jit;
+      var d = climbRot([(a.hi[0]-a.lo[0])*s, (a.hi[1]-a.lo[1])*s], th);
+      st.push({ key:key, a:a, th:th, hrot:(rnd()*2-1)*8, hk:CLIMB_HOLD_HAND[i], d:d });
+      rel.push([rel[i][0]+d[0], rel[i][1]+d[1]]);
+    }
+    // contact points of the first n holds, relative to the route's start: the start hold, each hold, both soles of each stance, head and torso
+    function pointsFor(n){
+      var pts = [rel[0]];
+      for(var q=0; q<n; q++){
+        pts.push(rel[q+1]);
+        var sp = { a:st[q].a.hi, P:rel[q+1], th:st[q].th, s:s, mir:false };
+        pts.push(climbScr(sp, st[q].a.fa), climbScr(sp, st[q].a.fb), climbScr(sp, st[q].a.head));
+      }
+      return pts;
+    }
+    function margin(p, ox, oy){ var x = p[0]+ox, y = p[1]+oy; return Math.min(climbInside(poly, [x, y]), x-L.xLo, L.xHi-x, y-L.yLo); }
+    var best = null, n;
+    for(n=CLIMB_MAX_HOLDS; n>=CLIMB_MIN_HOLDS; n--){
+      var pts = pointsFor(n), minY = Math.min.apply(null, pts.map(function(p){ return p[1]; })), maxY = Math.max.apply(null, pts.map(function(p){ return p[1]; }));
+      var cand = { n:n, margin:-1e9, ox:0, oy:0 }, oy0 = L.yLo - minY;
+      function scan(xa, xb, ya, yb, step){ // best offset on a grid (a coarse pass first, then 3 px around its best: the same grid as before, a fraction of the work)
+        for(var oy = ya; oy + maxY <= g.floorY && oy <= yb; oy += step){
+          for(var ox = xa; ox <= xb; ox += step){
+            var mn = 1e9;
+            for(var k2=0; k2<pts.length && mn>cand.margin; k2++) mn = Math.min(mn, margin(pts[k2], ox, oy));
+            if(mn>cand.margin){ cand.margin = mn; cand.ox = ox; cand.oy = oy; }
+          }
+        }
+      }
+      scan(L.xLo, L.xHi, oy0, 1e9, 6);
+      if(cand.margin>-1e9) scan(Math.max(L.xLo, cand.ox-6), Math.min(L.xHi, cand.ox+6), Math.max(oy0, cand.oy-6), cand.oy+6, 3);
+      if(cand.margin<7) scan(L.xLo, L.xHi, oy0, 1e9, 3); // not good enough yet: the full 3 px search, as before, so the hold count never drops by a miss
+      if(!best || cand.margin>best.margin) best = cand;
+      if(cand.margin >= 7){ best = cand; break; } // every contact at least 7 px inside the board: use this many holds
+    }
+    var R = { st:st.slice(0, best.n), n:best.n, S:[best.ox+rel[0][0], best.oy+rel[0][1]], hold:[], foot:[], margin:best.margin, poly:poly };
+    for(i=0; i<R.n; i++){
+      R.hold.push([best.ox+rel[i+1][0], best.oy+rel[i+1][1]]);
+      var sp2 = { a:st[i].a.hi, P:R.hold[i], th:st[i].th, s:s, mir:false };
+      R.foot.push([climbScr(sp2, st[i].a.fa), climbScr(sp2, st[i].a.fb)]);
+    }
+    return R;
+  }
+
+  /* ---- drawing: one CSS transform on #characterWander pins frame point sp.a to scene point sp.P ---- */
+  function climbDraw(sp){
+    var c = homeClimb, g = c.g, k = g.boxW/1024, scl = sp.s/k, ox = sp.a[0]*k, oy = sp.a[1]*k;
+    var wander = document.getElementById("characterWander"), img = document.getElementById("characterStage");
+    wander.style.transformOrigin = ox+"px "+oy+"px";
+    wander.style.transform = "translate("+(sp.P[0]-g.left0-ox)+"px,"+(sp.P[1]-g.top0-oy)+"px) rotate("+sp.th+"deg) scale("+(sp.mir ? -scl : scl)+","+scl+")";
+    var src = climbSrc(sp.key); if(img.getAttribute("src")!==src) img.src = src;
+    c.cur = sp;
+  }
+  function climbDom(q){ // where the browser really puts frame point q (unflipped frame coords), scene px (test hook: checks the pin against the real DOM)
+    var c = homeClimb, g = c.g, w = document.getElementById("characterWander"), cs = getComputedStyle(w);
+    var o = cs.transformOrigin.split(" ").map(parseFloat), m = new DOMMatrix(cs.transform==="none" ? undefined : cs.transform);
+    var p = m.transformPoint(new DOMPoint(q[0]*g.k - o[0], q[1]*g.k - o[1]));
+    return [p.x + o[0] + g.left0, p.y + o[1] + g.top0];
+  }
+  function climbLater(c, fn, ms){
+    var h = setTimeout(function(){ climbTimerCount--; var i = c.timers.indexOf(h); if(i>-1) c.timers.splice(i, 1); if(homeClimb===c) fn(); }, ms);
+    climbTimerCount++; c.timers.push(h); return h;
+  }
+  function climbCancel(c, h){ var i = c.timers.indexOf(h); if(i>-1){ c.timers.splice(i, 1); clearTimeout(h); climbTimerCount--; } }
+  function climbAnim(c, ms, fn, done){ // rAF with a timer fallback (background tabs); reduced motion finishes at once
+    var t0 = performance.now(), fin = false, id = 0, tm = 0, rec = { cancel:function(){ if(!fin){ fin = true; stop(); } } };
+    function stop(){ if(id){ cancelAnimationFrame(id); id = 0; climbTimerCount--; } if(tm){ clearTimeout(tm); tm = 0; climbTimerCount--; } var i = c.anims.indexOf(rec); if(i>-1) c.anims.splice(i, 1); }
+    function finish(){ if(fin) return; fin = true; stop(); if(homeClimb!==c) return; fn(1); done && done(); }
+    function tick(){ id = 0; climbTimerCount--; if(fin || homeClimb!==c) return; var t = climbClamp((performance.now()-t0)/ms, 0, 1); if(t>=1){ finish(); return; } fn(t); id = requestAnimationFrame(tick); climbTimerCount++; }
+    if(prefersReducedMotion || ms<=0){ fin = true; if(homeClimb===c){ fn(1); done && done(); } return rec; }
+    c.anims.push(rec);
+    id = requestAnimationFrame(tick); climbTimerCount++;
+    tm = setTimeout(function(){ tm = 0; climbTimerCount--; finish(); }, ms+120); climbTimerCount++;
+    return rec;
+  }
+  function climbClear(c){
+    c.timers.forEach(function(h){ clearTimeout(h); climbTimerCount--; }); c.timers = []; c.pumpT = 0;
+    c.anims.slice().forEach(function(a){ a.cancel(); }); c.anims = [];
+    if(c.restTimer){ clearTimeout(c.restTimer); c.restTimer = 0; climbTimerCount--; }
+    if(c.fallStop) c.fallStop();
+  }
+
+  /* ---- holds ---- */
+  function climbHoldImg(host, hk, cx, cy, rot, foot, w375){
+    var src = IMG.wall[hk]; if(!src) return null;
+    var sz = (typeof wallHoldSize==="function" ? wallHoldSize(hk) : 56)*(14/58)*(foot ? 8/14 : 1)*w375;
+    var im = document.createElement("img"); im.alt = ""; im.draggable = false; im.className = foot ? "foot" : ""; im.src = src;
+    im.style.left = cx+"px"; im.style.top = cy+"px"; im.style.width = sz+"px";
+    im.style.transform = (foot ? "translate(-50%,-1px)" : "translate(-50%,-50%)")+" rotate("+rot+"deg)";
+    host.appendChild(im); return im;
+  }
+  function climbDrawHolds(c){
+    var scene = document.getElementById("characterScene"), host = document.getElementById("climbHolds");
+    if(!host){ host = document.createElement("div"); host.id = "climbHolds"; host.className = "climb-holds"; host.setAttribute("aria-hidden", "true"); scene.insertBefore(host, document.getElementById("characterWander")); }
+    host.innerHTML = ""; c.chalkFeet = [];
+    var R = c.R, w375 = c.g.W/375, rnd = mulberry32(CLIMB_SEED+99);
+    climbHoldImg(host, CLIMB_HOLD_HAND[8], R.S[0], R.S[1], CLIMB_LEAN + (rnd()*2-1)*8, false, w375);
+    R.hold.forEach(function(p, i){ climbHoldImg(host, R.st[i].hk, p[0], p[1], CLIMB_LEAN + R.st[i].hrot, false, w375); });
+    R.foot.forEach(function(f, i){ f.forEach(function(q, j){ climbHoldImg(host, CLIMB_HOLD_FOOT[(i+j)%2], q[0], q[1], CLIMB_LEAN*0.5 + (rnd()*2-1)*8, true, w375); }); });
+    [0, 1].forEach(function(){ var h = climbHoldImg(host, "h_foot", -50, -50, 0, true, w375); if(h){ h.style.display = "none"; c.chalkFeet.push(h); } });
+  }
+  function climbHideChalkFeet(c){ (c.chalkFeet||[]).forEach(function(h){ h.style.display = "none"; }); }
+
+  /* ---- stances, rest, steps ---- */
+  function climbDisarmRest(c){ if(c.restTimer){ clearTimeout(c.restTimer); c.restTimer = 0; climbTimerCount--; } climbHideChalkFeet(c); }
+  function climbArmRest(c){ // the chalk rest is ambient motion: never with reduced motion
+    if(c.restTimer){ clearTimeout(c.restTimer); c.restTimer = 0; climbTimerCount--; }
+    if(prefersReducedMotion) return;
+    climbTimerCount++;
+    c.restTimer = setTimeout(function(){ c.restTimer = 0; climbTimerCount--; if(homeClimb===c && c.mode==="wall" && !c.busy && !c.dragging) climbShowChalk(c); }, CLIMB_REST_MS);
+  }
+  function climbShowStance(c, i){
+    climbDisarmRest(c); c.mode = "wall"; c.idx = i; c.desired = i; c.f = 0; c.busy = false; c.loadT0 = 0;
+    document.getElementById("characterShadow").style.opacity = "0";
+    climbDraw(climbStanceSpec(c, i)); climbArmRest(c);
+  }
+  function climbShowChalk(c){ // chalk rest: the chalk frame's high hand is its right, so the frame is mirrored when the high hand is the left (RL)
+    var i = c.idx, r = c.R.st[i], sp = { key:"CH", a:CLIMB_A.CH.hi, P:c.R.hold[i], th:r.th, s:c.s, mir:r.key==="RL" };
+    c.mode = "chalk"; climbDraw(sp);
+    [CLIMB_A.CH.fa, CLIMB_A.CH.fb].forEach(function(q, j){
+      var p = climbScr(sp, q), h = c.chalkFeet[j]; if(!h) return;
+      h.style.display = "block"; h.style.left = p[0]+"px"; h.style.top = p[1]+"px";
+    });
+  }
+  function climbExitChalk(c){ climbHideChalkFeet(c); c.mode = "wall"; climbDraw(climbStanceSpec(c, c.idx)); }
+  function climbCanMove(c, dir){ return c.idx+dir>=0 && c.idx+dir<c.R.n; }
+  function climbDrift(c, i, dir, pin){ if(!window.__cruxTest) return; climbDriftMax = Math.max(climbDriftMax, climbDist(climbDom(climbPinAnchor(c, i, dir)), pin)); }
+  function climbStepTo(c, dir, p0){
+    c.busy = true; var i = c.idx, pin = dir>0 ? c.R.hold[i] : c.R.hold[i+dir];
+    function landed(){ c.idx = i+dir; c.busy = false; c.f = 0; c.lastStep = performance.now(); climbDraw(climbStanceSpec(c, c.idx)); climbPump(c); }
+    if(prefersReducedMotion){ landed(); return; }               // no swing: the new stance is placed directly
+    climbAnim(c, CLIMB_TWEEN_MS*(1 - p0*0.5), function(t){ var p = p0 + (1-p0)*t; climbDraw(climbPreviewSpec(c, i, dir, p)); climbDrift(c, i, dir, pin); }, landed);
+  }
+  function climbShowPreview(c){
+    var f = c.f, dir = f>0 ? 1 : -1, p = Math.abs(f);
+    if(prefersReducedMotion || p<CLIMB_PREVIEW_MIN || !climbCanMove(c, dir)){ c.loadT0 = 0; climbDraw(climbStanceSpec(c, c.idx)); return; }
+    var now = performance.now(); if(!c.loadT0) c.loadT0 = now;
+    if(now-c.loadT0<60){ // a 60 ms load: a small swing about the high fist, which stays pinned
+      var kk = (now-c.loadT0)/60, sp = climbStanceSpec(c, c.idx); sp.th += -5*Math.sin(kk*Math.PI/2)*(dir>0 ? 1 : -1)*(c.R.st[c.idx].key==="RL" ? 1 : -1);
+      climbDraw(sp); climbLater(c, function(){ if(c.dragging && !c.busy) climbShowPreview(c); }, 62-(now-c.loadT0)); return;
+    }
+    climbDraw(climbPreviewSpec(c, c.idx, dir, p));
+    climbDrift(c, c.idx, dir, dir>0 ? c.R.hold[c.idx] : c.R.hold[c.idx+dir]);
+  }
+  function climbPump(c){
+    if(homeClimb!==c || c.busy || c.mode!=="wall") return;
+    var now = performance.now(), gap = prefersReducedMotion ? 0 : CLIMB_STEP_GAP;
+    if(c.idx!==c.desired){
+      var wait = c.lastStep + gap - now;
+      if(wait>0){ if(!c.pumpT) c.pumpT = climbLater(c, function(){ c.pumpT = 0; climbPump(c); }, wait+1); return; } // one wait timer at a time
+      var dir = c.desired>c.idx ? 1 : -1; climbStepTo(c, dir, (c.dragging && c.f*dir>0) ? Math.abs(c.f) : 0); return;
+    }
+    if(c.dragging){ climbShowPreview(c); return; }
+    var dirR = c.f>0 ? 1 : -1;
+    if(Math.abs(c.f)>=0.5 && climbCanMove(c, dirR)){ var p0r = Math.abs(c.f); c.desired = c.idx+dirR; c.f = 0; climbStepTo(c, dirR, p0r); return; }
+    if(!prefersReducedMotion && Math.abs(c.f)>CLIMB_PREVIEW_MIN && climbCanMove(c, dirR)){ // spring back
+      c.busy = true; var from = Math.abs(c.f), i = c.idx;
+      climbAnim(c, 100, function(t){ climbDraw(climbPreviewSpec(c, i, dirR, from*(1-t))); }, function(){ c.busy = false; c.f = 0; c.loadT0 = 0; climbDraw(climbStanceSpec(c, c.idx)); climbArmRest(c); });
+      return;
+    }
+    c.f = 0; c.loadT0 = 0; climbDraw(climbStanceSpec(c, c.idx)); climbArmRest(c);
+  }
+
+  /* ---- coming and going ---- */
+  function climbFloorX(c){ return c.g.W/2 + wanderOffsetX; } // where the climber's body centre stands on the floor
+  function climbPrepare(c){ // take over the sprite: no easing, own height, drag-friendly, shadow stays on the floor
+    var wander = document.getElementById("characterWander");
+    motionToken++; motionPlaying = true; mascotAnim.queue = []; syncFace();
+    document.getElementById("characterBody").style.transform = "translateY(0)";
+    wander.classList.add("in-motion", "climbing"); wander.style.height = c.g.boxH+"px";
+  }
+  function climbEnd(x){ // back to the ordinary floor climber at scene-px x (default: where he is now), at once
+    var c = homeClimb; if(!c) return;
+    climbClear(c); homeClimb = null;
+    var host = document.getElementById("climbHolds"); if(host) host.remove();
+    var wander = document.getElementById("characterWander"), scene = document.getElementById("characterScene"), img = document.getElementById("characterStage"), shadow = document.getElementById("characterShadow");
+    if(x==null) x = c.cur ? climbScr(c.cur, [CLIMB_A[c.cur.key].bb.cx, CLIMB_A[c.cur.key].bb.cy])[0] : c.g.W/2 + wanderOffsetX;
+    var maxX = Math.max(0, Math.min(scene.clientWidth, scene.parentNode.clientWidth)/2 - wander.offsetWidth/2 - 6);
+    wander.classList.remove("climbing"); wander.style.height = ""; wander.style.transformOrigin = "";
+    wanderOffsetX = climbClamp(x - c.g.W/2, -maxX, maxX); wanderOffsetY = 0; wanderFacing = 1;
+    perchEnvId = null;
+    perchSetTransform(wanderOffsetX, 0, 1);
+    shadow.style.opacity = ""; shadow.style.transform = "";
+    document.getElementById("characterBody").style.transform = "translateY(0)";
+    var rest = climberFrame(IMG.mascot.idle[0]); if(img.getAttribute("src")!==rest) img.src = rest;
+    motionPlaying = false; mascotAnim.queue = []; syncFace();
+  }
+  function climbFall(){
+    var c = homeClimb; if(!c || c.mode==="fall" || c.mode==="mount" || !c.cur) return false;
+    var cur = c.cur, bb0 = CLIMB_A[cur.key].bb, g = c.g;
+    climbDisarmRest(c); c.mode = "fall"; c.busy = true; c.dragging = false; c.drag = null; c.landed = false;
+    var from = climbScr(cur, [bb0.cx, bb0.cy]), maxX = Math.max(0, (g.W - 2*g.vis.x/100*g.W)/2 - g.boxW/2 - 6);
+    var x1 = climbClamp(from[0], g.W/2 - maxX, g.W/2 + maxX), bb = CLIMB_A.J2.bb, shadow = document.getElementById("characterShadow");
+    function land(){
+      if(c.landed) return; c.landed = true;
+      if(prefersReducedMotion){ climbEnd(x1); return; }
+      shadow.style.opacity = ""; climbDraw(climbFloorSpec(c, "L1", x1));
+      climbLater(c, function(){ climbDraw(climbFloorSpec(c, "L2", x1)); climbLater(c, function(){ climbEnd(x1); }, 110); }, 90);
+    }
+    if(prefersReducedMotion){ land(); return true; }
+    shadow.style.opacity = "0";
+    var s0 = c.s, y0 = from[1], gr = 0.0016*g.H/450, total = Math.sqrt(2*Math.max(1, g.floorY - (bb.y1-bb.cy)*s0 - y0)/gr) + 1, t0 = performance.now(), raf = 0, tm = 0;
+    c.fallStop = function(){ cancelAnimationFrame(raf); clearTimeout(tm); };
+    function frame(){
+      if(homeClimb!==c || c.landed) return;
+      var t = performance.now()-t0, y = y0 + 0.5*gr*t*t, tt = climbClamp(t/total, 0, 1), s = s0 + (g.k-s0)*tt*tt, x = from[0] + (x1-from[0])*tt;
+      if(y + (bb.y1-bb.cy)*s >= g.floorY || t>3000){ c.fallStop(); land(); return; }
+      climbDraw({ key:"J2", a:[bb.cx, bb.cy], P:[x, y], th:CLIMB_LEAN*(1-tt), s:s, mir:false });
+      c.fallStop(); raf = requestAnimationFrame(frame); tm = setTimeout(frame, 40);
+    }
+    frame();
+    return true;
+  }
+  function climbFinishNow(){ // an interruption (hidden tab, relayout): the mount lands on stance A, a fall ends on the floor
+    var c = homeClimb; if(!c) return;
+    if(c.mode==="fall"){ var x = c.cur ? climbScr(c.cur, [CLIMB_A[c.cur.key].bb.cx, CLIMB_A[c.cur.key].bb.cy])[0] : null; climbEnd(x==null ? null : x); return; }
+    if(c.mode==="mount"){ climbClear(c); climbShowStance(c, 0); }
+  }
+  function climbPreload(cb){
+    var keys = ["RL", "RR", "CH", "J1", "J2", "J3", "L1", "L2", "ID"].concat(climbMidOn() ? ["M2", "M3"] : []), left = keys.length, done = false;
+    function fin(){ if(done) return; done = true; climbFramesReady = true; cb(); }
+    if(!climbArt()){ fin(); return; }
+    keys.forEach(function(k){ var im = new Image(); var mid = k==="M2" || k==="M3"; im.onload = function(){ if(--left<=0) fin(); }; im.onerror = function(){ if(mid) climbMidBad = true; if(--left<=0) fin(); }; im.src = climbSrc(k); if(im.complete){ im.onload = im.onerror = null; if(mid && !im.naturalWidth) climbMidBad = true; left--; } });
+    if(left<=0) fin();
+  }
+  function climbKey(c){ var g = c.g; return [g.W, g.H, g.vis.x.toFixed(1), g.vis.y.toFixed(1), climbMidOn() ? "mid" : "plain", climberVariantId()].join("/"); }
+  // Jump on from the floor. true when the climb starts (or is running).
+  function climbMount(){
+    if(homeClimb) return true;
+    if(arrangeMode || document.getElementById("view-home").hidden || !document.getElementById("characterScene").offsetWidth) return false;
+    var env = selectedEnvironment(); if(!env.climbBoard || !climbArt()) return false;
+    if(perchRun) perchFinishRun();
+    if(homePerch) dismountHome();
+    var g = climbGeo(), s = CLIMB_REL*g.W/375, c = { envId:env.id, g:g, s:s, R:climbBuildRoute(env, g, s), mid:climbMidOn(), mode:"mount", idx:0, desired:0, f:0, busy:true, dragging:false, lastStep:0, loadT0:0,
+      timers:[], anims:[], restTimer:0, chalkFeet:[], cur:null, drag:null, samples:[], key:"", landed:false, fallStop:null };
+    c.key = climbKey(c);
+    homeClimb = c; climbDriftMax = 0;
+    var x0 = climbFloorX(c), started = false, fallback = 0;
+    climbPrepare(c); climbDrawHolds(c);
+    function go(){
+      if(started || homeClimb!==c || c.mode!=="mount") return; started = true; climbCancel(c, fallback);
+      if(c.mid && !climbMidOn()) c.mid = false; // a mid frame failed to load: the no-mid path
+      if(prefersReducedMotion){ climbShowStance(c, 0); return; }
+      var stance = climbStanceSpec(c, 0), j3 = CLIMB_A.J3.bb, end = climbScr(stance, [CLIMB_A.RL.bb.cx, CLIMB_A.RL.bb.cy]), shadow = document.getElementById("characterShadow");
+      climbDraw(climbFloorSpec(c, "J1", x0));
+      climbLater(c, function(){
+        var c0 = [x0, g.floorY - (j3.y1-j3.cy)*g.k - 8];
+        climbAnim(c, 430, function(t){
+          shadow.style.opacity = String(Math.max(0, 1-t*3));
+          climbDraw({ key:"J3", a:[j3.cx, j3.cy], P:[c0[0]+(end[0]-c0[0])*t, c0[1]+(end[1]-c0[1])*t - Math.sin(t*Math.PI)*70], th:CLIMB_LEAN*t, s:g.k+(s-g.k)*t, mir:false });
+        }, function(){ climbShowStance(c, 0); });
+      }, 140);
+    }
+    fallback = climbLater(c, go, 700);
+    climbPreload(go);
+    return true;
+  }
+  // a resize / re-render: rebuild the route for the new scene size and re-seat him on the same hold (or end it when the room changed)
+  function climbRelayout(env){
+    var c = homeClimb; if(!c) return;
+    if(env.id!==c.envId || arrangeMode || !document.getElementById("characterScene").offsetWidth){ climbEnd(); return; }
+    var g = climbGeo(); if(climbKey({ g:g })===c.key) return;
+    if(c.busy){
+      if(c.mode==="wall" || c.mode==="chalk"){ climbClear(c); c.busy = false; c.f = 0; c.desired = c.idx; c.loadT0 = 0; } // a step or spring-back in flight runs against the old route: drop it, stay on the hold he is on
+      else { climbFinishNow(); c = homeClimb; if(!c) return; }
+    }
+    var s = CLIMB_REL*g.W/375, i = c.idx, was = c.mode;
+    c.g = g; c.s = s; c.R = climbBuildRoute(env, g, s); c.mid = climbMidOn(); c.key = climbKey(c);
+    document.getElementById("characterWander").style.height = g.boxH+"px";
+    climbDrawHolds(c); climbShowStance(c, Math.min(i, c.R.n-1));
+    if(was==="chalk" && !prefersReducedMotion) climbShowChalk(c);
+  }
+
+  /* ---- the drag on the climber ---- */
+  function climbXY(e){ var r = document.getElementById("characterScene").getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
+  function climbVelY(c){ // px/ms over the last >= 16 ms (shorter spans are noise: a fling needs a measurable run)
+    var sm = c.samples, n = sm.length; if(n<2) return 0; var b = sm[n-1];
+    for(var i=n-2; i>=0; i--) if(b.t-sm[i].t>=16) return (b.y-sm[i].y)/(b.t-sm[i].t);
+    return 0;
+  }
+  function climbDown(e){
+    var c = homeClimb; if(!c || c.busy) return;
+    if(c.drag){ // a drag whose pointerup never came (lost capture, backgrounded) is replaced; a live one (same pointer, still captured) is kept
+      var cap = false; try{ cap = document.getElementById("characterStage").hasPointerCapture(c.drag.id); }catch(err){}
+      if(c.drag.id===e.pointerId && cap) return;
+      c.drag = null; c.dragging = false;
+    }
+    if(e.pointerType==="mouse" && e.button!==0) return;
+    var xy = climbXY(e); c.samples = [{ t:e.timeStamp, y:xy[1] }];
+    if(c.mode==="chalk") climbExitChalk(c);
+    if(c.mode!=="wall") return;
+    climbDisarmRest(c); c.drag = { x0:xy[0], y0:xy[1], idx0:c.idx, id:e.pointerId, moved:false }; c.dragging = true; c.f = 0; c.loadT0 = 0;
+    try{ document.getElementById("characterStage").setPointerCapture(e.pointerId); }catch(err){}
+    e.preventDefault();
+  }
+  function climbMove(e){
+    var c = homeClimb; if(!c || !c.drag || e.pointerId!==c.drag.id) return;
+    var xy = climbXY(e), d = c.drag; c.samples.push({ t:e.timeStamp, y:xy[1] }); if(c.samples.length>12) c.samples.shift();
+    if(Math.hypot(xy[0]-d.x0, xy[1]-d.y0)>6) d.moved = true;
+    if(climbInside(c.R.poly, xy) < -40 || climbVelY(c)>1.2){ c.drag = null; c.dragging = false; climbSwallowNext = true; climbFall(); return; } // 40 px off the board, or a fast fling down
+    var raw = (d.y0-xy[1])/CLIMB_RISE, n = raw<0 ? Math.ceil(raw) : Math.floor(raw), f = raw-n; // sideways is ignored: only y is read
+    var want = climbClamp(d.idx0+n, 0, c.R.n-1); if(want!==d.idx0+n) f = 0;
+    c.desired = want; c.f = f; climbPump(c);
+  }
+  function climbUp(e){
+    if(climbSwallowNext){ climbSwallowNext = false; perchSwallowUntil = Date.now() + PERCH_SWALLOW_MS; } // the release after a fall: the click that follows is not a tap
+    var c = homeClimb; if(!c || !c.drag || e.pointerId!==c.drag.id) return;
+    c.drag = null; c.dragging = false; perchSwallowUntil = Date.now() + PERCH_SWALLOW_MS; // the click after a drag is not a tap
+    if(!c.busy) climbPump(c);
+  }
+  (function climbWire(){
+    var stage = document.getElementById("characterStage");
+    stage.addEventListener("pointermove", climbMove);
+    stage.addEventListener("pointerup", climbUp);
+    stage.addEventListener("pointercancel", climbUp);
+    stage.addEventListener("touchmove", function(e){ if(homeClimb && homeClimb.dragging && e.cancelable) e.preventDefault(); }, { passive:false });
+    document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden" && homeClimb){ homeClimb.drag = null; homeClimb.dragging = false; climbFinishNow(); } });
+    window.addEventListener("blur", function(){ var c = homeClimb; if(c && c.drag){ c.drag = null; c.dragging = false; if(!c.busy) climbPump(c); } });
+  })();
+  climbPreload(function(){}); // warm the frames at start (mid frames only when they can be drawn)
+  if(window.__cruxTest) window.__cruxClimb = { // dev/tests.html only
+    mount:climbMount, fall:climbFall, end:function(){ climbEnd(); }, finish:climbFinishNow, relayout:function(){ climbRelayout(selectedEnvironment()); }, chalk:function(){ if(homeClimb && homeClimb.mode==="wall") climbShowChalk(homeClimb); },
+    state:function(){ var c = homeClimb; return c ? { mode:c.mode, idx:c.idx, desired:c.desired, busy:c.busy, dragging:c.dragging, n:c.R.n, key:c.cur ? c.cur.key : null, spec:c.cur, mid:c.mid, s:c.s, drag:!!c.drag } : null; },
+    route:function(){ return homeClimb && homeClimb.R; }, geo:function(){ return homeClimb ? homeClimb.g : climbGeo(); }, drift:function(){ return climbDriftMax; }, resetDrift:function(){ climbDriftMax = 0; },
+    pending:function(){ return climbTimerCount; }, midOn:climbMidOn, outfitted:climbOutfitted, scr:climbScr, dom:climbDom, hit:climbHit, boardPx:function(){ return climbBoardPx(selectedEnvironment(), climbGeo()); },
+    inside:climbInside, anchors:CLIMB_A, rel:CLIMB_REL, rise:CLIMB_RISE, src:climbSrc, ringBox:function(){ return climbRingBox(selectedEnvironment(), climbGeo()); }, limits:function(){ return climbLimits(climbGeo()); },
+    stance:function(i){ var c = homeClimb; if(c) climbShowStance(c, i); }, preview:function(i, dir, p){ var c = homeClimb; if(!c) return null; var sp = climbPreviewSpec(c, i, dir, p); climbDisarmRest(c); climbDraw(sp); return sp; }, outfitLayers:function(){ return outfitLayersLive(document.getElementById("characterStage").getAttribute("src")); } };
+  /* ==== END HOME CLIMB ==== */
 
   // ---- the mascot's idle: a tiny data-driven frame player ----
   // Each clip is a list of [frame, ms]. Breathing rises through idle-02 and idle-03 (peak), settles
