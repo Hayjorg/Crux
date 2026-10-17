@@ -47,7 +47,7 @@
     <select id="variant"><option>default</option><option>slate</option><option>sandstone</option><option>moss</option></select>
     <select id="outfit"><option value="">no outfit</option><option value="teal-knit">teal-knit</option><option value="shirt">shirt</option><option value="headlamp">headlamp</option></select>
     <label><input type="checkbox" id="cMirror">mirror</label>
-    <label title="in-between frame during a move; default art, no outfit">mid frame <select id="sMid"><option value="v2">v2 right + left (no mirror)</option><option value="v1">v1 mirrored</option><option value="off">off</option></select></label>
+    <label title="in-between frame during a move; default art, no outfit">mid frame <select id="sMid"><option value="v3">v2 right + left-v2 (no mirror)</option><option value="v2">v2 right + left v1 (no mirror)</option><option value="v1">v1 mirrored</option><option value="off">off</option></select></label>
     <label><input type="checkbox" id="cAlign" checked>aligned swing</label><label><input type="checkbox" id="cReduced">reduced motion</label>
     <label><input type="checkbox" id="cOutline" checked>board outline</label>
     <label><input type="checkbox" id="cContacts">contacts</label>
@@ -65,10 +65,10 @@
 /* ---------- constants ---------- */
 var BASE = "../assets/mascot/climber/";
 var FN = { RL:"climb/climb-reach-left", RR:"climb/climb-reach-right", CH:"climb/climb-chalk-up",
-           MD:"MID", M2:"MID2", ML:"MIDL", J1:"jump/jump-01", J2:"jump/jump-02", J3:"jump/jump-03", L1:"land/land-01", L2:"land/land-02", ID:"idle/idle-01" };
+           MD:"MID", M2:"MID2", ML:"MIDL", M3:"MIDL2", J1:"jump/jump-01", J2:"jump/jump-02", J3:"jump/jump-03", L1:"land/land-01", L2:"land/land-02", ID:"idle/idle-01" };
 var KEYS = Object.keys(FN);
 var VARIANTS = ["default","slate","sandstone","moss"];
-var MIDFILE = { MD:"climb-mid-reach-right", M2:"climb-mid-reach-right-v2", ML:"climb-mid-reach-left" };
+var MIDFILE = { MD:"climb-mid-reach-right", M2:"climb-mid-reach-right-v2", ML:"climb-mid-reach-left", M3:"climb-mid-reach-left-v2" };
 function frameURL(key, variant){ if(MIDFILE[key]) return "climb-frames/"+MIDFILE[key]+".png";   // dev-only in-between frame, default colours only (not in assets/)
   return variant==="default" ? BASE+"default/"+FN[key]+".png" : BASE+"variants/"+variant+"/"+FN[key]+".png"; }
 function outfitURL(art, key){ if(MIDFILE[key]) return null; return "../assets/outfit/"+art+"/"+FN[key]+".png"; }
@@ -80,7 +80,7 @@ var EST = { RL:{hi:[174,200],lo:[688,560],fa:[808,928],fb:[504,1264]},
             RR:{hi:[870,323],lo:[352,608],fa:[264,872],fb:[632,1280]},
             CH:{hi:[872,400],fa:[440,1290],fb:[792,1090]},
             MD:{hi:[179,205],fa:[340,1400],fb:[830,1010]},
-            M2:{hi:[215,129],fa:[495,1403],fb:[819,922]}, ML:{hi:[837,115],fa:[613,1464],fb:[205,963]} };   // MD = climb-mid-reach-right: gripping (high left) fist, soles; head/torso are measured like the others
+            M2:{hi:[215,129],fa:[495,1403],fb:[819,922]}, ML:{hi:[837,115],fa:[613,1464],fb:[205,963]}, M3:{hi:[915,291],fa:[582,1352],fb:[224,928]} };   // MD = climb-mid-reach-right: gripping (high left) fist, soles; head/torso are measured like the others
 var LMEST = { RL:{head:[528,312]}, RR:{head:[512,376]}, CH:{head:[515,432]} };
 var HOLD_HAND = ["h_jug","r2_hold_red","h2_jug","r2_hold_blue","r2_hold_yellow","h2_jug","r2_hold_grey","h_jug","r2_hold_sand"];
 var HOLD_FOOT = ["h_foot","h2_chip"];
@@ -91,7 +91,7 @@ var MIDK = 1;   // 1 = rotate fully to follow the head/torso point, 0 = just the
 var MIDW = 0.7;   // 1 = align the mid frame by head, 0 = by torso
 var RISE = 48, STEP_GAP = 250, TWEEN_MS = 120, REST_MS = 3000, EXTRA_ROT = 14, PREVIEW_MIN = 0.08;
 
-var S = { mid:"v2", s:0.11, lean:12, mirror:false, variant:"default", reduced:false, outfit:"", seed:7, align:true, debug:true, contacts:false };
+var S = { mid:"v3", s:0.11, lean:12, mirror:false, variant:"default", reduced:false, outfit:"", seed:7, align:true, debug:true, contacts:false };
 var M = {};            // measurements, M[variant][key]
 var R = null;          // route
 var G = { mode:"floor", idx:0, desired:0, f:0, busy:false, dragging:false, lastStep:0, cur:null, fx:FLOOR_X };
@@ -172,7 +172,7 @@ function measureAll(){
       m.alphaDiff = alphaDiff(pD[k], P);
     });
   });
-  ["RL","RR","CH","MD","M2","ML"].forEach(function(k){
+  ["RL","RR","CH","MD","M2","ML","M3"].forEach(function(k){
     var m = M.default[k], e = EST[k], line = k+": ";
     ["hi","lo","fa","fb"].forEach(function(n){ if(!m[n]) return;
       var d = dist(m[n], e[n]); line += n+" ("+Math.round(m[n][0])+","+Math.round(m[n][1])+") est ("+e[n][0]+","+e[n][1]+") d="+d.toFixed(0)+(d>15?" **>15**":"")+"  ";
@@ -187,7 +187,7 @@ function measureAll(){
 }
 function drawMeasure(){
   var host = $("meas"); host.innerHTML = "";
-  ["RL","RR","CH","MD","M2","ML"].forEach(function(k){
+  ["RL","RR","CH","MD","M2","ML","M3"].forEach(function(k){
     var im = IMGS[S.variant][k], c = document.createElement("canvas"), w = 190, h = 285, sc = w/1024; c.width = w; c.height = h;
     var x = c.getContext("2d"); x.drawImage(im,0,0,w,h);
     function cross(p,col){ if(!p) return; var px = p[0]*sc, py = p[1]*sc; x.strokeStyle = col; x.lineWidth = 1; x.beginPath(); x.moveTo(px-6,py); x.lineTo(px+6,py); x.moveTo(px,py-6); x.lineTo(px,py+6); x.stroke(); x.beginPath(); x.arc(px,py,3,0,7); x.stroke(); }
@@ -195,7 +195,7 @@ function drawMeasure(){
     host.appendChild(c);
   });
   var t = "<table><tr><th>frame</th><th>hi</th><th>lo</th><th>foot a</th><th>foot b</th><th>head</th><th>torso</th></tr>";
-  ["RL","RR","CH","MD","M2","ML"].forEach(function(k){ var m = M.default[k];
+  ["RL","RR","CH","MD","M2","ML","M3"].forEach(function(k){ var m = M.default[k];
     function f(p){ return p ? Math.round(p[0])+","+Math.round(p[1]) : "-"; }
     t += "<tr><td>"+k+"</td><td>"+f(m.hi)+"</td><td>"+f(m.lo)+"</td><td>"+f(m.fa)+"</td><td>"+f(m.fb)+"</td><td>"+f(m.head)+"</td><td>"+f(m.torso)+"</td></tr>"; });
   $("mtab").innerHTML = t+"</table>";
@@ -329,12 +329,12 @@ function swingAngle(i, dir){      // rotation about the pinned fist that puts th
   var ao = Math.atan2(vo[1]-pin[1], vo[0]-pin[0]), an = Math.atan2(vn[1]-pin[1], vn[0]-pin[0]), d = (ao-an)*180/Math.PI;
   while(d>180) d -= 360; while(d<-180) d += 360; return d;
 }
-function midOn(){ return S.mid!=="off" && S.variant==="default" && !S.outfit && M.default.MD && M.default.M2 && M.default.ML; }   // the mid frame has default art only
+function midOn(){ return S.mid!=="off" && S.variant==="default" && !S.outfit && M.default.MD && M.default.M2 && M.default.ML && M.default.M3; }   // the mid frame has default art only
 function angLerp(a, b, t){ var d = b-a; while(d>Math.PI) d -= 2*Math.PI; while(d<-Math.PI) d += 2*Math.PI; return a+d*t; }
-function midKey(i, dir){ var hk = dir>0 ? R.st[i].key : R.st[i+dir].key; return S.mid==="v2" ? (hk==="RL" ? "M2" : "ML") : "MD"; }
+function midKey(i, dir){ var hk = dir>0 ? R.st[i].key : R.st[i+dir].key; return S.mid==="v3" ? (hk==="RL" ? "M2" : "M3") : S.mid==="v2" ? (hk==="RL" ? "M2" : "ML") : "MD"; }
 function midSpec(i, dir, p){      // in-between frame, pinned about its gripping (high left) fist on the hold that stays held; mirrored when that fist is the right one
-  var j = i+dir, ri = R.st[i], rj = R.st[j], heldKey = dir>0 ? ri.key : rj.key, v2 = S.mid==="v2";
-  var mkey = v2 ? (heldKey==="RL" ? "M2" : "ML") : "MD", mir = v2 ? S.mirror : ((heldKey==="RR") !== S.mirror);   // v2: a real frame per side; v1: one frame mirrored
+  var j = i+dir, ri = R.st[i], rj = R.st[j], heldKey = dir>0 ? ri.key : rj.key, v2 = S.mid!=="v1";
+  var mkey = midKey(i, dir), mir = v2 ? S.mirror : ((heldKey==="RR") !== S.mirror);   // v2: a real frame per side; v1: one frame mirrored
   var pin = dir>0 ? R.hold[i] : R.hold[j], m = M.default[mkey];
   var nsp = dir>0 ? { key:rj.key, a:rj.a.lo, P:pin, th:rj.th, s:S.s, mir:S.mirror } : { key:rj.key, a:rj.a.hi, P:pin, th:rj.th, s:S.s, mir:S.mirror };
   function bl(a){ return [a.head[0]*MIDW+a.torso[0]*(1-MIDW), a.head[1]*MIDW+a.torso[1]*(1-MIDW)]; }      // alignment point: head, torso or a blend
@@ -390,7 +390,7 @@ function popStats(){      // head/torso jump (screen px) at the two frame swaps 
 function popReport(){
   function mean(v){ return v.reduce(function(a,b){ return a+b; },0)/v.length; } function mx(v){ return Math.max.apply(null,v); }
   var keep = S.mid, rows = {};
-  [["no mid frame, "+(S.align?"aligned swing":"fixed swing"),"off"],["mid v1 (mirrored)","v1"],["mid v2 (right + left frames)","v2"]].forEach(function(c){
+  [["no mid frame, "+(S.align?"aligned swing":"fixed swing"),"off"],["mid v1 (mirrored)","v1"],["mid v2 (right v2 + left v1)","v2"],["mid v3 (right v2 + left v2)","v3"]].forEach(function(c){
     S.mid = c[1]; if(c[1]!=="off" && !midOn()){ L("pop: mid frame unavailable (variant/outfit/not loaded)"); return; }
     var o = popStats(); rows[c[0]] = o; var wm = c[1]!=="off";
     function side(sel){ return ["s1","s2"].map(function(k){ return k+" head "+mean(sel(o[k].h)).toFixed(1)+"/"+mx(sel(o[k].h)).toFixed(1)+" torso "+mean(sel(o[k].t)).toFixed(1)+"/"+mx(sel(o[k].t)).toFixed(1); }).join(" | "); }
