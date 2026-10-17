@@ -3043,6 +3043,7 @@
       // Your own workouts (Workout document v1, docs/coaching/DESIGN.md section 5): {id, workout, createdAt, updatedAt}.
       workouts:[],
       customTimers:[],
+      lastView:null,
       // THE WALL (removable): rest days you logged (local day numbers), and how many holds you have
       // already watched your climber reach (null until you first open The Wall).
       restDays:[], wallSeen:null,
@@ -3173,6 +3174,12 @@
     });
     return out;
   }
+  // Where the user last was, so a refresh lands there. Anything else becomes null (start as before).
+  function normLastView(v){
+    if(!v || typeof v!=="object" || typeof v.v!=="string") return null;
+    if(["home","train","wall","session","detail"].indexOf(v.v)<0) return null;
+    return { v:v.v, id: v.v==="detail" && typeof v.id==="string" ? v.id : null };
+  }
   function normalizeState(parsed){
     var migrated = migrateIfNeeded(parsed);
     var base = defaultState();
@@ -3186,6 +3193,7 @@
       projects: Array.isArray(migrated.projects)?migrated.projects:[],
       workouts: Array.isArray(migrated.workouts)?migrated.workouts.filter(function(w){ return w && typeof w==="object"; }):[],
       customTimers: normCustomTimers(migrated.customTimers),
+      lastView: normLastView(migrated.lastView),
       restDays: Array.isArray(migrated.restDays)?migrated.restDays.filter(function(d){ return typeof d==="number" && isFinite(d); }):[],
       games: gamesNormalize(migrated.games)
     });
@@ -10173,7 +10181,24 @@
     currentViewName = name;
     syncNav();
     window.scrollTo(0,0);
+    rememberView(name);
     if(name==="wall") onWallShown(); // THE WALL hook
+  }
+  // Where you were survives a refresh or the phone evicting the tab (state.lastView).
+  function rememberView(name){
+    state.lastView = { v:name, id:name==="detail" ? currentDetailId : null };
+    saveState();
+  }
+  function startView(){
+    var saved = state.lastView;
+    var active = getActiveSession(), running = !!(active && !active.endedAt);
+    if(saved && saved.v){
+      if(saved.v==="home" || saved.v==="train") return { name:saved.v };
+      if(saved.v==="wall" && WALL_ENABLED) return { name:"wall" };
+      if(saved.v==="session" && running) return { name:"session" };
+      if(saved.v==="detail" && saved.id && state.sessions.some(function(x){ return x.id===saved.id; })) return { name:"detail", id:saved.id };
+    }
+    return { name: running ? "session" : "home" };
   }
 
   /* ---------------- wiring ---------------- */
@@ -10943,11 +10968,8 @@
   restoreTimer();
   updateWakeLock();
   quickLogFromLaunch();
-  var activeSession = getActiveSession();
-  if(activeSession && !activeSession.endedAt){
-    switchView("session");
-  } else {
-    switchView("home");
-  }
+  var first = startView();
+  if(first.name==="detail") currentDetailId = first.id;
+  switchView(first.name);
 })();
 </script>
