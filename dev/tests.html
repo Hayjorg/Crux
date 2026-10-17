@@ -3733,7 +3733,7 @@ and the project rules. It runs on its own private copy of the data, never your r
         if(t.valid){
           var visY = vis.y/100*sb.h, visX = vis.x/100*sb.w;
           expect(pl.topY>=visY-1, env+" "+t.id+": valid but the head is above the visible stage");
-          var floorFeet = sb.h*0.93 - (1-P.feet)*boxH;
+          var floorFeet = sb.h*0.93 - (1-P.feet)*(pl.boxH0 || boxH); if(pl.s<1 && (t.kind==="sit" || t.kind==="stand")) floorFeet = Math.max(floorFeet, sb.h*0.97); // a smaller climber on a low object may stand nearer than the floor line
           expect(pl.feetY<=floorFeet+0.015*sb.h+1, env+" "+t.id+": valid but the feet are below the floor line");
           expect(pl.leftX>=visX-1 && pl.rightX<=sb.w-visX+1, env+" "+t.id+": valid but cropped at the side");
         } else expect(/^(top|floor|side)$/.test(t.why), env+" "+t.id+": invalid with no reason");
@@ -3747,10 +3747,13 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(Math.abs((sit.top+Pp.seat*360)-(300+0.12*40))<0.01 && sit.frame==="sit", "sit seat");
     expect(hg.frame==="reachL" && Math.abs(hg.left+0.17*240-140)<0.01, "hang hand: "+hg.left);
     expect(Pp.placement({ id:"x", x:300, y:300, w:80, h:40, sceneW:400 }, "hang", 240, 360).frame==="reachR", "a hold on the right should use the right reach");
-    // an invalid target is returned flagged, not dropped: the stool on the floor would have the legs below the floor
+    // an invalid target is returned flagged, not dropped: the Gray Hold low on the wall would have the legs below the floor
     await perchBoot("homewall");
+    var low = Pp.targets("homewall", W.__cruxPerch.sceneBox()).filter(function(t){ return t.id==="holdgray"; })[0];
+    expect(low && !low.valid && low.why==="floor", "a too-low hang target should be flagged invalid (floor): "+JSON.stringify(low && low.why));
+    // Home polish: the floor-level step stool is valid now (a smaller seated climber), with its own scale
     var stool = Pp.targets("homewall", W.__cruxPerch.sceneBox()).filter(function(t){ return t.id==="stepstool"; })[0];
-    expect(stool && !stool.valid && stool.why==="floor", "a floor-level sit target should be flagged invalid (floor): "+JSON.stringify(stool && stool.why));
+    expect(stool && stool.valid && stool.s<1 && stool.place.s===stool.s, "the floor-level stool should be valid at its own scale: "+JSON.stringify(stool && [stool.valid, stool.why, stool.s]));
   });
 
   test("Home perch: a plain tap still plays the step and sets no perch", async function(){
@@ -3780,8 +3783,10 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(/variants\/sandstone\/climb\/climb-reach-(left|right)\.png$/.test(fileOf(stageSrc())), "reach frame isn't the variant's: "+fileOf(stageSrc()));
     var kept = qa("#characterBody img.outfit-layer");
     expect(kept.length===2 && kept[0].previousElementSibling.id==="characterStage" && kept.every(function(l){ return /climb\/climb-reach-(left|right)$/.test(layerKey(l)); }), "layers aren't directly after the sprite on the reach frame");
-    // part 2: a drop on a target that doesn't fit is no longer refused: the floor-level toolbox resolves to "beside" (feet on the floor, no perch)
-    expect(P.to("toolbox")===true && P.state()===null && P.offsetY()===0, "dropping on the floor-level toolbox should stand beside it, not perch or refuse");
+    // part 2: a drop on a target that doesn't fit is no longer refused: the too-low Gray Hold resolves to "beside" (feet on the floor, no perch)
+    expect(P.to("holdgray")===true && P.state()===null && P.offsetY()===0, "dropping on the too-low gray hold should stand beside it, not perch or refuse");
+    // Home polish: the floor-level toolbox now takes a (smaller) seated climber
+    expect(P.to("toolbox")===true && P.state() && P.state().kind==="sit" && P.state().id==="toolbox", "the floor-level toolbox should take a small seated climber: "+JSON.stringify(P.state()));
     expect(P.to(hang.id)===true && P.state().id===hang.id, "couldn't perch again");
     P.dismount(); await wait(200);
     expect(P.state()===null && P.offsetY()===0 && /\/idle\//.test(fileOf(stageSrc())), "dismount didn't return to the floor idle: "+fileOf(stageSrc()));
@@ -3886,8 +3891,12 @@ and the project rules. It runs on its own private copy of the data, never your r
           expect(hx>=t.x-0.03*t.geo.W-1 && hx<=t.x+t.w+0.03*t.geo.W+1 && hy>=t.y-0.03*t.geo.H-1 && hy<=t.y+t.h+0.03*t.geo.H+1, tag+" "+t.id+": reach pose's hand isn't near the hold");
           expect(P.check({ topY:r.top+f.minY*r.boxH, feetY:r.top+P.feet*r.boxH, leftX:r.left+f.minX*r.boxW, rightX:r.left+f.maxX*r.boxW, boxH:r.boxH }, t.geo.vis, t.geo.W, t.geo.H)==="", tag+" "+t.id+": reach pose is cropped");
         }
-        if(W.innerWidth<500 && (t.id==="stepstool" || t.id==="toolbox")){ expect(r.kind==="beside", tag+" "+t.id+": a floor-level sit should stand beside it"); tally.floorSit++; }
+        if(W.innerWidth<500 && (t.id==="stepstool" || t.id==="toolbox")){ expect(r.kind==="sit" && r.s<1, tag+" "+t.id+": a floor-level sit should take a smaller seated climber, got "+r.kind+" s="+r.s); tally.floorSit++; }
+        if(W.innerWidth<500 && t.kind==="hang" && !t.valid) expect(r.kind==="beside" || r.kind==="reach", tag+" "+t.id+": a too-low hang falls back to the floor");
       });
+      // the floor-reach fallback is for a hold the climber can touch from the floor: a full-size (scale 1) climber on the Slotted Hold
+      var sl = ts.filter(function(x){ return x.id==="slottedhold"; })[0];
+      if(sl){ var full = Object.assign({}, sl, { s:1 }), rf = P.resolve(full); expect(/^(reach|beside)$/.test(rf.kind) && rf.s===1, tag+" slottedhold at scale 1: "+rf.kind); if(rf.kind==="reach") tally.reach = true; }
   }
 
   test("Home perch: every target in every room resolves to a valid pose (own kind, reach, or beside on the floor)", async function(){
@@ -3950,8 +3959,9 @@ and the project rules. It runs on its own private copy of the data, never your r
   test("Home perch: every landing (hang, sit, beside, floor-reach) ends on the right frame; saved data gets no new keys", async function(){
     await perchBoot("homewall");
     var P = W.__cruxPerch, before = JSON.stringify(saved()), ts = P.targets("homewall", P.sceneBox());
-    var cases = [["jug","hang",/climb-reach-(left|right)\.png$/], ["wallshelf","sit",/ledge-sit/], ["chalkbag","stand",/\/idle\//], ["stepstool","beside",/\/idle\//]];
-    var reach = ts.filter(function(t){ return P.live(t).kind==="reach"; })[0];
+    var cases = [["jug","hang",/climb-reach-(left|right)\.png$/], ["wallshelf","sit",/ledge-sit/], ["chalkbag","stand",/\/idle\//], ["holdgray","beside",/\/idle\//], ["toolbox","sit",/ledge-sit/]];
+    P.scales.slottedhold = 1; // a full-size climber can touch the Slotted Hold from the floor: the floor-reach fallback
+    var reach = P.targets("homewall", P.sceneBox()).filter(function(t){ return P.live(t).kind==="reach"; })[0];
     expect(reach, "no reach target in the Home Wall"); cases.push([reach.id, "reach", /climb-reach-(left|right)\.png$/]);
     for(var cs of cases){
       expect(P.travel(cs[0])===true, "travel refused for "+cs[0]);
@@ -3965,6 +3975,7 @@ and the project rules. It runs on its own private copy of the data, never your r
       expect(P.pending()===0, cs[0]+": timers left");
       P.dismount(); await wait(120);
     }
+    delete P.scales.slottedhold;
     expect(JSON.stringify(saved())===before, "travelling changed the saved data");
     expect(!/perch|wanderOffset/i.test(STORE[KEY]), "a perch key reached the save");
     expect(D.documentElement.scrollWidth<=W.innerWidth, "horizontal scroll");
@@ -4019,7 +4030,7 @@ and the project rules. It runs on its own private copy of the data, never your r
       expect(!P.running() && P.pending()===0, "reduced motion left timers running");
       expect(P.state() && P.state().kind==="sit" && /ledge-sit/.test(fileOf(stageSrc())), "reduced motion didn't land at once: "+JSON.stringify(P.state()));
       P.dismount();
-      var tb = await targetXY("stepstool", "homewall");
+      var tb = await targetXY("holdgray", "homewall");
       await dragDrop("mouse", tb);
       expect(!P.running() && P.pending()===0 && P.state()===null, "reduced-motion beside");
     } finally { P.reduced(false); }
@@ -4519,6 +4530,131 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(D.documentElement.scrollWidth<=W.innerWidth, "horizontal scroll");
   });
 
+  // ---- Home polish tests (2026-10-17): the climb zone is the board, per-target scale, the hangboard target ----
+  test("Home polish: the climb zone is the board polygon: the route follows its path and angle, and nothing outside it starts a climb", async function(){
+    for(var wh of [[375, 740], [390, 844]]){
+      var frame = document.getElementById("app"), w0 = frame.style.width, h0 = frame.style.height;
+      try{
+        frame.style.width = wh[0]+"px"; frame.style.height = wh[1]+"px";
+        await climbBoot(); await wait(300);
+        var C = W.__cruxClimb, g = C.geo(), L = C.limits(), poly = C.boardPx(), tag = wh.join("x");
+        // the zone: points inside the painted board (inside the visible window) hit, points anywhere else do not
+        var yMid = (L.yLo + g.floorY)/2, sp = C.span(yMid); expect(sp && sp.hi>sp.lo, tag+": no board span at mid height");
+        expect(C.hit(sp.c, yMid)===true, tag+": the middle of the board is not on the board");
+        expect(C.hit(sp.c, g.floorY-20)===true || C.span(g.floorY-20)===null, tag+": low on the board is refused");
+        [[sp.hi+10, yMid], [sp.hi+60, yMid], [g.W-L.xLo, yMid], [g.W/2, g.floorY+8], [g.W/2, g.floorY-2+30], [sp.c, L.yLo-6], [sp.c, 1], [sp.lo-12, yMid]].forEach(function(q, k){
+          expect(C.hit(q[0], q[1])===false, tag+": point "+k+" "+q.map(Math.round)+" is off the board but starts a climb");
+        });
+        // a real drop off the board (right of its edge) is a tap: no climb, no perch
+        var scr = $("characterScene").getBoundingClientRect(), off = { x:scr.left + Math.min(L.xHi-8, sp.hi+40), y:scr.top + yMid };
+        await dragDrop("mouse", off); await wait(700);
+        expect(C.state()===null && W.__cruxPerch.state()===null, tag+": a drop off the board started something: "+JSON.stringify(C.state()));
+        // a drop on the board does mount
+        var ok = { x:scr.left + sp.c, y:scr.top + yMid };
+        var near = W.__cruxPerch.targets("homewall", W.__cruxPerch.sceneBox()).length; // (no decorations are on in this boot)
+        await dragDrop("mouse", ok);
+        await until(function(){ return C.state() && C.state().mode==="wall"; }, 4000, tag+": to mount on the board");
+        // the route follows the board: every hold sits near the middle of the board's span, and each stance leans with the board there
+        var R = C.route(), tot = 0;
+        expect(R.n>=C.minHolds, tag+": "+R.n+" holds");
+        for(var i=0;i<R.n;i++){
+          var p = R.hold[i], s2 = C.span(p[1]); expect(s2, tag+": hold "+i+" has no board span");
+          C.stance(i); await wait(30); var bst = C.state(), bc = C.dom([C.anchors[bst.key].bb.cx, C.anchors[bst.key].bb.cy]), bs = C.span(bc[1]); // the body's centre on this stance
+          expect(bs && Math.abs(bc[0]-bs.c) <= 0.4*(bs.hi-bs.lo), tag+": stance "+i+": the body is "+Math.round(bc[0]-(bs&&bs.c))+" px from the middle of the board (span "+Math.round(bs ? bs.hi-bs.lo : 0)+")");
+          expect(C.inside(poly, p)>=4 && p[0]>=L.xLo && p[0]<=L.xHi, tag+": hold "+i+" is off the board");
+          var lean = C.pathLean(p[1]+30); tot += Math.abs(R.st[i].th - lean);
+          expect(Math.abs(R.st[i].th - lean) <= C.follow + 8, tag+": stance "+i+" leans "+R.st[i].th.toFixed(1)+" but the board leans "+lean.toFixed(1)+" there");
+        }
+        expect(tot/R.n < 14, tag+": the route's lean doesn't follow the board's (mean difference "+(tot/R.n).toFixed(1)+")");
+        expect(C.pathLean(g.floorY-60)>3 && C.pathLean(g.floorY-60)<40, tag+": the board's path lean is implausible: "+C.pathLean(g.floorY-60));
+        // the climber and every contact stay on the board and in the window on every stance (head, both soles, the gripping fist)
+        for(i=0;i<R.n;i++){
+          C.stance(i); await wait(30);
+          var st = C.state(), a = C.anchors[st.key], pts = [a.hi, a.fa, a.fb, a.head].map(function(q){ return C.dom(q); });
+          pts.forEach(function(q, k){ expect(C.inside(poly, q)>=0 && q[0]>=L.xLo-1 && q[0]<=L.xHi+1, tag+": stance "+i+" point "+k+" at "+q.map(Math.round)+" left the board"); });
+        }
+        C.end(); await wait(100);
+      } finally { frame.style.width = w0; frame.style.height = h0; }
+    }
+  });
+
+  test("Home polish: the wall climber is smaller than before, and the route has at least 4 holds on a small phone", async function(){
+    var frame = document.getElementById("app"), w0 = frame.style.width, h0 = frame.style.height;
+    try{
+      for(var wh of [[360, 640], [375, 740], [430, 932]]){
+        frame.style.width = wh[0]+"px"; frame.style.height = wh[1]+"px";
+        await climbBoot(); await wait(300);
+        var C = W.__cruxClimb; expect(C.mount()===true, wh+": mount refused");
+        var g = C.geo(), R = C.route(), ratio = C.state().s/g.k;
+        expect(C.rel<=0.08, "CLIMB_REL should be at most 0.08 now, got "+C.rel);
+        expect(ratio>0.29 && ratio<0.42, wh+": the wall climber should be about a third of the floor climber, got "+ratio.toFixed(3));
+        expect(R.n>=4, wh+": only "+R.n+" holds");
+        C.end(); await wait(80);
+      }
+    } finally { frame.style.width = w0; frame.style.height = h0; }
+  });
+
+  test("Home polish: every perch target has its own scale; seat, stand and hang are in proportion to what they are on", async function(){
+    for(var env of PERCH_ENVS){
+      await perchBoot(env);
+      var P = W.__cruxPerch, sb = P.sceneBox(), ts = P.targets(env, sb), tag = env;
+      ts.forEach(function(t){
+        expect(t.s>0.15 && t.s<=0.6, tag+" "+t.id+": scale "+t.s+" is out of range");
+        expect(t.place.s===t.s && Math.abs(t.place.boxW - t.geo.boxW*t.s)<0.01, tag+" "+t.id+": the placement isn't drawn at the target's scale");
+        var wid = t.place.rightX - t.place.leftX;
+        if(t.kind==="sit" || t.kind==="stand") expect(wid <= 1.3*t.w, tag+" "+t.id+": the "+t.kind+"ing climber ("+Math.round(wid)+" px wide) is bigger than what he is on ("+Math.round(t.w)+" px)");
+        if(t.kind==="hang") expect(t.place.boxH <= 0.5*t.geo.boxH, tag+" "+t.id+": a hanging climber should be at most half the floor size");
+        var r = P.resolve(t); if(r.onTarget) expect(r.s===t.s, tag+" "+t.id+": resolve lost the scale");
+        else expect(r.s===1, tag+" "+t.id+": a floor pose must be floor size, got "+r.s);
+      });
+      expect(P.scaleOf("beanbag","sit")<=0.5 && P.scaleOf("beanbag","sit")===P.scales.beanbag, "the beanbag has its own sit scale");
+      expect(P.scaleOf("nonexistent","sit")===0.40 && P.scaleOf("nonexistent","hang")===0.36 && P.scaleOf("nonexistent","stand")===0.34, "kind defaults");
+    }
+    // the sit on the beanbag really is drawn small: the transform carries the scale, a dismount goes back to full size, travelling ends scaled
+    await perchBoot("homewall");
+    var Pb = W.__cruxPerch, bb = Pb.targets("homewall", Pb.sceneBox()).filter(function(t){ return t.id==="beanbag"; })[0];
+    expect(bb.valid && bb.kind==="sit" && bb.s<0.5, "the beanbag should be a valid small sit: "+JSON.stringify([bb.valid, bb.why, bb.s]));
+    expect(Pb.to("beanbag")===true && Pb.state() && Pb.state().kind==="sit", "couldn't sit on the beanbag"); await wait(250);
+    var w = $("characterWander"), m = /scale\(([-\d.]+),\s*([-\d.]+)\)/.exec(w.style.transform);
+    expect(m && Math.abs(parseFloat(m[2])-bb.s)<0.001 && parseFloat(m[1])>0, "the seated climber's transform has no beanbag scale: "+w.style.transform);
+    // the drawn size and seat come from the transform the app applied (the harness may not load the pictures, so no picture sizes are read)
+    var tm = /translate\(([-\d.]+)px, ?([-\d.]+)px\)/.exec(w.style.transform), gb = bb.geo, boxW0 = gb.boxW, boxH0 = gb.boxH;
+    expect(tm, "no translate in the transform: "+w.style.transform);
+    var drawnW = boxW0*bb.s, drawnTop = gb.top0 + parseFloat(tm[2]) + boxH0*(1-bb.s)/2, seatY = drawnTop + boxH0*bb.s*Pb.seat, wantY = bb.y + 0.173*bb.h;
+    expect(drawnW <= 2.2*bb.w, "the seated climber is still huge next to the beanbag ("+Math.round(drawnW)+" vs "+Math.round(bb.w)+")");
+    expect(Math.abs(seatY-wantY) <= 4, "the seat isn't on the beanbag ("+Math.round(seatY)+" vs "+Math.round(wantY)+")");
+    Pb.dismount(); await wait(200);
+    expect(!/scale\(-?[\d.]+,/.test(w.style.transform), "a dismount should be full size again: "+w.style.transform);
+    expect(Pb.travel("beanbag")===true, "travel refused"); await settleRun(7000);
+    expect(Pb.state() && Pb.state().kind==="sit" && /scale\(/.test(w.style.transform), "the travel didn't end small and seated: "+w.style.transform);
+    expect(Pb.pending()===0, "timers left"); Pb.dismount();
+  });
+
+  test("Home polish: the Hangboard is a hang target in every room, gripped on its top edge, small, feet off the floor, with the fallback flag and the art note", async function(){
+    var rows = null;
+    for(var env of PERCH_ENVS){
+      await perchBoot(env);
+      var P = W.__cruxPerch, sb = P.sceneBox(), t = P.targets(env, sb).filter(function(x){ return x.id==="hangboard"; })[0];
+      rows = rows || P.accessories.filter(function(a){ return a.id==="hangboard"; })[0];
+      expect(t && t.kind==="hang" && t.valid, env+": the hangboard isn't a valid hang target ("+JSON.stringify(t && [t.valid, t.why])+")");
+      expect(t.fallback===true && P.hangboardFallback()===true, env+": the stand-in flag isn't set");
+      expect(t.s>0.3 && t.s<0.6, env+": hangboard scale "+t.s);
+      var pl = t.place, f = P.frames[pl.frame], hx = pl.left + f.hand[0]*pl.boxW, hy = pl.top + f.hand[1]*pl.boxH;
+      expect(hx>=t.x && hx<=t.x+t.w, env+": the fist isn't over the board");
+      expect(hy>=t.y && hy<=t.y+0.4*t.h, env+": the fist isn't on the board's top edge ("+Math.round(hy-t.y)+" of "+Math.round(t.h)+")");
+      var floorFeet = sb.h*0.93 - (1-P.feet)*t.geo.boxH;
+      expect(pl.feetY < floorFeet - 0.1*pl.boxH0, env+": the feet aren't off the floor ("+Math.round(pl.feetY)+" vs "+Math.round(floorFeet)+")");
+      expect(/^reach[LR]$/.test(pl.frame), env+": the stand-in is the one-fist reach frame");
+      expect(P.to("hangboard")===true && P.state() && P.state().id==="hangboard" && P.state().kind==="hang", env+": couldn't hang on the hangboard"); await wait(250);
+      expect(/climb-reach-(left|right)\.png$/.test(fileOf(stageSrc())), env+": frame "+fileOf(stageSrc()));
+      P.dismount();
+    }
+    expect(rows && rows.from==null, "the hangboard should belong to no room (available in all five)");
+    var doc = await (await fetch("../docs/art/HANGBOARD-HANG-BRIEF-NOTES.md", { cache:"no-store" })).text();
+    expect(/HANGBOARD_FALLBACK/.test(doc) && /pose/i.test(doc) && /camera/i.test(doc) && /1024 x 1536/.test(doc), "the missing-frame note isn't there or is incomplete");
+    expect(/HANGBOARD_FALLBACK\s*=\s*true/.test(SRC), "HANGBOARD_FALLBACK should be true until the two-hand frame exists");
+  });
+  // ---- end Home polish tests ----
   // ---- end Home perch tests ----
 
   /* ---------- runner ---------- */
