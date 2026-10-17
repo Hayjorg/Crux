@@ -234,6 +234,30 @@ Press and hold the Home climber, drag to a decoration, let go: he travels there 
   While perched `mascotTick` plays the perch idle and `autoHopOnce` skips.
 - **Resize:** `homeRelayout` calls `perchSync` first, so a perch is re-seated even when the visible-window key is unchanged. **Tests:** "Home perch:" in `dev/tests.html`, through `window.__cruxPerch` (only with `window.__cruxTest`). `dev/tests.html?only=Home%20perch` runs just those. Not verified on a real phone: long-press and scroll behaviour on iOS.
 
+## Home climb (2026-10-17)
+
+In the Home Wall room, press and hold the climber, drag onto the painted leaning board and let go: he jumps on and climbs hold to hold as you drag him up or down
+(one hold per 48 px). All in the `HOME CLIMB` block in `crux.html`, ported from the dev prototype `dev/climb-lab.html` (frames in `dev/climb-frames/`).
+- **Entry:** the Home perch gesture (`perchAim` / `perchRelease`). A drop that is within 4% of the scene width of a decoration or gear hold still perches there (hooks marked `// HOME CLIMB hook`);
+  a drop on the board (`climbHit`, polygon `climbBoard` on the `homewall` row of `ENVIRONMENTS`, in painting px) mounts. Off the board it is a tap, as before. The ring while aiming is the board's visible box.
+- **Frames** (all through `climberFrame()`, drawn on `#characterStage`, so variants and outfit layers follow): stances `climb/climb-reach-left` (RL) and `climb-reach-right` (RR) alternating; `climb-chalk-up` for the chalk rest
+  (3 s idle; mirrored when the high hand is the left, so gear can flip sides there); `jump/jump-01..03` to mount, `jump-02` then `land/land-01..02` to fall; `idle-01` once back on the floor.
+  **Two in-between frames, runtime assets** `assets/mascot/climber/default/climb/climb-mid-reach-right-v2.png` and `climb-mid-reach-left-v2.png` (640x960 RGBA; `IMG.wall.cl_mid_r2` / `cl_mid_l2`, blob ids empty until Claude uploads them, rule 2;
+  the build ships every `asset()` address, so they are in the installed app's file list). **Default colours with no outfit only** (`climbMidOn()`): any other variant or any equipped outfit takes the no-mid path (the stance frame of the next hold,
+  pinned about the same fist and swung to put the torso where it was: a visible pose swap at the start of each move, then smooth). Never mirrored (except the chalk frame).
+- **Scale:** `CLIMB_REL = 0.09` (px per 1024-frame unit on a 375 px wide scene; the lab was 0.11; 0.095-0.10 left only 3-4 holds on a small phone). He is about 40% of the floor climber's size.
+- **Placement:** one CSS transform on `#characterWander` (`translate rotate scale`, `transform-origin` = the pinned frame point) pins a frame point to a scene point (`climbDraw`); the measured frame points are in `CLIMB_A` (1024 units).
+  The route (`climbBuildRoute`) is built per scene size in scene px: as many holds as fit (3-8), every hold, sole and the head at least 7 px inside the board and the visible window below the top chips; the start hold and footholds are drawn
+  as `.climb-holds` images. Resize / re-render re-fits it (`climbRelayout`, via `perchSync`) and keeps him on the same hold.
+- **Moves:** `climbPreviewSpec` (mid frame or swung next stance) tweens 120 ms; the pinned fist stays on its hold (drift < 0.6 px in the tests). A fling down (> 1.2 px/ms over >= 16 ms) or dragging 40 px off the board is a fall
+  (`climbFall`: gravity arc, scale up to the floor climber, land frames). A tap on the board does nothing. Hidden tab, leaving Home, Arrange, a room change and a level-up all end it on the floor at once (`dismountHome` -> `climbEnd`).
+- **Reduced motion:** no mount / fall animation, no swing or mid frames, no chalk rest, no timers: stances are placed directly.
+- **In memory only:** `homeClimb`; no saved field, no new localStorage key (the "Home climb:" tests check the save and a backup round trip are untouched). Test hook `window.__cruxClimb`, only under `__cruxTest`.
+- **Honest looks (phone 375x740):** the mid-move pose swings far (up to about 60-70 degrees, near horizontal at the end of a move) and the legs can swing past the board's right edge for a moment; the no-mid swap pops the head by about
+  a quarter of the body width; the figure is a little wider than the board at its lowest stance. Not verified on a real phone (touch drag, `touch-action:none` while on the board).
+- **To remove:** delete the `HOME CLIMB` block, the `climbBoard` row of the `homewall` environment, the `.climb-holds` / `.character-wander.climbing` CSS, the `cl_mid_r2` / `cl_mid_l2` rows and the two `climb-mid-reach-*-v2.png` files,
+  every `// HOME CLIMB hook` line (`playHop`, `dismountHome`, `perchSync`, `perchAim`, `perchRelease`, the perch `pointerdown`, `perchTravel`, `perchTo`, `PERCH_NEAR_BOARD`), and the "Home climb:" tests. `dev/climb-lab.html` can stay.
+
 ## Projects (climb tracking)
 
 A project is **one named climb at one gym or crag**, and attempts link to it by `projectId`.
