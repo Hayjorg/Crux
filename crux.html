@@ -397,6 +397,8 @@
      included) covers a large part of the wall — in Arrange mode that swallowed presses meant
      for props underneath and turned them into taps. While arranging, the climber ignores input. */
   .scene-layers.arrange-mode ~ .character-wander{pointer-events:none;}
+  /* Home perch: the ring on the target you would drop the climber on (same look as Arrange) */
+  .perch-ring{position:absolute;pointer-events:none;box-sizing:content-box;outline:2px dashed color-mix(in srgb, var(--accent) 65%, transparent);outline-offset:3px;border-radius:6px;}
   /* ---- Room Lab: temporary placement-testing squares, see ROOM_SURFACES in the script ----
      The surfaces themselves (climbing wall / back wall / floor) are intentionally invisible
      — nothing drawn here, this is purely a hit-test against detectSurface(). The layer sits
@@ -7325,7 +7327,7 @@
     }, delay);
   }
 
-  /* ==== HOME PERCH (part 1: placement only; no gesture, no travel animation) ====================
+  /* ==== HOME PERCH (placement, fallbacks, pick-up gesture and travel) ====================
      The Home climber can be put on a hold or decoration that has `perch` in ACCESSORIES (or on one of
      the two level-8 gear holds in gearSVG). It uses EXISTING pose frames only, always through
      climberFrame() (so variants, outfit layers and skip lists follow): hang = the climb-reach frames,
@@ -7408,7 +7410,8 @@
     var boxW = W*0.6, boxH = boxW*1.5; // .character-wander: 60% of the stage wide, a 2:3 canvas
     function add(id, kind, x, y, w, h){
       if(!wall && kind!=="stand") kind = "stand";
-      var t = { id:id, kind:kind, x:x, y:y, w:w, h:h, sceneW:W, vlo:vis.x/100*W, vhi:W - vis.x/100*W };
+      var t = { id:id, kind:kind, x:x, y:y, w:w, h:h, sceneW:W, vlo:vis.x/100*W, vhi:W - vis.x/100*W,
+        geo:{ boxW:boxW, boxH:boxH, left0:(W-boxW)/2, top0:H*0.93-boxH, maxX:Math.max(0, (W-2*vis.x/100*W)/2 - boxW/2 - 6), W:W, H:H, vis:vis } };
       t.place = perchPlacement(t, kind, boxW, boxH);
       t.why = perchCheck(t.place, vis, W, H); t.valid = t.why==="";
       out.push(t);
@@ -7425,7 +7428,7 @@
   }
   function perchSceneBox(){ var sc = document.getElementById("characterScene"); return { w:sc.offsetWidth, h:sc.offsetHeight }; }
   function perchFind(id, envId){ return perchTargets(envId, perchSceneBox()).filter(function(t){ return t.id===id; })[0] || null; }
-  // Jump straight to a transform with the .15s easing off (part 1 has no travel animation).
+  // Jump straight to a transform with the .15s easing off.
   function perchSetTransform(x, y, facing){
     var wander = document.getElementById("characterWander");
     wander.classList.add("in-motion");
@@ -7433,32 +7436,75 @@
     void wander.offsetWidth;
     wander.classList.remove("in-motion");
   }
-  function perchApply(t, kind){
-    var wander = document.getElementById("characterWander"), img = document.getElementById("characterStage");
-    var boxW = wander.offsetWidth, boxH = wander.offsetHeight || boxW*1.5;
-    var pl = perchPlacement(t, kind, boxW, boxH);
-    var dx = pl.left - wander.offsetLeft, dy = pl.top - wander.offsetTop;
-    perchPose = { dx:dx, dy:dy, frame:pl.frame };
-    wanderOffsetY = dy;
-    perchSetTransform(dx, dy, 1); // the pose art is never mirrored: its hand and seat anchors are measured on the drawn side
-    var src = climberFrame(perchFrameAddr(pl.frame));
-    if(img.getAttribute("src")!==src) img.src = src;
-    document.getElementById("characterShadow").style.opacity = "0"; // the floor shadow stays down there
-    mascotAnim.queue = [];
+  // Where a drop on `t` really puts the climber. A drop on a decoration is almost never refused:
+  //   1. the target's own kind when the pose fits on screen (hang / sit / stand, the part-1 maths);
+  //   2. a floor-level 'sit' (or any stand / sit that doesn't fit): "beside" = standing on the floor next to it, facing it;
+  //   3. a 'hang' too low to grip from a perch: "reach" = feet on the floor, fist toward the hold, when the hand can reach it;
+  //   4. otherwise "beside" again. The floor-standing result is always valid (it is the normal floor pose, moved sideways).
+  // Returns { kind: hang|sit|stand|reach|beside, frame, left, top, dx, dy, facing, boxW, boxH } (dx, dy = offset from the resting spot).
+  // g overrides the geometry (the live sprite box); default is the one perchTargets measured.
+  function perchResolve(t, g){
+    g = g || t.geo;
+    var boxW = g.boxW, boxH = g.boxH, left0 = g.left0, top0 = g.top0, cx = t.x + t.w/2, W = g.W, H = g.H;
+    function out(pl, facing){ return { kind:pl.kind, frame:pl.frame, left:pl.left, top:pl.top, boxW:boxW, boxH:boxH, dx:pl.left-left0, dy:pl.top-top0, facing:facing, onTarget:pl.kind==="hang"||pl.kind==="sit"||pl.kind==="stand" }; }
+    var own = perchPlacement(t, t.kind, boxW, boxH);
+    if(perchCheck(own, g.vis, W, H)==="") return out(own, 1);
+    function clampDx(dx){ return Math.max(-g.maxX, Math.min(g.maxX, dx)); }
+    if(t.kind==="hang"){
+      var frames = (cx < W/2) ? ["reachL", "reachR"] : ["reachR", "reachL"];
+      for(var i=0;i<frames.length;i++){
+        var f = PERCH_FRAME[frames[i]], dx = clampDx(cx - f.hand[0]*boxW - left0), left = left0 + dx;
+        var hx = left + f.hand[0]*boxW, hy = top0 + f.hand[1]*boxH;
+        var pl = { kind:"reach", frame:frames[i], left:left, top:top0, boxW:boxW, boxH:boxH, topY:top0+f.minY*boxH, feetY:top0+PERCH_FEET*boxH, leftX:left+f.minX*boxW, rightX:left+f.maxX*boxW };
+        if(hx>=t.x-0.03*W && hx<=t.x+t.w+0.03*W && hy>=t.y-0.03*H && hy<=t.y+t.h+0.03*H && perchCheck(pl, g.vis, W, H)==="") return out(pl, 1);
+      }
+    }
+    // beside: the body's edge against the target's edge, on the side with more room, facing it
+    var st = PERCH_FRAME.stand, half = (st.maxX-st.minX)/2*boxW, off = t.w/2 + half*0.8, best = null;
+    [cx < W/2 ? 1 : -1, cx < W/2 ? -1 : 1].forEach(function(sd){
+      var want = cx + sd*off - st.cx*boxW - left0, dx = clampDx(want), err = Math.abs(dx-want);
+      if(!best || err < best.err - 0.5) best = { dx:dx, err:err };
+    });
+    var bodyCx = left0 + best.dx + st.cx*boxW;
+    return { kind:"beside", frame:"stand", left:left0+best.dx, top:top0, boxW:boxW, boxH:boxH, dx:best.dx, dy:0, facing:cx >= bodyCx ? 1 : -1, onTarget:false };
+  }
+  // Show the resolved pose at once (no animation). Floor poses ("beside") leave no perch; on-target ones and "reach" set homePerch.
+  function perchCommit(t, r){
+    var wander = document.getElementById("characterWander"), img = document.getElementById("characterStage"), shadow = document.getElementById("characterShadow");
+    document.getElementById("characterBody").style.transform = "translateY(0)";
+    shadow.style.transform = "";
+    wanderOffsetY = r.dy; mascotAnim.queue = [];
+    if(r.kind==="beside"){
+      homePerch = null; perchEnvId = null; perchPose = null;
+      wanderOffsetX = r.dx; wanderFacing = r.facing;
+      perchSetTransform(r.dx, 0, r.facing);
+      shadow.style.opacity = "";
+      var rest = climberFrame(IMG.mascot.idle[0]); if(img.getAttribute("src")!==rest) img.src = rest;
+    } else {
+      homePerch = { id:t.id, kind:r.kind }; perchEnvId = selectedEnvironment().id;
+      perchPose = { dx:r.dx, dy:r.dy, frame:r.frame };
+      perchSetTransform(r.dx, r.dy, 1); // the pose art is never mirrored: its hand and seat anchors are measured on the drawn side
+      var src = climberFrame(perchFrameAddr(r.frame)); if(img.getAttribute("src")!==src) img.src = src;
+      shadow.style.opacity = r.kind==="reach" ? "" : "0"; // the floor shadow stays down there
+    }
+    wander.classList.remove("in-motion");
     syncFace();
   }
-  // Put the climber on a target (no animation). Returns false if it can't (no such target, invalid, mid-motion, Home hidden).
+  // (the sprite box is a fixed 60% x 2:3 canvas at bottom:7%, so the measured geometry is the live one: no layout reads that could be stale)
+  function perchLive(t){ return perchResolve(t, t.geo); }
+  function perchApply(t, r){ perchCommit(t, r || perchLive(t)); }
+  // Put the climber on a target with no animation (reduced motion, tests). false only if there is no such target or it can't run now.
   function perchTo(id){
     if(motionPlaying || arrangeMode || document.getElementById("view-home").hidden) return false;
     if(!document.getElementById("characterScene").offsetWidth) return false;
     var env = selectedEnvironment(), t = perchFind(id, env.id);
-    if(!t || !t.valid) return false;
-    homePerch = { id:t.id, kind:t.kind }; perchEnvId = env.id; perchIdleI = 0;
-    perchApply(t, t.kind);
+    if(!t) return false;
+    perchApply(t);
     return true;
   }
-  // Back to the floor, at the same x as the perch (clamped like a step is).
+  // Back to the floor, at the same x as the perch (clamped like a step is). Also ends a travel half way (see perchCancelRun).
   function dismountHome(){
+    if(perchRun) perchCancelRun();
     if(!homePerch) return;
     var wander = document.getElementById("characterWander"), scene = document.getElementById("characterScene");
     var maxX = Math.max(0, Math.min(scene.clientWidth, scene.parentNode.clientWidth)/2 - wander.offsetWidth/2 - 6);
@@ -7475,13 +7521,222 @@
   // Called at the end of every renderSceneEnvironment: the decorations were just rebuilt, so re-seat the climber on the
   // fresh target, or drop to the floor if the room changed, Arrange is on, or the target is gone / no longer fits.
   function perchSync(env){
+    if(perchRun){ if(env.id!==perchRun.envId || arrangeMode) perchCancelRun(); return; }
     if(!homePerch) return;
     if(env.id!==perchEnvId || arrangeMode){ dismountHome(); return; }
     if(!document.getElementById("characterScene").offsetWidth) return; // Home isn't laid out: re-seated on the next render
     var t = perchFind(homePerch.id, env.id);
-    if(!t || !t.valid){ dismountHome(); return; }
-    perchApply(t, homePerch.kind);
+    if(!t){ dismountHome(); return; }
+    var r = perchLive(t);
+    if(r.kind!==homePerch.kind){ dismountHome(); return; }
+    perchApply(t, r);
   }
+
+  /* ---- travel: the climber goes to the target you dropped on (point-and-travel; it does not follow the finger) ----
+     Floor leg = the jump clip with sideways progress; then by resolved kind: hang = chalk, reach, pull up (the wallHop
+     pattern); sit = the jump arc lands in ledge-sit; stand = lands on the object; reach / beside = lands alongside.
+     Every wait is a setTimeout in perchRun.timers (rAF pauses in background tabs, so the pull has a timer to land it).
+     Reduced motion: perchTo, no timers. An interruption always ends in a valid pose: perchFinishRun (the final pose
+     at once: hidden tab, a second press) or perchCancelRun (the floor: leaving Home, room change, Arrange, level-up). */
+  var perchRun = null; // { id, envId, t, r, timers, raf, x, y, face }
+  var PERCH_JUMP_PROG = [0, 0, 0.05, 0.18, 0.34, 0.5, 0.66, 0.8, 0.9, 0.97, 1, 1];
+  function perchPreload(cb){
+    var srcs = perchWallArt() ? [IMG.wall.cl_reach_l, IMG.wall.cl_reach_r, IMG.wall.cl_pull, IMG.wall.cl_sit, IMG.wall.cl_chalk, IMG.wall.cl_sit_look] : [], left = srcs.length, done = false;
+    function fin(){ if(done) return; done = true; cb(); }
+    if(!left){ fin(); return; }
+    srcs.forEach(function(s){ var im = new Image(); im.onload = im.onerror = function(){ if(--left<=0) fin(); }; im.src = climberFrame(s); });
+  }
+  function perchClearRun(run){ run.timers.forEach(clearTimeout); run.timers = []; if(run.raf) cancelAnimationFrame(run.raf); run.raf = 0; }
+  function perchReleaseMotion(){
+    var wander = document.getElementById("characterWander");
+    document.getElementById("characterBody").style.transform = "translateY(0)";
+    document.getElementById("characterShadow").style.transform = "";
+    wander.classList.remove("in-motion");
+    motionPlaying = false;
+  }
+  function perchFinishRun(){ // the final pose at once
+    var run = perchRun; if(!run) return;
+    perchClearRun(run); perchRun = null;
+    perchCommit(run.t, run.r); perchReleaseMotion();
+  }
+  function perchCancelRun(){ // the floor, where the climber is now
+    var run = perchRun; if(!run) return;
+    perchClearRun(run); perchRun = null;
+    var wander = document.getElementById("characterWander"), scene = document.getElementById("characterScene"), img = document.getElementById("characterStage");
+    var maxX = Math.max(0, Math.min(scene.clientWidth, scene.parentNode.clientWidth)/2 - wander.offsetWidth/2 - 6);
+    homePerch = null; perchEnvId = null; perchPose = null; wanderOffsetY = 0;
+    wanderOffsetX = Math.max(-maxX, Math.min(maxX, run.x)); wanderFacing = run.face;
+    perchReleaseMotion();
+    perchSetTransform(wanderOffsetX, 0, wanderFacing);
+    document.getElementById("characterShadow").style.opacity = "";
+    var rest = climberFrame(IMG.mascot.idle[0]); if(img.getAttribute("src")!==rest) img.src = rest;
+    mascotAnim.queue = []; syncFace();
+  }
+  // Start travelling to target `id`. true when the climber will end up (or already is) somewhere.
+  function perchTravel(id){
+    if(arrangeMode || document.getElementById("view-home").hidden || !document.getElementById("characterScene").offsetWidth) return false;
+    if(perchRun) perchFinishRun();
+    if(prefersReducedMotion){ return perchTo(id); }
+    var env = selectedEnvironment();
+    if(!perchFind(id, env.id)) return false;
+    var run = { id:id, envId:env.id, t:null, r:null, timers:[], raf:0, x:wanderOffsetX, y:0, face:wanderFacing };
+    perchRun = run;
+    function later(fn, ms){ run.timers.push(setTimeout(function(){ if(perchRun===run) fn(); }, ms)); }
+    var wander = document.getElementById("characterWander"), img = document.getElementById("characterStage"), body = document.getElementById("characterBody"), shadow = document.getElementById("characterShadow");
+    function show(src){ var s = climberFrame(src); if(img.getAttribute("src")!==s) img.src = s; }
+    function place(x, y, face, lift){
+      run.x = x; run.y = y; run.face = face;
+      wander.style.transform = "translate("+x+"px,"+y+"px) scaleX("+face+")";
+      body.style.transform = "translateY("+(lift||0)+"px)";
+    }
+    // the jump clip, sideways (and up) by progress; `landing` replaces the two floor-landing frames
+    function arc(x0, y0, x1, y1, face, landing, cb){
+      var frames = mascotClip("jump").frames.slice(0, 12), k = 0, boxH = wander.offsetHeight || wander.offsetWidth*1.5 || 1;
+      (function step(){
+        var f = frames[k], p = PERCH_JUMP_PROG[k], e = 1-(1-p)*(1-p);
+        if(landing && k>=10){ show(landing); place(x1, y1, 1, 0); shadow.style.opacity = y1<0 ? "0" : ""; k = frames.length; }
+        else {
+          if(img.getAttribute("src")!==f[0]) img.src = f[0]; // the clip frames already went through climberFrame
+          place(x0+(x1-x0)*p, y0+(y1-y0)*e, face, f[2]*boxH);
+          var lift = Math.min(0, f[2]*boxH);
+          shadow.style.opacity = y1<0 ? String(Math.max(0, 1-e)) : String(Math.max(0.5, 1+3*lift/boxH));
+          shadow.style.transform = f[4] ? "translateX(-50%) scale("+f[4]+")" : "translateX(-50%) scale("+Math.max(0.6, 1+2.5*lift/boxH)+")";
+          k++;
+        }
+        if(k<frames.length) later(step, f[1]); else later(cb, landing ? 160 : 140);
+      })();
+    }
+    function begin(){
+      var t = perchFind(id, env.id); if(!t){ perchCancelRun(); return; }
+      run.t = t; run.r = perchLive(t);
+      var r = run.r;
+      if(homePerch){ homePerch = null; perchEnvId = null; perchPose = null; wanderOffsetY = 0; } // lifted off the old perch: start from the floor
+      motionPlaying = true; syncFace(); mascotAnim.queue = [];
+      wander.classList.add("in-motion");
+      var x0 = wanderOffsetX, face = wanderFacing;
+      var scene = document.getElementById("characterScene");
+      var maxX = Math.max(0, Math.min(scene.clientWidth, scene.parentNode.clientWidth)/2 - wander.offsetWidth/2 - 6);
+      var floorX = Math.max(-maxX, Math.min(maxX, r.dx));
+      var tx = (r.kind==="hang") ? floorX : r.dx;
+      var f2 = Math.abs(tx-x0) < 2 ? face : (tx > x0 ? 1 : -1);
+      place(x0, 0, face, 0);
+      var landing = r.kind==="sit" ? IMG.wall.cl_sit : null;
+      if(r.kind==="hang"){
+        arc(x0, 0, floorX, 0, f2, null, function(){
+          place(floorX, 0, 1, 0); shadow.style.transform = ""; show(IMG.wall.cl_chalk);
+          later(function(){
+            show(r.frame==="reachR" ? IMG.wall.cl_reach_r : IMG.wall.cl_reach_l);
+            later(function(){
+              show(IMG.wall.cl_pull); shadow.style.opacity = "0";
+              var t0 = performance.now(), dur = 560, landed = false;
+              function land(){ if(landed) return; landed = true; perchFinishRun(); }
+              later(land, dur + 250); // animation frames pause in the background, so a timer makes sure the pull always finishes
+              (function pull(now){ if(landed || perchRun!==run) return;
+                var u = Math.min(1, (now-t0)/dur), e = u<0.5 ? 2*u*u : 1 - Math.pow(-2*u+2, 2)/2;
+                place(floorX + (r.dx-floorX)*e, r.dy*e, 1, 0);
+                if(u<1) run.raf = requestAnimationFrame(pull); else land();
+              })(t0);
+            }, 300);
+          }, 520);
+        });
+      } else if(r.kind==="reach"){
+        arc(x0, 0, r.dx, 0, f2, null, function(){ place(r.dx, 0, 1, 0); show(perchFrameAddr(r.frame)); later(perchFinishRun, 260); });
+      } else {
+        arc(x0, 0, r.dx, r.dy, f2, landing, function(){ perchFinishRun(); });
+      }
+    }
+    // wait out a step in progress, load the climb / sit frames, then go
+    var tries = 0;
+    (function go(){
+      if(perchRun!==run) return;
+      if(motionPlaying && tries++ < 12){ later(go, 100); return; }
+      var started = false;
+      function start(){ if(started || perchRun!==run) return; started = true; begin(); }
+      perchPreload(start); later(start, 700);
+    })();
+    return true;
+  }
+
+  /* ---- the pick-up gesture on the climber: idle -> pressed -> armed -> aiming -> travelling -> perched ---- */
+  var PERCH_HOLD_MS = 350, PERCH_MOUSE_PX = 8, PERCH_TOUCH_PX = 10, PERCH_NEAR = 0.12;
+  var perchG = null;            // { pointerId, type, x0, y0, x, y, state, timer, targets, aim }
+  var perchSwallowUntil = 0;    // the click that follows an armed gesture is not a tap
+  function perchRing(t){
+    var layer = document.getElementById("sceneLayers"), el = document.getElementById("perchRing");
+    if(!t){ if(el) el.remove(); return; }
+    if(!el){ el = document.createElement("div"); el.id = "perchRing"; el.className = "perch-ring"; el.setAttribute("aria-hidden", "true"); }
+    if(el.parentNode!==layer) layer.appendChild(el);
+    var pad = Math.max(0, (30 - t.w)/2), padY = Math.max(0, (30 - t.h)/2);
+    el.style.left = (t.x - pad)+"px"; el.style.top = (t.y - padY)+"px"; el.style.width = (t.w + 2*pad)+"px"; el.style.height = (t.h + 2*padY)+"px";
+  }
+  function perchAim(){
+    var g = perchG; if(!g || g.state==="pressed") return;
+    var rect = document.getElementById("characterScene").getBoundingClientRect(), px = g.x - rect.left, py = g.y - rect.top, near = PERCH_NEAR*rect.width, best = null;
+    g.targets.forEach(function(t){ // distance from the finger to the target's box (0 inside); the closest wins, the nearer centre on a tie
+      var dx = Math.max(t.x - px, 0, px - (t.x + t.w)), dy = Math.max(t.y - py, 0, py - (t.y + t.h)), d = Math.sqrt(dx*dx + dy*dy);
+      var c = Math.hypot(px - (t.x + t.w/2), py - (t.y + t.h/2));
+      if(d <= near && (!best || d < best.d - 0.5 || (Math.abs(d-best.d) <= 0.5 && c < best.c))) best = { t:t, d:d, c:c };
+    });
+    g.aim = best ? best.t : null;
+    g.state = g.aim ? "aiming" : "armed";
+    perchRing(g.aim);
+  }
+  function perchArm(){
+    var g = perchG; if(!g || g.state!=="pressed") return;
+    clearTimeout(g.timer); g.timer = 0;
+    if(arrangeMode || document.getElementById("view-home").hidden){ perchAbort(); return; }
+    g.state = "armed"; g.targets = perchTargets(selectedEnvironment().id, perchSceneBox());
+    perchPreload(function(){});
+    document.getElementById("characterBody").style.transform = "translateY(-"+Math.round((document.getElementById("characterWander").offsetHeight||0)*0.02)+"px)"; // a small lift: picked up
+    buzz(12);
+    perchAim();
+  }
+  function perchAbort(){
+    var g = perchG; if(!g) return;
+    clearTimeout(g.timer); perchG = null;
+    perchRing(null);
+    if(!motionPlaying) document.getElementById("characterBody").style.transform = "translateY(0)";
+    if(g.state!=="pressed") perchSwallowUntil = Date.now() + 400;
+  }
+  function perchRelease(){
+    var g = perchG; if(!g) return;
+    var armed = g.state!=="pressed", t = g.aim;
+    perchAbort();
+    if(armed){ perchSwallowUntil = Date.now() + 400; if(t) perchTravel(t.id); }
+  }
+  (function perchWire(){
+    var stage = document.getElementById("characterStage");
+    stage.addEventListener("pointerdown", function(e){
+      if(e.pointerType==="mouse" && e.button!==0) return;
+      if(perchRun){ perchFinishRun(); perchSwallowUntil = Date.now() + 400; return; } // a second press: it lands now
+      if(arrangeMode || perchG || motionPlaying) { if(perchG && e.pointerId!==perchG.pointerId) perchAbort(); return; }
+      perchG = { pointerId:e.pointerId, type:e.pointerType, x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, state:"pressed", timer:setTimeout(perchArm, PERCH_HOLD_MS), targets:[], aim:null };
+      try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    stage.addEventListener("pointermove", function(e){
+      var g = perchG; if(!g || e.pointerId!==g.pointerId) return;
+      g.x = e.clientX; g.y = e.clientY;
+      if(g.state==="pressed"){
+        var d = Math.hypot(g.x-g.x0, g.y-g.y0);
+        if(g.type==="mouse" || g.type==="pen"){ if(d > PERCH_MOUSE_PX) perchArm(); }
+        else if(d > PERCH_TOUCH_PX){ clearTimeout(g.timer); perchG = null; } // a swipe: a scroll, not a pick-up
+        return;
+      }
+      perchAim();
+    });
+    stage.addEventListener("pointerup", function(e){ if(perchG && e.pointerId===perchG.pointerId){ perchG.x = e.clientX; perchG.y = e.clientY; if(perchG.state!=="pressed") perchAim(); perchRelease(); } });
+    stage.addEventListener("pointercancel", function(e){ if(perchG && e.pointerId===perchG.pointerId) perchAbort(); });
+    // once armed, the touch must not scroll the page (listener is non-passive so preventDefault counts)
+    stage.addEventListener("touchmove", function(e){ if(perchG && perchG.state!=="pressed" && e.cancelable) e.preventDefault(); }, { passive:false });
+    window.addEventListener("blur", perchAbort);
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape" && perchG) perchAbort(); });
+    document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden"){ perchAbort(); if(perchRun) perchFinishRun(); } });
+    stage.addEventListener("click", function(e){
+      if(Date.now() < perchSwallowUntil){ perchSwallowUntil = 0; return; }
+      if(perchRun){ perchFinishRun(); return; }
+      playHop();
+    });
+  })();
   // [src, ms] for the mascot player while perched: sit glances now and then (like wallIdleTick), hang holds the reach.
   function perchIdleFrame(){
     if(homePerch.kind==="sit"){
@@ -7491,7 +7746,7 @@
     return [climberFrame(perchFrameAddr(perchPose ? perchPose.frame : "reachL")), 600];
   }
   if(window.__cruxTest) window.__cruxPerch = { // dev/tests.html only
-    targets:perchTargets, placement:perchPlacement, check:perchCheck, to:perchTo, dismount:dismountHome, sync:perchSync,
+    targets:perchTargets, resolve:perchResolve, live:perchLive, travel:perchTravel, finish:perchFinishRun, running:function(){ return !!perchRun; }, pending:function(){ return perchRun ? perchRun.timers.length : 0; }, gesture:function(){ return perchG ? perchG.state : "idle"; }, reduced:function(v){ prefersReducedMotion = !!v; }, placement:perchPlacement, check:perchCheck, to:perchTo, dismount:dismountHome, sync:perchSync,
     state:function(){ return homePerch; }, offsetY:function(){ return wanderOffsetY; }, frames:PERCH_FRAME, feet:PERCH_FEET, seat:PERCH_SEAT,
     frameAddr:perchFrameAddr, idleFrame:perchIdleFrame, sceneBox:perchSceneBox, accessories:ACCESSORIES, gearHolds:PERCH_GEAR_HOLDS, autoHop:autoHopOnce, levelUp:celebrateLevelUp, offsetX:function(){ return wanderOffsetX; }, vis:sceneVisible };
   /* ==== END HOME PERCH ==== */
@@ -9922,7 +10177,6 @@
   document.getElementById("closeSettingsBtn").addEventListener("click", closeSettings);
   document.getElementById("settingsOverlay").addEventListener("click", function(e){ if(e.target.id==="settingsOverlay") closeSettings(); });
 
-  document.getElementById("characterStage").addEventListener("click", playHop);
   // Long-press / right-click on the climber should not open the browser's image menu or select it.
   document.getElementById("characterStage").addEventListener("contextmenu", function(e){ e.preventDefault(); });
 

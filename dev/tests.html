@@ -3755,7 +3755,9 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(/variants\/sandstone\/climb\/climb-reach-(left|right)\.png$/.test(fileOf(stageSrc())), "reach frame isn't the variant's: "+fileOf(stageSrc()));
     var kept = qa("#characterBody img.outfit-layer");
     expect(kept.length===2 && kept[0].previousElementSibling.id==="characterStage" && kept.every(function(l){ return /climb\/climb-reach-(left|right)$/.test(layerKey(l)); }), "layers aren't directly after the sprite on the reach frame");
-    expect(P.to("toolbox")===false && P.state() && P.state().id===hang.id, "an invalid target changed the perch");
+    // part 2: a drop on a target that doesn't fit is no longer refused: the floor-level toolbox resolves to "beside" (feet on the floor, no perch)
+    expect(P.to("toolbox")===true && P.state()===null && P.offsetY()===0, "dropping on the floor-level toolbox should stand beside it, not perch or refuse");
+    expect(P.to(hang.id)===true && P.state().id===hang.id, "couldn't perch again");
     P.dismount(); await wait(200);
     expect(P.state()===null && P.offsetY()===0 && /\/idle\//.test(fileOf(stageSrc())), "dismount didn't return to the floor idle: "+fileOf(stageSrc()));
     expect(/^translate\(-?[\d.]+px, ?0px\)/.test($("characterWander").style.transform), "dismount transform: "+$("characterWander").style.transform);
@@ -3819,10 +3821,208 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(P2.state()===null && P2.offsetY()===0 && /\/idle\//.test(fileOf(stageSrc())), "a reload didn't show the floor: "+fileOf(stageSrc()));
     expect(JSON.stringify(saved().character)===JSON.stringify(JSON.parse(before).character), "the character save changed over a reload");
   });
+
+  // ---- Home perch part 2: fallbacks, gesture, travel ----
+  function ptr(type, ptype, x, y, id){
+    var ev = new W.PointerEvent(type, { bubbles:true, cancelable:true, pointerId:id||1, pointerType:ptype, isPrimary:true, button:0, buttons:type==="pointerup"?0:1, clientX:x, clientY:y });
+    $("characterStage").dispatchEvent(ev); return ev;
+  }
+  function stageCenter(){ var r = $("characterStage").getBoundingClientRect(); return { x:r.left + r.width/2, y:r.top + r.height*0.4 }; }
+  async function targetXY(id, env){
+    var P = W.__cruxPerch, t = P.targets(env, P.sceneBox()).filter(function(x){ return x.id===id; })[0], r = $("characterScene").getBoundingClientRect();
+    return { x:r.left + t.x + t.w/2, y:r.top + t.y + t.h/2, t:t };
+  }
+  async function settleRun(ms){ var t0 = Date.now(); while(W.__cruxPerch.running() && Date.now()-t0 < (ms||5000)) await wait(50); await wait(60); }
+  async function dragDrop(ptype, to){ // press the climber, hold past the arm time, move to `to`, release
+    var c = stageCenter();
+    ptr("pointerdown", ptype, c.x, c.y); await wait(420);
+    ptr("pointermove", ptype, to.x, to.y); await wait(30);
+    ptr("pointerup", ptype, to.x, to.y);
+  }
+
+  test("Home perch: every target in every room resolves to a valid pose (own kind, reach, or beside on the floor)", async function(){
+    var kinds = {}, anyReach = false, floorSitBeside = 0;
+    for(var env of PERCH_ENVS){
+      await perchBoot(env);
+      var P = W.__cruxPerch, ts = P.targets(env, P.sceneBox());
+      expect(ts.length>=34, env+": expected every target");
+      ts.forEach(function(t){
+        var r = P.resolve(t); kinds[r.kind] = 1;
+        expect(/^(hang|sit|stand|reach|beside)$/.test(r.kind), env+" "+t.id+": bad kind "+r.kind);
+        if(t.valid) expect(r.kind===t.kind && r.onTarget, env+" "+t.id+": a fitting target must keep its own kind, got "+r.kind);
+        else expect(r.kind==="reach" || r.kind==="beside", env+" "+t.id+": an unfitting target must fall back to reach / beside, got "+r.kind);
+        if(r.kind==="beside" || r.kind==="reach"){
+          expect(Math.abs(r.dy)<0.01, env+" "+t.id+": a floor pose has to stay on the floor");
+          expect(Math.abs(r.dx)<=t.geo.maxX+0.5, env+" "+t.id+": floor pose outside the room ("+r.dx+" > "+t.geo.maxX+")");
+        }
+        if(r.kind==="beside") expect(r.facing===1 || r.facing===-1, env+" "+t.id+": no facing");
+        if(r.kind==="reach"){
+          anyReach = true;
+          var f = P.frames[r.frame], hx = r.left + f.hand[0]*r.boxW, hy = r.top + f.hand[1]*r.boxH;
+          expect(hx>=t.x-0.03*t.geo.W-1 && hx<=t.x+t.w+0.03*t.geo.W+1 && hy>=t.y-0.03*t.geo.H-1 && hy<=t.y+t.h+0.03*t.geo.H+1, env+" "+t.id+": reach pose's hand isn't near the hold");
+          expect(P.check({ topY:r.top+f.minY*r.boxH, feetY:r.top+P.feet*r.boxH, leftX:r.left+f.minX*r.boxW, rightX:r.left+f.maxX*r.boxW, boxH:r.boxH }, t.geo.vis, t.geo.W, t.geo.H)==="", env+" "+t.id+": reach pose is cropped");
+        }
+        if(t.id==="stepstool" || t.id==="toolbox"){ expect(r.kind==="beside", env+" "+t.id+": a floor-level sit should stand beside it"); floorSitBeside++; }
+      });
+    }
+    expect(anyReach, "no low hang target used the floor-reach frame in any room");
+    expect(kinds.beside && kinds.hang && kinds.sit && kinds.stand, "expected every resolution kind: "+Object.keys(kinds).join(","));
+    expect(floorSitBeside>=4, "floor-level sits weren't all checked");
+  });
+
+  test("Home perch: long-press and drop travels and ends perched on the sit frame through the variant, outfit layers after the sprite", async function(){
+    await perchBoot("homewall", function(s){ s.settings.devLevel = 10; s.character.variant = "sandstone"; s.character.outfit = { headband:"teal-knit", chalkbag:"teal" }; });
+    var P = W.__cruxPerch, c = stageCenter(), tp = await targetXY("wallshelf", "homewall");
+    ptr("pointerdown", "mouse", c.x, c.y);
+    expect(P.gesture()==="pressed", "not pressed: "+P.gesture());
+    await wait(420);
+    expect(P.gesture()==="armed" || P.gesture()==="aiming", "didn't arm after the hold: "+P.gesture());
+    ptr("pointermove", "mouse", tp.x, tp.y); await wait(30);
+    expect(P.gesture()==="aiming", "not aiming over the shelf: "+P.gesture());
+    var ring = D.getElementById("perchRing");
+    expect(ring && /dashed/.test(W.getComputedStyle(ring).outlineStyle), "no dashed aiming ring");
+    ptr("pointerup", "mouse", tp.x, tp.y); await wait(50);
+    expect(P.running(), "release over the shelf didn't start a travel");
+    expect(!D.getElementById("perchRing"), "the ring stayed after release");
+    await settleRun(6000);
+    expect(P.state() && P.state().kind==="sit" && P.state().id==="wallshelf", "didn't end perched on the shelf: "+JSON.stringify(P.state()));
+    expect(/variants\/sandstone\/sit\/ledge-sit(-look)?\.png$/.test(fileOf(stageSrc())), "not the variant sit frame: "+fileOf(stageSrc()));
+    var layers = qa("#characterBody img.outfit-layer");
+    expect(layers.length===2 && layers[0].previousElementSibling.id==="characterStage" && layers.every(function(l){ return /^[a-z-]+\/sit\/ledge-sit(-look)?$/.test(layerKey(l)); }), "outfit layers aren't on the sit frame");
+    expect(P.offsetY()<0 && P.pending()===0, "pose or timers wrong after landing");
+    $("characterStage").click(); await wait(250);
+    expect(P.state()===null, "a tap after the swallowed click should have hopped down");
+  });
+
+  test("Home perch: every landing (hang, sit, beside, floor-reach) ends on the right frame; saved data gets no new keys", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch, before = JSON.stringify(saved()), ts = P.targets("homewall", P.sceneBox());
+    var cases = [["jug","hang",/climb-reach-(left|right)\.png$/], ["wallshelf","sit",/ledge-sit/], ["chalkbag","stand",/\/idle\//], ["stepstool","beside",/\/idle\//]];
+    var reach = ts.filter(function(t){ return P.live(t).kind==="reach"; })[0];
+    expect(reach, "no reach target in the Home Wall"); cases.push([reach.id, "reach", /climb-reach-(left|right)\.png$/]);
+    for(var cs of cases){
+      expect(P.travel(cs[0])===true, "travel refused for "+cs[0]);
+      expect(P.running(), cs[0]+": not running");
+      await settleRun(7000);
+      expect(!P.running(), cs[0]+": still running"); 
+      var st = P.state();
+      if(cs[1]==="beside") expect(st===null && P.offsetY()===0, cs[0]+": beside should leave no perch"); else expect(st && st.kind===cs[1] && st.id===cs[0], cs[0]+": state "+JSON.stringify(st));
+      if(cs[1]==="reach") expect(P.offsetY()===0, "the floor-reach left the floor");
+      expect(cs[2].test(fileOf(stageSrc())), cs[0]+": frame "+fileOf(stageSrc()));
+      expect(P.pending()===0, cs[0]+": timers left");
+      P.dismount(); await wait(120);
+    }
+    expect(JSON.stringify(saved())===before, "travelling changed the saved data");
+    expect(!/perch|wanderOffset/i.test(STORE[KEY]), "a perch key reached the save");
+    expect(D.documentElement.scrollWidth<=W.innerWidth, "horizontal scroll");
+  });
+
+  test("Home perch: a short tap still steps; a touch that moves before 350 ms is a scroll and never arms; an armed gesture swallows the click", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch, c = stageCenter();
+    ptr("pointerdown", "mouse", c.x, c.y); await wait(60); ptr("pointerup", "mouse", c.x, c.y); $("characterStage").click(); await wait(130);
+    expect(/\/step\//.test(fileOf(stageSrc())) && P.state()===null && P.gesture()==="idle", "a short tap didn't step: "+fileOf(stageSrc()));
+    await wait(900);
+    ptr("pointerdown", "touch", c.x, c.y, 5); await wait(100); ptr("pointermove", "touch", c.x, c.y+30, 5);
+    expect(P.gesture()==="idle", "a moving touch must give up the gesture: "+P.gesture());
+    await wait(450);
+    expect(P.gesture()==="idle" && !D.getElementById("perchRing") && !P.running(), "a scrolling touch armed anyway");
+    var tm = new W.Event("touchmove", { bubbles:true, cancelable:true }); $("characterStage").dispatchEvent(tm);
+    expect(!tm.defaultPrevented, "touchmove was blocked before arming (would break scrolling)");
+    ptr("pointerup", "touch", c.x, c.y+30, 5);
+    // a touch that stays put arms, and then blocks scrolling
+    ptr("pointerdown", "touch", c.x, c.y, 6); await wait(420);
+    expect(P.gesture()==="armed" || P.gesture()==="aiming", "a still touch didn't arm: "+P.gesture());
+    var tm2 = new W.Event("touchmove", { bubbles:true, cancelable:true }); $("characterStage").dispatchEvent(tm2);
+    expect(tm2.defaultPrevented, "an armed touch should stop the page scroll");
+    // release over nothing: no travel, no perch, and the click that follows is swallowed
+    ptr("pointermove", "touch", 3, 3, 6);
+    expect(P.gesture()==="armed", "far from every target should only be armed: "+P.gesture());
+    var x0 = P.offsetX(); ptr("pointerup", "touch", 3, 3, 6);
+    $("characterStage").click(); await wait(130);
+    expect(!P.running() && P.state()===null && P.offsetX()===x0 && !/\/step\//.test(fileOf(stageSrc())), "the click after an armed gesture wasn't swallowed / a no-op drop did something");
+    // Escape and pointercancel abort
+    ptr("pointerdown", "mouse", c.x, c.y); await wait(420); expect(P.gesture()!=="idle", "didn't arm");
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); expect(P.gesture()==="idle", "Escape didn't abort");
+    ptr("pointerup", "mouse", c.x, c.y);
+    ptr("pointerdown", "mouse", c.x, c.y); await wait(420); ptr("pointercancel", "mouse", c.x, c.y); expect(P.gesture()==="idle", "pointercancel didn't abort");
+    await wait(450);
+  });
+
+  test("Home perch: reduced motion drops straight on the pose: no travel timers", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch; P.reduced(true);
+    try{
+      var tp = await targetXY("wallshelf", "homewall");
+      await dragDrop("mouse", tp);
+      expect(!P.running() && P.pending()===0, "reduced motion left timers running");
+      expect(P.state() && P.state().kind==="sit" && /ledge-sit/.test(fileOf(stageSrc())), "reduced motion didn't land at once: "+JSON.stringify(P.state()));
+      P.dismount();
+      var tb = await targetXY("stepstool", "homewall");
+      await dragDrop("mouse", tb);
+      expect(!P.running() && P.pending()===0 && P.state()===null, "reduced-motion beside");
+    } finally { P.reduced(false); }
+  });
+
+  test("Home perch: every interruption mid-travel ends on a valid pose and frees the climber", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch;
+    async function expectFree(label){
+      expect(!P.running() && P.pending()===0, label+": still travelling");
+      expect(P.state()===null ? P.offsetY()===0 : P.offsetY()<=0, label+": bad offset");
+      expect(/^translate\(-?[\d.]+px, ?-?[\d.]+px\)/.test($("characterWander").style.transform), label+": transform "+$("characterWander").style.transform);
+      await wait(500);
+      P.dismount(); await wait(150);
+      $("characterStage").click(); await wait(130);
+      expect(/\/step\//.test(fileOf(stageSrc())), label+": the climber is locked (a tap didn't step): "+fileOf(stageSrc()));
+      await wait(900);
+    }
+    P.travel("wallshelf"); await wait(250); expect(P.running(), "not travelling");
+    await click("navTrainBtn", 100); expect(P.state()===null, "view switch left a perch"); await expectFree("view switch");
+    await goHome(); await wait(300);
+    P.travel("jug"); await wait(250);
+    await click("arrangeToggleBtn", 100); expect(P.state()===null, "Arrange left a perch"); await expectFree("arrange");
+    await click("arrangeToggleBtn", 300);
+    P.travel("wallshelf"); await wait(250);
+    await openCustomize(); await click(q('#environmentPickerGrid [data-pick-env="local"]'), 300);
+    expect(P.state()===null, "room change left a perch"); await click("closeCustomizeBtn", 300); await goHome(); await wait(200); await expectFree("room change");
+    await perchBoot("homewall");
+    P = W.__cruxPerch;
+    P.travel("wallshelf"); await wait(250);
+    var c = stageCenter(); ptr("pointerdown", "mouse", c.x, c.y); ptr("pointerup", "mouse", c.x, c.y);
+    expect(!P.running() && P.state() && P.state().id==="wallshelf", "a second press should land the climber at once: "+JSON.stringify(P.state()));
+    $("characterStage").click(); await wait(100);
+    expect(P.state(), "the click after the second press should have been swallowed");
+    P.dismount(); await wait(150);
+    P.travel("jug"); await wait(250);
+    Object.defineProperty(D, "visibilityState", { configurable:true, get:function(){ return "hidden"; } });
+    try{ D.dispatchEvent(new W.Event("visibilitychange")); } finally { delete D.visibilityState; }
+    expect(!P.running() && P.state() && P.state().id==="jug", "a hidden tab should finish the travel: "+JSON.stringify(P.state()));
+    P.dismount(); await wait(150);
+    P.travel("wallshelf"); await wait(200); P.levelUp(); await wait(80);
+    expect(!P.running() && P.state()===null, "level-up didn't end the travel on the floor");
+    await wait(1800);
+  });
+
+  test("Home perch: Arrange still drags a decoration and saves decorPositionsByEnv", async function(){
+    await perchBoot("homewall", function(s){ s.character.decorations = ["wallshelf", "chalkbag"]; });
+    await click("arrangeToggleBtn", 300);
+    var el = q('#sceneLayers [data-decor-id="chalkbag"]'), r = el.getBoundingClientRect();
+    var mk = function(t, x, y){ return new W.PointerEvent(t, { bubbles:true, cancelable:true, pointerId:3, pointerType:"mouse", isPrimary:true, button:0, clientX:x, clientY:y }); };
+    el.setPointerCapture = function(){}; // a synthetic pointer id has nothing to capture
+    el.dispatchEvent(mk("pointerdown", r.left+4, r.top+4));
+    el.dispatchEvent(mk("pointermove", r.left+4-40, r.top+4-20)); el.dispatchEvent(mk("pointerup", r.left+4-40, r.top+4-20));
+    await wait(200);
+    var pos = saved().character.decorPositionsByEnv;
+    expect(pos && pos.homewall && pos.homewall.chalkbag, "dragging in Arrange didn't save the position: "+JSON.stringify(pos));
+    await click("arrangeToggleBtn", 300);
+  });
+  // ---- end Home perch part 2 ----
   // ---- end Home perch tests ----
 
   /* ---------- runner ---------- */
   var running = false;
+  var ONLY = (new URLSearchParams(location.search)).get("only") || "";
   async function runAll(){
     if(running) return; running = true;
     results.length = 0;
@@ -3835,6 +4035,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     var dup = SRC.toLowerCase().indexOf("<!doctype", 1); if(dup>0) SRC = SRC.slice(dup); // drop a dev server's wrapper
     for(var i=0;i<TESTS.length;i++){
       var t = TESTS[i], li = document.createElement("li");
+      if(ONLY && i>0 && t.name.indexOf(ONLY)<0) continue; // dev/tests.html?only=Home perch runs just those (the first test always runs: it makes the fresh-install save)
       li.className = "run"; li.innerHTML = '<span class="tag">…</span> <span class="name"></span><div class="detail"></div>';
       li.querySelector(".name").textContent = t.name; list.appendChild(li);
       window.__appErrors.length = 0;

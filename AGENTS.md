@@ -207,17 +207,32 @@ A small, optional play area for rest times, using the player's own climber. Remo
   focus to the game's card, Tab is trapped inside the sheet; the whole sound row toggles and states On/Off in words. The end screen puts Play again first.
 - **Reduced motion:** every game has a still variant (Dyno: flat bar, no wobble; Wall Run: fixed rows and fuse bar; bar instead of ring scale elsewhere, no scroll, crossfades <= 120 ms).
 
-## Home perch (part 1, 2026-10-16)
+## Home perch (2026-10-16)
 
-The Home climber can be put on a decoration (`HOME PERCH` block in `crux.html`). Part 1 is placement only: no pick-up gesture, no travel animation.
+Press and hold the Home climber, drag to a decoration, let go: he travels there and perches. All in the `HOME PERCH` block in `crux.html`.
 - **Targets:** ACCESSORIES rows with `perch:"hang"|"sit"|"stand"` plus the two level-8 gear holds (`gearHoldA/B`, hang). `perchTargets(envId, sceneBox)` returns
-  them with `valid` / `why` (`top` head above the visible stage, `floor` feet lower than the floor line, `side` cropped); invalid ones are returned flagged, not dropped.
-  `perchPlacement(target, kind, boxW, boxH)` is pure (frame anchors and the measured hand points are in the comment above `PERCH_FRAME`).
+  them with `valid` / `why` (`top` head above the visible stage, `floor` feet lower than the floor line, `side` cropped) and `geo` (sprite box, resting spot, floor limit `maxX`);
+  invalid ones are returned flagged, not dropped. `perchPlacement(target, kind, boxW, boxH)` is pure (frame anchors and the measured hand points are in the comment above `PERCH_FRAME`).
+- **How to add a perch to a new decoration:** add `perch:"hang"|"sit"|"stand"` to its ACCESSORIES row. For `sit` / `stand` also measure the first picture row that is
+  the seat or rim (first row whose opaque width is >= half the widest row, as a fraction of the picture height) and add it to `PERCH_SURFACE`; without an entry it uses `PERCH_SINK`.
+  A `ar` (picture height / width) on the row, or the loaded picture, gives its height. Nothing else: the gesture, fallbacks and tests pick it up (the "Home perch:" tests loop over every target).
+- **Fallbacks (a drop is almost never refused):** `perchResolve(target)` returns `{kind, frame, left, top, dx, dy, facing}`. Order: the target's own kind if it fits (`hang` / `sit` / `stand`);
+  else for a `hang` the floor `reach` (feet on the floor, fist at the hold, if the hand anchor lands within 3% of the scene of the hold); else `beside` (standing on the floor next to it, facing it,
+  clamped to the floor range). `beside` is always valid and leaves no perch (`homePerch` stays null); `reach` is a perch with `dy` 0. Only a drop that is not near any target does nothing.
+  Most targets are `beside` at 375 px because the climber is big; that is expected.
+- **Gesture** (pointer events on `#characterStage`, beside the click): idle, pressed, armed, aiming, travelling, perched. Armed after 350 ms hold, or 8 px of mouse movement. A touch that moves more than 10 px
+  before 350 ms is a scroll: the gesture is dropped and the page scrolls (nothing is blocked by default: `touch-action:manipulation`). Once armed, a non-passive `touchmove` calls `preventDefault`. While aiming,
+  `#perchRing` (the Arrange dashed look) marks the nearest target within 12% of the scene width. Release over it travels; release elsewhere is a no-op. A short tap still runs `playHop` (or dismounts);
+  an armed gesture swallows the click that follows (400 ms); Escape / pointercancel / blur / a hidden tab abort. Off in Arrange (the climber is `pointer-events:none` there).
+- **Travel** (point-and-travel, not following the finger): the jump clip with sideways progress and a rise to the target (`PERCH_JUMP_PROG`), then by kind: hang = chalk (`cl_chalk`), reach, pull (`cl_pull`) tween
+  to the hold (the `wallHop` pattern, rAF plus a timer fallback); sit = the arc lands in `ledge-sit`; stand = lands on the object; reach / beside = lands alongside. Frames are preloaded first.
+  Every wait is in `perchRun.timers`. Reduced motion = `perchTo`, instant, no timers. Interruptions always end valid: a hidden tab or a second press finish the final pose at once (`perchFinishRun`);
+  leaving Home, a room change, Arrange and level-up put him on the floor where he is (`perchCancelRun`, called from `dismountHome` and `perchSync`).
 - **Frames:** existing art only, through `climberFrame()`: hang = `climb-reach-left/right`, sit = `ledge-sit` / `ledge-sit-look`, stand = `idle-01`. Without `IMG.wall` hang/sit fall back to stand.
-- **State is memory only** (`homePerch`, `wanderOffsetY`): never saved, no state-shape change. A reload shows the floor. The climber's transform is `translate(x,y) scaleX(f)`; `playMotion` keeps Y.
+- **State is memory only** (`homePerch`, `wanderOffsetY`, `perchRun`): never saved, no state-shape change. A reload shows the floor. The climber's transform is `translate(x,y) scaleX(f)`; `playMotion` keeps Y.
 - **Dismounts:** tap while perched, Arrange on, any view away from Home, a room change, a removed or no-longer-fitting target (`perchSync` at the end of `renderSceneEnvironment`), level-up jump.
   While perched `mascotTick` plays the perch idle and `autoHopOnce` skips.
-- **Tests:** "Home perch:" in `dev/tests.html`, through `window.__cruxPerch` (only with `window.__cruxTest`).
+- **Tests:** "Home perch:" in `dev/tests.html`, through `window.__cruxPerch` (only with `window.__cruxTest`). `dev/tests.html?only=Home%20perch` runs just those. Not verified on a real phone: long-press and scroll behaviour on iOS.
 
 ## Projects (climb tracking)
 
@@ -369,7 +384,8 @@ unlocks it at that Wall hold. That is the fourth `// THE WALL hook` line.
    Keep `assets/wall/` files `rays`, `sparkle`, `r2_plinth`, `r2_lights`, `r2_hold_*`, `r2_shelf`,
    `r2_shoes` and `r2_gearbag`: the celebration card and Garage decorations also use them.
 3. Delete the Wall tests in `dev/tests.html`, the `assets/wall/` folder, and the climber's
-   `climb`, `sit`, `rest` and `move` folders.
+   `climb`, `sit`, `rest` and `move` folders. **Home perch uses `IMG.wall.cl_reach_l/r`, `cl_pull`, `cl_chalk`, `cl_sit` and `cl_sit_look`**
+   (the climb and sit frames): without them it falls back to `stand` / `beside` (`perchWallArt()` is false), so keep those files, or accept the reduced perch.
 4. `restDays` and `wallSeen` can stay in saves: they're harmless. Or remove them from
    `defaultState`/`normalizeState`.
 
