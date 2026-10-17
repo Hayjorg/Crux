@@ -4405,6 +4405,73 @@ and the project rules. It runs on its own private copy of the data, never your r
     } finally { frame.style.width = w0; frame.style.height = h0; }
   });
 
+  function climbHidden(){ Object.defineProperty(D, "visibilityState", { configurable:true, get:function(){ return "hidden"; } }); try{ D.dispatchEvent(new W.Event("visibilitychange")); } finally { delete D.visibilityState; } }
+
+  test("Home climb: a resize during a step or spring-back drops the in-flight move (no throw, idx stays on the route, nothing left running)", async function(){
+    var frame = document.getElementById("app"), w0 = frame.style.width, h0 = frame.style.height, errs = [];
+    function onErr(e){ errs.push(String(e.message||e)); } W.addEventListener("error", onErr);
+    try{
+      await climbBoot(); var C = W.__cruxClimb; await climbOn();
+      C.stance(Math.min(3, C.route().n-1)); await wait(60);
+      var i0 = C.state().idx, c = climbStageCenter();
+      ptr("pointerdown", "mouse", c.x, c.y); ptr("pointermove", "mouse", c.x, c.y-60); await wait(30);
+      expect(C.state().busy, "a step should be in flight before the resize");
+      frame.style.width = "330px"; C.relayout(); await wait(500); // re-fit now, while the step is still in flight
+      var st = C.state(); expect(st, "the climb ended on resize");
+      expect(!st.busy && st.idx===Math.min(i0, st.n-1) && st.desired===st.idx, "the old step survived the resize: "+JSON.stringify({ busy:st.busy, idx:st.idx, desired:st.desired, n:st.n }));
+      var R = C.route(), hi = C.dom(C.anchors[st.key].hi); expect(Math.hypot(hi[0]-R.hold[st.idx][0], hi[1]-R.hold[st.idx][1])<0.6, "fist off the hold after the resize");
+      ptr("pointerup", "mouse", c.x, c.y-60); await wait(500);
+      expect(C.state().idx<=C.state().n-1 && !C.state().busy, "idx off the route after release");
+      expect(errs.length===0, "errors after a resize mid-step: "+errs.join(" | "));
+    } finally { W.removeEventListener("error", onErr); frame.style.width = w0; frame.style.height = h0; }
+  });
+
+  test("Home climb: a drag left over from a lost pointerup is cleared by a hidden tab and replaced by the next press", async function(){
+    await climbBoot(); var C = W.__cruxClimb; await climbOn();
+    var c = climbStageCenter();
+    ptr("pointerdown", "mouse", c.x, c.y, 1); expect(C.state().dragging && C.state().drag, "the press didn't start a drag");
+    climbHidden(); expect(!C.state().dragging && !C.state().drag, "a hidden tab left the drag set");
+    ptr("pointerdown", "mouse", c.x, c.y, 1); expect(C.state().drag, "no drag after backgrounding");
+    ptr("pointerdown", "mouse", c.x, c.y, 2);   // pointerup for 1 never came: the new pointer takes over
+    expect(C.state().drag, "a press with a different pointer id was ignored");
+    for(var k=1;k<=10;k++){ ptr("pointermove", "mouse", c.x, c.y-k*8, 2); await wait(18); }
+    expect(C.state().desired>=1, "the new drag doesn't move him: "+JSON.stringify(C.state()));
+    ptr("pointerup", "mouse", c.x, c.y-80, 2); await wait(500);
+    expect(!C.state().dragging && !C.state().drag, "release left the drag set");
+  });
+
+  test("Home climb: the click after a fall (fling, drag off, reduced motion) is not a tap-hop", async function(){
+    await climbBoot(); var C = W.__cruxClimb, P = W.__cruxPerch;
+    async function fallThenClick(label){
+      await climbOn(); await wait(200);
+      var c = climbStageCenter();
+      ptr("pointerdown", "mouse", c.x, c.y); ptr("pointermove", "mouse", c.x, c.y+30); await wait(20); ptr("pointermove", "mouse", c.x, c.y+95); await wait(20);
+      await until(function(){ return C.state()===null; }, 3500, label+": the fall to end");
+      await wait(300); // longer than the swallow window: the release comes late
+      ptr("pointerup", "mouse", c.x, c.y+95); $("characterStage").click(); await wait(130);
+      expect(!/\/step\//.test(dev_frameName()), label+": the click after a fall hopped: "+dev_frameName());
+      await wait(900);
+    }
+    await fallThenClick("fling");
+    P.reduced(true);
+    try{ await fallThenClick("reduced motion"); } finally { P.reduced(false); }
+    // and an ordinary tap afterwards still hops
+    await wait(400); var c2 = stageCenter(); ptr("pointerdown", "mouse", c2.x, c2.y); ptr("pointerup", "mouse", c2.x, c2.y); $("characterStage").click(); await wait(130);
+    expect(/\/step\//.test(dev_frameName()), "a later tap doesn't hop: "+dev_frameName());
+  });
+
+  test("Home climb: a late preload callback cannot start the jump after the mount was finished", async function(){
+    await climbBoot(); var C = W.__cruxClimb, Orig = W.Image;
+    W.Image = function(){ var self = { complete:false, onload:null, onerror:null }; Object.defineProperty(self, "src", { set:function(){ setTimeout(function(){ self.onload && self.onload(); }, 350); } }); return self; };
+    try{
+      expect(C.mount()===true, "mount refused"); C.finish();
+      expect(C.state().mode==="wall" && C.state().idx===0, "finish didn't land on stance A: "+JSON.stringify(C.state()));
+      var seen = {}, t0 = Date.now(); while(Date.now()-t0<700){ seen[dev_frameName()] = 1; await wait(20); }
+      expect(!Object.keys(seen).some(function(f){ return /jump\//.test(f); }), "a late preload started the jump: "+Object.keys(seen).join());
+      expect(C.state().mode==="wall", "mode changed: "+C.state().mode);
+    } finally { W.Image = Orig; C.end(); }
+  });
+
   test("Home climb: reduced motion places him directly: no mount or fall animation, no swing, no mid frames, no timers", async function(){
     await climbBoot();
     var C = W.__cruxClimb, P = W.__cruxPerch; P.reduced(true);

@@ -7764,7 +7764,7 @@
     stage.addEventListener("pointerdown", function(e){
       if(e.pointerType==="mouse" && e.button!==0) return;
       if(homeClimb){ climbDown(e); return; } // HOME CLIMB hook: on the board a press is a climb drag
-      perchSwallowUntil = 0; // a new press is never the tail of an old gesture
+      perchSwallowUntil = 0; climbSwallowNext = false; // a new press is never the tail of an old gesture
       if(perchRun){ perchFinishRun(); perchSwallowUntil = Date.now() + PERCH_SWALLOW_MS; return; } // a second press: it lands now
       if(arrangeMode || perchG || motionPlaying) { if(perchG && e.pointerId!==perchG.pointerId) perchAbort(); return; }
       perchG = { pointerId:e.pointerId, type:e.pointerType, x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, state:"pressed", timer:(perchTimerCount++, setTimeout(perchArm, PERCH_HOLD_MS)), targets:[], aim:null };
@@ -7836,7 +7836,7 @@
   var CLIMB_HOLD_HAND = ["h_jug","r2_hold_red","h2_jug","r2_hold_blue","r2_hold_yellow","h2_jug","r2_hold_grey","h_jug","r2_hold_sand"];
   var CLIMB_HOLD_FOOT = ["h_foot","h2_chip"];
   var homeClimb = null;      // { envId, g, s, R, mode: mount|wall|chalk|fall, idx, desired, f, busy, dragging, ... } while he is on the board
-  var climbTimerCount = 0, climbDriftMax = 0, climbFramesReady = false;
+  var climbTimerCount = 0, climbDriftMax = 0, climbFramesReady = false, climbSwallowNext = false, climbMidBad = false;
 
   function climbRot(v, deg){ var t = deg*Math.PI/180, c = Math.cos(t), s = Math.sin(t); return [v[0]*c - v[1]*s, v[0]*s + v[1]*c]; }
   function climbDist(a, b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
@@ -7852,7 +7852,7 @@
     var o = state.character && state.character.outfit; if(!o) return false;
     return OUTFIT_SLOTS.some(function(slot){ var id = o[slot], it = id && OUTFIT_ITEMS[id]; return !!it && it.slot===slot && outfitUnlocked(it, state.level, outfitHolds); });
   }
-  function climbMidOn(){ return climberVariantId()==="default" && !climbOutfitted() && !!IMG.wall.cl_mid_r2 && !!IMG.wall.cl_mid_l2; }
+  function climbMidOn(){ return climberVariantId()==="default" && !climbOutfitted() && !!IMG.wall.cl_mid_r2 && !!IMG.wall.cl_mid_l2 && !climbMidBad; }
   function climbArt(){ return perchWallArt() && Array.isArray(IMG.mascot.jump) && IMG.mascot.jump.length>2 && Array.isArray(IMG.mascot.land) && IMG.mascot.land.length>1; }
   function climbGeo(){
     var sc = document.getElementById("characterScene"), W = sc.offsetWidth, H = sc.offsetHeight, boxW = W*0.6, boxH = boxW*1.5; // .character-wander: 60% wide, 2:3, bottom 7%
@@ -7952,14 +7952,19 @@
     var best = null, n;
     for(n=CLIMB_MAX_HOLDS; n>=CLIMB_MIN_HOLDS; n--){
       var pts = pointsFor(n), minY = Math.min.apply(null, pts.map(function(p){ return p[1]; })), maxY = Math.max.apply(null, pts.map(function(p){ return p[1]; }));
-      var cand = { n:n, margin:-1e9, ox:0, oy:0 };
-      for(var oy = L.yLo - minY; oy + maxY <= g.floorY; oy += 3){
-        for(var ox = L.xLo; ox <= L.xHi; ox += 3){
-          var mn = 1e9;
-          for(var k2=0; k2<pts.length && mn>cand.margin; k2++) mn = Math.min(mn, margin(pts[k2], ox, oy));
-          if(mn>cand.margin){ cand.margin = mn; cand.ox = ox; cand.oy = oy; }
+      var cand = { n:n, margin:-1e9, ox:0, oy:0 }, oy0 = L.yLo - minY;
+      function scan(xa, xb, ya, yb, step){ // best offset on a grid (a coarse pass first, then 3 px around its best: the same grid as before, a fraction of the work)
+        for(var oy = ya; oy + maxY <= g.floorY && oy <= yb; oy += step){
+          for(var ox = xa; ox <= xb; ox += step){
+            var mn = 1e9;
+            for(var k2=0; k2<pts.length && mn>cand.margin; k2++) mn = Math.min(mn, margin(pts[k2], ox, oy));
+            if(mn>cand.margin){ cand.margin = mn; cand.ox = ox; cand.oy = oy; }
+          }
         }
       }
+      scan(L.xLo, L.xHi, oy0, 1e9, 6);
+      if(cand.margin>-1e9) scan(Math.max(L.xLo, cand.ox-6), Math.min(L.xHi, cand.ox+6), Math.max(oy0, cand.oy-6), cand.oy+6, 3);
+      if(cand.margin<7) scan(L.xLo, L.xHi, oy0, 1e9, 3); // not good enough yet: the full 3 px search, as before, so the hold count never drops by a miss
       if(!best || cand.margin>best.margin) best = cand;
       if(cand.margin >= 7){ best = cand; break; } // every contact at least 7 px inside the board: use this many holds
     }
@@ -8004,7 +8009,7 @@
     return rec;
   }
   function climbClear(c){
-    c.timers.forEach(function(h){ clearTimeout(h); climbTimerCount--; }); c.timers = [];
+    c.timers.forEach(function(h){ clearTimeout(h); climbTimerCount--; }); c.timers = []; c.pumpT = 0;
     c.anims.slice().forEach(function(a){ a.cancel(); }); c.anims = [];
     if(c.restTimer){ clearTimeout(c.restTimer); c.restTimer = 0; climbTimerCount--; }
     if(c.fallStop) c.fallStop();
@@ -8077,7 +8082,7 @@
     var now = performance.now(), gap = prefersReducedMotion ? 0 : CLIMB_STEP_GAP;
     if(c.idx!==c.desired){
       var wait = c.lastStep + gap - now;
-      if(wait>0){ climbLater(c, function(){ climbPump(c); }, wait+1); return; }
+      if(wait>0){ if(!c.pumpT) c.pumpT = climbLater(c, function(){ c.pumpT = 0; climbPump(c); }, wait+1); return; } // one wait timer at a time
       var dir = c.desired>c.idx ? 1 : -1; climbStepTo(c, dir, (c.dragging && c.f*dir>0) ? Math.abs(c.f) : 0); return;
     }
     if(c.dragging){ climbShowPreview(c); return; }
@@ -8150,7 +8155,7 @@
     var keys = ["RL", "RR", "CH", "J1", "J2", "J3", "L1", "L2", "ID"].concat(climbMidOn() ? ["M2", "M3"] : []), left = keys.length, done = false;
     function fin(){ if(done) return; done = true; climbFramesReady = true; cb(); }
     if(!climbArt()){ fin(); return; }
-    keys.forEach(function(k){ var im = new Image(); im.onload = im.onerror = function(){ if(--left<=0) fin(); }; im.src = climbSrc(k); if(im.complete){ im.onload = im.onerror = null; left--; } });
+    keys.forEach(function(k){ var im = new Image(); var mid = k==="M2" || k==="M3"; im.onload = function(){ if(--left<=0) fin(); }; im.onerror = function(){ if(mid) climbMidBad = true; if(--left<=0) fin(); }; im.src = climbSrc(k); if(im.complete){ im.onload = im.onerror = null; if(mid && !im.naturalWidth) climbMidBad = true; left--; } });
     if(left<=0) fin();
   }
   function climbKey(c){ var g = c.g; return [g.W, g.H, g.vis.x.toFixed(1), g.vis.y.toFixed(1), climbMidOn() ? "mid" : "plain", climberVariantId()].join("/"); }
@@ -8168,7 +8173,8 @@
     var x0 = climbFloorX(c), started = false, fallback = 0;
     climbPrepare(c); climbDrawHolds(c);
     function go(){
-      if(started || homeClimb!==c) return; started = true; climbCancel(c, fallback);
+      if(started || homeClimb!==c || c.mode!=="mount") return; started = true; climbCancel(c, fallback);
+      if(c.mid && !climbMidOn()) c.mid = false; // a mid frame failed to load: the no-mid path
       if(prefersReducedMotion){ climbShowStance(c, 0); return; }
       var stance = climbStanceSpec(c, 0), j3 = CLIMB_A.J3.bb, end = climbScr(stance, [CLIMB_A.RL.bb.cx, CLIMB_A.RL.bb.cy]), shadow = document.getElementById("characterShadow");
       climbDraw(climbFloorSpec(c, "J1", x0));
@@ -8189,7 +8195,10 @@
     var c = homeClimb; if(!c) return;
     if(env.id!==c.envId || arrangeMode || !document.getElementById("characterScene").offsetWidth){ climbEnd(); return; }
     var g = climbGeo(); if(climbKey({ g:g })===c.key) return;
-    if(c.busy){ climbFinishNow(); c = homeClimb; if(!c) return; }
+    if(c.busy){
+      if(c.mode==="wall" || c.mode==="chalk"){ climbClear(c); c.busy = false; c.f = 0; c.desired = c.idx; c.loadT0 = 0; } // a step or spring-back in flight runs against the old route: drop it, stay on the hold he is on
+      else { climbFinishNow(); c = homeClimb; if(!c) return; }
+    }
     var s = CLIMB_REL*g.W/375, i = c.idx, was = c.mode;
     c.g = g; c.s = s; c.R = climbBuildRoute(env, g, s); c.mid = climbMidOn(); c.key = climbKey(c);
     document.getElementById("characterWander").style.height = g.boxH+"px";
@@ -8205,7 +8214,12 @@
     return 0;
   }
   function climbDown(e){
-    var c = homeClimb; if(!c || c.busy || c.drag) return;
+    var c = homeClimb; if(!c || c.busy) return;
+    if(c.drag){ // a drag whose pointerup never came (lost capture, backgrounded) is replaced; a live one (same pointer, still captured) is kept
+      var cap = false; try{ cap = document.getElementById("characterStage").hasPointerCapture(c.drag.id); }catch(err){}
+      if(c.drag.id===e.pointerId && cap) return;
+      c.drag = null; c.dragging = false;
+    }
     if(e.pointerType==="mouse" && e.button!==0) return;
     var xy = climbXY(e); c.samples = [{ t:e.timeStamp, y:xy[1] }];
     if(c.mode==="chalk") climbExitChalk(c);
@@ -8218,12 +8232,13 @@
     var c = homeClimb; if(!c || !c.drag || e.pointerId!==c.drag.id) return;
     var xy = climbXY(e), d = c.drag; c.samples.push({ t:e.timeStamp, y:xy[1] }); if(c.samples.length>12) c.samples.shift();
     if(Math.hypot(xy[0]-d.x0, xy[1]-d.y0)>6) d.moved = true;
-    if(climbInside(c.R.poly, xy) < -40 || climbVelY(c)>1.2){ c.drag = null; c.dragging = false; climbFall(); return; } // 40 px off the board, or a fast fling down
+    if(climbInside(c.R.poly, xy) < -40 || climbVelY(c)>1.2){ c.drag = null; c.dragging = false; climbSwallowNext = true; climbFall(); return; } // 40 px off the board, or a fast fling down
     var raw = (d.y0-xy[1])/CLIMB_RISE, n = raw<0 ? Math.ceil(raw) : Math.floor(raw), f = raw-n; // sideways is ignored: only y is read
     var want = climbClamp(d.idx0+n, 0, c.R.n-1); if(want!==d.idx0+n) f = 0;
     c.desired = want; c.f = f; climbPump(c);
   }
   function climbUp(e){
+    if(climbSwallowNext){ climbSwallowNext = false; perchSwallowUntil = Date.now() + PERCH_SWALLOW_MS; } // the release after a fall: the click that follows is not a tap
     var c = homeClimb; if(!c || !c.drag || e.pointerId!==c.drag.id) return;
     c.drag = null; c.dragging = false; perchSwallowUntil = Date.now() + PERCH_SWALLOW_MS; // the click after a drag is not a tap
     if(!c.busy) climbPump(c);
@@ -8234,13 +8249,13 @@
     stage.addEventListener("pointerup", climbUp);
     stage.addEventListener("pointercancel", climbUp);
     stage.addEventListener("touchmove", function(e){ if(homeClimb && homeClimb.dragging && e.cancelable) e.preventDefault(); }, { passive:false });
-    document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden" && homeClimb) climbFinishNow(); });
+    document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden" && homeClimb){ homeClimb.drag = null; homeClimb.dragging = false; climbFinishNow(); } });
     window.addEventListener("blur", function(){ var c = homeClimb; if(c && c.drag){ c.drag = null; c.dragging = false; if(!c.busy) climbPump(c); } });
   })();
   climbPreload(function(){}); // warm the frames at start (mid frames only when they can be drawn)
   if(window.__cruxTest) window.__cruxClimb = { // dev/tests.html only
-    mount:climbMount, fall:climbFall, end:function(){ climbEnd(); }, finish:climbFinishNow, chalk:function(){ if(homeClimb && homeClimb.mode==="wall") climbShowChalk(homeClimb); },
-    state:function(){ var c = homeClimb; return c ? { mode:c.mode, idx:c.idx, desired:c.desired, busy:c.busy, dragging:c.dragging, n:c.R.n, key:c.cur ? c.cur.key : null, spec:c.cur, mid:c.mid, s:c.s } : null; },
+    mount:climbMount, fall:climbFall, end:function(){ climbEnd(); }, finish:climbFinishNow, relayout:function(){ climbRelayout(selectedEnvironment()); }, chalk:function(){ if(homeClimb && homeClimb.mode==="wall") climbShowChalk(homeClimb); },
+    state:function(){ var c = homeClimb; return c ? { mode:c.mode, idx:c.idx, desired:c.desired, busy:c.busy, dragging:c.dragging, n:c.R.n, key:c.cur ? c.cur.key : null, spec:c.cur, mid:c.mid, s:c.s, drag:!!c.drag } : null; },
     route:function(){ return homeClimb && homeClimb.R; }, geo:function(){ return homeClimb ? homeClimb.g : climbGeo(); }, drift:function(){ return climbDriftMax; }, resetDrift:function(){ climbDriftMax = 0; },
     pending:function(){ return climbTimerCount; }, midOn:climbMidOn, outfitted:climbOutfitted, scr:climbScr, dom:climbDom, hit:climbHit, boardPx:function(){ return climbBoardPx(selectedEnvironment(), climbGeo()); },
     inside:climbInside, anchors:CLIMB_A, rel:CLIMB_REL, rise:CLIMB_RISE, src:climbSrc, ringBox:function(){ return climbRingBox(selectedEnvironment(), climbGeo()); }, limits:function(){ return climbLimits(climbGeo()); },
