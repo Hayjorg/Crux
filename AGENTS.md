@@ -218,12 +218,12 @@ Press and hold the Home climber, drag to a decoration, let go: he travels there 
   A `ar` (picture height / width) on the row, or the loaded picture, gives its height. Nothing else: the gesture, fallbacks and tests pick it up (the "Home perch:" tests loop over every target).
 - **Fallbacks (a drop is almost never refused):** `perchResolve(target)` returns `{kind, frame, left, top, dx, dy, facing}`. Order: the target's own kind if it fits (`hang` / `sit` / `stand`);
   else for a `hang` the floor `reach` (feet on the floor, fist at the hold, if the hand anchor lands within 3% of the scene of the hold); else `beside` (standing on the floor next to it, facing it,
-  clamped to the floor range). `beside` is always valid and leaves no perch (`homePerch` stays null); `reach` is a perch with `dy` 0. Only a drop that is not near any target does nothing.
+  clamped to the floor range). `beside` is always valid and leaves no perch (`homePerch` stays null); `reach` is a perch with `dy` 0. A drop that is not near any target is just a tap.
   Most targets are `beside` at 375 px because the climber is big; that is expected.
 - **Gesture** (pointer events on `#characterStage`, beside the click): idle, pressed, armed, aiming, travelling, perched. Armed after 350 ms hold, or 8 px of mouse movement. A touch that moves more than 10 px
   before 350 ms is a scroll: the gesture is dropped and the page scrolls (nothing is blocked by default: `touch-action:manipulation`). Once armed, a non-passive `touchmove` calls `preventDefault`. While aiming,
-  `#perchRing` (the Arrange dashed look) marks the nearest target within 12% of the scene width. Release over it travels; release elsewhere is a no-op. A short tap still runs `playHop` (or dismounts);
-  an armed gesture swallows the click that follows (400 ms); Escape / pointercancel / blur / a hidden tab abort. Off in Arrange (the climber is `pointer-events:none` there).
+  `#perchRing` (the Arrange dashed look) marks the nearest target within 12% of the scene width. Release over it travels; release elsewhere answers like a tap. A short tap still runs `playHop` (or dismounts);
+  an armed gesture swallows the click that follows (250 ms, cleared by the next press); armed but released over nothing still plays the tap's step (or hops down off a perch); Escape / pointercancel / blur / a hidden tab abort. Off in Arrange (the climber is `pointer-events:none` there).
 - **Travel** (point-and-travel, not following the finger): the jump clip with sideways progress and a rise to the target (`PERCH_JUMP_PROG`), then by kind: hang = chalk (`cl_chalk`), reach, pull (`cl_pull`) tween
   to the hold (the `wallHop` pattern, rAF plus a timer fallback); sit = the arc lands in `ledge-sit`; stand = lands on the object; reach / beside = lands alongside. Frames are preloaded first.
   Every wait is in `perchRun.timers`. Reduced motion = `perchTo`, instant, no timers. Interruptions always end valid: a hidden tab or a second press finish the final pose at once (`perchFinishRun`);
@@ -232,7 +232,7 @@ Press and hold the Home climber, drag to a decoration, let go: he travels there 
 - **State is memory only** (`homePerch`, `wanderOffsetY`, `perchRun`): never saved, no state-shape change. A reload shows the floor. The climber's transform is `translate(x,y) scaleX(f)`; `playMotion` keeps Y.
 - **Dismounts:** tap while perched, Arrange on, any view away from Home, a room change, a removed or no-longer-fitting target (`perchSync` at the end of `renderSceneEnvironment`), level-up jump.
   While perched `mascotTick` plays the perch idle and `autoHopOnce` skips.
-- **Tests:** "Home perch:" in `dev/tests.html`, through `window.__cruxPerch` (only with `window.__cruxTest`). `dev/tests.html?only=Home%20perch` runs just those. Not verified on a real phone: long-press and scroll behaviour on iOS.
+- **Resize:** `homeRelayout` calls `perchSync` first, so a perch is re-seated even when the visible-window key is unchanged. **Tests:** "Home perch:" in `dev/tests.html`, through `window.__cruxPerch` (only with `window.__cruxTest`). `dev/tests.html?only=Home%20perch` runs just those. Not verified on a real phone: long-press and scroll behaviour on iOS.
 
 ## Projects (climb tracking)
 
@@ -385,7 +385,9 @@ unlocks it at that Wall hold. That is the fourth `// THE WALL hook` line.
    `r2_shoes` and `r2_gearbag`: the celebration card and Garage decorations also use them.
 3. Delete the Wall tests in `dev/tests.html`, the `assets/wall/` folder, and the climber's
    `climb`, `sit`, `rest` and `move` folders. **Home perch uses `IMG.wall.cl_reach_l/r`, `cl_pull`, `cl_chalk`, `cl_sit` and `cl_sit_look`**
-   (the climb and sit frames): without them it falls back to `stand` / `beside` (`perchWallArt()` is false), so keep those files, or accept the reduced perch.
+   (the climb and sit frames). If any of those six is missing, `perchWallArt()` is false and the perch falls back to `stand` / `beside`;
+   that clean fallback only holds for a partial removal of the climb / sit frames. Removing the whole `IMG.wall` breaks the existing ACCESSORIES lines
+   that use `IMG.wall.*` pictures (the Garage decorations), so keep those regardless.
 4. `restDays` and `wallSeen` can stay in saves: they're harmless. Or remove them from
    `defaultState`/`normalizeState`.
 
