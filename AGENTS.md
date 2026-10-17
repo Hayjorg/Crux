@@ -246,6 +246,17 @@ only), and a runner that steps through a workout inside a normal session. The co
 - **No hangboard protocols** among the built-in examples.
 - **Per-set log (optional):** Advanced + `settings.timerSetLog` (default off). After a program's WORK phase a small strip (kg, RPE 6-10) can append `{ts,label,tag,load,rpe}` to `session.setLog` (separate from `session.workout`, so the v1 format is unchanged; migrated in `normalizeState()`). Never read by `recomputeProfile()`/XP.
 
+## Workout timer (2026-10-16)
+
+Built on the timestamp engine and `loadTimerProgram()`; free mode (no program) is unchanged apart from the small "Next:" line.
+- **Builder:** `compileTimerConfig(cfg)` turns `{work,reps,repRest,sets,setRest,leadIn}` into a phase list (GET READY lead-in is phase 0, set rest replaces rep rest, no trailing rest, tags "REP r/R · SET s/S"). Loaded with `meta {kind:"custom"}`; `timerProgramDoneHook` ignores custom. Only the Reset *button* keeps a custom program (`resetTimer({keepCustom:true})`); every other caller clears it.
+- **Controls:** `timerSkip(dir)` and `timerAddMs(15000)` work on programs only (custom and workout steps); `timer.extraMs` tracks +15s so Back and the progress bar stay right. Skipping past the end uses the same `finishTimerProgram()` as a natural end.
+- **Sound:** `settings.timerVolume` (70 = original loudness), `timerVibrate`, `timerVoice`. Timer-only: games use `gmBeep`/`gmBuzz` and are not affected. Beeps stay the source of truth; speech is additive.
+- **Full screen:** `timer-full` CSS overlay on `#timerCard` (no Fullscreen API). Escape/Exit leaves; it also leaves when the session view hides.
+- **Saved timers:** `state.customTimers` (cap 30, normalised by `normCustomTimers()`); pinned ones are chips at the start of `#presets` in Simple and Advanced, the builder and save/rename/delete are Advanced only. Reset progress keeps them; Reset all data clears them. `planFor()` never reads them.
+- **Per-set log:** see the Workouts section above. Off by default, Advanced only.
+- **Tests:** `dev/tests.html`, sections "timer builder", "skip", "sound", "full screen", "saved custom timers", "Set log".
+
 ## The Wall (beta, removable)
 
 The Wall is a streak ladder, added 2026-10-04. Each day you log something, your climber moves
