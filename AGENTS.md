@@ -207,6 +207,18 @@ A small, optional play area for rest times, using the player's own climber. Remo
   focus to the game's card, Tab is trapped inside the sheet; the whole sound row toggles and states On/Off in words. The end screen puts Play again first.
 - **Reduced motion:** every game has a still variant (Dyno: flat bar, no wobble; Wall Run: fixed rows and fuse bar; bar instead of ring scale elsewhere, no scroll, crossfades <= 120 ms).
 
+## Home perch (part 1, 2026-10-16)
+
+The Home climber can be put on a decoration (`HOME PERCH` block in `crux.html`). Part 1 is placement only: no pick-up gesture, no travel animation.
+- **Targets:** ACCESSORIES rows with `perch:"hang"|"sit"|"stand"` plus the two level-8 gear holds (`gearHoldA/B`, hang). `perchTargets(envId, sceneBox)` returns
+  them with `valid` / `why` (`top` head above the visible stage, `floor` feet lower than the floor line, `side` cropped); invalid ones are returned flagged, not dropped.
+  `perchPlacement(target, kind, boxW, boxH)` is pure (frame anchors and the measured hand points are in the comment above `PERCH_FRAME`).
+- **Frames:** existing art only, through `climberFrame()`: hang = `climb-reach-left/right`, sit = `ledge-sit` / `ledge-sit-look`, stand = `idle-01`. Without `IMG.wall` hang/sit fall back to stand.
+- **State is memory only** (`homePerch`, `wanderOffsetY`): never saved, no state-shape change. A reload shows the floor. The climber's transform is `translate(x,y) scaleX(f)`; `playMotion` keeps Y.
+- **Dismounts:** tap while perched, Arrange on, any view away from Home, a room change, a removed or no-longer-fitting target (`perchSync` at the end of `renderSceneEnvironment`), level-up jump.
+  While perched `mascotTick` plays the perch idle and `autoHopOnce` skips.
+- **Tests:** "Home perch:" in `dev/tests.html`, through `window.__cruxPerch` (only with `window.__cruxTest`).
+
 ## Projects (climb tracking)
 
 A project is **one named climb at one gym or crag**, and attempts link to it by `projectId`.

@@ -3642,6 +3642,185 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
   // ---- end review fixes ----
 
+  // ---- Home perch tests ----
+  // an outfit layer's picture -> "<art>/<folder>/<frame>" (assets/outfit/... or its uploaded /_blob/<id> copy)
+  function layerKey(l){
+    var src = l.getAttribute("src"), b = /_blob\/([0-9a-f]{32})/.exec(src||"");
+    if(!b) return (src||"").replace(/^.*?assets\/outfit\//, "").replace(/\.png$/, "");
+    var blob = W.__cruxOutfit.blob;
+    return Object.keys(blob).filter(function(k){ return blob[k]===b[1]; })[0] || "";
+  }
+  var PERCH_ENVS = ["garage", "homewall", "local", "club", "dream"];
+  function perchSave(env, extra){
+    var s = clone(TEMPLATE); s.settings.devPreviewGyms = true; s.settings.devLevel = 40;
+    s.character.selectedEnvironmentId = env;
+    s.character.decorations = ACC_IDS_FOR_PERCH.slice();
+    if(extra) extra(s);
+    return s;
+  }
+  var ACC_IDS_FOR_PERCH = null;
+  async function perchBoot(env, extra){
+    if(!ACC_IDS_FOR_PERCH){ await boot(clone(TEMPLATE)); ACC_IDS_FOR_PERCH = W.__cruxPerch.accessories.map(function(a){ return a.id; }); }
+    await boot(perchSave(env, extra)); await ackSafety(); await goHome(); await wait(500);
+  }
+  function stageSrc(){ return $("characterStage").getAttribute("src"); }
+  // an on-screen picture address -> the asset file it is (the page may show assets/<file> or its uploaded /_blob/<id> copy)
+  function fileOf(src){
+    var b = /_blob\/([0-9a-f]{32})/.exec(src||"");
+    if(!b) return (src||"").replace(/^.*?assets\//, "");
+    var m = (SRC.match(/asset\("[^"]+",\s*"[0-9a-f]{32}"\)/g) || []).map(function(c){ return c.match(/asset\("([^"]+)",\s*"([0-9a-f]{32})"\)/); }).filter(function(x){ return x[2]===b[1]; })[0];
+    return m ? m[1] : "";
+  }
+
+  test("Home perch: every perch id exists in ACCESSORIES, with a known kind; non-targets have none", async function(){
+    await boot(clone(TEMPLATE));
+    var P = W.__cruxPerch, acc = P.accessories, ids = acc.map(function(a){ return a.id; });
+    var want = { hang:"jug slottedhold foothold holdred holdblue holdyellowtri holdgreentri holdpurple holdgray holdvolume holdsand holdwood campusrungs hangboard rings iceaxes",
+      sit:"stepstool toolbox beanbag bench crashpad2 haybail wallshelf volumestack", stand:"chalkbag climbshoes smoothie" };
+    Object.keys(want).forEach(function(kind){
+      want[kind].split(" ").forEach(function(id){
+        expect(ids.indexOf(id)>-1, "perch id "+id+" is not in ACCESSORIES");
+        expect(acc.filter(function(a){ return a.id===id; })[0].perch===kind, id+" should be "+kind);
+      });
+    });
+    acc.forEach(function(a){ expect(a.perch==null || /^(hang|sit|stand)$/.test(a.perch), a.id+" has a bad perch: "+a.perch); });
+    ["artprint","deskfan","pottedplant2","monstera","clubmap","foamroller","brushstick"].forEach(function(id){
+      expect(acc.filter(function(a){ return a.id===id; })[0].perch==null, id+" must not be a perch target");
+    });
+    expect(P.gearHolds.length===2 && P.gearHolds.every(function(g){ return /^gearHold/.test(g.id); }), "the two level-8 gear holds aren't targets");
+  });
+
+  test("Home perch: placement maths in every room, for every target", async function(){
+    for(var env of PERCH_ENVS){
+      await perchBoot(env);
+      var P = W.__cruxPerch, sb = P.sceneBox(), ts = P.targets(env, sb), seen = {};
+      expect(ts.length>=34, env+": expected every target, got "+ts.length);
+      var vis = P.vis(); // the same crop the app uses
+      ts.forEach(function(t){
+        var pl = t.place, f = P.frames[pl.frame], boxW = pl.boxW, boxH = pl.boxH, tol = 1.5;
+        seen[t.kind+(t.valid?"+":"-")] = 1;
+        // the anchor really lands on the target, valid or not
+        if(t.kind==="stand") expect(pl.feetY>=t.y-tol && pl.feetY<=t.y+t.h+tol, env+" "+t.id+": feet not on the target");
+        if(t.kind==="sit"){ var seat = pl.top + P.seat*boxH; expect(seat>=t.y-tol && seat<=t.y+t.h+tol, env+" "+t.id+": seat not on the target"); }
+        if(t.kind==="hang"){ var hx = pl.left + f.hand[0]*boxW, hy = pl.top + f.hand[1]*boxH;
+          expect(hx>=t.x-tol && hx<=t.x+t.w+tol && hy>=t.y-tol && hy<=t.y+t.h+tol, env+" "+t.id+": hand not on the hold ("+Math.round(hx)+","+Math.round(hy)+")"); }
+        expect(Math.abs(pl.feetY-(pl.top+P.feet*boxH))<0.01, env+" "+t.id+": feet line is not 12.5% up from the frame bottom");
+        if(t.valid){
+          var visY = vis.y/100*sb.h, visX = vis.x/100*sb.w;
+          expect(pl.topY>=visY-1, env+" "+t.id+": valid but the head is above the visible stage");
+          var floorFeet = sb.h*0.93 - (1-P.feet)*boxH;
+          expect(pl.feetY<=floorFeet+0.015*sb.h+1, env+" "+t.id+": valid but the feet are below the floor line");
+          expect(pl.leftX>=visX-1 && pl.rightX<=sb.w-visX+1, env+" "+t.id+": valid but cropped at the side");
+        } else expect(/^(top|floor|side)$/.test(t.why), env+" "+t.id+": invalid with no reason");
+      });
+      ["hang+","sit+","stand+"].forEach(function(k){ expect(seen[k], env+": no valid "+k.slice(0,-1)+" target in the default layout"); });
+    }
+    // pure maths on a made-up target: a stand's feet and a sit's seat land on the surface line
+    var Pp = W.__cruxPerch, fake = { id:"x", x:100, y:300, w:80, h:40, sceneW:400 };
+    var st = Pp.placement(fake, "stand", 240, 360), sit = Pp.placement(fake, "sit", 240, 360), hg = Pp.placement(fake, "hang", 240, 360);
+    expect(Math.abs(st.feetY-(300+0.1*40))<0.01, "stand feet: "+st.feetY);
+    expect(Math.abs((sit.top+Pp.seat*360)-(300+0.12*40))<0.01 && sit.frame==="sit", "sit seat");
+    expect(hg.frame==="reachL" && Math.abs(hg.left+0.17*240-140)<0.01, "hang hand: "+hg.left);
+    expect(Pp.placement({ id:"x", x:300, y:300, w:80, h:40, sceneW:400 }, "hang", 240, 360).frame==="reachR", "a hold on the right should use the right reach");
+    // an invalid target is returned flagged, not dropped: the stool on the floor would have the legs below the floor
+    await perchBoot("homewall");
+    var stool = Pp.targets("homewall", W.__cruxPerch.sceneBox()).filter(function(t){ return t.id==="stepstool"; })[0];
+    expect(stool && !stool.valid && stool.why==="floor", "a floor-level sit target should be flagged invalid (floor): "+JSON.stringify(stool && stool.why));
+  });
+
+  test("Home perch: a plain tap still plays the step and sets no perch", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch;
+    $("characterStage").click(); await wait(130);
+    expect(/\/step\//.test(fileOf(stageSrc())), "the tap didn't play the step: "+fileOf(stageSrc()));
+    expect(P.state()===null && P.offsetY()===0, "a tap set a perch");
+    await wait(900);
+    expect(/\/idle\//.test(fileOf(stageSrc())), "didn't settle back to idle: "+fileOf(stageSrc()));
+    expect(/^translate\(-?[\d.]+px, ?0px\) scaleX\(-?1\)$/.test($("characterWander").style.transform), "transform: "+$("characterWander").style.transform);
+  });
+
+  test("Home perch: perchTo shows the sit / reach frame through the variant, outfit layers right after the sprite", async function(){
+    await perchBoot("homewall", function(s){ s.settings.devLevel = 10; s.character.variant = "sandstone"; s.character.outfit = { headband:"teal-knit", chalkbag:"teal" }; });
+    var P = W.__cruxPerch;
+    expect(P.to("wallshelf")===true, "couldn't perch on the shelf"); await wait(300);
+    expect(P.state().kind==="sit" && P.state().id==="wallshelf", "state: "+JSON.stringify(P.state()));
+    expect(/variants\/sandstone\/sit\/ledge-sit(-look)?\.png$/.test(fileOf(stageSrc())), "sit frame isn't the variant's: "+fileOf(stageSrc()));
+    expect(P.offsetY()<0, "climber wasn't lifted: "+P.offsetY());
+    var layers = qa("#characterBody img.outfit-layer");
+    expect(layers.length===2 && layers[0].previousElementSibling.id==="characterStage", "outfit layers: "+layers.length);
+    expect(layers.every(function(l){ return /^[a-z-]+\/sit\/ledge-sit(-look)?$/.test(layerKey(l)); }), "outfit layers aren't on the sit frame: "+layers.map(layerKey).join(" "));
+    var ts = P.targets("homewall", P.sceneBox());
+    var hang = ts.filter(function(t){ return t.kind==="hang" && t.valid; })[0];
+    expect(P.to(hang.id)===true, "couldn't perch on "+hang.id); await wait(300);
+    expect(/variants\/sandstone\/climb\/climb-reach-(left|right)\.png$/.test(fileOf(stageSrc())), "reach frame isn't the variant's: "+fileOf(stageSrc()));
+    var kept = qa("#characterBody img.outfit-layer");
+    expect(kept.length===2 && kept[0].previousElementSibling.id==="characterStage" && kept.every(function(l){ return /climb\/climb-reach-(left|right)$/.test(layerKey(l)); }), "layers aren't directly after the sprite on the reach frame");
+    expect(P.to("toolbox")===false && P.state() && P.state().id===hang.id, "an invalid target changed the perch");
+    P.dismount(); await wait(200);
+    expect(P.state()===null && P.offsetY()===0 && /\/idle\//.test(fileOf(stageSrc())), "dismount didn't return to the floor idle: "+fileOf(stageSrc()));
+    expect(/^translate\(-?[\d.]+px, ?0px\)/.test($("characterWander").style.transform), "dismount transform: "+$("characterWander").style.transform);
+  });
+
+  test("Home perch: mascotTick and auto-hop leave the perch pose alone; level-up dismounts first", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch;
+    P.to("wallshelf");
+    var seen = {};
+    for(var i=0;i<14;i++){ await wait(350); seen[fileOf(stageSrc())] = 1; P.autoHop(); }
+    expect(Object.keys(seen).every(function(k){ return /^mascot\/climber\/default\/sit\/ledge-sit(-look)?\.png$/.test(k); }), "sit pose was replaced: "+Object.keys(seen).join(", "));
+    expect(P.state() && P.offsetY()<0, "auto-hop or the idle dropped the perch");
+    var hang = P.targets("homewall", P.sceneBox()).filter(function(t){ return t.kind==="hang" && t.valid; })[0];
+    P.to(hang.id); seen = {};
+    for(i=0;i<8;i++){ await wait(400); seen[fileOf(stageSrc())] = 1; P.autoHop(); }
+    expect(Object.keys(seen).length===1 && /climb\/climb-reach-(left|right)\.png$/.test(Object.keys(seen)[0]), "hang pose was replaced: "+Object.keys(seen).join(", "));
+    var st = P.targets("homewall", P.sceneBox()).filter(function(t){ return t.kind==="stand" && t.valid; })[0];
+    P.to(st.id); await wait(1200);
+    expect(/\/(idle|blink)\//.test(fileOf(stageSrc())) && P.state().kind==="stand", "stand perch isn't the normal idle: "+fileOf(stageSrc()));
+    P.autoHop(); await wait(200);
+    expect(!/\/step\//.test(fileOf(stageSrc())) && P.state(), "auto-hop played while perched: "+fileOf(stageSrc()));
+    P.levelUp(); await wait(100);
+    expect(P.state()===null && P.offsetY()===0, "the level-up jump didn't dismount first");
+    await wait(1700);
+  });
+
+  test("Home perch: Arrange, a room switch, a removed target and leaving Home all dismount", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch;
+    P.to("wallshelf"); expect(P.state(), "not perched");
+    await click("arrangeToggleBtn", 300);
+    expect(P.state()===null && P.offsetY()===0, "entering Arrange left the climber perched");
+    await click("arrangeToggleBtn", 300);
+    P.to("wallshelf"); expect(P.state(), "couldn't perch again after Arrange");
+    await openCustomize();
+    await click(q('#environmentPickerGrid [data-pick-env="local"]'), 300);
+    expect(P.state()===null && P.offsetY()===0, "a room switch left the climber perched");
+    await click("closeCustomizeBtn", 300);
+    await goHome(); P.to("wallshelf"); expect(P.state(), "couldn't perch in the Local");
+    await openCustomize();
+    await click(q('#decoratePickerGrid [data-decor="wallshelf"]'), 300);
+    expect(P.state()===null && P.offsetY()===0, "removing the target left the climber perched");
+    await click("closeCustomizeBtn", 300);
+    await goHome(); P.to("chalkbag"); expect(P.state(), "couldn't perch on the chalk bag");
+    await click("navTrainBtn", 300);
+    expect(P.state()===null && P.offsetY()===0, "leaving Home left the climber perched");
+  });
+
+  test("Home perch: a tap while perched hops back to the floor; a reload shows the floor; nothing new is saved", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch, before = JSON.stringify(saved());
+    P.to("wallshelf"); await wait(400);
+    expect(JSON.stringify(saved())===before, "perching changed the saved data");
+    expect(!/perch|wanderOffset/i.test(STORE[KEY]), "a perch key reached the save");
+    $("characterStage").click(); await wait(300);
+    expect(P.state()===null && P.offsetY()===0 && /\/idle\//.test(fileOf(stageSrc())), "a tap while perched didn't return to the floor: "+fileOf(stageSrc()));
+    P.to("wallshelf"); await wait(300);
+    await boot(); await goHome(); await wait(400);
+    var P2 = W.__cruxPerch;
+    expect(P2.state()===null && P2.offsetY()===0 && /\/idle\//.test(fileOf(stageSrc())), "a reload didn't show the floor: "+fileOf(stageSrc()));
+    expect(JSON.stringify(saved().character)===JSON.stringify(JSON.parse(before).character), "the character save changed over a reload");
+  });
+  // ---- end Home perch tests ----
+
   /* ---------- runner ---------- */
   var running = false;
   async function runAll(){
