@@ -2212,6 +2212,26 @@
       </div>
     </div>
 
+    <div class="settings-section" id="timerSoundSection">
+      <p class="settings-section-title">Timer sound</p>
+      <p class="settings-section-hint">How the workout timer tells you to start and stop. Spoken cues may not work on every phone.</p>
+      <div class="switch-row">
+        <div style="flex:1;min-width:0;"><div class="switch-label">Volume</div><div class="switch-desc" id="timerVolumeVal">70%</div></div>
+        <input type="range" id="timerVolume" min="0" max="100" step="5" value="70" aria-label="Timer volume" style="flex:1;min-width:0;max-width:55%;accent-color:var(--accent,#E0A83A);">
+      </div>
+      <div class="switch-row">
+        <div><div class="switch-label">Vibrate</div><div class="switch-desc">Buzz when the timer changes</div></div>
+        <button type="button" class="switch" data-setting="timerVibrate" aria-pressed="false"><span class="switch-thumb"></span></button>
+      </div>
+      <div class="switch-row">
+        <div><div class="switch-label">Speak</div><div class="switch-desc">Say Work, Rest, the set number and 3-2-1</div></div>
+        <button type="button" class="switch" data-setting="timerVoice" aria-pressed="false"><span class="switch-thumb"></span></button>
+      </div>
+      <div class="theme-row" style="margin-top:12px;">
+        <button type="button" class="btn btn-ghost" id="timerTestSound" style="flex:1;padding:10px 12px;">Test sound</button>
+      </div>
+    </div>
+
     <div class="settings-section" id="loggingFieldsSection">
       <p class="settings-section-title">When you log a climb</p>
       <p class="settings-section-hint" id="loggingFieldsHint">Only Effort starts on — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging.</p>
@@ -2886,7 +2906,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true }, // gameSound: soft Play sounds; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true, timerVolume:70, timerVibrate:true, timerVoice:false }, // gameSound: soft Play sounds; timerVolume 0-100 (70 = the original loudness), timerVibrate, timerVoice: timer only; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -3024,6 +3044,11 @@
       restDays: Array.isArray(migrated.restDays)?migrated.restDays.filter(function(d){ return typeof d==="number" && isFinite(d); }):[],
       games: gamesNormalize(migrated.games)
     });
+    // Timer sound settings: old saves and backups have none, so they get the defaults; bad values are repaired.
+    var tv = Number(merged.settings.timerVolume);
+    merged.settings.timerVolume = isFinite(tv) ? Math.max(0, Math.min(100, Math.round(tv))) : 70;
+    merged.settings.timerVibrate = merged.settings.timerVibrate !== false;
+    merged.settings.timerVoice = merged.settings.timerVoice === true;
     // One-time upgrades, each gated on its own settingsVersion so a person's later choice
     // always wins and these never re-fire.
     if(!(migrated.settingsVersion>=2)){
@@ -3263,6 +3288,8 @@
       var on = !!state.settings[btn.dataset.setting];
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    var tvEl = document.getElementById("timerVolume");
+    if(tvEl){ tvEl.value = state.settings.timerVolume; document.getElementById("timerVolumeVal").textContent = state.settings.timerVolume+"%"; }
     document.getElementById("developerSection").hidden = !state.settings.devMode;
     if(typeof renderDevWall==="function" && WALL_ENABLED) renderDevWall(); // THE WALL hook
     document.querySelectorAll("#devLevelRow .chip").forEach(function(btn){
@@ -3665,7 +3692,14 @@
   }
   var lastTimerBeepAt = 0;   // when a non-game beep last started: game sounds stay clear of it (see gmSoundOk)
   function beep(freq, dur, vol, fromGame){
-    if(!fromGame) lastTimerBeepAt = Date.now();
+    if(!fromGame){
+      lastTimerBeepAt = Date.now();
+      // Timer volume: 70 is the original loudness (scale 1); 0 is silent and makes no sound at all.
+      var tvol = state.settings.timerVolume;
+      tvol = (typeof tvol==="number" && isFinite(tvol)) ? Math.max(0, Math.min(100, tvol)) : 70;
+      if(tvol<=0) return;
+      vol = (vol||0.08) * tvol / 70;
+    }
     var ctx = ensureAudio();
     if(!ctx) return;
     try{
@@ -3679,6 +3713,20 @@
     }catch(e){}
   }
 
+  // Timer-only vibrate and voice. The games and celebrations keep using buzz() directly.
+  function timerBuzz(pattern){ if(state.settings.timerVibrate !== false) buzz(pattern); }
+  // Optional spoken cue. Additive only: the beeps stay the source of truth (iOS may keep speech silent).
+  function timerSpeak(text){
+    try{
+      if(!state.settings.timerVoice || !text) return;
+      var ss = window.speechSynthesis;
+      if(!ss || typeof ss.speak!=="function" || typeof SpeechSynthesisUtterance==="undefined") return;
+      if(typeof ss.cancel==="function") ss.cancel();
+      ss.speak(new SpeechSynthesisUtterance(String(text)));
+    }catch(e){}
+  }
+  function setNumOf(tag){ var m = /SET (\d+)\/\d+(?! DONE)/.exec(tag||""); return m && !/DONE/.test(tag) ? +m[1] : 0; }
+  function phaseWord(label){ label = String(label||""); return label.charAt(0).toUpperCase()+label.slice(1).toLowerCase(); }
   // Walk through every phase boundary that has already passed. Only a boundary crossed within
   // the last second gets its beep — catching up after the screen was off shouldn't fire a burst
   // of stale beeps. Returns whether the phase changed.
@@ -3689,7 +3737,7 @@
       var fresh = now - timer.phaseEndsAt < 1000;
       if(timer.program){
         var ended = timer.program[timer.pIndex];
-        if(fresh){ if(ended.kind==="work"){ beep(880,220,0.1); buzz([40,60,40]); } else { beep(440,220,0.1); buzz(120); } }
+        if(fresh){ if(ended.kind==="work"){ beep(880,220,0.1); timerBuzz([40,60,40]); } else { beep(440,220,0.1); timerBuzz(120); } }
         if(ended.kind==="work") timer.round += 1;
         changed = true;
         if(timer.pIndex >= timer.program.length-1){
@@ -3698,12 +3746,17 @@
           break;
         }
         timer.pIndex += 1;
+        if(fresh){
+          var nxt = timer.program[timer.pIndex], nSet = setNumOf(nxt.tag);
+          timerSpeak((nSet && nSet!==setNumOf(ended.tag) ? "Set "+nSet+". " : "") + phaseWord(nxt.label));
+        }
         timer.phase = timer.program[timer.pIndex].kind;
         timer.phaseEndsAt += timer.program[timer.pIndex].ms;
         continue;
       }
-      if(timer.phase==="work"){ timer.round += 1; if(fresh){ beep(880,220,0.1); buzz([40,60,40]); } }
-      else if(fresh){ beep(440,220,0.1); buzz(120); }
+      if(timer.phase==="work"){ timer.round += 1; if(fresh){ beep(880,220,0.1); timerBuzz([40,60,40]); } }
+      else if(fresh){ beep(440,220,0.1); timerBuzz(120); }
+      if(fresh) timerSpeak(timer.phase==="work" ? "Rest" : "Work");
       timer.phase = timer.phase==="work" ? "rest" : "work";
       timer.phaseEndsAt += phaseDurationMs(timer.phase);
       changed = true;
@@ -3826,7 +3879,7 @@
     var phaseChanged = syncTimer(now);
     var secs = Math.ceil(timerRemainingMs(now)/1000);
     if(phaseChanged) persistTimer();
-    else if(timer.running && secs!==timer.lastShownSec && secs>=1 && secs<=3) beep(660,90,0.06);
+    else if(timer.running && secs!==timer.lastShownSec && secs>=1 && secs<=3){ beep(660,90,0.06); timerSpeak(String(secs)); }
     if(phaseChanged || secs!==timer.lastShownSec) renderTimer();
   }
   function fmtClock(sec){
@@ -4886,6 +4939,7 @@
     }
     return out;
   }
+  if(window.__cruxTest) window.__cruxSound = { beep:beep, ensureAudio:ensureAudio, buzz:timerBuzz }; // dev/tests.html only
   if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig, skip:timerSkip, add:timerAddMs, get:function(){ return timer; }, load:loadTimerProgram }; // dev/tests.html only
   function restProgram(sec, tag){ return [{ kind:"rest", label:"REST", ms:sec*1000, tag:tag||"" }]; }
 
@@ -9536,6 +9590,15 @@
       if(key==="devRoomLab") renderRoomLab();
       if(key==="devPreviewGyms"){ lastUnlockedEnvCount = null; renderCharacterCard(); } // a preview isn't an unlock: no toast
     });
+  });
+
+  document.getElementById("timerVolume").addEventListener("input", function(e){
+    state.settings.timerVolume = Math.max(0, Math.min(100, Math.round(+e.target.value)));
+    document.getElementById("timerVolumeVal").textContent = state.settings.timerVolume+"%";
+    saveState();
+  });
+  document.getElementById("timerTestSound").addEventListener("click", function(){
+    beep(880,220,0.1); timerBuzz([40,60,40]); timerSpeak("Work");
   });
 
   document.getElementById("startBtn").addEventListener("click", function(){

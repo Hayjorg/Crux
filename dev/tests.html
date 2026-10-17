@@ -3128,6 +3128,95 @@ and the project rules. It runs on its own private copy of the data, never your r
   // ---- end shell polish tests ----
 
 
+  /* ---------- timer sound settings ---------- */
+  function setTimerSetting(id, v){ $(id).value = String(v); fire($(id), "input"); }
+  function spyAudio(){
+    var ctx = W.__cruxSound.ensureAudio(), rec = { osc:0, gains:[] };
+    expect(!!ctx, "no audio context in this browser");
+    var co = ctx.createOscillator.bind(ctx), cg = ctx.createGain.bind(ctx);
+    ctx.createOscillator = function(){ rec.osc++; return co(); };
+    ctx.createGain = function(){ var g = cg(), sv = g.gain.setValueAtTime.bind(g.gain);
+      g.gain.setValueAtTime = function(v, t){ rec.gains.push(v); return sv(v, t); }; return g; };
+    return rec;
+  }
+  function stubSpeech(){
+    var rec = { spoken:[], cancels:0 };
+    Object.defineProperty(W, "speechSynthesis", { configurable:true, value:{ speak:function(u){ rec.spoken.push(u && u.text); }, cancel:function(){ rec.cancels++; } } });
+    if(!W.SpeechSynthesisUtterance) W.SpeechSynthesisUtterance = function(t){ this.text = t; };
+    return rec;
+  }
+  function stubVibrate(){
+    var rec = { n:0 };
+    Object.defineProperty(W.navigator, "vibrate", { configurable:true, value:function(){ rec.n++; return true; } });
+    return rec;
+  }
+
+  test("Timer sound: an old save imports with the defaults and nothing else changes", async function(){
+    await boot(oldFormatSave());
+    var s = saved();
+    expect(s.settings.timerVolume===70 && s.settings.timerVibrate===true && s.settings.timerVoice===false, "defaults: "+JSON.stringify([s.settings.timerVolume, s.settings.timerVibrate, s.settings.timerVoice]));
+    expect(s.settings.gameSound===true, "gameSound changed");
+    var json = await exportJson();
+    var old = JSON.parse(json); delete old.data.settings.timerVolume; delete old.data.settings.timerVibrate; delete old.data.settings.timerVoice;
+    await importText(JSON.stringify(old), true);
+    s = saved();
+    expect(s.settings.timerVolume===70 && s.settings.timerVibrate===true && s.settings.timerVoice===false, "import defaults: "+JSON.stringify(s.settings));
+    expect(Array.isArray(s.sessions) && s.sessions.length===JSON.parse(json).data.sessions.length, "sessions changed");
+  });
+
+  test("Timer sound: volume scales the beep, 70 is the old loudness, 0 creates no oscillator", async function(){
+    await boot(workoutSave());
+    var rec = spyAudio();
+    W.__cruxSound.beep(880, 220, 0.1);
+    expect(rec.osc===1 && Math.abs(rec.gains[0]-0.1)<1e-9, "default gain: "+rec.gains[0]);
+    await click("openSettingsBtn"); setTimerSetting("timerVolume", 35);
+    W.__cruxSound.beep(880, 220, 0.1);
+    expect(Math.abs(rec.gains[1]-0.05)<1e-9 && saved().settings.timerVolume===35, "half gain: "+rec.gains[1]);
+    setTimerSetting("timerVolume", 0);
+    W.__cruxSound.beep(880, 220, 0.1);
+    expect(rec.osc===2 && saved().settings.timerVolume===0, "oscillator created at volume 0: "+rec.osc);
+    // a game beep is untouched by the timer volume
+    W.__cruxSound.beep(880, 60, 0.08, true);
+    expect(rec.osc===3, "game beep was silenced by timer volume");
+  });
+
+  test("Timer sound: vibrate off means navigator.vibrate is not called", async function(){
+    await boot(workoutSave());
+    var v = stubVibrate();
+    W.__cruxSound.buzz(100);
+    var reduced = W.matchMedia && W.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    expect(reduced || v.n===1, "vibrate on should call it once: "+v.n);
+    await click("openSettingsBtn"); q('.switch[data-setting="timerVibrate"]').click();
+    W.__cruxSound.buzz(100);
+    expect(v.n===(reduced?0:1) && saved().settings.timerVibrate===false, "vibrate called with it off: "+v.n);
+  });
+
+  test("Timer sound: voice speaks at a phase change when on, never when off; backup round-trips the settings", async function(){
+    await boot(workoutSave()); await startOrResume();
+    var sp = stubSpeech(), v = stubVibrate();
+    var prog = [{ kind:"work", label:"WORK", ms:700, tag:"REP 1/1 \u00b7 SET 1/2" }, { kind:"rest", label:"SET REST", ms:600000, tag:"REP 1/1 \u00b7 SET 1/2" }];
+    // off (default): silent
+    loadCustom(prog); await click("startBtn", 1200);
+    expect(T().phase==="rest" && sp.spoken.length===0, "spoke with voice off: "+JSON.stringify(sp.spoken));
+    await click("resetBtn", 100);
+    // turn voice on and vibrate off through the Settings sheet
+    await click("openSettingsBtn");
+    q('.switch[data-setting="timerVoice"]').click(); q('.switch[data-setting="timerVibrate"]').click(); setTimerSetting("timerVolume", 40);
+    await click("closeSettingsBtn");
+    var s = saved().settings;
+    expect(s.timerVoice===true && s.timerVibrate===false && s.timerVolume===40, "settings not saved: "+JSON.stringify(s));
+    v.n = 0; sp.cancels = 0; loadCustom(prog); await click("startBtn", 1200);
+    expect(sp.spoken.length>=1 && sp.spoken[0]==="Set rest", "voice on didn't speak: "+JSON.stringify(sp.spoken));
+    expect(sp.cancels>=1, "didn't cancel before speaking");
+    expect(v.n===0, "vibrate called with vibrate off: "+v.n);
+    // round trip
+    var json = await exportJson();
+    expect(JSON.parse(json).data.settings.timerVoice===true, "export lacks timerVoice");
+    await importText(json, true);
+    s = saved().settings;
+    expect(s.timerVoice===true && s.timerVibrate===false && s.timerVolume===40, "round trip: "+JSON.stringify(s));
+  });
+
   /* ---------- runner ---------- */
   var running = false;
   async function runAll(){
