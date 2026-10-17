@@ -166,6 +166,29 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(xpSum===55, "attempt XP adds up to "+xpSum+", expected 30+20+5");
   });
 
+  test("A refresh keeps you on the screen you were on (Train, Wall), with safe fallbacks", async function(){
+    await boot(TEMPLATE);
+    expect(!D.getElementById("view-home").hidden, "a save with no lastView should open on Home");
+    await click("navTrainBtn", 250);
+    expect(saved().lastView && saved().lastView.v==="train", "Train wasn't remembered: "+JSON.stringify(saved().lastView));
+    await boot();
+    expect(!D.getElementById("view-train").hidden && D.getElementById("view-home").hidden, "refresh on Train didn't stay on Train");
+    await boot(Object.assign(clone(TEMPLATE), { lastView:{ v:"wall", id:null } }));
+    expect(!D.getElementById("view-wall").hidden, "refresh on the Wall didn't stay on the Wall");
+    await boot(Object.assign(clone(TEMPLATE), { lastView:{ v:"session", id:null } }));
+    expect(!D.getElementById("view-home").hidden, "a remembered session with none running should fall back to Home");
+    await boot(Object.assign(clone(TEMPLATE), { lastView:{ v:"detail", id:"nope" } }));
+    expect(!D.getElementById("view-home").hidden, "a remembered detail for a missing session should fall back to Home");
+    await boot(Object.assign(clone(TEMPLATE), { lastView:"garbage" }));
+    expect(!D.getElementById("view-home").hidden && saved().lastView!=="garbage", "a malformed lastView should be ignored");
+    await boot(TEMPLATE); await startOrResume(); await log("send");
+    await click("sessionHomeBtn", 250);
+    await boot();
+    expect(!D.getElementById("view-home").hidden, "with a session running, a refresh on Home should stay on Home");
+    await boot(Object.assign(clone(saved()), { lastView:null }));
+    expect(!D.getElementById("view-session").hidden, "no remembered view + a running session should still open the session");
+  });
+
   test("Quick log: the home-screen shortcuts (?log=send / flash / fall) log once, start a session if needed, and a reload doesn't log again", async function(){
     await boot(TEMPLATE, "?log=send");
     var a = active(saved());
@@ -257,7 +280,9 @@ and the project rules. It runs on its own private copy of the data, never your r
     var before = STORE[KEY];
     var msg = await importText(json);
     expect(/Replace everything/.test(msg), "no import confirmation shown");
-    expect(STORE[KEY]===before, "data changed after importing its own backup");
+    // lastView is just where you were on screen (the test itself goes Home to import), not user data
+    function noView(t){ var o = JSON.parse(t); delete o.lastView; return JSON.stringify(o); }
+    expect(noView(STORE[KEY])===noView(before), "data changed after importing its own backup");
   });
 
   test("Old-format and raw backups import, with details kept", async function(){
