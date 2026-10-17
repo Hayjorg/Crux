@@ -3733,7 +3733,7 @@ and the project rules. It runs on its own private copy of the data, never your r
         if(t.valid){
           var visY = vis.y/100*sb.h, visX = vis.x/100*sb.w;
           expect(pl.topY>=visY-1, env+" "+t.id+": valid but the head is above the visible stage");
-          var floorFeet = sb.h*0.93 - (1-P.feet)*boxH;
+          var floorFeet = sb.h*0.93 - (1-P.feet)*(pl.boxH0 || boxH); if(pl.s<1 && (t.kind==="sit" || t.kind==="stand")) floorFeet = Math.max(floorFeet, sb.h*0.97); // a smaller climber on a low object may stand nearer than the floor line
           expect(pl.feetY<=floorFeet+0.015*sb.h+1, env+" "+t.id+": valid but the feet are below the floor line");
           expect(pl.leftX>=visX-1 && pl.rightX<=sb.w-visX+1, env+" "+t.id+": valid but cropped at the side");
         } else expect(/^(top|floor|side)$/.test(t.why), env+" "+t.id+": invalid with no reason");
@@ -3747,10 +3747,13 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(Math.abs((sit.top+Pp.seat*360)-(300+0.12*40))<0.01 && sit.frame==="sit", "sit seat");
     expect(hg.frame==="reachL" && Math.abs(hg.left+0.17*240-140)<0.01, "hang hand: "+hg.left);
     expect(Pp.placement({ id:"x", x:300, y:300, w:80, h:40, sceneW:400 }, "hang", 240, 360).frame==="reachR", "a hold on the right should use the right reach");
-    // an invalid target is returned flagged, not dropped: the stool on the floor would have the legs below the floor
+    // an invalid target is returned flagged, not dropped: the Gray Hold low on the wall would have the legs below the floor
     await perchBoot("homewall");
+    var low = Pp.targets("homewall", W.__cruxPerch.sceneBox()).filter(function(t){ return t.id==="holdgray"; })[0];
+    expect(low && !low.valid && low.why==="floor", "a too-low hang target should be flagged invalid (floor): "+JSON.stringify(low && low.why));
+    // Home polish: the floor-level step stool is valid now (a smaller seated climber), with its own scale
     var stool = Pp.targets("homewall", W.__cruxPerch.sceneBox()).filter(function(t){ return t.id==="stepstool"; })[0];
-    expect(stool && !stool.valid && stool.why==="floor", "a floor-level sit target should be flagged invalid (floor): "+JSON.stringify(stool && stool.why));
+    expect(stool && stool.valid && stool.s<1 && stool.place.s===stool.s, "the floor-level stool should be valid at its own scale: "+JSON.stringify(stool && [stool.valid, stool.why, stool.s]));
   });
 
   test("Home perch: a plain tap still plays the step and sets no perch", async function(){
@@ -3780,8 +3783,10 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(/variants\/sandstone\/climb\/climb-reach-(left|right)\.png$/.test(fileOf(stageSrc())), "reach frame isn't the variant's: "+fileOf(stageSrc()));
     var kept = qa("#characterBody img.outfit-layer");
     expect(kept.length===2 && kept[0].previousElementSibling.id==="characterStage" && kept.every(function(l){ return /climb\/climb-reach-(left|right)$/.test(layerKey(l)); }), "layers aren't directly after the sprite on the reach frame");
-    // part 2: a drop on a target that doesn't fit is no longer refused: the floor-level toolbox resolves to "beside" (feet on the floor, no perch)
-    expect(P.to("toolbox")===true && P.state()===null && P.offsetY()===0, "dropping on the floor-level toolbox should stand beside it, not perch or refuse");
+    // part 2: a drop on a target that doesn't fit is no longer refused: the too-low Gray Hold resolves to "beside" (feet on the floor, no perch)
+    expect(P.to("holdgray")===true && P.state()===null && P.offsetY()===0, "dropping on the too-low gray hold should stand beside it, not perch or refuse");
+    // Home polish: the floor-level toolbox now takes a (smaller) seated climber
+    expect(P.to("toolbox")===true && P.state() && P.state().kind==="sit" && P.state().id==="toolbox", "the floor-level toolbox should take a small seated climber: "+JSON.stringify(P.state()));
     expect(P.to(hang.id)===true && P.state().id===hang.id, "couldn't perch again");
     P.dismount(); await wait(200);
     expect(P.state()===null && P.offsetY()===0 && /\/idle\//.test(fileOf(stageSrc())), "dismount didn't return to the floor idle: "+fileOf(stageSrc()));
@@ -3886,8 +3891,12 @@ and the project rules. It runs on its own private copy of the data, never your r
           expect(hx>=t.x-0.03*t.geo.W-1 && hx<=t.x+t.w+0.03*t.geo.W+1 && hy>=t.y-0.03*t.geo.H-1 && hy<=t.y+t.h+0.03*t.geo.H+1, tag+" "+t.id+": reach pose's hand isn't near the hold");
           expect(P.check({ topY:r.top+f.minY*r.boxH, feetY:r.top+P.feet*r.boxH, leftX:r.left+f.minX*r.boxW, rightX:r.left+f.maxX*r.boxW, boxH:r.boxH }, t.geo.vis, t.geo.W, t.geo.H)==="", tag+" "+t.id+": reach pose is cropped");
         }
-        if(W.innerWidth<500 && (t.id==="stepstool" || t.id==="toolbox")){ expect(r.kind==="beside", tag+" "+t.id+": a floor-level sit should stand beside it"); tally.floorSit++; }
+        if(W.innerWidth<500 && (t.id==="stepstool" || t.id==="toolbox")){ expect(r.kind==="sit" && r.s<1, tag+" "+t.id+": a floor-level sit should take a smaller seated climber, got "+r.kind+" s="+r.s); tally.floorSit++; }
+        if(W.innerWidth<500 && t.kind==="hang" && !t.valid) expect(r.kind==="beside" || r.kind==="reach", tag+" "+t.id+": a too-low hang falls back to the floor");
       });
+      // the floor-reach fallback is for a hold the climber can touch from the floor: a full-size (scale 1) climber on the Slotted Hold
+      var sl = ts.filter(function(x){ return x.id==="slottedhold"; })[0];
+      if(sl){ var full = Object.assign({}, sl, { s:1 }), rf = P.resolve(full); expect(/^(reach|beside)$/.test(rf.kind) && rf.s===1, tag+" slottedhold at scale 1: "+rf.kind); if(rf.kind==="reach") tally.reach = true; }
   }
 
   test("Home perch: every target in every room resolves to a valid pose (own kind, reach, or beside on the floor)", async function(){
@@ -3950,8 +3959,9 @@ and the project rules. It runs on its own private copy of the data, never your r
   test("Home perch: every landing (hang, sit, beside, floor-reach) ends on the right frame; saved data gets no new keys", async function(){
     await perchBoot("homewall");
     var P = W.__cruxPerch, before = JSON.stringify(saved()), ts = P.targets("homewall", P.sceneBox());
-    var cases = [["jug","hang",/climb-reach-(left|right)\.png$/], ["wallshelf","sit",/ledge-sit/], ["chalkbag","stand",/\/idle\//], ["stepstool","beside",/\/idle\//]];
-    var reach = ts.filter(function(t){ return P.live(t).kind==="reach"; })[0];
+    var cases = [["jug","hang",/climb-reach-(left|right)\.png$/], ["wallshelf","sit",/ledge-sit/], ["chalkbag","stand",/\/idle\//], ["holdgray","beside",/\/idle\//], ["toolbox","sit",/ledge-sit/]];
+    P.scales.slottedhold = 1; // a full-size climber can touch the Slotted Hold from the floor: the floor-reach fallback
+    var reach = P.targets("homewall", P.sceneBox()).filter(function(t){ return P.live(t).kind==="reach"; })[0];
     expect(reach, "no reach target in the Home Wall"); cases.push([reach.id, "reach", /climb-reach-(left|right)\.png$/]);
     for(var cs of cases){
       expect(P.travel(cs[0])===true, "travel refused for "+cs[0]);
@@ -3965,6 +3975,7 @@ and the project rules. It runs on its own private copy of the data, never your r
       expect(P.pending()===0, cs[0]+": timers left");
       P.dismount(); await wait(120);
     }
+    delete P.scales.slottedhold;
     expect(JSON.stringify(saved())===before, "travelling changed the saved data");
     expect(!/perch|wanderOffset/i.test(STORE[KEY]), "a perch key reached the save");
     expect(D.documentElement.scrollWidth<=W.innerWidth, "horizontal scroll");
@@ -4019,7 +4030,7 @@ and the project rules. It runs on its own private copy of the data, never your r
       expect(!P.running() && P.pending()===0, "reduced motion left timers running");
       expect(P.state() && P.state().kind==="sit" && /ledge-sit/.test(fileOf(stageSrc())), "reduced motion didn't land at once: "+JSON.stringify(P.state()));
       P.dismount();
-      var tb = await targetXY("stepstool", "homewall");
+      var tb = await targetXY("holdgray", "homewall");
       await dragDrop("mouse", tb);
       expect(!P.running() && P.pending()===0 && P.state()===null, "reduced-motion beside");
     } finally { P.reduced(false); }
