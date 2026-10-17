@@ -7378,7 +7378,7 @@
   // (see CLIMB_REL), a seat is sized to the seat, a stand to what he stands on. A row in PERCH_SCALE beats the kind default.
   // The floor poses (reach, beside) stay at 1: that is the normal floor climber.
   var PERCH_SCALE_KIND = { hang:0.36, sit:0.40, stand:0.34 };
-  var PERCH_SCALE = { hangboard:0.44, campusrungs:0.40, rings:0.44, iceaxes:0.40, beanbag:0.40, haybail:0.44, crashpad2:0.44, bench:0.42, volumestack:0.40, wallshelf:0.38,
+  var PERCH_SCALE = { hangboard:0.44, campusrungs:0.40, rings:0.44, iceaxes:0.40, beanbag:0.44, haybail:0.44, crashpad2:0.44, bench:0.42, volumestack:0.40, wallshelf:0.38,
     stepstool:0.36, toolbox:0.34, chalkbag:0.30, climbshoes:0.26, gearbag:0.34, chalkbucket:0.32, taperoll:0.26, rucksack:0.34, boots:0.28, lantern:0.30, trophy:0.28, smoothie:0.24 };
   function perchScale(id, kind){ var v = PERCH_SCALE[id]; return v!=null ? v : (PERCH_SCALE_KIND[kind]!=null ? PERCH_SCALE_KIND[kind] : 1); }
   // Where on a hang target's picture (fraction of its height) the fist grips; holds are drawn centred (0.5), a hangboard is gripped on its top edge.
@@ -7511,7 +7511,7 @@
       if(!best || err < best.err - 0.5) best = { dx:dx, err:err };
     });
     var bodyCx = left0 + best.dx + st.cx*boxW;
-    return { kind:"beside", frame:"stand", left:left0+best.dx, top:top0, boxW:boxW, boxH:boxH, dx:best.dx, dy:0, facing:cx >= bodyCx ? 1 : -1, onTarget:false };
+    return { kind:"beside", frame:"stand", s:1, left:left0+best.dx, top:top0, boxW:boxW, boxH:boxH, dx:best.dx, dy:0, facing:cx >= bodyCx ? 1 : -1, onTarget:false };
   }
   // Show the resolved pose at once (no animation). Floor poses ("beside") leave no perch; on-target ones and "reach" set homePerch.
   function perchCommit(t, r){
@@ -7840,9 +7840,9 @@
      scale) that pins a chosen frame point (the fist that holds on) to a screen point.
      IN MEMORY ONLY: nothing here is saved. Remove: delete this block, the `climbBoard` row of ENVIRONMENTS, the
      `.climb-holds` CSS, the `cl_mid_*` rows of IMG.wall, the hooks marked `// HOME CLIMB hook`, and the "Home climb:" tests. */
-  var CLIMB_REL = 0.09;     // wall scale: px per 1024-frame unit on a 375 px wide scene (0.11 in the lab; smaller reads more solid)
+  var CLIMB_REL = 0.075;    // wall scale: px per 1024-frame unit on a 375 px wide scene (0.11 in the lab; smaller reads more solid)
   var CLIMB_RISE = 48, CLIMB_STEP_GAP = 250, CLIMB_TWEEN_MS = 120, CLIMB_REST_MS = 3000, CLIMB_PREVIEW_MIN = 0.08;
-  var CLIMB_LEAN = 12, CLIMB_SEED = 7, CLIMB_MIDW = 0.7, CLIMB_MAX_HOLDS = 8, CLIMB_MIN_HOLDS = 3;
+  var CLIMB_LEAN = 12, CLIMB_FOLLOW = 12, CLIMB_SEED = 7, CLIMB_MIDW = 0.7, CLIMB_MAX_HOLDS = 8, CLIMB_MIN_HOLDS = 3;
   // Measured once on the runtime frames, in 1024x1536 frame units: hi / lo = gripping fists (hi is the one that holds on),
   // fa / fb = soles, head / torso = alignment points, bb = opaque box (cx, cy, y1 = bottom).
   var CLIMB_A = {
@@ -7904,7 +7904,7 @@
   function climbRingBox(env, g){
     var poly = climbBoardPx(env, g); if(!poly) return null;
     var L = climbLimits(g), xs = poly.map(function(p){ return p[0]; }), ys = poly.map(function(p){ return p[1]; });
-    var x0 = Math.max(L.xLo-6, Math.min.apply(null, xs)), x1 = Math.min(L.xHi+6, Math.max.apply(null, xs)), y0 = Math.max(L.yLo-30, Math.min.apply(null, ys)), y1 = Math.min(g.floorY, Math.max.apply(null, ys));
+    var x0 = Math.max(L.xLo, Math.min.apply(null, xs)), x1 = Math.min(L.xHi, Math.max.apply(null, xs)), y0 = Math.max(L.yLo, Math.min.apply(null, ys)), y1 = Math.min(g.floorY, Math.max.apply(null, ys));
     return { x:x0, y:y0, w:Math.max(0, x1-x0), h:Math.max(0, y1-y0) };
   }
   // Is a finger at scene px (px, py) on the board (and is a climb possible here at all)?
@@ -7912,7 +7912,7 @@
     if(homeClimb || !climbArt()) return false;
     var env = selectedEnvironment(), g = climbGeo(), poly = climbBoardPx(env, g); if(!poly) return false;
     var L = climbLimits(g);
-    return px>=L.xLo-6 && px<=L.xHi+6 && py>=L.yLo-30 && py<=g.floorY && climbInside(poly, [px, py])>2;
+    return px>=L.xLo && px<=L.xHi && py>=L.yLo && py<=g.floorY && climbInside(poly, [px, py])>2; // the climbing wall's own polygon, inside the visible window: nowhere else starts a climb
   }
 
   /* ---- frame-point maths ---- */
@@ -7951,49 +7951,72 @@
   function climbFloorSpec(c, key, x, s){ var bb = CLIMB_A[key].bb; return { key:key, a:[bb.cx, bb.y1], P:[x, c.g.floorY], th:0, s:s==null ? c.g.k : s, mir:false, floor:true }; }
 
   /* ---- the route: holds and footholds for the current scene size ---- */
-  function climbBuildRoute(env, g, s){
-    var poly = climbBoardPx(env, g), L = climbLimits(g), rnd = mulberry32(CLIMB_SEED), st = [], rel = [[0, 0]], i;
-    for(i=0; i<CLIMB_MAX_HOLDS; i++){
-      var key = i%2===0 ? "RL" : "RR", a = CLIMB_A[key], jit = (rnd()*2-1)*8, th = CLIMB_LEAN + jit;
-      var d = climbRot([(a.hi[0]-a.lo[0])*s, (a.hi[1]-a.lo[1])*s], th);
-      st.push({ key:key, a:a, th:th, hrot:(rnd()*2-1)*8, hk:CLIMB_HOLD_HAND[i], d:d });
-      rel.push([rel[i][0]+d[0], rel[i][1]+d[1]]);
+  // The board's visible middle at scene height y: { lo, hi, c } (x of its left / right edge there, clipped to the visible window, and the centre), or null.
+  function climbSpan(poly, L, y){
+    var lo = 1e9, hi = -1e9, n = poly.length;
+    for(var i=0, j=n-1; i<n; j=i++){
+      var a = poly[i], b = poly[j];
+      if((a[1]>y) !== (b[1]>y)){ var x = a[0] + (y-a[1])*(b[0]-a[0])/(b[1]-a[1]); if(x<lo) lo = x; if(x>hi) hi = x; }
     }
-    // contact points of the first n holds, relative to the route's start: the start hold, each hold, both soles of each stance, head and torso
-    function pointsFor(n){
-      var pts = [rel[0]];
+    if(hi<lo) return null;
+    lo = Math.max(lo, L.xLo); hi = Math.min(hi, L.xHi);
+    return hi>lo ? { lo:lo, hi:hi, c:(lo+hi)/2 } : null;
+  }
+  // How far the board's middle line leans at height y, in degrees (clockwise = top to the right, the same sign as the stance rotation). It is read off the
+  // painted board's own outline, so the route runs along the board instead of straight up: this is "the angle of the wall".
+  function climbPathLean(poly, L, y){
+    var a = climbSpan(poly, L, y+40), b = climbSpan(poly, L, y-40);
+    return a && b ? Math.atan2(b.c-a.c, 80)*180/Math.PI : CLIMB_LEAN;
+  }
+
+  /* ---- the route: holds and footholds for the current scene size ----
+     The route FOLLOWS the board. Its path is the middle of the board's visible span (climbSpan) from the bottom edge upward; each stance is
+     rotated about its fist by the board's lean there (climbPathLean) plus a few degrees that put the next hold back on the middle line.
+     Holds are only ever placed where every contact point (hold, both soles, head) is at least 7 px inside the board polygon and the visible window. */
+  function climbBuildRoute(env, g, s){
+    var poly = climbBoardPx(env, g), L = climbLimits(g), i;
+    var yBot = Math.min(g.floorY, Math.max.apply(null, poly.map(function(p){ return p[1]; }))) - 7;
+    function margin(p){ return Math.min(climbInside(poly, p), p[0]-L.xLo, L.xHi-p[0], p[1]-L.yLo); }
+    function chain(yS, n){ // n stances up the middle of the board from a start at height yS; null when the board has no span there
+      var c0 = climbSpan(poly, L, yS); if(!c0) return null;
+      var rnd = mulberry32(CLIMB_SEED), S = [c0.c, yS], P = S, st = [], rel = [S], k;
+      for(k=0; k<n; k++){
+        var key = k%2===0 ? "RL" : "RR", a = CLIMB_A[key], v = [(a.hi[0]-a.lo[0])*s, (a.hi[1]-a.lo[1])*s], jit = (rnd()*2-1)*2, hrot = (rnd()*2-1)*8;
+        var tan = climbPathLean(poly, L, P[1] + v[1]/2) + jit, bestTh = tan, bestE = 1e9;
+        for(var dth=-CLIMB_FOLLOW; dth<=CLIMB_FOLLOW; dth++){ // the rotation that lands the next hold nearest the board's middle line
+          var d = climbRot(v, tan+dth), E = [P[0]+d[0], P[1]+d[1]], sp = climbSpan(poly, L, E[1]), e = (sp ? Math.abs(E[0]-sp.c) : 1e6) + 0.5*Math.abs(dth);
+          if(e<bestE){ bestE = e; bestTh = tan+dth; }
+        }
+        var dd = climbRot(v, bestTh); P = [P[0]+dd[0], P[1]+dd[1]]; rel.push(P);
+        st.push({ key:key, a:a, th:bestTh, hrot:hrot, hk:CLIMB_HOLD_HAND[k], d:dd });
+      }
+      return { st:st, rel:rel };
+    }
+    function points(ch, n){ // every contact of the first n stances: start hold, each hold, both soles and the head
+      var pts = [ch.rel[0]];
       for(var q=0; q<n; q++){
-        pts.push(rel[q+1]);
-        var sp = { a:st[q].a.hi, P:rel[q+1], th:st[q].th, s:s, mir:false };
-        pts.push(climbScr(sp, st[q].a.fa), climbScr(sp, st[q].a.fb), climbScr(sp, st[q].a.head));
+        pts.push(ch.rel[q+1]);
+        var sp = { a:ch.st[q].a.hi, P:ch.rel[q+1], th:ch.st[q].th, s:s, mir:false };
+        pts.push(climbScr(sp, ch.st[q].a.fa), climbScr(sp, ch.st[q].a.fb), climbScr(sp, ch.st[q].a.head));
       }
       return pts;
     }
-    function margin(p, ox, oy){ var x = p[0]+ox, y = p[1]+oy; return Math.min(climbInside(poly, [x, y]), x-L.xLo, L.xHi-x, y-L.yLo); }
     var best = null, n;
-    for(n=CLIMB_MAX_HOLDS; n>=CLIMB_MIN_HOLDS; n--){
-      var pts = pointsFor(n), minY = Math.min.apply(null, pts.map(function(p){ return p[1]; })), maxY = Math.max.apply(null, pts.map(function(p){ return p[1]; }));
-      var cand = { n:n, margin:-1e9, ox:0, oy:0 }, oy0 = L.yLo - minY;
-      function scan(xa, xb, ya, yb, step){ // best offset on a grid (a coarse pass first, then 3 px around its best: the same grid as before, a fraction of the work)
-        for(var oy = ya; oy + maxY <= g.floorY && oy <= yb; oy += step){
-          for(var ox = xa; ox <= xb; ox += step){
-            var mn = 1e9;
-            for(var k2=0; k2<pts.length && mn>cand.margin; k2++) mn = Math.min(mn, margin(pts[k2], ox, oy));
-            if(mn>cand.margin){ cand.margin = mn; cand.ox = ox; cand.oy = oy; }
-          }
-        }
+    for(n=CLIMB_MAX_HOLDS; n>=CLIMB_MIN_HOLDS && !(best && best.margin>=7); n--){
+      for(var yS = yBot; yS > L.yLo; yS -= 3){ // from the bottom of the board upward: the lowest start where all of it fits
+        var ch = chain(yS, n); if(!ch) continue;
+        var pts = points(ch, n), mn = 1e9, miny = 1e9, maxy = -1e9, k2;
+        for(k2=0; k2<pts.length; k2++){ mn = Math.min(mn, margin(pts[k2])); miny = Math.min(miny, pts[k2][1]); maxy = Math.max(maxy, pts[k2][1]); }
+        if(maxy>yBot) mn = Math.min(mn, yBot-maxy); // a sole below the bottom edge of the board
+        if(!best || mn>best.margin){ best = { n:n, ch:ch, margin:mn }; }
+        if(mn>=7 || miny<L.yLo) break;
       }
-      scan(L.xLo, L.xHi, oy0, 1e9, 6);
-      if(cand.margin>-1e9) scan(Math.max(L.xLo, cand.ox-6), Math.min(L.xHi, cand.ox+6), Math.max(oy0, cand.oy-6), cand.oy+6, 3);
-      if(cand.margin<7) scan(L.xLo, L.xHi, oy0, 1e9, 3); // not good enough yet: the full 3 px search, as before, so the hold count never drops by a miss
-      if(!best || cand.margin>best.margin) best = cand;
-      if(cand.margin >= 7){ best = cand; break; } // every contact at least 7 px inside the board: use this many holds
     }
-    var R = { st:st.slice(0, best.n), n:best.n, S:[best.ox+rel[0][0], best.oy+rel[0][1]], hold:[], foot:[], margin:best.margin, poly:poly };
+    var ch2 = best.ch, R = { st:ch2.st.slice(0, best.n), n:best.n, S:ch2.rel[0], hold:[], foot:[], margin:best.margin, poly:poly, lean:ch2.st[0].th };
     for(i=0; i<R.n; i++){
-      R.hold.push([best.ox+rel[i+1][0], best.oy+rel[i+1][1]]);
-      var sp2 = { a:st[i].a.hi, P:R.hold[i], th:st[i].th, s:s, mir:false };
-      R.foot.push([climbScr(sp2, st[i].a.fa), climbScr(sp2, st[i].a.fb)]);
+      R.hold.push(ch2.rel[i+1]);
+      var sp2 = { a:R.st[i].a.hi, P:R.hold[i], th:R.st[i].th, s:s, mir:false };
+      R.foot.push([climbScr(sp2, R.st[i].a.fa), climbScr(sp2, R.st[i].a.fb)]);
     }
     return R;
   }
@@ -8050,9 +8073,9 @@
     if(!host){ host = document.createElement("div"); host.id = "climbHolds"; host.className = "climb-holds"; host.setAttribute("aria-hidden", "true"); scene.insertBefore(host, document.getElementById("characterWander")); }
     host.innerHTML = ""; c.chalkFeet = [];
     var R = c.R, w375 = c.g.W/375, rnd = mulberry32(CLIMB_SEED+99);
-    climbHoldImg(host, CLIMB_HOLD_HAND[8], R.S[0], R.S[1], CLIMB_LEAN + (rnd()*2-1)*8, false, w375);
-    R.hold.forEach(function(p, i){ climbHoldImg(host, R.st[i].hk, p[0], p[1], CLIMB_LEAN + R.st[i].hrot, false, w375); });
-    R.foot.forEach(function(f, i){ f.forEach(function(q, j){ climbHoldImg(host, CLIMB_HOLD_FOOT[(i+j)%2], q[0], q[1], CLIMB_LEAN*0.5 + (rnd()*2-1)*8, true, w375); }); });
+    climbHoldImg(host, CLIMB_HOLD_HAND[8], R.S[0], R.S[1], R.lean + (rnd()*2-1)*8, false, w375);
+    R.hold.forEach(function(p, i){ climbHoldImg(host, R.st[i].hk, p[0], p[1], R.st[i].th + R.st[i].hrot, false, w375); });
+    R.foot.forEach(function(f, i){ f.forEach(function(q, j){ climbHoldImg(host, CLIMB_HOLD_FOOT[(i+j)%2], q[0], q[1], R.st[i].th*0.5 + (rnd()*2-1)*8, true, w375); }); });
     [0, 1].forEach(function(){ var h = climbHoldImg(host, "h_foot", -50, -50, 0, true, w375); if(h){ h.style.display = "none"; c.chalkFeet.push(h); } });
   }
   function climbHideChalkFeet(c){ (c.chalkFeet||[]).forEach(function(h){ h.style.display = "none"; }); }
@@ -8161,7 +8184,7 @@
       if(homeClimb!==c || c.landed) return;
       var t = performance.now()-t0, y = y0 + 0.5*gr*t*t, tt = climbClamp(t/total, 0, 1), s = s0 + (g.k-s0)*tt*tt, x = from[0] + (x1-from[0])*tt;
       if(y + (bb.y1-bb.cy)*s >= g.floorY || t>3000){ c.fallStop(); land(); return; }
-      climbDraw({ key:"J2", a:[bb.cx, bb.cy], P:[x, y], th:CLIMB_LEAN*(1-tt), s:s, mir:false });
+      climbDraw({ key:"J2", a:[bb.cx, bb.cy], P:[x, y], th:c.R.lean*(1-tt), s:s, mir:false });
       c.fallStop(); raf = requestAnimationFrame(frame); tm = setTimeout(frame, 40);
     }
     frame();
@@ -8203,7 +8226,7 @@
         var c0 = [x0, g.floorY - (j3.y1-j3.cy)*g.k - 8];
         climbAnim(c, 430, function(t){
           shadow.style.opacity = String(Math.max(0, 1-t*3));
-          climbDraw({ key:"J3", a:[j3.cx, j3.cy], P:[c0[0]+(end[0]-c0[0])*t, c0[1]+(end[1]-c0[1])*t - Math.sin(t*Math.PI)*70], th:CLIMB_LEAN*t, s:g.k+(s-g.k)*t, mir:false });
+          climbDraw({ key:"J3", a:[j3.cx, j3.cy], P:[c0[0]+(end[0]-c0[0])*t, c0[1]+(end[1]-c0[1])*t - Math.sin(t*Math.PI)*70], th:c.R.lean*t, s:g.k+(s-g.k)*t, mir:false });
         }, function(){ climbShowStance(c, 0); });
       }, 140);
     }
@@ -8279,6 +8302,7 @@
     state:function(){ var c = homeClimb; return c ? { mode:c.mode, idx:c.idx, desired:c.desired, busy:c.busy, dragging:c.dragging, n:c.R.n, key:c.cur ? c.cur.key : null, spec:c.cur, mid:c.mid, s:c.s, drag:!!c.drag } : null; },
     route:function(){ return homeClimb && homeClimb.R; }, geo:function(){ return homeClimb ? homeClimb.g : climbGeo(); }, drift:function(){ return climbDriftMax; }, resetDrift:function(){ climbDriftMax = 0; },
     pending:function(){ return climbTimerCount; }, midOn:climbMidOn, outfitted:climbOutfitted, scr:climbScr, dom:climbDom, hit:climbHit, boardPx:function(){ return climbBoardPx(selectedEnvironment(), climbGeo()); },
+    span:function(y){ return climbSpan(climbBoardPx(selectedEnvironment(), climbGeo()), climbLimits(climbGeo()), y); }, pathLean:function(y){ return climbPathLean(climbBoardPx(selectedEnvironment(), climbGeo()), climbLimits(climbGeo()), y); }, follow:CLIMB_FOLLOW, minHolds:CLIMB_MIN_HOLDS,
     inside:climbInside, anchors:CLIMB_A, rel:CLIMB_REL, rise:CLIMB_RISE, src:climbSrc, ringBox:function(){ return climbRingBox(selectedEnvironment(), climbGeo()); }, limits:function(){ return climbLimits(climbGeo()); },
     stance:function(i){ var c = homeClimb; if(c) climbShowStance(c, i); }, preview:function(i, dir, p){ var c = homeClimb; if(!c) return null; var sp = climbPreviewSpec(c, i, dir, p); climbDisarmRest(c); climbDraw(sp); return sp; }, outfitLayers:function(){ return outfitLayersLive(document.getElementById("characterStage").getAttribute("src")); } };
   /* ==== END HOME CLIMB ==== */
