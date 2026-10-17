@@ -3389,14 +3389,134 @@ and the project rules. It runs on its own private copy of the data, never your r
   test("Saved timers: a workout step owns the timer, so chips and Load stay disabled", async function(){
     var s = ctSave("advanced", [ctEntry("t1", "Alpha", CFG_A, true)]);
     await boot(s); await startQuick();
-    var steps = 0;
     for(var i=0;i<4 && !W.__cruxTimer.get().program;i++){ await wait(200); }
     var T_ = W.__cruxTimer.get();
-    if(!T_.program) return;   // this quick workout opens on a non-timer step: nothing to guard
-    expect(T_.programMeta.kind!=="custom", "setup");
+    // QUICK opens on a timed step ("Warm-up"), so a program must be loaded: always assert it, never bail out.
+    expect(activeWorkout() && activeWorkout().doc.steps[0].type==="timed", "setup: quick workout's first step should be timed");
+    expect(T_.program && T_.programMeta && T_.programMeta.kind==="step", "setup: no workout step program is loaded");
     var chip = q("#presets .preset-pinned"); expect(chip && chip.disabled, "chip enabled while a workout owns the timer");
     var before = JSON.stringify(T_.program); chip.click(); await wait(100);
     expect(JSON.stringify(W.__cruxTimer.get().program)===before, "workout program replaced");
+  });
+
+  // ---- per-set logging (Advanced, settings.timerSetLog) ----
+  function setLogSeed(mode, on){
+    var s = workoutSave(mode); s.settings.timerSetLog = !!on; return s;
+  }
+  var SL_PROG = function(){ return [{ kind:"work", label:"HANG", ms:700, tag:"REP 1/2 · SET 1/1" }, { kind:"rest", label:"REST", ms:600000, tag:"REP 1/2 · SET 1/1" }, { kind:"work", label:"HANG", ms:600000, tag:"REP 2/2 · SET 1/1" }]; };
+  function stripUp(){ var el = D.getElementById("setLogStrip"); return !!el && !el.hidden && !!el.querySelector(".sl-save"); }
+
+  test("Set log: off by default; nothing rendered when off or in Simple mode", async function(){
+    await boot(workoutSave()); 
+    expect(saved().settings.timerSetLog===false, "default not false: "+saved().settings.timerSetLog);
+    await startOrResume(); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(T().phase==="rest" && !stripUp() && $("setLogStrip").innerHTML==="", "strip shown with the setting off");
+    expect(Array.isArray(active().setLog) && active().setLog.length===0, "new session lacks setLog []");
+    await boot(setLogSeed("simple", true)); await startOrResume(); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(T().phase==="rest" && !stripUp() && $("setLogStrip").innerHTML==="", "strip shown in Simple mode");
+    await click("openSettingsBtn");
+    expect(!visible("timerLogSection"), "Timer logging row visible in Simple");
+    await click("closeSettingsBtn");
+    await setMode("advanced"); await click("openSettingsBtn");
+    expect(visible("timerLogSection"), "Timer logging row missing in Advanced");
+  });
+
+  test("Set log: a work phase end shows the strip; Save appends one entry with the right fields; the timer keeps running", async function(){
+    await boot(setLogSeed("advanced", true)); await startOrResume();
+    loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(T().phase==="rest" && stripUp(), "no strip after the work phase");
+    expect(!$("setLogStrip").hidden && $("timerCard").contains($("setLogStrip")), "strip not inside the timer card");
+    var ends = T().phaseEndsAt, ind = T().pIndex, run = T().running;
+    q("#setLogStrip .sl-kg").value = "22.5"; fire(q("#setLogStrip .sl-kg"), "input");
+    await click(q('#setLogStrip [data-rpe="8"]'), 100);
+    expect(T().phaseEndsAt===ends && T().running===run && T().pIndex===ind, "interacting with the strip moved the timer");
+    await click(q("#setLogStrip .sl-save"), 150);
+    var log = active().setLog;
+    expect(log.length===1 && log[0].label==="Hang" && log[0].load===22.5 && log[0].rpe===8 && /REP 1\/2/.test(log[0].tag) && typeof log[0].ts==="number", "entry: "+JSON.stringify(log));
+    expect(!stripUp(), "strip still up after Save");
+    expect(T().phaseEndsAt===ends && T().running, "Save moved the timer");
+  });
+
+  test("Set log: Skip logs nothing; the next work phase dismisses the strip; skipping a phase with the step 2 controls does not log; default load is remembered", async function(){
+    await boot(setLogSeed("advanced", true)); await startOrResume();
+    loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp(), "no strip");
+    await click(q("#setLogStrip .sl-skip"), 100);
+    expect(!stripUp() && active().setLog.length===0, "Skip logged or left the strip");
+    // step 2 skip from work does not offer or log
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 100);
+    W.__cruxTimer.skip(1);
+    expect(T().phase==="rest" && !stripUp() && active().setLog.length===0, "skip control offered/logged a set");
+    // work phase 1 ends, strip up, then the next work phase starting dismisses it
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp(), "strip missing for dismissal test");
+    W.__cruxTimer.skip(1);
+    expect(T().phase==="work" && !stripUp() && active().setLog.length===0, "next work phase did not dismiss the strip");
+    // remembered load: save 30 kg for HANG, next strip defaults to it
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    q("#setLogStrip .sl-kg").value = "30"; fire(q("#setLogStrip .sl-kg"), "input");
+    await click(q("#setLogStrip .sl-save"), 100);
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp() && q("#setLogStrip .sl-kg").value==="30", "load not remembered: "+q("#setLogStrip .sl-kg").value);
+    expect(q("#setLogStrip .sl-save").disabled===false, "Save disabled with a default load");
+    expect(active().setLog.length===1 && active().setLog[0].rpe===null && active().setLog[0].load===30, "entry: "+JSON.stringify(active().setLog));
+  });
+
+  test("Set log: a reload drops the strip without logging; ending the session keeps the setLog and lists it in the summary (Advanced only)", async function(){
+    var seed = setLogSeed("advanced", true);
+    await boot(seed); await startOrResume();
+    loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp(), "no strip");
+    var snap = saved();
+    await boot(snap);
+    expect(!stripUp() && (active().setLog||[]).length===0, "reload kept or logged the strip");
+    // log one, finish
+    await boot(seed); await startOrResume(); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    q("#setLogStrip .sl-kg").value = "12"; fire(q("#setLogStrip .sl-kg"), "input");
+    await click(q('#setLogStrip [data-rpe="7"]'), 100); await click(q("#setLogStrip .sl-save"), 100);
+    var sid = saved().activeSessionId;
+    await click("finishSessionBtn", 300);
+    var s = saved(), se = s.sessions.find(function(x){ return x.id===sid; });
+    expect(se && se.endedAt && se.setLog.length===1, "ended session lost its setLog");
+    expect(visible("endSetLog") && /12 kg/.test($("endSetLog").textContent) && /RPE 7/.test($("endSetLog").textContent), "summary list: "+$("endSetLog").textContent);
+  });
+
+  test("Set log: summary shows nothing when there are no sets, or in Simple mode", async function(){
+    var seed = setLogSeed("simple", false);
+    await boot(seed); await startOrResume();
+    await click("finishSessionBtn", 300);
+    expect(!visible("endSetLog") && $("endSetLog").innerHTML==="", "set list shown with no sets");
+    var s2 = setLogSeed("simple", true);
+    s2.sessions.unshift({ id:"sl1", startedAt:Date.now()-9e5, endedAt:Date.now()-6e5, attempts:[], note:"", photos:[], satisfaction:null, setLog:[{ ts:1, label:"Hang", tag:"", load:20, rpe:7 }] });
+    await boot(s2); await startOrResume();
+    await click("finishSessionBtn", 300);
+    expect(!visible("endSetLog"), "set list shown in Simple mode");
+  });
+
+  test("Set log: backup export/import keeps setLog; an old backup without the key imports with []; XP and level do not read it", async function(){
+    var seed = setLogSeed("advanced", true);
+    seed.sessions.unshift({ id:"sl2", startedAt:Date.now()-9e5, endedAt:Date.now()-6e5, attempts:[{ id:"a1", result:"send", xp:20, ts:Date.now()-8e5, seq:1, grade:"V3" }], note:"keep", photos:[], satisfaction:null,
+      setLog:[{ ts:5, label:"Hang", tag:"REP 1/2", load:20.5, rpe:9 }, { ts:6, label:"Hang", tag:"REP 2/2", load:null, rpe:null }] });
+    await boot(seed);
+    var json = await exportJson();
+    expect(JSON.parse(json).data.sessions.find(function(x){ return x.id==="sl2"; }).setLog.length===2, "export lacks setLog");
+    await boot(null);   // fresh state
+    await importText(json, true);
+    var se = saved().sessions.find(function(x){ return x.id==="sl2"; });
+    expect(se && JSON.stringify(se.setLog)===JSON.stringify(seed.sessions[0].setLog), "round trip: "+JSON.stringify(se && se.setLog));
+    expect(se.attempts.length===1 && se.note==="keep", "attempts/notes changed");
+    // XP and level identical with and without setLog entries
+    var withLog = saved();
+    var noLog = JSON.parse(json); noLog.data.sessions.forEach(function(x){ delete x.setLog; }); delete noLog.data.settings.timerSetLog;
+    await boot(null); await importText(JSON.stringify(noLog), true);
+    var a = saved();
+    expect(a.sessions.every(function(x){ return Array.isArray(x.setLog) && x.setLog.length===0; }), "old backup did not import with []");
+    expect(a.settings.timerSetLog===false, "old backup setting not false");
+    expect(a.xp===withLog.xp && a.level===withLog.level, "XP/level differ with setLog: "+[a.xp,a.level]+" vs "+[withLog.xp,withLog.level]);
+    var big = clone(JSON.parse(json)); big.data.sessions.forEach(function(x){ x.setLog = [{ ts:1, label:"X", tag:"", load:999, rpe:10 }, { ts:2, label:"Y", tag:"", load:1, rpe:6 }]; });
+    await boot(null); await importText(JSON.stringify(big), true);
+    var b = saved();
+    expect(b.xp===a.xp && b.level===a.level && b.totalAttempts===a.totalAttempts, "XP/level moved with extra setLog entries");
   });
 
   test("Saved timers: Simple mode shows pinned chips but none of the builder", async function(){

@@ -244,6 +244,7 @@ only), and a runner that steps through a workout inside a normal session. The co
 - **The result** is saved on the session as `session.workout`: per-step status, plus
   `result: {rpe, note}`.
 - **No hangboard protocols** among the built-in examples.
+- **Per-set log (optional):** Advanced + `settings.timerSetLog` (default off). After a program's WORK phase a small strip (kg, RPE 6-10) can append `{ts,label,tag,load,rpe}` to `session.setLog` (separate from `session.workout`, so the v1 format is unchanged; migrated in `normalizeState()`). Never read by `recomputeProfile()`/XP.
 
 ## The Wall (beta, removable)
 

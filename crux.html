@@ -625,6 +625,28 @@
   .timer-card{position:relative;}
   .timer-next{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);margin:-8px 0 14px;font-variant-numeric:tabular-nums;}
   .timer-next[hidden]{display:none;}
+  /* Optional per-set note (Advanced + Timer logging): sits under the controls, never over the clock. */
+  .set-log{margin:14px auto 0;max-width:420px;text-align:left;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);}
+  .set-log[hidden]{display:none;}
+  .sl-head{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px;}
+  .sl-title{font-size:12.5px;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sl-row{display:flex;align-items:center;gap:8px;}
+  .sl-load{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);flex:1;min-width:0;}
+  .sl-load input{width:100%;min-width:60px;max-width:96px;min-height:44px;box-sizing:border-box;font-size:16px;padding:6px 8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;}
+  .sl-chips{display:flex;gap:6px;margin-top:8px;}
+  .sl-chips .chip{flex:1;min-width:44px;min-height:44px;padding:0;justify-content:center;}
+  .sl-chips .chip.selected{background:var(--accent);color:var(--accent-contrast);border-color:transparent;}
+  .sl-row .btn{min-height:44px;padding:8px 18px;font-size:14px;}
+  .timer-full .set-log{margin:1vh 0 0;width:100%;max-width:none;box-sizing:border-box;background:color-mix(in srgb, var(--tf-ink) 10%, transparent);border-color:color-mix(in srgb, var(--tf-ink) 45%, transparent);color:var(--tf-ink);}
+  .timer-full .sl-title,.timer-full .sl-load{color:var(--tf-ink);}
+  .timer-full .sl-load input{background:color-mix(in srgb, var(--tf-bg) 70%, #fff);color:#111;}
+  .timer-full .sl-chips .chip.selected{background:var(--tf-ink);color:var(--tf-bg);}
+  .timer-full .sl-row .btn-primary{background:var(--tf-ink);color:var(--tf-bg);border-color:transparent;box-shadow:none;}
+  .timer-full.sl-open .play-rest-btn{display:none;}
+  .timer-full.sl-open .countdown{font-size:min(40vw,22dvh);}
+  .timer-full.sl-open .progress-track{margin-bottom:1vh;}
+  .set-log-list .sl-li{display:flex;gap:8px;font-size:12.5px;align-items:baseline;margin:3px 0;}
+  .set-log-list .sl-li .wr-detail{margin-left:auto;}
   /* Gym-floor display: the card itself becomes a fixed overlay (no Fullscreen API: it can be blocked in the Artifact iframe). */
   .timer-card.timer-full{position:fixed;inset:0;z-index:90;margin:0;border:0;border-radius:0;box-sizing:border-box;width:100%;height:100vh;height:100dvh;
     padding:calc(14px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));
@@ -1955,6 +1977,7 @@
         <button type="button" class="chip timer-skip-chip" id="timerAddBtn" aria-label="Add 15 seconds to the rest" hidden>+15s</button>
         <button type="button" class="btn btn-ghost timer-skip-btn" id="timerSkipBtn" aria-label="Skip to the next phase">Skip &#9654;&#9654;</button>
       </div>
+      <div class="set-log" id="setLogStrip" role="group" aria-label="Note this set" hidden></div>
       </div>
       <details class="timer-settings" id="timerSettings">
       <summary class="timer-settings-summary">
@@ -2311,6 +2334,14 @@
       </div>
     </div>
 
+    <div class="settings-section" id="timerLogSection" hidden>
+      <p class="settings-section-title">Timer logging</p>
+      <div class="switch-row">
+        <div><div class="switch-label">Note each set</div><div class="switch-desc">After each work interval, offer a quick note for load and effort</div></div>
+        <button type="button" class="switch" data-setting="timerSetLog" aria-pressed="false"><span class="switch-thumb"></span></button>
+      </div>
+    </div>
+
     <div class="settings-section" id="loggingFieldsSection">
       <p class="settings-section-title">When you log a climb</p>
       <p class="settings-section-hint" id="loggingFieldsHint">Only Effort starts on — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging.</p>
@@ -2587,6 +2618,7 @@
     <div class="rating-row" id="endRatingRow"></div>
     <p class="rating-label" id="endRatingLabel">Tap to rate how it felt</p>
     <div class="workout-result" id="endWorkout" hidden></div>
+    <div class="workout-result set-log-list" id="endSetLog" hidden></div>
     <div class="coach-box" id="endCoach" hidden>
       <button type="button" class="link-btn coach-btn" id="endCoachBtn"></button>
       <div class="coach-text" id="endCoachText" hidden></div>
@@ -2985,7 +3017,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true, timerVolume:70, timerVibrate:true, timerVoice:false }, // gameSound: soft Play sounds; timerVolume 0-100 (70 = the original loudness), timerVibrate, timerVoice: timer only; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true, timerVolume:70, timerVibrate:true, timerVoice:false, timerSetLog:false }, // gameSound: soft Play sounds; timerVolume 0-100 (70 = the original loudness), timerVibrate, timerVoice: timer only; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -3127,6 +3159,18 @@
     }
     return out;
   }
+  function normSetLog(list){
+    if(!Array.isArray(list)) return [];
+    var out = [];
+    list.forEach(function(e){
+      if(!e || typeof e!=="object") return;
+      var load = (e.load===null || e.load===undefined || e.load==="") ? NaN : Number(e.load);
+      var rpe = Math.round(Number(e.rpe));
+      out.push({ ts:isFinite(+e.ts) ? +e.ts : 0, label:typeof e.label==="string" ? e.label : "", tag:typeof e.tag==="string" ? e.tag : "",
+        load:isFinite(load) && load>=0 ? load : null, rpe:(isFinite(rpe) && rpe>=6 && rpe<=10) ? rpe : null });
+    });
+    return out;
+  }
   function normalizeState(parsed){
     var migrated = migrateIfNeeded(parsed);
     var base = defaultState();
@@ -3148,6 +3192,9 @@
     merged.settings.timerVolume = isFinite(tv) ? Math.max(0, Math.min(100, Math.round(tv))) : 70;
     merged.settings.timerVibrate = merged.settings.timerVibrate !== false;
     merged.settings.timerVoice = merged.settings.timerVoice === true;
+    merged.settings.timerSetLog = merged.settings.timerSetLog === true;
+    // Per-set log (session.setLog): older sessions and backups have none. Only adds the key and tidies bad rows.
+    merged.sessions.forEach(function(se){ if(se && typeof se==="object") se.setLog = normSetLog(se.setLog); });
     // One-time upgrades, each gated on its own settingsVersion so a person's later choice
     // always wins and these never re-fire.
     if(!(migrated.settingsVersion>=2)){
@@ -3398,6 +3445,7 @@
       ? "Pretending to be level "+state.level+" (your real level is "+realLevel()+"). Your real XP is never changed."
       : "Test how rooms, gear and unlocks look. Your real XP is never changed.";
     var advanced = state.settings.mode==="advanced";
+    document.getElementById("timerLogSection").hidden = !advanced;
     document.getElementById("loggingFieldsSwitches").hidden = !advanced;
     document.getElementById("loggingFieldsHint").textContent = advanced
       ? "Only Effort starts on — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging."
@@ -3824,6 +3872,83 @@
       ss.speak(new SpeechSynthesisUtterance(String(text)));
     }catch(e){}
   }
+
+  // ---- optional per-set note (Advanced + settings.timerSetLog) ----
+  // After a program's WORK phase ends, a small strip offers load (kg) and effort (RPE 6-10). It is only
+  // in-memory UI (a reload drops it); a Save appends one row to session.setLog. The timer is never touched.
+  var setLogOffer = null;   // { sid, label, tag, ts } for the work phase that just ended
+  function setLogOn(){ return state.settings.mode==="advanced" && state.settings.timerSetLog===true; }
+  function setLogName(ended, meta){
+    var s = getActiveSession(), nm = "";
+    if(meta && meta.kind==="custom" && meta.timerId){ var ct = findCustomTimer(meta.timerId); nm = ct ? ct.name : ""; }
+    else if(meta && meta.kind==="step" && s && s.workout){
+      var st = (s.workout.doc.steps||[]).filter(function(x){ return x.id===meta.stepId; })[0];
+      if(st) nm = stepLabel(st);
+    }
+    return nm || phaseWord(ended.label);
+  }
+  function setLogLastLoad(label){
+    for(var i=0;i<state.sessions.length;i++){
+      var l = state.sessions[i].setLog || [];
+      for(var j=l.length-1;j>=0;j--){ if(l[j].label===label && l[j].load!=null) return l[j].load; }
+    }
+    return null;
+  }
+  function setLogDismiss(){
+    setLogOffer = null;
+    var el = document.getElementById("setLogStrip");
+    if(el){ el.hidden = true; el.innerHTML = ""; }
+    var card = document.getElementById("timerCard"); if(card) card.classList.remove("sl-open");
+  }
+  function setLogOfferWork(ended, meta, now, endedAt){
+    var s = getActiveSession();
+    if(!setLogOn() || !s || now-endedAt>120000) return;
+    setLogOffer = { sid:s.id, label:setLogName(ended, meta), tag:ended.tag||"", ts:endedAt };
+    setLogBuild();
+  }
+  function setLogBuild(){
+    var el = document.getElementById("setLogStrip"), o = setLogOffer;
+    if(!el || !o) return;
+    var last = setLogLastLoad(o.label), rpe = null;
+    el.innerHTML =
+      '<div class="sl-head"><span class="sl-title"></span></div>'+
+      '<div class="sl-row"><label class="sl-load">kg <input type="number" class="sl-kg" inputmode="decimal" min="0" max="999" step="0.5" aria-label="Load in kilograms (optional)"></label>'+
+      '<button type="button" class="btn btn-primary sl-save">Save</button><button type="button" class="btn btn-ghost sl-skip" aria-label="Skip noting this set">Skip</button></div>'+
+      '<div class="sl-chips" role="group" aria-label="Effort, 6 easy to 10 all-out">'+[6,7,8,9,10].map(function(n){ return '<button type="button" class="chip" data-rpe="'+n+'" aria-pressed="false" aria-label="Effort '+n+'">'+n+'</button>'; }).join("")+'</div>';
+    el.querySelector(".sl-title").textContent = "Note this set · "+o.label+(o.tag ? " · "+o.tag : "");
+    var kg = el.querySelector(".sl-kg"), save = el.querySelector(".sl-save");
+    if(last!=null) kg.value = last;
+    function sync(){ save.disabled = !(kg.value.trim()!=="" || rpe!==null); }
+    kg.addEventListener("input", sync);
+    el.querySelectorAll(".sl-chips .chip").forEach(function(c){
+      c.addEventListener("click", function(){
+        var v = +c.dataset.rpe; rpe = rpe===v ? null : v;
+        el.querySelectorAll(".sl-chips .chip").forEach(function(b){ var on = +b.dataset.rpe===rpe; b.classList.toggle("selected", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+        sync();
+      });
+    });
+    save.addEventListener("click", function(){
+      var se = state.sessions.filter(function(x){ return x.id===o.sid; })[0];
+      var n = parseFloat(kg.value), load = (isFinite(n) && n>=0) ? Math.round(Math.min(n, 999)*10)/10 : null;
+      if(se && setLogOffer===o && (load!==null || rpe!==null)){
+        if(!Array.isArray(se.setLog)) se.setLog = [];
+        se.setLog.push({ ts:o.ts, label:o.label, tag:o.tag, load:load, rpe:rpe });
+        saveState();
+      }
+      setLogDismiss();
+    });
+    el.querySelector(".sl-skip").addEventListener("click", setLogDismiss);
+    sync();
+    el.hidden = false;
+    document.getElementById("timerCard").classList.add("sl-open");
+  }
+  // Called from renderTimer: hide the strip whenever it no longer applies (setting off, Simple mode, session gone).
+  function setLogSync(){
+    var el = document.getElementById("setLogStrip");
+    if(!el) return;
+    if(setLogOffer && !(setLogOn() && getActiveSession() && getActiveSession().id===setLogOffer.sid)) setLogDismiss();
+    else if(!setLogOffer && (el.innerHTML || !el.hidden)) setLogDismiss();
+  }
   function setNumOf(tag){ var m = /SET (\d+)\/\d+(?! DONE)/.exec(tag||""); return m && !/DONE/.test(tag) ? +m[1] : 0; }
   function phaseWord(label){ label = String(label||""); return label.charAt(0).toUpperCase()+label.slice(1).toLowerCase(); }
   // Walk through every phase boundary that has already passed. Only a boundary crossed within
@@ -3837,7 +3962,7 @@
       if(timer.program){
         var ended = timer.program[timer.pIndex];
         if(fresh){ if(ended.kind==="work"){ beep(880,220,0.1); timerBuzz([40,60,40]); } else { beep(440,220,0.1); timerBuzz(120); } }
-        if(ended.kind==="work") timer.round += 1;
+        if(ended.kind==="work"){ timer.round += 1; setLogOfferWork(ended, timer.programMeta, now, timer.phaseEndsAt); }
         changed = true;
         if(timer.pIndex >= timer.program.length-1){
           // the last phase is over: stop, and tell the runner (after this sync has finished)
@@ -3850,6 +3975,7 @@
           timerSpeak((nSet && nSet!==setNumOf(ended.tag) ? "Set "+nSet+". " : "") + phaseWord(nxt.label));
         }
         timer.phase = timer.program[timer.pIndex].kind;
+        if(timer.phase==="work") setLogDismiss();
         timer.phaseEndsAt += timer.program[timer.pIndex].ms;
         continue;
       }
@@ -3892,6 +4018,7 @@
       to = (i>0 && elapsed < TIMER_RESTART_MS) ? i-1 : i;
     }
     timer.pIndex = to; timer.phase = prog[to].kind; timer.round = workPhasesBefore(to);
+    if(timer.phase==="work") setLogDismiss();
     if(timer.running) timer.phaseEndsAt = now + prog[to].ms; else timer.remainingMs = prog[to].ms;
     beep(520, 80, 0.05);
     persistTimer(); renderTimer();
@@ -3914,6 +4041,7 @@
   // Rebuild the in-memory timer from the active session — on load, and after an import.
   function restoreTimer(){
     stopTimerTicking();
+    setLogDismiss();
     timer = idleTimer();
     var s = getActiveSession();
     var t = s && s.timerState;
@@ -3945,6 +4073,7 @@
       if(timer.phase==="idle"){ timer.pIndex = 0; timer.phase = timer.program[0].kind; timer.round = 0; timer.remainingMs = timer.program[0].ms; }
     } else if(timer.phase==="idle"){ timer.phase="work"; timer.round=0; timer.remainingMs=phaseDurationMs("work"); }
     timer.running = true;
+    if(timer.phase==="work") setLogDismiss();
     timer.phaseEndsAt = Date.now() + timer.remainingMs;
     startTimerTicking();
     persistTimer();
@@ -3968,6 +4097,7 @@
     // or finished session, an import, Reset progress) it clears the program as before. A program
     // loaded from the timer builder is kept (restarted); its Clear button is what unloads it.
     var prog = timer.program, meta = timer.programMeta, s = getActiveSession();
+    setLogDismiss();
     timer = idleTimer();
     if(prog && ((s && s.workout) || (meta && meta.kind==="custom"))){ timer.program = prog; timer.pIndex = 0; timer.programMeta = meta; timer.remainingMs = prog[0].ms; }
     persistTimer();
@@ -4044,6 +4174,7 @@
     document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : timer.phase==="done" ? "Done" : "Resume");
     document.getElementById("startBtn").disabled = timer.phase==="done";
     document.getElementById("playRestBtn").hidden = timer.phase!=="rest"; // GAMES hook
+    setLogSync();
     document.getElementById("timerSkipRow").hidden = !timerSkipOk();
     document.getElementById("timerAddBtn").hidden = !(timerSkipOk() && timer.phase==="rest");
     // A workout step's program owns the timer; the free work/rest settings wait until it's unloaded.
@@ -4590,7 +4721,7 @@
     var s = {
       id:uid(), startedAt:Date.now(), endedAt:null,
       timerConfig:{ workSec:state.timerDefaults.workSec, restSec:state.timerDefaults.restSec },
-      attempts:[], note:"", photos:[], satisfaction:null,
+      attempts:[], note:"", photos:[], satisfaction:null, setLog:[],
       location: opts.location!=null ? opts.location : (state.lastLocation||""),
       projectId: opts.projectId || null
     };
@@ -4607,6 +4738,7 @@
     if(!s) return;
     flushPendingSaves();
     pauseTimer();
+    setLogDismiss();
     finalizeWorkout(s);
     s.endedAt = Date.now();
     delete s.timerState;
@@ -4616,6 +4748,22 @@
     saveState();
     updateWakeLock();
     showEndSummary(s);
+  }
+  // Read-only list of the sets noted with the timer; nothing at all unless Advanced and there are some.
+  function renderSetLogList(container, s){
+    var list = (s && Array.isArray(s.setLog)) ? s.setLog : [];
+    var show = state.settings.mode==="advanced" && list.length>0;
+    container.hidden = !show;
+    container.innerHTML = "";
+    if(!show) return;
+    var eb = document.createElement("p"); eb.className = "eyebrow"; eb.textContent = "Sets noted"; container.appendChild(eb);
+    list.forEach(function(e){
+      var row = document.createElement("div"); row.className = "sl-li";
+      var a = document.createElement("span"); a.textContent = e.label+(e.tag ? " · "+e.tag : "");
+      var b = document.createElement("span"); b.className = "wr-detail";
+      b.textContent = [e.load!=null ? e.load+" kg" : "", e.rpe!=null ? "RPE "+e.rpe : ""].filter(Boolean).join(" · ");
+      row.appendChild(a); row.appendChild(b); container.appendChild(row);
+    });
   }
   function showEndSummary(s){
     var counts = { flash:0, send:0, fall:0 }, xpEarned = 0;
@@ -4646,6 +4794,7 @@
     setBuddy("endBuddy", (counts.flash+counts.send)>0 ? "stoked" : (total>0 ? "sheepish" : "neutral"));
     endSummarySession = s;
     renderWorkoutResult(document.getElementById("endWorkout"), s);
+    renderSetLogList(document.getElementById("endSetLog"), s);
     var endCoachText = document.getElementById("endCoachText");
     endCoachText.hidden = true; endCoachText.textContent = "";
     document.getElementById("endSessionOverlay").hidden = false;
@@ -9836,6 +9985,7 @@
       state.settings[key] = !state.settings[key];
       saveState();
       renderSettingsModal();
+      if(key==="timerSetLog") renderTimer();
       if(key==="devRoomLab") renderRoomLab();
       if(key==="devPreviewGyms"){ lastUnlockedEnvCount = null; renderCharacterCard(); } // a preview isn't an unlock: no toast
     });
