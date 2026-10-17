@@ -47,7 +47,7 @@
     <select id="variant"><option>default</option><option>slate</option><option>sandstone</option><option>moss</option></select>
     <select id="outfit"><option value="">no outfit</option><option value="teal-knit">teal-knit</option><option value="shirt">shirt</option><option value="headlamp">headlamp</option></select>
     <label><input type="checkbox" id="cMirror">mirror</label>
-    <label title="in-between frame during a move; default art, no outfit"><input type="checkbox" id="cMid" checked>use mid frame</label>
+    <label title="in-between frame during a move; default art, no outfit">mid frame <select id="sMid"><option value="v2">v2 right + left (no mirror)</option><option value="v1">v1 mirrored</option><option value="off">off</option></select></label>
     <label><input type="checkbox" id="cAlign" checked>aligned swing</label><label><input type="checkbox" id="cReduced">reduced motion</label>
     <label><input type="checkbox" id="cOutline" checked>board outline</label>
     <label><input type="checkbox" id="cContacts">contacts</label>
@@ -65,12 +65,13 @@
 /* ---------- constants ---------- */
 var BASE = "../assets/mascot/climber/";
 var FN = { RL:"climb/climb-reach-left", RR:"climb/climb-reach-right", CH:"climb/climb-chalk-up",
-           MD:"MID", J1:"jump/jump-01", J2:"jump/jump-02", J3:"jump/jump-03", L1:"land/land-01", L2:"land/land-02", ID:"idle/idle-01" };
+           MD:"MID", M2:"MID2", ML:"MIDL", J1:"jump/jump-01", J2:"jump/jump-02", J3:"jump/jump-03", L1:"land/land-01", L2:"land/land-02", ID:"idle/idle-01" };
 var KEYS = Object.keys(FN);
 var VARIANTS = ["default","slate","sandstone","moss"];
-function frameURL(key, variant){ if(key==="MD") return "climb-frames/climb-mid-reach-right.png";   // dev-only in-between frame, default colours only (not in assets/)
+var MIDFILE = { MD:"climb-mid-reach-right", M2:"climb-mid-reach-right-v2", ML:"climb-mid-reach-left" };
+function frameURL(key, variant){ if(MIDFILE[key]) return "climb-frames/"+MIDFILE[key]+".png";   // dev-only in-between frame, default colours only (not in assets/)
   return variant==="default" ? BASE+"default/"+FN[key]+".png" : BASE+"variants/"+variant+"/"+FN[key]+".png"; }
-function outfitURL(art, key){ if(key==="MD") return null; return "../assets/outfit/"+art+"/"+FN[key]+".png"; }
+function outfitURL(art, key){ if(MIDFILE[key]) return null; return "../assets/outfit/"+art+"/"+FN[key]+".png"; }
 var K = 375/1024, YOFF = 360 - 1095*K;           // paintedRoomSVG: floor line 1095 lands on 80% of the 450 scene
 var FLOOR_Y = 380, FLOOR_S = 0.2, FLOOR_X = 270;
 var BOARD_PX = [[45,1060],[235,1060],[570,130],[150,0]];
@@ -78,17 +79,19 @@ var BOARD = BOARD_PX.map(function(p){ return [p[0]*K, p[1]*K+YOFF]; });
 var EST = { RL:{hi:[174,200],lo:[688,560],fa:[808,928],fb:[504,1264]},
             RR:{hi:[870,323],lo:[352,608],fa:[264,872],fb:[632,1280]},
             CH:{hi:[872,400],fa:[440,1290],fb:[792,1090]},
-            MD:{hi:[179,205],fa:[340,1400],fb:[830,1010]} };   // MD = climb-mid-reach-right: gripping (high left) fist, soles; head/torso are measured like the others
+            MD:{hi:[179,205],fa:[340,1400],fb:[830,1010]},
+            M2:{hi:[215,129],fa:[495,1403],fb:[819,922]}, ML:{hi:[837,115],fa:[613,1464],fb:[205,963]} };   // MD = climb-mid-reach-right: gripping (high left) fist, soles; head/torso are measured like the others
 var LMEST = { RL:{head:[528,312]}, RR:{head:[512,376]}, CH:{head:[515,432]} };
 var HOLD_HAND = ["h_jug","r2_hold_red","h2_jug","r2_hold_blue","r2_hold_yellow","h2_jug","r2_hold_grey","h_jug","r2_hold_sand"];
 var HOLD_FOOT = ["h_foot","h2_chip"];
 var WALL_HOLD_SHAPE = { h_jug:0.72, h_foot:0.71, h2_jug:0.98, h2_chip:0.86, r2_hold_red:0.98, r2_hold_sand:0.96, r2_hold_yellow:0.92, r2_hold_grey:0.98, r2_hold_blue:0.87 };
 function wallHoldSize(k){ var r = WALL_HOLD_SHAPE[k] || 0.9; return Math.round(Math.max(46, Math.min(70, 47/Math.sqrt(r)))); } // same proportion idea as crux.html
 var HOLD_PX = 14/58;           // crux.html sizes are for the full-screen Wall; here the same proportions at ~14 px hand / ~8 px foot
+var MIDK = 1;   // 1 = rotate fully to follow the head/torso point, 0 = just the stance lean
 var MIDW = 0.7;   // 1 = align the mid frame by head, 0 = by torso
 var RISE = 48, STEP_GAP = 250, TWEEN_MS = 120, REST_MS = 3000, EXTRA_ROT = 14, PREVIEW_MIN = 0.08;
 
-var S = { mid:true, s:0.11, lean:12, mirror:false, variant:"default", reduced:false, outfit:"", seed:7, align:true, debug:true, contacts:false };
+var S = { mid:"v2", s:0.11, lean:12, mirror:false, variant:"default", reduced:false, outfit:"", seed:7, align:true, debug:true, contacts:false };
 var M = {};            // measurements, M[variant][key]
 var R = null;          // route
 var G = { mode:"floor", idx:0, desired:0, f:0, busy:false, dragging:false, lastStep:0, cur:null, fx:FLOOR_X };
@@ -169,7 +172,7 @@ function measureAll(){
       m.alphaDiff = alphaDiff(pD[k], P);
     });
   });
-  ["RL","RR","CH","MD"].forEach(function(k){
+  ["RL","RR","CH","MD","M2","ML"].forEach(function(k){
     var m = M.default[k], e = EST[k], line = k+": ";
     ["hi","lo","fa","fb"].forEach(function(n){ if(!m[n]) return;
       var d = dist(m[n], e[n]); line += n+" ("+Math.round(m[n][0])+","+Math.round(m[n][1])+") est ("+e[n][0]+","+e[n][1]+") d="+d.toFixed(0)+(d>15?" **>15**":"")+"  ";
@@ -184,7 +187,7 @@ function measureAll(){
 }
 function drawMeasure(){
   var host = $("meas"); host.innerHTML = "";
-  ["RL","RR","CH","MD"].forEach(function(k){
+  ["RL","RR","CH","MD","M2","ML"].forEach(function(k){
     var im = IMGS[S.variant][k], c = document.createElement("canvas"), w = 190, h = 285, sc = w/1024; c.width = w; c.height = h;
     var x = c.getContext("2d"); x.drawImage(im,0,0,w,h);
     function cross(p,col){ if(!p) return; var px = p[0]*sc, py = p[1]*sc; x.strokeStyle = col; x.lineWidth = 1; x.beginPath(); x.moveTo(px-6,py); x.lineTo(px+6,py); x.moveTo(px,py-6); x.lineTo(px,py+6); x.stroke(); x.beginPath(); x.arc(px,py,3,0,7); x.stroke(); }
@@ -192,7 +195,7 @@ function drawMeasure(){
     host.appendChild(c);
   });
   var t = "<table><tr><th>frame</th><th>hi</th><th>lo</th><th>foot a</th><th>foot b</th><th>head</th><th>torso</th></tr>";
-  ["RL","RR","CH","MD"].forEach(function(k){ var m = M.default[k];
+  ["RL","RR","CH","MD","M2","ML"].forEach(function(k){ var m = M.default[k];
     function f(p){ return p ? Math.round(p[0])+","+Math.round(p[1]) : "-"; }
     t += "<tr><td>"+k+"</td><td>"+f(m.hi)+"</td><td>"+f(m.lo)+"</td><td>"+f(m.fa)+"</td><td>"+f(m.fb)+"</td><td>"+f(m.head)+"</td><td>"+f(m.torso)+"</td></tr>"; });
   $("mtab").innerHTML = t+"</table>";
@@ -264,7 +267,7 @@ function buildClimberImgs(){
 function setSources(){
   KEYS.forEach(function(k){
     imgEls[k].src = frameURL(k, S.variant);
-    var o = olEls[k]; o._bad = false; o.removeAttribute("src"); if(S.outfit && k!=="MD") o.src = outfitURL(S.outfit, k);
+    var o = olEls[k]; o._bad = false; o.removeAttribute("src"); if(S.outfit && !MIDFILE[k]) o.src = outfitURL(S.outfit, k);
   });
 }
 function draw(sp){
@@ -326,21 +329,23 @@ function swingAngle(i, dir){      // rotation about the pinned fist that puts th
   var ao = Math.atan2(vo[1]-pin[1], vo[0]-pin[0]), an = Math.atan2(vn[1]-pin[1], vn[0]-pin[0]), d = (ao-an)*180/Math.PI;
   while(d>180) d -= 360; while(d<-180) d += 360; return d;
 }
-function midOn(){ return S.mid && S.variant==="default" && !S.outfit && M.default.MD && IMGS.default.MD; }   // the mid frame has default art only
+function midOn(){ return S.mid!=="off" && S.variant==="default" && !S.outfit && M.default.MD && M.default.M2 && M.default.ML; }   // the mid frame has default art only
 function angLerp(a, b, t){ var d = b-a; while(d>Math.PI) d -= 2*Math.PI; while(d<-Math.PI) d += 2*Math.PI; return a+d*t; }
+function midKey(i, dir){ var hk = dir>0 ? R.st[i].key : R.st[i+dir].key; return S.mid==="v2" ? (hk==="RL" ? "M2" : "ML") : "MD"; }
 function midSpec(i, dir, p){      // in-between frame, pinned about its gripping (high left) fist on the hold that stays held; mirrored when that fist is the right one
-  var j = i+dir, ri = R.st[i], rj = R.st[j], heldKey = dir>0 ? ri.key : rj.key, mir = (heldKey==="RR") !== S.mirror;
-  var pin = dir>0 ? R.hold[i] : R.hold[j], m = M.default.MD;
+  var j = i+dir, ri = R.st[i], rj = R.st[j], heldKey = dir>0 ? ri.key : rj.key, v2 = S.mid==="v2";
+  var mkey = v2 ? (heldKey==="RL" ? "M2" : "ML") : "MD", mir = v2 ? S.mirror : ((heldKey==="RR") !== S.mirror);   // v2: a real frame per side; v1: one frame mirrored
+  var pin = dir>0 ? R.hold[i] : R.hold[j], m = M.default[mkey];
   var nsp = dir>0 ? { key:rj.key, a:rj.a.lo, P:pin, th:rj.th, s:S.s, mir:S.mirror } : { key:rj.key, a:rj.a.hi, P:pin, th:rj.th, s:S.s, mir:S.mirror };
   function bl(a){ return [a.head[0]*MIDW+a.torso[0]*(1-MIDW), a.head[1]*MIDW+a.torso[1]*(1-MIDW)]; }      // alignment point: head, torso or a blend
   var vo = scr(stanceSpec(i), bl(ri.a)), vn = scr(nsp, bl(rj.a));
   var ao = Math.atan2(vo[1]-pin[1], vo[0]-pin[0]), an = Math.atan2(vn[1]-pin[1], vn[0]-pin[0]);
   var u = clamp((p-PREVIEW_MIN)/(1-PREVIEW_MIN),0,1); u = u*u*(3-2*u);
-  var sp = { key:"MD", a:m.hi, P:pin, th:0, s:S.s, mir:mir }, hv = scr(sp, bl(m)), a0 = Math.atan2(hv[1]-pin[1], hv[0]-pin[0]);
-  sp.th = (angLerp(ao, an, u)-a0)*180/Math.PI;     // direction from the fist to the head/torso point eases from the old stance's to the new stance's
+  var sp = { key:mkey, a:m.hi, P:pin, th:0, s:S.s, mir:mir }, hv = scr(sp, bl(m)), a0 = Math.atan2(hv[1]-pin[1], hv[0]-pin[0]);
+  var thS = (angLerp(ao, an, u)-a0)*180/Math.PI, thL = (ri.th+rj.th)/2; sp.th = thL+MIDK*(thS-thL);     // direction from the fist to the head/torso point eases from the old stance's to the new stance's
   return sp;
 }
-function pinAnchor(i, dir){ return midOn() ? M.default.MD.hi : R.st[i+dir].a[dir>0 ? "lo" : "hi"]; }   // the frame point that must sit on the held hold
+function pinAnchor(i, dir){ return midOn() ? M.default[midKey(i, dir)].hi : R.st[i+dir].a[dir>0 ? "lo" : "hi"]; }   // the frame point that must sit on the held hold
 function previewSpec(i, dir, p){      // body moving from stance i toward stance i+dir, drawn pinned about the fist that stays on a hold
   if(midOn()) return midSpec(i, dir, p);
   var j = i+dir, r = R.st[j], ex;
@@ -375,21 +380,22 @@ function logStances(){
 function lmScreen(){ var m = M.default[G.cur.key]; return { head:domPoint(m.head), torso:domPoint(m.torso) }; }
 function popStats(){      // head/torso jump (screen px) at the two frame swaps of every move: old stance -> preview (p=PREVIEW_MIN), preview (p=1) -> new stance
   function pop(a, b){ draw(a); var A = lmScreen(); draw(b); var B = lmScreen(); return { h:Math.hypot(B.head[0]-A.head[0], B.head[1]-A.head[1]), t:Math.hypot(B.torso[0]-A.torso[0], B.torso[1]-A.torso[1]) }; }
-  var out = { s1:{h:[],t:[]}, s2:{h:[],t:[]}, travel:[] };
+  var out = { s1:{h:[],t:[]}, s2:{h:[],t:[]}, travel:[], held:[] };
   for(var i=0; i<8; i++) [1,-1].forEach(function(dir){ if(i+dir<0 || i+dir>7) return;
     var a = pop(stanceSpec(i), previewSpec(i, dir, PREVIEW_MIN)), b = pop(previewSpec(i, dir, 1), stanceSpec(i+dir));
-    out.s1.h.push(a.h); out.s1.t.push(a.t); out.s2.h.push(b.h); out.s2.t.push(b.t); out.travel.push(pop(stanceSpec(i), stanceSpec(i+dir)).h);
+    out.s1.h.push(a.h); out.s1.t.push(a.t); out.s2.h.push(b.h); out.s2.t.push(b.t); out.travel.push(pop(stanceSpec(i), stanceSpec(i+dir)).h); out.held.push(dir>0 ? R.st[i].key : R.st[i+dir].key);
   });
   showStance(G.idx); return out;
 }
 function popReport(){
   function mean(v){ return v.reduce(function(a,b){ return a+b; },0)/v.length; } function mx(v){ return Math.max.apply(null,v); }
   var keep = S.mid, rows = {};
-  [["no mid frame, "+(S.align?"aligned swing":"fixed swing"),false],["mid frame",true]].forEach(function(c){
-    S.mid = c[1]; if(c[1] && !midOn()){ L("pop: mid frame unavailable (variant/outfit/not loaded)"); return; }
-    var o = popStats(); rows[c[0]] = o;
-    L("pop ["+c[0]+"] swap 1 (old stance -> "+(c[1]?"mid":"preview")+"): head mean "+mean(o.s1.h).toFixed(1)+" max "+mx(o.s1.h).toFixed(1)+", torso mean "+mean(o.s1.t).toFixed(1)+" max "+mx(o.s1.t).toFixed(1)
-      +" | swap 2 ("+(c[1]?"mid":"preview")+" -> new stance): head mean "+mean(o.s2.h).toFixed(1)+" max "+mx(o.s2.h).toFixed(1)+", torso mean "+mean(o.s2.t).toFixed(1)+" max "+mx(o.s2.t).toFixed(1)+" | stance-to-stance head travel mean "+mean(o.travel).toFixed(1)+" px");
+  [["no mid frame, "+(S.align?"aligned swing":"fixed swing"),"off"],["mid v1 (mirrored)","v1"],["mid v2 (right + left frames)","v2"]].forEach(function(c){
+    S.mid = c[1]; if(c[1]!=="off" && !midOn()){ L("pop: mid frame unavailable (variant/outfit/not loaded)"); return; }
+    var o = popStats(); rows[c[0]] = o; var wm = c[1]!=="off";
+    function side(sel){ return ["s1","s2"].map(function(k){ return k+" head "+mean(sel(o[k].h)).toFixed(1)+"/"+mx(sel(o[k].h)).toFixed(1)+" torso "+mean(sel(o[k].t)).toFixed(1)+"/"+mx(sel(o[k].t)).toFixed(1); }).join(" | "); }
+    L("pop ["+c[0]+"] all moves: "+side(function(v){ return v; })+" (mean/max px)");
+    if(wm){ L("   right moves (held RL): "+side(function(v){ return v.filter(function(_,n){ return o.held[n]==="RL"; }); })); L("   left moves (held RR): "+side(function(v){ return v.filter(function(_,n){ return o.held[n]==="RR"; }); })); }
   });
   S.mid = keep; showStance(G.idx); return rows;
 }
@@ -546,7 +552,7 @@ function init(){
   $("variant").onchange = function(){ S.variant = this.value; setSources(); drawMeasure(); showCurrent(); };
   $("outfit").onchange = function(){ S.outfit = this.value; setSources(); setTimeout(showCurrent, 120); };
   $("cMirror").onchange = function(){ S.mirror = this.checked; rebuild(); };
-  $("cMid").onchange = function(){ S.mid = this.checked; };
+  $("sMid").onchange = function(){ S.mid = this.value; };
   $("cAlign").onchange = function(){ S.align = this.checked; };
   $("cReduced").onchange = function(){ S.reduced = this.checked; };
   $("cOutline").onchange = drawContacts;
@@ -570,7 +576,7 @@ var ready = (function(){
     L("ready. floor climber scale "+FLOOR_S+", wall scale "+S.s);
   }).catch(function(e){ L("ERROR "+e.message); });
 })();
-window.lab = { S:S, G:G, M:M, LOG:LOG, ready:ready, get R(){ return R; }, showStance:showStance, stanceErrors:stanceErrors, logStances:logStances, popReport:popReport, popStats:popStats, setMIDW:function(w){ MIDW = w; }, midOn:midOn, previewSpec:previewSpec, stanceSpec:stanceSpec,
+window.lab = { S:S, G:G, M:M, LOG:LOG, ready:ready, get R(){ return R; }, showStance:showStance, stanceErrors:stanceErrors, logStances:logStances, popReport:popReport, popStats:popStats, setMIDW:function(w){ MIDW = w; }, setMIDK:function(k){ MIDK = k; }, midOn:midOn, previewSpec:previewSpec, stanceSpec:stanceSpec,
   showChalk:showChalk, doFall:doFall, doMount:doMount, showFloor:showFloor, rebuild:rebuild, setSources:setSources, domPoint:domPoint, get drift(){ return driftMax; }, drawMeasure:drawMeasure,
   scr:scr, anim:anim };
 </script>
