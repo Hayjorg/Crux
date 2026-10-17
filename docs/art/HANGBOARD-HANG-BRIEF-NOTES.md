@@ -1,7 +1,8 @@
 # Hangboard hang: the frame we do not have (notes, 2026-10-17)
 
-Status: **missing art.** The Home climber can be dropped on the Hangboard decoration (`hangboard` in `ACCESSORIES`, a `perch:"hang"` target),
-but it uses a stand-in frame, behind the flag `HANGBOARD_FALLBACK` in `crux.html` (true today). This note says what the real frame has to be.
+Status: **DONE (2026-10-17).** The frame was made and wired: `assets/mascot/climber/default/climb/climb-hang-two.png` (640x960, keyed from the 1024x1536 master, head width matched to the other climb frames), `IMG.wall.cl_hang_two`,
+`PERCH_FRAME.hangTwo`, `HANGBOARD_FALLBACK = false`. It is used for the Hangboard, Campus Rungs and Gym Rings (`PERCH_TWOHAND`), **default colours with no outfit only**; another colour or any outfit keeps the one-fist stand-in described below.
+The rest of this note is the original brief, kept for the spec and for making the recolours / outfit layers later (then drop the `perchTwoOn` colour / outfit condition).
 
 ## Why nothing existing works
 

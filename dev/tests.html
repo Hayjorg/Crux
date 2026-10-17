@@ -3729,7 +3729,7 @@ and the project rules. It runs on its own private copy of the data, never your r
         if(t.kind==="sit"){ var seat = pl.top + P.seat*boxH; expect(seat>=t.y-tol && seat<=t.y+t.h+tol, env+" "+t.id+": seat not on the target"); }
         if(t.kind==="hang"){ var hx = pl.left + f.hand[0]*boxW, hy = pl.top + f.hand[1]*boxH;
           expect(hx>=t.x-tol && hx<=t.x+t.w+tol && hy>=t.y-tol && hy<=t.y+t.h+tol, env+" "+t.id+": hand not on the hold ("+Math.round(hx)+","+Math.round(hy)+")"); }
-        expect(Math.abs(pl.feetY-(pl.top+P.feet*boxH))<0.01, env+" "+t.id+": feet line is not 12.5% up from the frame bottom");
+        expect(Math.abs(pl.feetY-(pl.top+(f.feet || P.feet)*boxH))<0.01, env+" "+t.id+": feet line is not where the frame says (12.5% up from the bottom unless the frame has its own)");
         if(t.valid){
           var visY = vis.y/100*sb.h, visX = vis.x/100*sb.w;
           expect(pl.topY>=visY-1, env+" "+t.id+": valid but the head is above the visible stage");
@@ -4630,29 +4630,47 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(Pb.pending()===0, "timers left"); Pb.dismount();
   });
 
-  test("Home polish: the Hangboard is a hang target in every room, gripped on its top edge, small, feet off the floor, with the fallback flag and the art note", async function(){
+  test("Home polish: the Hangboard (and rungs, rings) take the two-hand hang in every room: both fists on the grip row, feet off the floor, small; other colours and outfits keep the one-fist reach", async function(){
     var rows = null;
     for(var env of PERCH_ENVS){
       await perchBoot(env);
-      var P = W.__cruxPerch, sb = P.sceneBox(), t = P.targets(env, sb).filter(function(x){ return x.id==="hangboard"; })[0];
+      var P = W.__cruxPerch, sb = P.sceneBox(), ts = P.targets(env, sb), t = ts.filter(function(x){ return x.id==="hangboard"; })[0];
       rows = rows || P.accessories.filter(function(a){ return a.id==="hangboard"; })[0];
       expect(t && t.kind==="hang" && t.valid, env+": the hangboard isn't a valid hang target ("+JSON.stringify(t && [t.valid, t.why])+")");
-      expect(t.fallback===true && P.hangboardFallback()===true, env+": the stand-in flag isn't set");
+      expect(t.fallback===false && P.hangboardFallback()===false && P.twoHandOn(), env+": the two-hand frame isn't switched on");
       expect(t.s>0.3 && t.s<0.6, env+": hangboard scale "+t.s);
-      var pl = t.place, f = P.frames[pl.frame], hx = pl.left + f.hand[0]*pl.boxW, hy = pl.top + f.hand[1]*pl.boxH;
-      expect(hx>=t.x && hx<=t.x+t.w, env+": the fist isn't over the board");
-      expect(hy>=t.y && hy<=t.y+0.4*t.h, env+": the fist isn't on the board's top edge ("+Math.round(hy-t.y)+" of "+Math.round(t.h)+")");
+      var pl = t.place, f = P.frames[pl.frame];
+      expect(pl.frame==="hangTwo", env+": the hangboard frame is "+pl.frame);
+      f.fists.forEach(function(fi, k){
+        var hx = pl.left + fi[0]*pl.boxW, hy = pl.top + fi[1]*pl.boxH;
+        expect(hx>=t.x && hx<=t.x+t.w, env+": fist "+k+" isn't over the board ("+Math.round(hx)+" vs "+Math.round(t.x)+".."+Math.round(t.x+t.w)+")");
+        expect(hy>=t.y && hy<=t.y+0.4*t.h, env+": fist "+k+" isn't on the board's top edge ("+Math.round(hy-t.y)+" of "+Math.round(t.h)+")");
+      });
+      var gap = (f.fists[1][0]-f.fists[0][0])*pl.boxW; expect(gap>=0.35*t.w && gap<=0.8*t.w, env+": the fist gap "+Math.round(gap)+" px against a board "+Math.round(t.w)+" px wide");
       var floorFeet = sb.h*0.93 - (1-P.feet)*t.geo.boxH;
       expect(pl.feetY < floorFeet - 0.1*pl.boxH0, env+": the feet aren't off the floor ("+Math.round(pl.feetY)+" vs "+Math.round(floorFeet)+")");
-      expect(/^reach[LR]$/.test(pl.frame), env+": the stand-in is the one-fist reach frame");
       expect(P.to("hangboard")===true && P.state() && P.state().id==="hangboard" && P.state().kind==="hang", env+": couldn't hang on the hangboard"); await wait(250);
-      expect(/climb-reach-(left|right)\.png$/.test(fileOf(stageSrc())), env+": frame "+fileOf(stageSrc()));
+      expect(/climb\/climb-hang-two\.png$/.test(fileOf(stageSrc())), env+": frame "+fileOf(stageSrc()));
       P.dismount();
+      ["campusrungs", "rings"].forEach(function(id){ var x = ts.filter(function(q){ return q.id===id; })[0]; expect(x && x.place.frame==="hangTwo", env+": "+id+" should take the two-hand hang"); });
+      expect(ts.filter(function(q){ return q.id==="iceaxes"; })[0].place.frame!=="hangTwo", env+": the ice axes keep the one-fist reach");
     }
     expect(rows && rows.from==null, "the hangboard should belong to no room (available in all five)");
-    var doc = await (await fetch("../docs/art/HANGBOARD-HANG-BRIEF-NOTES.md", { cache:"no-store" })).text();
-    expect(/HANGBOARD_FALLBACK/.test(doc) && /pose/i.test(doc) && /camera/i.test(doc) && /1024 x 1536/.test(doc), "the missing-frame note isn't there or is incomplete");
-    expect(/HANGBOARD_FALLBACK\s*=\s*true/.test(SRC), "HANGBOARD_FALLBACK should be true until the two-hand frame exists");
+    // another colour, or any outfit, has no two-hand art: the one-fist reach (the stand-in) is drawn instead
+    await perchBoot("homewall", function(s){ s.character.variant = "sandstone"; });
+    var Pv = W.__cruxPerch, tv = Pv.targets("homewall", Pv.sceneBox()).filter(function(x){ return x.id==="hangboard"; })[0];
+    expect(!Pv.twoHandOn() && /^reach[LR]$/.test(tv.place.frame), "a recoloured climber should keep the one-fist reach: "+tv.place.frame);
+    expect(Pv.to("hangboard")===true && /variants\/sandstone\/climb\/climb-reach-(left|right)\.png$/.test(fileOf(stageSrc())), "variant hangboard frame: "+fileOf(stageSrc()));
+    await perchBoot("homewall", function(s){ s.character.outfit = { headband:"teal-knit" }; });
+    var Po = W.__cruxPerch, to = Po.targets("homewall", Po.sceneBox()).filter(function(x){ return x.id==="hangboard"; })[0];
+    expect(!Po.twoHandOn() && /^reach[LR]$/.test(to.place.frame), "an outfitted climber should keep the one-fist reach: "+to.place.frame);
+    // the art: 640x960 RGBA, no magenta left, nothing on the canvas edge
+    var im = new Image(); im.src = "../assets/mascot/climber/default/climb/climb-hang-two.png"; await im.decode();
+    expect(im.naturalWidth===640 && im.naturalHeight===960, "hang-two is "+im.naturalWidth+"x"+im.naturalHeight);
+    var cv = D.createElement("canvas"); cv.width = 640; cv.height = 960; var cx = cv.getContext("2d"); cx.drawImage(im, 0, 0); var d = cx.getImageData(0, 0, 640, 960).data, pink = 0, edge = 0;
+    for(var i=0;i<640*960;i++){ var a = d[i*4+3]; if(a>20){ var x0 = i%640, y0 = (i/640)|0; if(x0===0||x0===639||y0===0||y0===959) edge++; if(a>128 && Math.min(d[i*4], d[i*4+2])-d[i*4+1]>30) pink++; } }
+    expect(pink===0 && edge===0, "hang-two has "+pink+" pink pixels and "+edge+" pixels on the canvas edge");
+    expect(/HANGBOARD_FALLBACK\s*=\s*false/.test(SRC), "HANGBOARD_FALLBACK should be false now the frame exists");
   });
   // ---- end Home polish tests ----
   // ---- end Home perch tests ----
