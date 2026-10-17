@@ -637,6 +637,178 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect($("countdown").textContent==="00:45" && $("phaseLabel").textContent==="READY", "reset: "+$("countdown").textContent);
   });
 
+  test("Timer builder: compileTimerConfig phases, totals, lead-in and no trailing rest", async function(){
+    await boot(workoutSave());
+    var C = W.__cruxTimer.compile;
+    function total(p){ return p.reduce(function(n, x){ return n + x.ms; }, 0); }
+    // 6 reps x 7/3, 3 sets, 60 s set rest, 10 s get ready
+    var p = C({ work:7, reps:6, repRest:3, sets:3, setRest:60, leadIn:10 });
+    expect(p.length===36 && total(p)===301000, "repeaters: "+p.length+" phases, "+total(p)+" ms");
+    expect(p[0].kind==="rest" && p[0].label==="GET READY" && p[0].ms===10000, "lead-in is not phase 0: "+JSON.stringify(p[0]));
+    expect(p[p.length-1].kind==="work" && p[p.length-1].tag==="REP 6/6 \u00b7 SET 3/3", "ends on: "+JSON.stringify(p[p.length-1]));
+    expect(p[1].tag==="REP 1/6 \u00b7 SET 1/3" && p[1].label==="WORK", "first rep: "+JSON.stringify(p[1]));
+    var sr = p.filter(function(x){ return x.label==="SET REST"; });
+    expect(sr.length===2 && sr.every(function(x){ return x.ms===60000; }), "set rests: "+sr.length);
+    var i6 = p.findIndex(function(x){ return x.tag==="REP 6/6 \u00b7 SET 1/3" && x.kind==="work"; });
+    expect(p[i6+1].label==="SET REST" && p[i6+2].tag==="REP 1/6 \u00b7 SET 2/3", "set rest doesn't replace the rep rest");
+    // 4x4s: 4 reps of 240/240, one set
+    p = C({ work:240, reps:4, repRest:240, sets:1, setRest:0, leadIn:10 });
+    expect(p.length===8 && total(p)===10000+4*240000+3*240000 && p[p.length-1].kind==="work", "4x4s: "+p.length+", "+total(p));
+    // 10/50 x6
+    p = C({ work:10, reps:6, repRest:50, sets:1, setRest:0, leadIn:10 });
+    expect(p.length===12 && total(p)===10000+60000+250000 && p[p.length-1].kind==="work", "10/50: "+p.length+", "+total(p));
+    // no lead-in, and clamping
+    p = C({ work:10, reps:2, repRest:5, sets:1, setRest:0, leadIn:0 });
+    expect(p.length===3 && p[0].kind==="work", "leadIn 0 should add no phase");
+    p = C({ work:1, reps:500, repRest:5000, sets:-3, setRest:0, leadIn:10 });
+    expect(p[1].ms===3000 && p.filter(function(x){ return x.kind==="work"; }).length===99 && p[2].ms===1800000, "clamp: "+JSON.stringify(p.slice(0, 3)));
+    expect(C({}).length>=1 && C(null).length>=1, "garbage in gave no program");
+  });
+
+  test("Timer builder: loads a custom program, Reset keeps it, Clear returns to free mode", async function(){
+    await boot(workoutSave()); await startOrResume();
+    expect(!$("tbClearBtn").offsetParent || $("tbClearBtn").hidden, "Clear shows with nothing loaded");
+    $("timerSettings").open = true;
+    var f = {tbWork:"7", tbRepRest:"3", tbReps:"2", tbSets:"2", tbSetRest:"20", tbLeadIn:"5"};
+    Object.keys(f).forEach(function(id){ $(id).value = f[id]; fire($(id), "change"); });
+    expect(/4 work intervals/.test($("tbTotal").textContent), "total: "+$("tbTotal").textContent);
+    await click("tbLoadBtn", 300);
+    expect($("phaseLabel").textContent==="READY \u00b7 GET READY" && $("countdown").textContent==="00:05", "after load: "+$("phaseLabel").textContent+" "+$("countdown").textContent);
+    expect($("workInput").disabled && !$("tbClearBtn").hidden, "free steppers should be disabled and Clear shown");
+    await click("startBtn", 300); await click("resetBtn", 300);
+    expect($("countdown").textContent==="00:05" && $("workInput").disabled && !$("tbClearBtn").hidden, "Reset dropped the custom program");
+    await click("tbClearBtn", 300);
+    expect($("phaseLabel").textContent==="READY" && !$("workInput").disabled && $("countdown").textContent==="00:45" && $("tbClearBtn").hidden, "Clear: "+$("phaseLabel").textContent);
+    // finishing a custom program must not touch a workout
+    await click("startBtn", 200); await click("resetBtn", 200);
+    expect($("phaseLabel").textContent==="READY", "plain timer after Clear");
+  });
+
+  // ---- timer skip / back / +15s ----
+  function ph(kind, ms, label){ return { kind:kind, label:label||kind.toUpperCase(), ms:ms, tag:"" }; }
+  var SKIP_PROG = function(){ return [ph("work",20000), ph("rest",10000), ph("work",20000), ph("rest",10000), ph("work",20000)]; };
+  function T(){ return W.__cruxTimer.get(); }
+  function loadCustom(prog){ W.__cruxTimer.load(prog, { kind:"custom" }); }
+
+  test("Timer skip: free mode shows no skip controls and ignores skip / +15s", async function(){
+    await boot(workoutSave()); await startOrResume();
+    expect($("timerSkipRow").hidden && $("timerAddBtn").hidden, "controls visible while idle in free mode");
+    await click("startBtn", 300);
+    expect($("phaseLabel").textContent==="WORK" && $("timerSkipRow").hidden, "controls visible in free mode while running");
+    var ends = T().phaseEndsAt;
+    W.__cruxTimer.skip(1); W.__cruxTimer.skip(-1); W.__cruxTimer.add(15000);
+    expect(T().phase==="work" && T().phaseEndsAt===ends && !T().program, "free mode changed by skip: "+T().phase);
+    await click("resetBtn", 200);
+    expect($("countdown").textContent==="00:45" && $("timerSkipRow").hidden, "reset in free mode");
+  });
+
+  test("Timer skip: skip and back move the phase, recompute round, and survive a reload", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom(SKIP_PROG());
+    expect($("timerSkipRow").hidden, "skip row shown before the program starts");
+    await click("startBtn", 300);
+    expect(!$("timerSkipRow").hidden && $("timerAddBtn").hidden, "work phase: row shown, +15s must be hidden");
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===1 && T().phase==="rest" && T().round===1 && !$("timerAddBtn").hidden, "after skip: "+T().pIndex+" "+T().phase+" r"+T().round);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===2 && T().phase==="work" && T().round===1, "second skip: "+T().pIndex+" r"+T().round);
+    await click("timerSkipBtn", 100); await click("timerSkipBtn", 100);
+    expect(T().pIndex===4 && T().round===2, "round after skips: "+T().pIndex+" r"+T().round);
+    await click("timerBackBtn", 100);   // <2 s in: previous phase
+    expect(T().pIndex===3 && T().phase==="rest" && T().round===2, "back: "+T().pIndex+" r"+T().round);
+    var before = { p:T().pIndex, ph:T().phase, ends:T().phaseEndsAt, round:T().round };
+    expect(Math.abs((before.ends-Date.now()) - 10000) < 400, "full phase length after skip: "+(before.ends-Date.now()));
+    var s = active().timerState;
+    expect(s.pIndex===3 && s.phaseEndsAt===before.ends, "not persisted");
+    await boot();
+    expect(T().pIndex===before.p && T().phase===before.ph && T().phaseEndsAt===before.ends && T().round===before.round && T().running, "after reload: "+T().pIndex+" "+T().phase);
+    expect(Math.abs(parseInt($("countdown").textContent.slice(3), 10) - 10) <= 1, "time left after reload: "+$("countdown").textContent);
+  });
+
+  test("Timer skip: skip and back while paused adjust remainingMs, and survive a reload", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom(SKIP_PROG());
+    await click("startBtn", 300); await click("startBtn", 100);   // pause
+    expect(!T().running && T().phaseEndsAt===null, "not paused");
+    await click("timerSkipBtn", 100);
+    expect(!T().running && T().phaseEndsAt===null && T().pIndex===1 && T().remainingMs===10000 && $("countdown").textContent==="00:10", "paused skip: "+JSON.stringify([T().running, T().pIndex, T().remainingMs]));
+    expect($("startBtn").textContent==="Resume", "should still be paused");
+    W.__cruxTimer.add(15000);
+    expect(T().remainingMs===25000 && !T().running, "paused +15s: "+T().remainingMs);
+    await boot();
+    expect(!T().running && T().pIndex===1 && T().phase==="rest" && T().remainingMs===25000 && $("countdown").textContent==="00:25", "paused reload: "+T().pIndex+" "+T().remainingMs);
+    await click("timerBackBtn", 100);   // at the start of phase 1 (0 s elapsed): previous
+    expect(T().pIndex===0 && T().remainingMs===20000 && T().round===0, "paused back: "+T().pIndex+" "+T().remainingMs);
+    await click("startBtn", 200);
+    expect(T().running && Math.abs(T().phaseEndsAt-Date.now()-20000) < 400, "resume after paused skip");
+  });
+
+  test("Timer skip: back restarts the current phase (phase 0, or more than 2 s in)", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom(SKIP_PROG());
+    await click("startBtn", 1200);
+    var left = T().phaseEndsAt - Date.now();
+    expect(left < 19000, "phase 0 hasn't run: "+left);
+    await click("timerBackBtn", 50);
+    expect(T().pIndex===0 && T().phaseEndsAt-Date.now() > 19500, "back from phase 0 should restart it: "+(T().phaseEndsAt-Date.now()));
+    await click("timerSkipBtn", 50);
+    await wait(2200);
+    await click("timerBackBtn", 50);
+    expect(T().pIndex===1 && T().phaseEndsAt-Date.now() > 9500, "back >2 s in should restart phase 1: "+T().pIndex+" "+(T().phaseEndsAt-Date.now()));
+  });
+
+  test("Timer skip: +15s only in rest, adds exactly 15 s each time, and the phase still ends on time", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom([ph("work",20000), ph("rest",1500), ph("work",20000)]);
+    await click("startBtn", 200);
+    W.__cruxTimer.add(15000);
+    expect(T().phase==="work" && Math.abs(T().phaseEndsAt-Date.now()-19800) < 400, "+15s worked outside rest");
+    await click("timerSkipBtn", 50);
+    expect(T().phase==="rest" && !$("timerAddBtn").hidden, "+15s chip missing in rest");
+    var e0 = T().phaseEndsAt;
+    await click("timerAddBtn", 50); await click("timerAddBtn", 50); await click("timerAddBtn", 50);
+    expect(T().phaseEndsAt===e0+45000, "3x +15s moved the end by "+(T().phaseEndsAt-e0));
+    expect(Math.abs(parseInt($("countdown").textContent.slice(3), 10) - 46) <= 1, "clock: "+$("countdown").textContent);
+    // the extended end instant is what the engine obeys: before it we stay in rest, at it we move on
+    W.__cruxTimer.get().phaseEndsAt = Date.now() + 700;   // jump near the end (engine is timestamp-driven)
+    await wait(300); expect(T().phase==="rest", "ended early");
+    await wait(900); expect(T().phase==="work" && T().pIndex===2, "didn't end at the instant: "+T().phase);
+  });
+
+  test("Timer skip: past the last phase a custom program is done and never touches the workout runner", async function(){
+    await boot(workoutSave()); await startQuick();
+    var idx0 = activeWorkout().index, st0 = JSON.stringify(activeWorkout().steps);
+    loadCustom([ph("work",20000), ph("rest",10000)]);
+    await click("startBtn", 200);
+    await click("timerSkipBtn", 50); await click("timerSkipBtn", 200);
+    expect(T().phase==="done" && !T().running && $("phaseLabel").textContent==="DONE" && $("timerSkipRow").hidden, "not done: "+T().phase);
+    expect(T().round===1, "round at done: "+T().round);
+    expect(activeWorkout().index===idx0 && JSON.stringify(activeWorkout().steps)===st0, "custom skip advanced the workout");
+    await click("resetBtn", 200);
+    expect(T().phase==="idle" && T().program, "reset should keep the custom program");
+    // running a custom program to natural completion must not call the runner either
+    loadCustom([ph("work",700), ph("rest",600)]);
+    await click("startBtn", 1700);
+    expect(T().phase==="done" && activeWorkout().index===idx0 && JSON.stringify(activeWorkout().steps)===st0, "natural completion touched the runner: "+T().phase);
+  });
+
+  test("Timer skip: inside a workout step, skip keeps the round right and skipping past the end advances the runner", async function(){
+    await boot(workoutSave()); await startQuick();
+    await click("startBtn", 150); await click("timerSkipBtn", 400);   // s1 (single phase) -> done, runner on to s2
+    expect(stepStatus("s1")==="done" && activeWorkout().index===1, "step 1 not advanced by skipping its last phase");
+    var n = T().program.length;
+    expect(/PULLS|READY/.test($("phaseLabel").textContent), "s2 not loaded: "+$("phaseLabel").textContent);
+    await click("startBtn", 150);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===1 && T().round===1, "s2 after one skip: "+T().pIndex+" r"+T().round);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===2 && T().round===1 && T().phase==="work", "s2 second skip: "+T().pIndex+" r"+T().round);
+    await click("timerBackBtn", 100);
+    expect(T().pIndex===1 && T().round===1, "s2 back: "+T().pIndex+" r"+T().round);
+    await click("timerSkipBtn", 100); await click("timerSkipBtn", 400);
+    expect(stepStatus("s2")==="done" && activeWorkout().index===2, "step 2 not advanced: idx "+activeWorkout().index);
+  });
+
   test("Workouts: build, edit and delete your own in Advanced; Simple can only run them", async function(){
     await boot(workoutSave()); await toTrain(); await click("openWorkoutsBtn");
     await click("newWorkoutBtn");
@@ -2304,7 +2476,11 @@ and the project rules. It runs on its own private copy of the data, never your r
     var g = saved().games;
     expect(g.chalkRhythm.best===31 && g.chalkRhythm.plays===9 && g.chalkRhythm.perfectBest===6 && g.chalkUp.best===5 && g.holdHop.best===4 && g.futureGame.shiny==="x", "legacy ids lost: "+JSON.stringify(g));
     expect(g.dyno.best===0 && g.dyno.plays===0 && g.dyno.cleanBest===0, "dyno defaults: "+JSON.stringify(g.dyno));
-    await dyOpen(); await dyLatch(G); await wait(60);
+    await dyOpen();
+    // The band is only ~400 ms wide and a hold is timed with setTimeout, so a stalled test frame can turn one latch into a fall
+    // (that made this test fail once, then pass on reruns). What is under test is the legacy data, so retry until a hold latches.
+    for(var k=0; k<4 && !(G.current().h>=1); k++){ await dyReady(G); await dyLatch(G); await wait(80); }
+    expect(G.current().h>=1, "could not latch a hold");
     await click("closeGamesBtn", 250);
     g = saved().games;
     expect(g.dyno.plays===1 && g.dyno.best===1 && g.chalkRhythm.best===31 && g.chalkRhythm.plays===9 && g.chalkRhythm.perfectBest===6 && g.futureGame.best===3, "a Dyno round touched other games: "+JSON.stringify(g));
@@ -2955,6 +3131,516 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
   // ---- end shell polish tests ----
 
+
+  /* ---------- timer sound settings ---------- */
+  function setTimerSetting(id, v){ $(id).value = String(v); fire($(id), "input"); }
+  function spyAudio(){
+    var ctx = W.__cruxSound.ensureAudio(), rec = { osc:0, gains:[] };
+    expect(!!ctx, "no audio context in this browser");
+    var co = ctx.createOscillator.bind(ctx), cg = ctx.createGain.bind(ctx);
+    ctx.createOscillator = function(){ rec.osc++; return co(); };
+    ctx.createGain = function(){ var g = cg(), sv = g.gain.setValueAtTime.bind(g.gain);
+      g.gain.setValueAtTime = function(v, t){ rec.gains.push(v); return sv(v, t); }; return g; };
+    return rec;
+  }
+  function stubSpeech(){
+    var rec = { spoken:[], cancels:0 };
+    Object.defineProperty(W, "speechSynthesis", { configurable:true, value:{ speak:function(u){ rec.spoken.push(u && u.text); }, cancel:function(){ rec.cancels++; } } });
+    if(!W.SpeechSynthesisUtterance) W.SpeechSynthesisUtterance = function(t){ this.text = t; };
+    return rec;
+  }
+  function stubVibrate(){
+    var rec = { n:0 };
+    Object.defineProperty(W.navigator, "vibrate", { configurable:true, value:function(){ rec.n++; return true; } });
+    return rec;
+  }
+
+  test("Timer sound: an old save imports with the defaults and nothing else changes", async function(){
+    await boot(oldFormatSave());
+    var s = saved();
+    expect(s.settings.timerVolume===70 && s.settings.timerVibrate===true && s.settings.timerVoice===false, "defaults: "+JSON.stringify([s.settings.timerVolume, s.settings.timerVibrate, s.settings.timerVoice]));
+    expect(s.settings.gameSound===true, "gameSound changed");
+    var json = await exportJson();
+    var old = JSON.parse(json); delete old.data.settings.timerVolume; delete old.data.settings.timerVibrate; delete old.data.settings.timerVoice;
+    await importText(JSON.stringify(old), true);
+    s = saved();
+    expect(s.settings.timerVolume===70 && s.settings.timerVibrate===true && s.settings.timerVoice===false, "import defaults: "+JSON.stringify(s.settings));
+    expect(Array.isArray(s.sessions) && s.sessions.length===JSON.parse(json).data.sessions.length, "sessions changed");
+  });
+
+  test("Timer sound: volume scales the beep, 70 is the old loudness, 0 creates no oscillator", async function(){
+    await boot(workoutSave());
+    var rec = spyAudio();
+    W.__cruxSound.beep(880, 220, 0.1);
+    expect(rec.osc===1 && Math.abs(rec.gains[0]-0.1)<1e-9, "default gain: "+rec.gains[0]);
+    await click("openSettingsBtn"); setTimerSetting("timerVolume", 35);
+    W.__cruxSound.beep(880, 220, 0.1);
+    expect(Math.abs(rec.gains[1]-0.05)<1e-9 && saved().settings.timerVolume===35, "half gain: "+rec.gains[1]);
+    setTimerSetting("timerVolume", 0);
+    W.__cruxSound.beep(880, 220, 0.1);
+    expect(rec.osc===2 && saved().settings.timerVolume===0, "oscillator created at volume 0: "+rec.osc);
+    // a game beep is untouched by the timer volume
+    W.__cruxSound.beep(880, 60, 0.08, true);
+    expect(rec.osc===3, "game beep was silenced by timer volume");
+  });
+
+  test("Timer sound: vibrate off means navigator.vibrate is not called", async function(){
+    await boot(workoutSave());
+    var v = stubVibrate();
+    W.__cruxSound.buzz(100);
+    var reduced = W.matchMedia && W.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    expect(reduced || v.n===1, "vibrate on should call it once: "+v.n);
+    await click("openSettingsBtn"); q('.switch[data-setting="timerVibrate"]').click();
+    W.__cruxSound.buzz(100);
+    expect(v.n===(reduced?0:1) && saved().settings.timerVibrate===false, "vibrate called with it off: "+v.n);
+  });
+
+  test("Timer sound: voice speaks at a phase change when on, never when off; backup round-trips the settings", async function(){
+    await boot(workoutSave()); await startOrResume();
+    var sp = stubSpeech(), v = stubVibrate();
+    var prog = [{ kind:"work", label:"WORK", ms:700, tag:"REP 1/1 \u00b7 SET 1/2" }, { kind:"rest", label:"SET REST", ms:600000, tag:"REP 1/1 \u00b7 SET 1/2" }];
+    // off (default): silent
+    loadCustom(prog); await click("startBtn", 1200);
+    expect(T().phase==="rest" && sp.spoken.length===0, "spoke with voice off: "+JSON.stringify(sp.spoken));
+    await click("resetBtn", 100);
+    // turn voice on and vibrate off through the Settings sheet
+    await click("openSettingsBtn");
+    q('.switch[data-setting="timerVoice"]').click(); q('.switch[data-setting="timerVibrate"]').click(); setTimerSetting("timerVolume", 40);
+    await click("closeSettingsBtn");
+    var s = saved().settings;
+    expect(s.timerVoice===true && s.timerVibrate===false && s.timerVolume===40, "settings not saved: "+JSON.stringify(s));
+    v.n = 0; sp.cancels = 0; loadCustom(prog); await click("startBtn", 1200);
+    expect(sp.spoken.length>=1 && sp.spoken[0]==="Set rest", "voice on didn't speak: "+JSON.stringify(sp.spoken));
+    expect(sp.cancels>=1, "didn't cancel before speaking");
+    expect(v.n===0, "vibrate called with vibrate off: "+v.n);
+    // round trip
+    var json = await exportJson();
+    expect(JSON.parse(json).data.settings.timerVoice===true, "export lacks timerVoice");
+    await importText(json, true);
+    s = saved().settings;
+    expect(s.timerVoice===true && s.timerVibrate===false && s.timerVolume===40, "round trip: "+JSON.stringify(s));
+  });
+
+  // ---- gym-floor display ----
+  test("Timer full screen: class toggles, Escape and the button exit, scroll restored", async function(){
+    await boot(workoutSave()); await startOrResume();
+    var card = $("timerCard"), btn = $("timerFullBtn");
+    expect(btn && !card.classList.contains("timer-full") && btn.textContent==="Full screen", "initial state");
+    W.scrollTo(0, 0);
+    await click("timerFullBtn", 100);
+    expect(card.classList.contains("timer-full") && btn.textContent==="Exit" && btn.getAttribute("aria-pressed")==="true", "didn't enter");
+    var cs = W.getComputedStyle(card);
+    expect(cs.position==="fixed", "card not fixed: "+cs.position);
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); await wait(100);
+    expect(!card.classList.contains("timer-full") && btn.textContent==="Full screen", "Escape didn't exit");
+    await click("timerFullBtn", 100); await click("timerFullBtn", 100);
+    expect(!card.classList.contains("timer-full"), "button didn't exit");
+    // works while a free timer runs, and the wake lock path is untouched
+    await click("timerFullBtn", 100); await click("startBtn", 300);
+    expect(card.classList.contains("timer-full") && $("phaseLabel").textContent==="WORK" && $("startBtn").textContent==="Pause", "free mode in full screen");
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); await wait(100);
+    expect(!card.classList.contains("timer-full") && T().running, "exit stopped the timer");
+  });
+
+  test("Timer full screen: Next text and counters from a custom program", async function(){
+    await boot(workoutSave()); await startOrResume();
+    var prog = W.__cruxTimer.compile({ work:7, repRest:3, reps:2, sets:2, setRest:20, leadIn:5 });
+    loadCustom(prog);
+    expect($("timerNext").textContent==="Next: WORK 0:07", "idle: "+$("timerNext").textContent);
+    expect($("roundLabel").textContent==="REP 1/2 \u00b7 SET 1/2", "counter: "+$("roundLabel").textContent);
+    await click("startBtn", 200);
+    expect($("timerNext").textContent==="Next: WORK 0:07", "lead-in next: "+$("timerNext").textContent);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===1 && $("timerNext").textContent==="Next: REST 0:03", "at 1: "+$("timerNext").textContent);
+    await click("timerSkipBtn", 100); await click("timerSkipBtn", 100);   // -> 3 (WORK rep 2)
+    expect($("roundLabel").textContent==="REP 2/2 \u00b7 SET 1/2" && $("timerNext").textContent==="Next: SET REST 0:20", "at 3: "+$("roundLabel").textContent+" / "+$("timerNext").textContent);
+    for(var i=T().pIndex; i<prog.length-1; i++) await click("timerSkipBtn", 60);
+    expect(T().pIndex===prog.length-1 && $("timerNext").textContent==="Next: Done", "last: "+$("timerNext").textContent);
+    await click("timerSkipBtn", 200);
+    expect(T().phase==="done" && $("timerNext").hidden, "done should hide Next");
+    var c = W.__cruxTimer.counters;
+    expect(c("REP 3/6 \u00b7 SET 2/3")==="REP 3/6 \u00b7 SET 2/3" && c("SET 2/3 DONE")==="SET 2/3 DONE" && c("0:45")==="0:45" && c("")==="", "counters parse");
+  });
+
+  test("Timer full screen: free mode unchanged and Play while you rest still works", async function(){
+    await boot(workoutSave()); await startOrResume();
+    expect($("timerNext").hidden && $("roundLabel").textContent.trim()==="", "idle free mode should show no Next/round");
+    await click("startBtn", 300);
+    expect($("timerNext").textContent==="Next: REST 1:30" && $("roundLabel").textContent.trim()==="", "free work: "+$("timerNext").textContent+" / "+$("roundLabel").textContent);
+    expect($("playRestBtn").hidden, "play button visible during work");
+    W.__cruxTimer.get().phaseEndsAt = Date.now()+5; await wait(1500);
+    expect($("phaseLabel").textContent==="REST" && $("roundLabel").textContent==="ROUND 1" && $("timerNext").textContent==="Next: WORK 0:45" && !$("playRestBtn").hidden, "free rest: "+$("phaseLabel").textContent+" / "+$("timerNext").textContent);
+    await click("timerFullBtn", 100);
+    expect(!$("playRestBtn").hidden, "play button hidden in portrait full screen");
+    await click("timerFullBtn", 100);
+    await click("playRestBtn", 300);
+    expect(!$("gamesOverlay").hidden, "Games didn't open from rest");
+  });
+
+  // ---- saved custom timers ----
+  var CFG_A = { work:7, reps:6, repRest:3, sets:3, setRest:60, leadIn:10 }, CFG_B = { work:30, reps:4, repRest:20, sets:2, setRest:90, leadIn:5 };
+  function ctSave(mode, list){ var s = workoutSave(mode); s.customTimers = list; return s; }
+  function ctEntry(id, name, cfg, pinned){ return { id:id, name:name, cfg:cfg, pinned:!!pinned, createdAt:1000 }; }
+  function setBuilder(cfg){ var m = { tbWork:"work", tbRepRest:"repRest", tbReps:"reps", tbSets:"sets", tbSetRest:"setRest", tbLeadIn:"leadIn" };
+    Object.keys(m).forEach(function(id){ $(id).value = cfg[m[id]]; fire($(id), "change"); }); }
+  function savedRow(name){ return qa("#tbSaved li").find(function(li){ return li.querySelector(".tb-saved-name") && li.querySelector(".tb-saved-name").firstChild.textContent===name; }); }
+  function rowBtn(name, key){ var li = savedRow(name); expect(li, "no saved row "+name); var b = li.querySelector("["+key+"]") ; expect(b, "no "+key+" on "+name); return b; }
+
+  test("Saved timers: save, rename, pin, delete with Undo", async function(){
+    await boot(workoutSave()); await startOrResume();
+    $("timerSettings").open = true;
+    expect(visible("tbSaveBtn"), "no Save as button in Advanced");
+    await click("tbSaveBtn", 100);
+    expect((saved().customTimers||[]).length===0, "saved with no name");
+    setBuilder(CFG_A); await type($("tbSaveName"), "My hangs"); await click("tbSaveBtn", 200);
+    var s = saved();
+    expect(s.customTimers.length===1 && s.customTimers[0].name==="My hangs" && JSON.stringify(s.customTimers[0].cfg)===JSON.stringify(CFG_A) && s.customTimers[0].pinned===false && typeof s.customTimers[0].id==="string", "saved: "+JSON.stringify(s.customTimers));
+    setBuilder(CFG_B); await type($("tbSaveName"), "x".repeat(60)); await click("tbSaveBtn", 200);
+    s = saved(); expect(s.customTimers.length===2 && s.customTimers[1].name.length===40, "name cap: "+s.customTimers[1].name.length);
+    expect(qa("#tbSaved li").length===2, "list rows");
+    // rename
+    await click(rowBtn("My hangs", "data-rename"), 150);
+    var inp = q("#tbSaved li input"); inp.value = "Renamed"; await click(q("#tbSaved [data-rename-ok]"), 200);
+    expect(saved().customTimers[0].name==="Renamed" && savedRow("Renamed"), "rename: "+saved().customTimers[0].name);
+    // pin / unpin
+    await click(rowBtn("Renamed", "data-pin"), 150);
+    expect(saved().customTimers[0].pinned===true && qa("#presets .preset-pinned").length===1, "pin");
+    await click(rowBtn("Renamed", "data-pin"), 150);
+    expect(saved().customTimers[0].pinned===false && qa("#presets .preset-pinned").length===0, "unpin");
+    // delete + Undo
+    await click(rowBtn("Renamed", "data-delete"), 150);
+    expect(saved().customTimers.length===1 && !savedRow("Renamed"), "delete");
+    await click(q("#toastStack .toast-action"), 200);
+    s = saved(); expect(s.customTimers.length===2 && s.customTimers[0].name==="Renamed", "undo restore: "+JSON.stringify(s.customTimers.map(function(t){ return t.name; })));
+    await click(rowBtn("Renamed", "data-delete"), 150);
+    expect(saved().customTimers.length===1, "delete again");
+    // cap at 30
+    var many = []; for(var i=0;i<30;i++) many.push(ctEntry("m"+i, "T"+i, CFG_A));
+    await boot(ctSave("advanced", many)); await startOrResume(); $("timerSettings").open = true;
+    await type($("tbSaveName"), "one too many"); await click("tbSaveBtn", 200);
+    expect(saved().customTimers.length===30, "cap exceeded: "+saved().customTimers.length);
+  });
+
+  test("Saved timers: reload keeps them; backup export+import round-trips; an old backup gets []", async function(){
+    var list = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", CFG_B, false)];
+    await boot(ctSave("advanced", list)); await goHome();
+    expect(JSON.stringify(saved().customTimers)===JSON.stringify(list), "reload changed them: "+JSON.stringify(saved().customTimers));
+    await boot(); await startOrResume();
+    expect(qa("#tbSaved li").length===2 && qa("#presets .preset-pinned").length===1, "UI after reload");
+    var json = await exportJson();
+    expect(JSON.parse(json).data.customTimers.length===2, "export lacks customTimers");
+    await boot(TEMPLATE); await importText(json, true);
+    expect(JSON.stringify(saved().customTimers)===JSON.stringify(list), "import round-trip: "+JSON.stringify(saved().customTimers));
+    await startOrResume();
+    expect(qa("#presets .preset-pinned").length===1, "pinned chip not drawn after import");
+    var old = oldFormatSave(); delete old.customTimers;
+    await boot(TEMPLATE); await importText(JSON.stringify(old), true);
+    expect(Array.isArray(saved().customTimers) && saved().customTimers.length===0, "old backup: "+JSON.stringify(saved().customTimers));
+    await boot(old); await goHome();
+    expect(Array.isArray(saved().customTimers) && saved().customTimers.length===0, "old save");
+  });
+
+  test("Saved timers: malformed entries are dropped without throwing; good ones are repaired", async function(){
+    var bad = ctSave("advanced", [ null, 5, "x", { id:7, name:"n", cfg:CFG_A }, { id:"a", name:"", cfg:CFG_A }, { id:"b", name:"nocfg" },
+      { id:"c", name:"Good", cfg:{ work:1, reps:500, repRest:"zz", sets:-2, setRest:5000, leadIn:null }, pinned:"yes", createdAt:"no" },
+      { id:"c", name:"Dup id", cfg:CFG_B, pinned:true }, { id:"d", name:"y".repeat(80), cfg:CFG_B, pinned:true } ]);
+    await boot(bad); await startOrResume();
+    var l = saved().customTimers;
+    expect(l.length===3, "kept "+l.length+": "+JSON.stringify(l.map(function(t){ return t.name; })));
+    var g = l[0]; expect(g.name==="Good" && g.pinned===false && g.createdAt===0 && JSON.stringify(g.cfg)===JSON.stringify(W.__cruxTimer.norm(g.cfg)) && g.cfg.work===3 && g.cfg.reps===99, "repair: "+JSON.stringify(g));
+    expect(l[1].id!=="c" && l[1].name==="Dup id", "duplicate id kept: "+l[1].id);
+    expect(l[2].name.length===40, "name cap");
+    expect(qa("#presets .preset-pinned").length===2, "pinned chips");
+    await boot({ settings:{} , sessions:[], customTimers:"nope" }); 
+    expect(Array.isArray(saved().customTimers), "non-array list");
+    var huge = []; for(var i=0;i<80;i++) huge.push(ctEntry("h"+i, "H"+i, CFG_A));
+    await boot(ctSave("advanced", huge)); await goHome();
+    expect(saved().customTimers.length===30, "list cap: "+saved().customTimers.length);
+  });
+
+  test("Saved timers: pinned chips come first, load the right program, obey the guards; fixed presets unchanged", async function(){
+    var list = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", CFG_B, true), ctEntry("t3", "Gamma", CFG_A, false)];
+    await boot(ctSave("advanced", list)); await startOrResume(); $("timerSettings").open = true;
+    var chips = qa("#presets .chip");
+    expect(chips.length===7 && chips[0].textContent==="Alpha" && chips[1].textContent==="Beta" && chips[2].textContent==="Max Hangs 10/50", "order: "+chips.map(function(c){ return c.textContent; }).join("|"));
+    expect(/in total/.test(chips[0].title) && /in total/.test(chips[0].getAttribute("aria-label")), "no total in title/aria");
+    await click(chips[1], 300);
+    var T_ = W.__cruxTimer.get(), want = W.__cruxTimer.compile(CFG_B);
+    expect(T_.program && JSON.stringify(T_.program)===JSON.stringify(want) && T_.programMeta.kind==="custom" && T_.programMeta.timerId==="t2", "loaded program differs");
+    // another chip while custom is loaded (not running) swaps programs
+    await click(qa("#presets .preset-pinned")[0], 300);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===JSON.stringify(W.__cruxTimer.compile(CFG_A)), "swap while idle");
+    // running: disabled and ignored
+    await click("startBtn", 300);
+    qa("#presets .chip").forEach(function(c){ expect(c.disabled, c.textContent+" enabled while running"); });
+    var before = JSON.stringify(W.__cruxTimer.get().program);
+    qa("#presets .preset-pinned")[1].click(); qa("#tbSaved [data-load]")[1].click(); await wait(150);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===before, "program changed while running");
+    await click("resetBtn", 200);
+    // a fixed preset still works (after clearing the custom program)
+    await click("tbClearBtn", 200);
+    await click(qa("#presets .chip").find(function(c){ return /Max Hangs/.test(c.textContent); }), 200);
+    expect(saved().timerDefaults.workSec===10 && saved().timerDefaults.restSec===50, "fixed preset broke");
+    // Load button in the list
+    await click(rowBtn("Gamma", "data-load"), 300);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===JSON.stringify(W.__cruxTimer.compile(CFG_A)) && W.__cruxTimer.get().programMeta.timerId==="t3", "list Load");
+  });
+
+  test("Saved timers: a workout step owns the timer, so chips and Load stay disabled", async function(){
+    var s = ctSave("advanced", [ctEntry("t1", "Alpha", CFG_A, true)]);
+    await boot(s); await startQuick();
+    for(var i=0;i<4 && !W.__cruxTimer.get().program;i++){ await wait(200); }
+    var T_ = W.__cruxTimer.get();
+    // QUICK opens on a timed step ("Warm-up"), so a program must be loaded: always assert it, never bail out.
+    expect(activeWorkout() && activeWorkout().doc.steps[0].type==="timed", "setup: quick workout's first step should be timed");
+    expect(T_.program && T_.programMeta && T_.programMeta.kind==="step", "setup: no workout step program is loaded");
+    var chip = q("#presets .preset-pinned"); expect(chip && chip.disabled, "chip enabled while a workout owns the timer");
+    var before = JSON.stringify(T_.program); chip.click(); await wait(100);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===before, "workout program replaced");
+  });
+
+  // ---- per-set logging (Advanced, settings.timerSetLog) ----
+  function setLogSeed(mode, on){
+    var s = workoutSave(mode); s.settings.timerSetLog = !!on; return s;
+  }
+  var SL_PROG = function(){ return [{ kind:"work", label:"HANG", ms:700, tag:"REP 1/2 · SET 1/1" }, { kind:"rest", label:"REST", ms:600000, tag:"REP 1/2 · SET 1/1" }, { kind:"work", label:"HANG", ms:600000, tag:"REP 2/2 · SET 1/1" }]; };
+  function stripUp(){ var el = D.getElementById("setLogStrip"); return !!el && !el.hidden && !!el.querySelector(".sl-save"); }
+
+  test("Set log: off by default; nothing rendered when off or in Simple mode", async function(){
+    await boot(workoutSave()); 
+    expect(saved().settings.timerSetLog===false, "default not false: "+saved().settings.timerSetLog);
+    await startOrResume(); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(T().phase==="rest" && !stripUp() && $("setLogStrip").innerHTML==="", "strip shown with the setting off");
+    expect(Array.isArray(active().setLog) && active().setLog.length===0, "new session lacks setLog []");
+    await boot(setLogSeed("simple", true)); await startOrResume(); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(T().phase==="rest" && !stripUp() && $("setLogStrip").innerHTML==="", "strip shown in Simple mode");
+    await click("openSettingsBtn");
+    expect(!visible("timerLogSection"), "Timer logging row visible in Simple");
+    await click("closeSettingsBtn");
+    await setMode("advanced"); await click("openSettingsBtn");
+    expect(visible("timerLogSection"), "Timer logging row missing in Advanced");
+  });
+
+  test("Set log: a work phase end shows the strip; Save appends one entry with the right fields; the timer keeps running", async function(){
+    await boot(setLogSeed("advanced", true)); await startOrResume();
+    loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(T().phase==="rest" && stripUp(), "no strip after the work phase");
+    expect(!$("setLogStrip").hidden && $("timerCard").contains($("setLogStrip")), "strip not inside the timer card");
+    var ends = T().phaseEndsAt, ind = T().pIndex, run = T().running;
+    q("#setLogStrip .sl-kg").value = "22.5"; fire(q("#setLogStrip .sl-kg"), "input");
+    await click(q('#setLogStrip [data-rpe="8"]'), 100);
+    expect(T().phaseEndsAt===ends && T().running===run && T().pIndex===ind, "interacting with the strip moved the timer");
+    await click(q("#setLogStrip .sl-save"), 150);
+    var log = active().setLog;
+    expect(log.length===1 && log[0].label==="Hang" && log[0].load===22.5 && log[0].rpe===8 && /REP 1\/2/.test(log[0].tag) && typeof log[0].ts==="number", "entry: "+JSON.stringify(log));
+    expect(!stripUp(), "strip still up after Save");
+    expect(T().phaseEndsAt===ends && T().running, "Save moved the timer");
+  });
+
+  test("Set log: Skip logs nothing; the strip stays open through the next work phase; skipping a phase with the step 2 controls does not log; default load is remembered", async function(){
+    await boot(setLogSeed("advanced", true)); await startOrResume();
+    loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp(), "no strip");
+    await click(q("#setLogStrip .sl-skip"), 100);
+    expect(!stripUp() && active().setLog.length===0, "Skip logged or left the strip");
+    // step 2 skip from work does not offer or log
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 100);
+    W.__cruxTimer.skip(1);
+    expect(T().phase==="rest" && !stripUp() && active().setLog.length===0, "skip control offered/logged a set");
+    // work phase 1 ends, strip up, then the next work phase starting dismisses it
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp(), "strip missing for dismissal test");
+    W.__cruxTimer.skip(1);
+    expect(T().phase==="work" && stripUp() && active().setLog.length===0, "next work phase dismissed the strip (it should stay until Save/Skip)");
+    // remembered load: save 30 kg for HANG, next strip defaults to it
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    q("#setLogStrip .sl-kg").value = "30"; fire(q("#setLogStrip .sl-kg"), "input");
+    await click(q("#setLogStrip .sl-save"), 100);
+    await click("resetBtn", 100); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp() && q("#setLogStrip .sl-kg").value==="30", "load not remembered: "+q("#setLogStrip .sl-kg").value);
+    expect(q("#setLogStrip .sl-save").disabled===false, "Save disabled with a default load");
+    expect(active().setLog.length===1 && active().setLog[0].rpe===null && active().setLog[0].load===30, "entry: "+JSON.stringify(active().setLog));
+  });
+
+  test("Set log: a reload drops the strip without logging; ending the session keeps the setLog and lists it in the summary (Advanced only)", async function(){
+    var seed = setLogSeed("advanced", true);
+    await boot(seed); await startOrResume();
+    loadCustom(SL_PROG()); await click("startBtn", 1200);
+    expect(stripUp(), "no strip");
+    var snap = saved();
+    await boot(snap);
+    expect(!stripUp() && (active().setLog||[]).length===0, "reload kept or logged the strip");
+    // log one, finish
+    await boot(seed); await startOrResume(); loadCustom(SL_PROG()); await click("startBtn", 1200);
+    q("#setLogStrip .sl-kg").value = "12"; fire(q("#setLogStrip .sl-kg"), "input");
+    await click(q('#setLogStrip [data-rpe="7"]'), 100); await click(q("#setLogStrip .sl-save"), 100);
+    var sid = saved().activeSessionId;
+    await click("finishSessionBtn", 300);
+    var s = saved(), se = s.sessions.find(function(x){ return x.id===sid; });
+    expect(se && se.endedAt && se.setLog.length===1, "ended session lost its setLog");
+    expect(visible("endSetLog") && /12 kg/.test($("endSetLog").textContent) && /RPE 7/.test($("endSetLog").textContent), "summary list: "+$("endSetLog").textContent);
+  });
+
+  test("Set log: summary shows nothing when there are no sets, or in Simple mode", async function(){
+    var seed = setLogSeed("simple", false);
+    await boot(seed); await startOrResume();
+    await click("finishSessionBtn", 300);
+    expect(!visible("endSetLog") && $("endSetLog").innerHTML==="", "set list shown with no sets");
+    var s2 = setLogSeed("simple", true);
+    s2.sessions.unshift({ id:"sl1", startedAt:Date.now()-9e5, endedAt:Date.now()-6e5, attempts:[], note:"", photos:[], satisfaction:null, setLog:[{ ts:1, label:"Hang", tag:"", load:20, rpe:7 }] });
+    await boot(s2); await startOrResume();
+    await click("finishSessionBtn", 300);
+    expect(!visible("endSetLog"), "set list shown in Simple mode");
+  });
+
+  test("Set log: backup export/import keeps setLog; an old backup without the key imports with []; XP and level do not read it", async function(){
+    var seed = setLogSeed("advanced", true);
+    seed.sessions.unshift({ id:"sl2", startedAt:Date.now()-9e5, endedAt:Date.now()-6e5, attempts:[{ id:"a1", result:"send", xp:20, ts:Date.now()-8e5, seq:1, grade:"V3" }], note:"keep", photos:[], satisfaction:null,
+      setLog:[{ ts:5, label:"Hang", tag:"REP 1/2", load:20.5, rpe:9 }, { ts:6, label:"Hang", tag:"REP 2/2", load:null, rpe:null }] });
+    await boot(seed);
+    var json = await exportJson();
+    expect(JSON.parse(json).data.sessions.find(function(x){ return x.id==="sl2"; }).setLog.length===2, "export lacks setLog");
+    await boot(null);   // fresh state
+    await importText(json, true);
+    var se = saved().sessions.find(function(x){ return x.id==="sl2"; });
+    expect(se && JSON.stringify(se.setLog)===JSON.stringify(seed.sessions[0].setLog), "round trip: "+JSON.stringify(se && se.setLog));
+    expect(se.attempts.length===1 && se.note==="keep", "attempts/notes changed");
+    // XP and level identical with and without setLog entries
+    var withLog = saved();
+    var noLog = JSON.parse(json); noLog.data.sessions.forEach(function(x){ delete x.setLog; }); delete noLog.data.settings.timerSetLog;
+    await boot(null); await importText(JSON.stringify(noLog), true);
+    var a = saved();
+    expect(a.sessions.every(function(x){ return Array.isArray(x.setLog) && x.setLog.length===0; }), "old backup did not import with []");
+    expect(a.settings.timerSetLog===false, "old backup setting not false");
+    expect(a.xp===withLog.xp && a.level===withLog.level, "XP/level differ with setLog: "+[a.xp,a.level]+" vs "+[withLog.xp,withLog.level]);
+    var big = clone(JSON.parse(json)); big.data.sessions.forEach(function(x){ x.setLog = [{ ts:1, label:"X", tag:"", load:999, rpe:10 }, { ts:2, label:"Y", tag:"", load:1, rpe:6 }]; });
+    await boot(null); await importText(JSON.stringify(big), true);
+    var b = saved();
+    expect(b.xp===a.xp && b.level===a.level && b.totalAttempts===a.totalAttempts, "XP/level moved with extra setLog entries");
+  });
+
+  test("Saved timers: Simple mode shows pinned chips but none of the builder", async function(){
+    var list = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", CFG_B, false)];
+    await boot(ctSave("simple", list)); await startOrResume(); $("timerSettings").open = true;
+    expect(qa("#presets .preset-pinned").length===1 && $("presets").firstElementChild.textContent==="Alpha", "pinned chip missing in Simple");
+    expect(!visible("timerBuilder") && !$("tbSaveBtn").offsetParent && !$("tbLoadBtn").offsetParent && !$("tbSaved").offsetParent, "builder controls visible in Simple");
+    await click(q("#presets .preset-pinned"), 300);
+    expect(JSON.stringify(W.__cruxTimer.get().program)===JSON.stringify(W.__cruxTimer.compile(CFG_A)), "Simple chip didn't load");
+    expect(!$("tbClearBtn").hidden && $("tbClearBtn").offsetParent, "Clear should be reachable when a custom program is loaded");
+    expect(!$("tbSaveBtn").offsetParent, "save control showed with a program loaded");
+    await setMode("advanced"); await startOrResume(); $("timerSettings").open = true;
+    expect(visible("timerBuilder") && $("tbSaveBtn").offsetParent && qa("#tbSaved li").length===2, "Advanced lost the builder");
+  });
+
+  test("Saved timers: Today's plan is identical with and without saved timers", async function(){
+    var spec = [{ daysAgo:3, attempts:[["send","V5"],["fall"]] }], plain = planSave(spec), withT = planSave(spec);
+    withT.customTimers = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", { work:10, reps:6, repRest:50, sets:1, setRest:0, leadIn:10 }, true)];
+    await boot(plain); await startOrResume(); var a = planText();
+    await boot(withT); await startOrResume(); var b = planText();
+    expect(a.body && a.body===b.body && a.why===b.why, "plan changed: "+JSON.stringify(a)+" vs "+JSON.stringify(b));
+  });
+  // ---- end saved custom timers ----
+
+  // ---- review fixes (timer branch) ----
+  test("Reset progress keeps saved timers (and the pinned chips still load); Reset all data clears them", async function(){
+    var list = [ctEntry("t1", "Alpha", CFG_A, true), ctEntry("t2", "Beta", CFG_B, false)];
+    await boot(ctSave("advanced", list)); await startOrResume();
+    await click("openSettingsBtn"); await click("resetProgressBtn", 50); await click("resetProgressBtn", 400);
+    expect(saved().customTimers.length===2 && saved().customTimers[0].name==="Alpha", "Reset progress dropped saved timers: "+JSON.stringify(saved().customTimers));
+    await startOrResume(); $("timerSettings").open = true;
+    expect(qa("#presets .preset-pinned").length===1 && qa("#tbSaved li").length===2, "chips/rows not refreshed after Reset progress");
+    await click(q("#presets .preset-pinned"), 300);
+    expect(JSON.stringify(T().program)===JSON.stringify(W.__cruxTimer.compile(CFG_A)), "chip did not load after Reset progress");
+    await click("openSettingsBtn"); await click("resetAllDataBtn", 50); await click("resetAllDataBtn", 400);
+    expect(saved().customTimers.length===0 && qa("#presets .preset-pinned").length===0 && qa("#tbSaved li").length===0, "Reset all data kept saved timers");
+    expect(!T().program, "Reset all data left a custom program loaded");
+  });
+
+  test("Custom program: only the Reset button keeps it; ending a session then starting a new one does not carry it over", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom(SKIP_PROG());
+    await click("startBtn", 100); await click("resetBtn", 100);
+    expect(T().program && T().programMeta.kind==="custom" && T().pIndex===0, "Reset button dropped the custom program");
+    await click("finishSessionBtn", 300);
+    expect(!T().program, "finishSession left the program loaded");
+    if(visible("endSummaryDoneBtn")) await click("endSummaryDoneBtn", 200);
+    await startOrResume();
+    expect(!T().program && $("phaseLabel").textContent==="READY", "new session inherited the old custom program: "+JSON.stringify(T().programMeta));
+    loadCustom(SKIP_PROG());
+    await click("openSettingsBtn"); await click("resetAllDataBtn", 50); await click("resetAllDataBtn", 400);
+    expect(!T().program, "Reset all data kept the custom program");
+  });
+
+  test("Timer skip: Back after +15s restarts the rest (same phase); progress bar stays under 100%; extra survives a reload and an old save without it", async function(){
+    await boot(workoutSave()); await startOrResume();
+    loadCustom([ph("work",20000), ph("rest",30000), ph("work",20000)]);
+    await click("startBtn", 100); W.__cruxTimer.skip(1);
+    expect(T().pIndex===1 && T().phase==="rest", "setup");
+    T().phaseEndsAt = Date.now()+20000;                 // 10 s into a 30 s rest
+    W.__cruxTimer.add(15000);                           // 35 s left, rest is now 45 s long
+    var w = parseFloat($("timerFill").style.width);
+    expect(w>70 && w<85, "progress after +15s should be ~78%: "+w);
+    expect(T().extraMs===15000 && active().timerState.extraMs===15000, "extraMs not tracked/persisted: "+T().extraMs);
+    var snap = JSON.parse(JSON.stringify(saved()));
+    W.__cruxTimer.skip(-1);
+    expect(T().pIndex===1 && T().extraMs===0 && Math.abs(T().phaseEndsAt-Date.now()-30000)<500, "Back after +15s: pIndex "+T().pIndex+", ends in "+(T().phaseEndsAt-Date.now()));
+    await boot(snap);
+    expect(T().extraMs===15000 && T().pIndex===1, "reload lost extraMs: "+T().extraMs);
+    var old = JSON.parse(JSON.stringify(snap)); delete old.sessions.filter(function(x){ return x.id===old.activeSessionId; })[0].timerState.extraMs;
+    await boot(old);
+    expect(T().extraMs===0 && T().pIndex===1 && T().phase==="rest", "old save without extraMs misbehaved");
+    W.__cruxTimer.skip(-1);
+    expect(T().pIndex===1 || T().pIndex===0, "back on old save threw");
+  });
+
+  test("Timer full screen: Escape leaves a celebration/Wall sheet to close first; a hidden view exits without restoring scroll", async function(){
+    await boot(workoutSave()); await startOrResume();
+    var card = $("timerCard");
+    await click("timerFullBtn", 100);
+    var sheet = D.createElement("div"); sheet.className = "cel-sheet"; D.body.appendChild(sheet);
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); await wait(100);
+    expect(card.classList.contains("timer-full"), "Escape exited full screen under a cel-sheet");
+    sheet.remove();
+    sheet = D.createElement("div"); sheet.className = "wl-sheet"; D.body.appendChild(sheet);
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); await wait(100);
+    expect(card.classList.contains("timer-full"), "Escape exited full screen under a wl-sheet");
+    sheet.remove();
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); await wait(100);
+    expect(!card.classList.contains("timer-full"), "Escape didn't exit once the sheet was gone");
+    // hidden view: no scroll restore (spy on scrollTo)
+    await click("timerFullBtn", 100);
+    var calls = 0, orig = W.scrollTo; W.scrollTo = function(){ calls++; };
+    try{ $("view-session").hidden = true; await wait(100); }finally{ W.scrollTo = orig; $("view-session").hidden = false; }
+    expect(!card.classList.contains("timer-full") && calls===0, "hidden view exit restored scroll ("+calls+" calls)");
+  });
+
+  test("Set log: strip survives the next work phase (typed input kept) until Save/Skip; a new work-phase end replaces it; program end and reset clear it", async function(){
+    var prog = function(){ return [{ kind:"work", label:"HANG", ms:700, tag:"REP 1/3" }, { kind:"rest", label:"REST", ms:300, tag:"REP 1/3" }, { kind:"work", label:"HANG", ms:1500, tag:"REP 2/3" }, { kind:"rest", label:"REST", ms:600000, tag:"REP 2/3" }, { kind:"work", label:"HANG", ms:600000, tag:"REP 3/3" }]; };
+    await boot(setLogSeed("advanced", true)); await startOrResume();
+    loadCustom(prog()); await click("startBtn", 1300);   // rest 1 over, work 2 running
+    expect(T().pIndex===2 && stripUp(), "strip gone in the next work phase: pIndex "+T().pIndex);
+    q("#setLogStrip .sl-kg").value = "40"; fire(q("#setLogStrip .sl-kg"), "input");
+    await wait(300);
+    expect(q("#setLogStrip .sl-kg").value==="40", "typed load lost during work");
+    await wait(1200);                                     // work 2 ends -> rest 2: replaced by the next offer
+    expect(T().pIndex===3 && stripUp() && q("#setLogStrip .sl-kg").value==="", "not replaced by the next offer: "+T().pIndex);
+    await click("resetBtn", 100);
+    expect(!stripUp(), "Reset left the strip");
+    // program ending on a rest drops an older offer
+    loadCustom([{ kind:"work", label:"HANG", ms:300, tag:"" }, { kind:"rest", label:"REST", ms:300, tag:"" }]);
+    await click("startBtn", 900);
+    expect(T().phase==="done" && !stripUp(), "strip survived the program ending on a rest");
+  });
+
+  test("Backup with timerVolume null or empty imports as the default 70, not silent", async function(){
+    var s = workoutSave(); s.settings.timerVolume = null;
+    await boot(s); expect(saved().settings.timerVolume===70, "null -> "+saved().settings.timerVolume);
+    s = workoutSave(); s.settings.timerVolume = "";
+    await boot(s); expect(saved().settings.timerVolume===70, "'' -> "+saved().settings.timerVolume);
+    s = workoutSave(); s.settings.timerVolume = 0;
+    await boot(s); expect(saved().settings.timerVolume===0, "explicit 0 must stay 0: "+saved().settings.timerVolume);
+  });
+  // ---- end review fixes ----
 
   /* ---------- runner ---------- */
   var running = false;

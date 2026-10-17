@@ -603,6 +603,7 @@
 
   /* ================= TIMER (session view) ================= */
   .timer-card{padding:24px 22px 22px;text-align:center;margin-bottom:16px;transition:border-color .3s ease;}
+  .timer-full .timer-main,.timer-full .timer-side{width:100%;}
   .timer-card.phase-work{border-color:color-mix(in srgb, var(--accent) 55%, var(--border));}
   .timer-card.phase-rest{border-color:color-mix(in srgb, var(--send) 55%, var(--border));}
   .phase-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;}
@@ -616,6 +617,81 @@
   .progress-fill{height:100%;border-radius:999px;background:var(--text-dim);transition:width 1s linear, background .3s ease;}
   .phase-work .progress-fill{background:var(--accent);} .phase-rest .progress-fill{background:var(--send);}
   .timer-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+  .timer-skip-row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin:-8px 0 18px;}
+  .timer-skip-row[hidden], .timer-skip-row [hidden]{display:none;}
+  .timer-skip-btn{min-height:44px;min-width:44px;padding:10px 14px;font-size:13px;}
+  .timer-skip-chip{min-height:44px;min-width:44px;padding:8px 16px;font-size:13px;}
+  .timer-full-btn{display:flex;margin:-10px -8px 6px auto;min-height:32px;font-size:12px;}
+  .timer-card{position:relative;}
+  .timer-next{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);margin:-8px 0 14px;font-variant-numeric:tabular-nums;}
+  .timer-next[hidden]{display:none;}
+  /* Optional per-set note (Advanced + Timer logging): sits under the controls, never over the clock. */
+  .set-log{margin:14px auto 0;max-width:420px;text-align:left;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);}
+  .set-log[hidden]{display:none;}
+  .sl-head{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px;}
+  .sl-title{font-size:12.5px;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sl-row{display:flex;align-items:center;gap:8px;}
+  .sl-load{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);flex:1;min-width:0;}
+  .sl-load input{width:100%;min-width:60px;max-width:96px;min-height:44px;box-sizing:border-box;font-size:16px;padding:6px 8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;}
+  .sl-chips{display:flex;gap:6px;margin-top:8px;}
+  .sl-chips .chip{flex:1;min-width:44px;min-height:44px;padding:0;justify-content:center;}
+  .sl-chips .chip.selected{background:var(--accent);color:var(--accent-contrast);border-color:transparent;}
+  .sl-row .btn{min-height:44px;padding:8px 18px;font-size:14px;}
+  .timer-full .set-log{margin:1vh 0 0;width:100%;max-width:none;box-sizing:border-box;background:color-mix(in srgb, var(--tf-ink) 10%, transparent);border-color:color-mix(in srgb, var(--tf-ink) 45%, transparent);color:var(--tf-ink);}
+  .timer-full .sl-title,.timer-full .sl-load{color:var(--tf-ink);}
+  .timer-full .sl-load input{background:var(--surface);color:var(--text);}
+  .timer-full .sl-chips .chip.selected{background:var(--tf-ink);color:var(--tf-bg);}
+  .timer-full .sl-row .btn-primary{background:var(--tf-ink);color:var(--tf-bg);border-color:transparent;box-shadow:none;}
+  .timer-full.sl-open .play-rest-btn{display:none;}
+  .timer-full.sl-open .countdown{font-size:min(40vw,22dvh);}
+  .timer-full.sl-open .progress-track{margin-bottom:1vh;}
+  .set-log-list .sl-li{display:flex;gap:8px;font-size:12.5px;align-items:baseline;margin:3px 0;}
+  .set-log-list .sl-li .wr-detail{margin-left:auto;}
+  /* Gym-floor display: the card itself becomes a fixed overlay (no Fullscreen API: it can be blocked in the Artifact iframe). */
+  .timer-card.timer-full{position:fixed;inset:0;z-index:90;margin:0;border:0;border-radius:0;box-sizing:border-box;width:100%;height:100vh;height:100dvh;
+    padding:calc(14px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));
+    display:flex;flex-direction:column;justify-content:center;gap:2vh;overflow:hidden;
+    --tf-bg:var(--surface-2);--tf-ink:var(--text);--tf-sub:var(--text-dim);background:var(--tf-bg);color:var(--tf-ink);transition:background .2s ease;}
+  .timer-card.timer-full.phase-work{--tf-bg:var(--accent);--tf-ink:#0B1F1D;--tf-sub:#0B1F1D;}
+  .timer-card.timer-full.phase-rest{--tf-bg:color-mix(in srgb, var(--send) 32%, var(--bg));--tf-ink:var(--text);--tf-sub:var(--text);}
+  .timer-card.timer-full.phase-done{--tf-bg:var(--surface);}
+  .timer-full .timer-full-btn{position:absolute;margin:0;top:calc(10px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));min-height:56px;min-width:56px;padding:0 18px;font-size:15px;font-weight:700;color:var(--tf-ink);background:transparent;border:2px solid currentColor;border-radius:14px;z-index:2;}
+  .timer-full::before{content:"";position:absolute;inset:0;background:var(--tf-ink);opacity:0;pointer-events:none;}
+  .timer-full.tf-flash::before{animation:tfFlash .7s ease-out;}
+  @keyframes tfFlash{0%{opacity:.55;}100%{opacity:0;}}
+  .timer-full .timer-main,.timer-full .timer-side{position:relative;display:flex;flex-direction:column;align-items:center;}
+  .timer-full .phase-row{margin:0;}
+  .timer-full .phase-dot{display:none;}
+  .timer-full .phase-label{font-family:"Bebas Neue",sans-serif;font-size:clamp(40px,12vw,84px);letter-spacing:0.08em;color:var(--tf-ink);line-height:1;font-weight:400;}
+  .timer-full .round-label{font-size:clamp(16px,4.6vw,30px);color:var(--tf-sub);font-weight:600;}
+  .timer-full .phase-row{flex-direction:column;gap:4px;}
+  .timer-full .countdown{font-size:min(44vw,36dvh);line-height:0.9;margin:1vh 0;color:var(--tf-ink);font-variant-numeric:tabular-nums;}
+  .timer-full .progress-track{width:100%;max-width:none;height:clamp(16px,3.4dvh,28px);margin:0 0 1.5vh;background:color-mix(in srgb, var(--tf-ink) 22%, transparent);border-color:transparent;}
+  .timer-full .progress-fill{background:var(--tf-ink);transition:width 1s linear;}
+  .timer-full .timer-next{font-size:clamp(16px,4.6vw,28px);font-weight:600;color:var(--tf-ink);margin:0;}
+  .timer-full .timer-controls{margin:0 0 1.5vh;width:100%;flex-wrap:nowrap;}
+  .timer-full .timer-controls .btn{flex:1;min-height:64px;font-size:20px;}
+  .timer-full .timer-skip-row{margin:0;width:100%;flex-wrap:nowrap;}
+  .timer-full .timer-skip-row .btn,.timer-full .timer-skip-row .chip{flex:1;min-height:56px;font-size:16px;}
+  .timer-full .btn-ghost,.timer-full .chip{background:color-mix(in srgb, var(--tf-ink) 12%, transparent);color:var(--tf-ink);border-color:color-mix(in srgb, var(--tf-ink) 45%, transparent);}
+  .timer-full .timer-controls .btn-primary{background:var(--tf-ink);color:var(--tf-bg);border-color:transparent;box-shadow:none;}
+  .timer-full .timer-settings,.timer-full .presets,.timer-full .preset-guide-link,.timer-full .timer-builder{display:none;}
+  .timer-full .play-rest-btn{align-self:center;min-height:56px;color:var(--tf-ink);}
+  @media (orientation:landscape) and (max-height:520px){
+    .timer-card.timer-full{display:grid;grid-template-columns:1fr minmax(220px,34%);grid-template-rows:1fr;align-items:center;column-gap:20px;}
+    .timer-full .countdown{font-size:min(30vw,52dvh);}
+    .timer-full .phase-label{font-size:clamp(30px,13dvh,56px);}
+    .timer-full .round-label,.timer-full .timer-next{font-size:clamp(14px,5dvh,22px);}
+    .timer-full .timer-main{padding-right:0;}
+    .timer-full .timer-side{gap:10px;max-height:100%;overflow-y:auto;justify-content:flex-start;min-height:0;box-sizing:border-box;padding-top:46px;}
+    .timer-full .timer-controls,.timer-full .timer-skip-row{margin:0;}
+    .timer-full .play-rest-btn{display:none;}
+    .timer-full .timer-full-btn{top:calc(6px + env(safe-area-inset-top,0px));min-height:56px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .timer-full.tf-flash::before{animation:none;}
+    .timer-card.timer-full{transition:none;}
+  }
   .timer-config{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;padding-top:16px;border-top:1px dashed var(--border);}
   .field{display:flex;flex-direction:column;align-items:center;gap:4px;}
   .field label{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);}
@@ -1082,6 +1158,7 @@
 
   /* ---- shell polish: sheet motion, cards, intro, end, HUD ---- */
   body:has(#gamesOverlay:not([hidden])){overflow:hidden;}
+  html.timer-full-lock, html.timer-full-lock body{overflow:hidden;}
   .modal-overlay.games-overlay{animation:gmFade .2s ease;transition:opacity .11s ease;}
   .modal-overlay.games-overlay.gm-closing{opacity:0;pointer-events:none;}
   .modal-card.games-card{min-height:min(580px, calc(100dvh - 40px));animation:gmSheetIn .26s cubic-bezier(.2,.8,.2,1);
@@ -1377,6 +1454,27 @@
   .timer-settings-summary .chev{width:16px;height:16px;transition:transform .2s ease;flex:none;}
   .timer-settings[open] .timer-settings-summary .chev{transform:rotate(180deg);}
   .timer-settings[open] .timer-config{margin-top:8px;}
+  .timer-builder{margin-top:16px;padding-top:14px;border-top:1px dashed var(--border);text-align:center;}
+  .timer-builder-title{font-size:13px;font-weight:600;color:var(--text);margin:0 0 2px;}
+  .timer-builder-sub,.timer-builder-note{font-size:12px;color:var(--text-dim);margin:0 0 12px;}
+  .timer-builder-note{margin:10px 0 0;}
+  .timer-builder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px 10px;justify-items:center;align-items:end;}
+  .timer-builder .field label{text-align:center;}
+  .timer-builder-total{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);margin:14px 0 10px;}
+  .timer-builder-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .timer-builder.tb-simple .tb-adv{display:none;}
+  .tb-save{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:14px;}
+  .tb-save input{flex:1 1 140px;min-width:0;max-width:240px;min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;}
+  .tb-saved-title{font-size:13px;font-weight:600;margin:18px 0 6px;}
+  .tb-saved-empty{font-size:12px;color:var(--text-dim);margin:0;}
+  .tb-saved{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;text-align:left;}
+  .tb-saved li{border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+  .tb-saved-name{font-size:14px;font-weight:600;overflow-wrap:anywhere;}
+  .tb-saved-meta{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-dim);font-weight:400;margin-left:6px;}
+  .tb-saved-btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .tb-saved-btns .chip,.tb-saved input{min-height:44px;}
+  .tb-saved input{flex:1;min-width:0;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;}
+  .presets .chip.preset-pinned{border-style:solid;font-weight:600;}
 
   /* A small climber who watches you log. Head-and-shoulders crop of the full sprite. */
   .log-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px;}
@@ -1854,6 +1952,8 @@
     </section>
 
     <section class="card timer-card" id="timerCard">
+      <button type="button" class="link-btn timer-full-btn" id="timerFullBtn" aria-pressed="false" aria-label="Full screen timer">Full screen</button>
+      <div class="timer-main">
       <div class="phase-row">
         <span class="phase-dot"></span>
         <span class="phase-label" id="phaseLabel">READY</span>
@@ -1861,6 +1961,9 @@
       </div>
       <div class="countdown" id="countdown">00:45</div>
       <div class="progress-track"><div class="progress-fill" id="timerFill" style="width:100%"></div></div>
+      <div class="timer-next" id="timerNext" hidden></div>
+      </div>
+      <div class="timer-side">
       <button type="button" class="link-btn play-rest-btn" id="playRestBtn" aria-haspopup="dialog" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
         <span>Play while you rest</span>
@@ -1868,6 +1971,13 @@
       <div class="timer-controls">
         <button class="btn btn-primary" id="startBtn">Start</button>
         <button class="btn btn-ghost" id="resetBtn">Reset</button>
+      </div>
+      <div class="timer-skip-row" id="timerSkipRow" hidden>
+        <button type="button" class="btn btn-ghost timer-skip-btn" id="timerBackBtn" aria-label="Previous phase (or restart this one)">&#9664;&#9664; Back</button>
+        <button type="button" class="chip timer-skip-chip" id="timerAddBtn" aria-label="Add 15 seconds to the rest" hidden>+15s</button>
+        <button type="button" class="btn btn-ghost timer-skip-btn" id="timerSkipBtn" aria-label="Skip to the next phase">Skip &#9654;&#9654;</button>
+      </div>
+      <div class="set-log" id="setLogStrip" role="group" aria-label="Note this set" hidden></div>
       </div>
       <details class="timer-settings" id="timerSettings">
       <summary class="timer-settings-summary">
@@ -1904,6 +2014,39 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         What are these workouts for?
       </button>
+      <div class="timer-builder" id="timerBuilder">
+        <p class="timer-builder-title tb-adv">Build your own interval workout</p>
+        <p class="timer-builder-sub tb-adv">Set the work, rest, reps and sets, then load it onto the timer.</p>
+        <div class="timer-builder-grid tb-adv">
+          <div class="field"><label for="tbWork">Work (sec)</label>
+            <div class="stepper"><button type="button" data-tb="work" data-d="-5" aria-label="Decrease work seconds">–</button><input type="number" id="tbWork" min="3" max="1800" value="7" inputmode="numeric"><button type="button" data-tb="work" data-d="5" aria-label="Increase work seconds">+</button></div></div>
+          <div class="field"><label for="tbRepRest">Rest between reps (sec)</label>
+            <div class="stepper"><button type="button" data-tb="repRest" data-d="-5" aria-label="Decrease rest between reps">–</button><input type="number" id="tbRepRest" min="0" max="1800" value="3" inputmode="numeric"><button type="button" data-tb="repRest" data-d="5" aria-label="Increase rest between reps">+</button></div></div>
+          <div class="field"><label for="tbReps">Reps per set</label>
+            <div class="stepper"><button type="button" data-tb="reps" data-d="-1" aria-label="Fewer reps">–</button><input type="number" id="tbReps" min="1" max="99" value="6" inputmode="numeric"><button type="button" data-tb="reps" data-d="1" aria-label="More reps">+</button></div></div>
+          <div class="field"><label for="tbSets">Sets</label>
+            <div class="stepper"><button type="button" data-tb="sets" data-d="-1" aria-label="Fewer sets">–</button><input type="number" id="tbSets" min="1" max="99" value="3" inputmode="numeric"><button type="button" data-tb="sets" data-d="1" aria-label="More sets">+</button></div></div>
+          <div class="field"><label for="tbSetRest">Rest between sets (sec)</label>
+            <div class="stepper"><button type="button" data-tb="setRest" data-d="-15" aria-label="Decrease rest between sets">–</button><input type="number" id="tbSetRest" min="0" max="1800" value="60" inputmode="numeric"><button type="button" data-tb="setRest" data-d="15" aria-label="Increase rest between sets">+</button></div></div>
+          <div class="field"><label for="tbLeadIn">Get ready (sec)</label>
+            <div class="stepper"><button type="button" data-tb="leadIn" data-d="-5" aria-label="Decrease get ready seconds">–</button><input type="number" id="tbLeadIn" min="0" max="300" value="10" inputmode="numeric"><button type="button" data-tb="leadIn" data-d="5" aria-label="Increase get ready seconds">+</button></div></div>
+        </div>
+        <p class="timer-builder-total tb-adv" id="tbTotal" aria-live="polite"></p>
+        <div class="timer-builder-actions">
+          <button type="button" class="btn btn-primary tb-adv" id="tbLoadBtn">Load onto timer</button>
+          <button type="button" class="btn btn-ghost" id="tbClearBtn" hidden>Clear</button>
+        </div>
+        <div class="tb-save tb-adv">
+          <input type="text" id="tbSaveName" maxlength="40" placeholder="Name this workout" aria-label="Name for the saved workout" autocomplete="off">
+          <button type="button" class="btn btn-ghost" id="tbSaveBtn">Save as...</button>
+        </div>
+        <div class="tb-adv" id="tbSavedWrap">
+          <p class="tb-saved-title">Saved workouts</p>
+          <p class="tb-saved-empty" id="tbSavedEmpty">Nothing saved yet. Set up a workout, name it and tap Save as.</p>
+          <ul class="tb-saved" id="tbSaved"></ul>
+        </div>
+        <p class="timer-builder-note" id="tbNote" hidden>This workout is loaded. Clear it to go back to the simple work/rest timer.</p>
+      </div>
       </details>
     </section>
 
@@ -2168,6 +2311,34 @@
         <button type="button" class="chip" data-theme-val="system">System</button>
         <button type="button" class="chip" data-theme-val="light">Light</button>
         <button type="button" class="chip" data-theme-val="dark">Dark</button>
+      </div>
+    </div>
+
+    <div class="settings-section" id="timerSoundSection">
+      <p class="settings-section-title">Timer sound</p>
+      <p class="settings-section-hint">How the workout timer tells you to start and stop. Spoken cues may not work on every phone.</p>
+      <div class="switch-row">
+        <div style="flex:1;min-width:0;"><div class="switch-label">Volume</div><div class="switch-desc" id="timerVolumeVal">70%</div></div>
+        <input type="range" id="timerVolume" min="0" max="100" step="5" value="70" aria-label="Timer volume" style="flex:1;min-width:0;max-width:55%;accent-color:var(--accent,#E0A83A);">
+      </div>
+      <div class="switch-row">
+        <div><div class="switch-label">Vibrate</div><div class="switch-desc">Buzz when the timer changes</div></div>
+        <button type="button" class="switch" data-setting="timerVibrate" aria-pressed="false"><span class="switch-thumb"></span></button>
+      </div>
+      <div class="switch-row">
+        <div><div class="switch-label">Speak</div><div class="switch-desc">Say Work, Rest, the set number and 3-2-1</div></div>
+        <button type="button" class="switch" data-setting="timerVoice" aria-pressed="false"><span class="switch-thumb"></span></button>
+      </div>
+      <div class="theme-row" style="margin-top:12px;">
+        <button type="button" class="btn btn-ghost" id="timerTestSound" style="flex:1;padding:10px 12px;">Test sound</button>
+      </div>
+    </div>
+
+    <div class="settings-section" id="timerLogSection" hidden>
+      <p class="settings-section-title">Timer logging</p>
+      <div class="switch-row">
+        <div><div class="switch-label">Note each set</div><div class="switch-desc">After each work interval, offer a quick note for load and effort</div></div>
+        <button type="button" class="switch" data-setting="timerSetLog" aria-pressed="false"><span class="switch-thumb"></span></button>
       </div>
     </div>
 
@@ -2447,6 +2618,7 @@
     <div class="rating-row" id="endRatingRow"></div>
     <p class="rating-label" id="endRatingLabel">Tap to rate how it felt</p>
     <div class="workout-result" id="endWorkout" hidden></div>
+    <div class="workout-result set-log-list" id="endSetLog" hidden></div>
     <div class="coach-box" id="endCoach" hidden>
       <button type="button" class="link-btn coach-btn" id="endCoachBtn"></button>
       <div class="coach-text" id="endCoachText" hidden></div>
@@ -2845,7 +3017,7 @@
       lastLocation:"",
       settingsVersion:3,
       // devRoomLab: developer switch that reveals the Room Lab placement tool (off by default).
-      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true }, // gameSound: soft Play sounds; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
+      settings:{ theme:"system", mode:"simple", askGrade:false, askEffort:true, askReason:false, askNote:false, askClimbName:false, devRoomLab:false, devPreviewGyms:false, devLevel:0, devMode:false, devWallDays:0, devSeason:"", gameSound:true, timerVolume:70, timerVibrate:true, timerVoice:false, timerSetLog:false }, // gameSound: soft Play sounds; timerVolume 0-100 (70 = the original loudness), timerVibrate, timerVoice: timer only; devWallDays, devSeason: THE WALL (removable), fake streak and season for testing
       // null = auto (always show your newest unlock, same as before); set once someone
       // actually picks something in Customize. Independent of each other on purpose.
       // decorations: ids from ACCESSORIES currently toggled on — not level-gated, applies
@@ -2868,6 +3040,7 @@
       projects:[],
       // Your own workouts (Workout document v1, docs/coaching/DESIGN.md section 5): {id, workout, createdAt, updatedAt}.
       workouts:[],
+      customTimers:[],
       // THE WALL (removable): rest days you logged (local day numbers), and how many holds you have
       // already watched your climber reach (null until you first open The Wall).
       restDays:[], wallSeen:null,
@@ -2968,6 +3141,36 @@
   }
   // Shared by loadState and backup import: brings any saved shape (pre-sessions legacy data,
   // older settings versions, or a current save) up to today's state shape.
+  // Saved custom timers (the timer builder's "Save as"): [{id, name, cfg, pinned, createdAt}]. Older saves have none.
+  // Only malformed entries are dropped; a duplicate id is renamed, not lost. Nothing else (plan, XP, history) reads this list.
+  var MAX_CUSTOM_TIMERS = 30;
+  function normCustomTimers(list){
+    var out = [], seen = {};
+    if(!Array.isArray(list)) return out;
+    for(var i=0; i<list.length && out.length<MAX_CUSTOM_TIMERS; i++){
+      var t = list[i];
+      if(!t || typeof t!=="object" || typeof t.id!=="string" || !t.id || typeof t.name!=="string") continue;
+      var name = t.name.trim().slice(0, 40);
+      if(!name || !t.cfg || typeof t.cfg!=="object" || Array.isArray(t.cfg)) continue;
+      var id = t.id; while(seen[id]) id += "-"+i;
+      seen[id] = true;
+      var at = Number(t.createdAt);
+      out.push({ id:id, name:name, cfg:normTimerConfig(t.cfg), pinned:t.pinned===true, createdAt:isFinite(at) ? at : 0 });
+    }
+    return out;
+  }
+  function normSetLog(list){
+    if(!Array.isArray(list)) return [];
+    var out = [];
+    list.forEach(function(e){
+      if(!e || typeof e!=="object") return;
+      var load = (e.load===null || e.load===undefined || e.load==="") ? NaN : Number(e.load);
+      var rpe = Math.round(Number(e.rpe));
+      out.push({ ts:isFinite(+e.ts) ? +e.ts : 0, label:typeof e.label==="string" ? e.label : "", tag:typeof e.tag==="string" ? e.tag : "",
+        load:isFinite(load) && load>=0 ? load : null, rpe:(isFinite(rpe) && rpe>=6 && rpe<=10) ? rpe : null });
+    });
+    return out;
+  }
   function normalizeState(parsed){
     var migrated = migrateIfNeeded(parsed);
     var base = defaultState();
@@ -2980,9 +3183,18 @@
       sessions: Array.isArray(migrated.sessions)?migrated.sessions:[],
       projects: Array.isArray(migrated.projects)?migrated.projects:[],
       workouts: Array.isArray(migrated.workouts)?migrated.workouts.filter(function(w){ return w && typeof w==="object"; }):[],
+      customTimers: normCustomTimers(migrated.customTimers),
       restDays: Array.isArray(migrated.restDays)?migrated.restDays.filter(function(d){ return typeof d==="number" && isFinite(d); }):[],
       games: gamesNormalize(migrated.games)
     });
+    // Timer sound settings: old saves and backups have none, so they get the defaults; bad values are repaired.
+    var tvRaw = merged.settings.timerVolume, tv = (tvRaw===null || tvRaw===undefined || tvRaw==="") ? NaN : Number(tvRaw);
+    merged.settings.timerVolume = isFinite(tv) ? Math.max(0, Math.min(100, Math.round(tv))) : 70;
+    merged.settings.timerVibrate = merged.settings.timerVibrate !== false;
+    merged.settings.timerVoice = merged.settings.timerVoice === true;
+    merged.settings.timerSetLog = merged.settings.timerSetLog === true;
+    // Per-set log (session.setLog): older sessions and backups have none. Only adds the key and tidies bad rows.
+    merged.sessions.forEach(function(se){ if(se && typeof se==="object") se.setLog = normSetLog(se.setLog); });
     // One-time upgrades, each gated on its own settingsVersion so a person's later choice
     // always wins and these never re-fire.
     if(!(migrated.settingsVersion>=2)){
@@ -3222,6 +3434,8 @@
       var on = !!state.settings[btn.dataset.setting];
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    var tvEl = document.getElementById("timerVolume");
+    if(tvEl){ tvEl.value = state.settings.timerVolume; document.getElementById("timerVolumeVal").textContent = state.settings.timerVolume+"%"; }
     document.getElementById("developerSection").hidden = !state.settings.devMode;
     if(typeof renderDevWall==="function" && WALL_ENABLED) renderDevWall(); // THE WALL hook
     document.querySelectorAll("#devLevelRow .chip").forEach(function(btn){
@@ -3231,6 +3445,7 @@
       ? "Pretending to be level "+state.level+" (your real level is "+realLevel()+"). Your real XP is never changed."
       : "Test how rooms, gear and unlocks look. Your real XP is never changed.";
     var advanced = state.settings.mode==="advanced";
+    document.getElementById("timerLogSection").hidden = !advanced;
     document.getElementById("loggingFieldsSwitches").hidden = !advanced;
     document.getElementById("loggingFieldsHint").textContent = advanced
       ? "Only Effort starts on — tap Flash, Send, or Fall and you're done. Turn on only what you actually want to track; you'll be asked right after logging."
@@ -3591,7 +3806,7 @@
   var audioCtx = null;
 
   function idleTimer(){
-    return { phase:"idle", running:false, round:0, phaseEndsAt:null, remainingMs:state.timerDefaults.workSec*1000, lastShownSec:null };
+    return { phase:"idle", running:false, round:0, phaseEndsAt:null, remainingMs:state.timerDefaults.workSec*1000, lastShownSec:null, extraMs:0 };
   }
   function phaseDurationMs(phase){
     return (phase==="rest" ? state.timerDefaults.restSec : state.timerDefaults.workSec)*1000;
@@ -3604,6 +3819,7 @@
   var timerProgramDoneHook = null;
   function loadTimerProgram(program, meta){
     stopTimerTicking();
+    setLogDismiss();
     timer = idleTimer();
     if(program && program.length){
       timer.program = program; timer.pIndex = 0; timer.programMeta = meta || null;
@@ -3624,7 +3840,14 @@
   }
   var lastTimerBeepAt = 0;   // when a non-game beep last started: game sounds stay clear of it (see gmSoundOk)
   function beep(freq, dur, vol, fromGame){
-    if(!fromGame) lastTimerBeepAt = Date.now();
+    if(!fromGame){
+      lastTimerBeepAt = Date.now();
+      // Timer volume: 70 is the original loudness (scale 1); 0 is silent and makes no sound at all.
+      var tvol = state.settings.timerVolume;
+      tvol = (typeof tvol==="number" && isFinite(tvol)) ? Math.max(0, Math.min(100, tvol)) : 70;
+      if(tvol<=0) return;
+      vol = (vol||0.08) * tvol / 70;
+    }
     var ctx = ensureAudio();
     if(!ctx) return;
     try{
@@ -3638,6 +3861,97 @@
     }catch(e){}
   }
 
+  // Timer-only vibrate and voice. The games and celebrations keep using buzz() directly.
+  function timerBuzz(pattern){ if(state.settings.timerVibrate !== false) buzz(pattern); }
+  // Optional spoken cue. Additive only: the beeps stay the source of truth (iOS may keep speech silent).
+  function timerSpeak(text){
+    try{
+      if(!state.settings.timerVoice || !text) return;
+      var ss = window.speechSynthesis;
+      if(!ss || typeof ss.speak!=="function" || typeof SpeechSynthesisUtterance==="undefined") return;
+      if(typeof ss.cancel==="function") ss.cancel();
+      ss.speak(new SpeechSynthesisUtterance(String(text)));
+    }catch(e){}
+  }
+
+  // ---- optional per-set note (Advanced + settings.timerSetLog) ----
+  // After a program's WORK phase ends, a small strip offers load (kg) and effort (RPE 6-10). It is only
+  // in-memory UI (a reload drops it); a Save appends one row to session.setLog. The timer is never touched.
+  var setLogOffer = null;   // { sid, label, tag, ts } for the work phase that just ended
+  function setLogOn(){ return state.settings.mode==="advanced" && state.settings.timerSetLog===true; }
+  function setLogName(ended, meta){
+    var s = getActiveSession(), nm = "";
+    if(meta && meta.kind==="custom" && meta.timerId){ var ct = findCustomTimer(meta.timerId); nm = ct ? ct.name : ""; }
+    else if(meta && meta.kind==="step" && s && s.workout){
+      var st = (s.workout.doc.steps||[]).filter(function(x){ return x.id===meta.stepId; })[0];
+      if(st) nm = stepLabel(st);
+    }
+    return nm || phaseWord(ended.label);
+  }
+  function setLogLastLoad(label){
+    for(var i=0;i<state.sessions.length;i++){
+      var l = state.sessions[i].setLog || [];
+      for(var j=l.length-1;j>=0;j--){ if(l[j].label===label && l[j].load!=null) return l[j].load; }
+    }
+    return null;
+  }
+  function setLogDismiss(){
+    setLogOffer = null;
+    var el = document.getElementById("setLogStrip");
+    if(el){ el.hidden = true; el.innerHTML = ""; }
+    var card = document.getElementById("timerCard"); if(card) card.classList.remove("sl-open");
+  }
+  function setLogOfferWork(ended, meta, now, endedAt){
+    var s = getActiveSession();
+    if(!setLogOn() || !s || now-endedAt>120000) return;
+    setLogOffer = { sid:s.id, label:setLogName(ended, meta), tag:ended.tag||"", ts:endedAt };
+    setLogBuild();
+  }
+  function setLogBuild(){
+    var el = document.getElementById("setLogStrip"), o = setLogOffer;
+    if(!el || !o) return;
+    var last = setLogLastLoad(o.label), rpe = null;
+    el.innerHTML =
+      '<div class="sl-head"><span class="sl-title"></span></div>'+
+      '<div class="sl-row"><label class="sl-load">kg <input type="number" class="sl-kg" inputmode="decimal" min="0" max="999" step="0.5" aria-label="Load in kilograms (optional)"></label>'+
+      '<button type="button" class="btn btn-primary sl-save">Save</button><button type="button" class="btn btn-ghost sl-skip" aria-label="Skip noting this set">Skip</button></div>'+
+      '<div class="sl-chips" role="group" aria-label="Effort, 6 easy to 10 all-out">'+[6,7,8,9,10].map(function(n){ return '<button type="button" class="chip" data-rpe="'+n+'" aria-pressed="false" aria-label="Effort '+n+'">'+n+'</button>'; }).join("")+'</div>';
+    el.querySelector(".sl-title").textContent = "Note this set · "+o.label+(o.tag ? " · "+o.tag : "");
+    var kg = el.querySelector(".sl-kg"), save = el.querySelector(".sl-save");
+    if(last!=null) kg.value = last;
+    function sync(){ save.disabled = !(kg.value.trim()!=="" || rpe!==null); }
+    kg.addEventListener("input", sync);
+    el.querySelectorAll(".sl-chips .chip").forEach(function(c){
+      c.addEventListener("click", function(){
+        var v = +c.dataset.rpe; rpe = rpe===v ? null : v;
+        el.querySelectorAll(".sl-chips .chip").forEach(function(b){ var on = +b.dataset.rpe===rpe; b.classList.toggle("selected", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+        sync();
+      });
+    });
+    save.addEventListener("click", function(){
+      var se = state.sessions.filter(function(x){ return x.id===o.sid; })[0];
+      var n = parseFloat(kg.value), load = (isFinite(n) && n>=0) ? Math.round(Math.min(n, 999)*10)/10 : null;
+      if(se && setLogOffer===o && (load!==null || rpe!==null)){
+        if(!Array.isArray(se.setLog)) se.setLog = [];
+        se.setLog.push({ ts:o.ts, label:o.label, tag:o.tag, load:load, rpe:rpe });
+        saveState();
+      }
+      setLogDismiss();
+    });
+    el.querySelector(".sl-skip").addEventListener("click", setLogDismiss);
+    sync();
+    el.hidden = false;
+    document.getElementById("timerCard").classList.add("sl-open");
+  }
+  // Called from renderTimer: hide the strip whenever it no longer applies (setting off, Simple mode, session gone).
+  function setLogSync(){
+    var el = document.getElementById("setLogStrip");
+    if(!el) return;
+    if(setLogOffer && !(setLogOn() && getActiveSession() && getActiveSession().id===setLogOffer.sid)) setLogDismiss();
+    else if(!setLogOffer && (el.innerHTML || !el.hidden)) setLogDismiss();
+  }
+  function setNumOf(tag){ var m = /SET (\d+)\/\d+(?! DONE)/.exec(tag||""); return m && !/DONE/.test(tag) ? +m[1] : 0; }
+  function phaseWord(label){ label = String(label||""); return label.charAt(0).toUpperCase()+label.slice(1).toLowerCase(); }
   // Walk through every phase boundary that has already passed. Only a boundary crossed within
   // the last second gets its beep — catching up after the screen was off shouldn't fire a burst
   // of stale beeps. Returns whether the phase changed.
@@ -3648,29 +3962,73 @@
       var fresh = now - timer.phaseEndsAt < 1000;
       if(timer.program){
         var ended = timer.program[timer.pIndex];
-        if(fresh){ if(ended.kind==="work"){ beep(880,220,0.1); buzz([40,60,40]); } else { beep(440,220,0.1); buzz(120); } }
-        if(ended.kind==="work") timer.round += 1;
+        if(fresh){ if(ended.kind==="work"){ beep(880,220,0.1); timerBuzz([40,60,40]); } else { beep(440,220,0.1); timerBuzz(120); } }
+        if(ended.kind==="work"){ timer.round += 1; setLogOfferWork(ended, timer.programMeta, now, timer.phaseEndsAt); }
+        else if(timer.pIndex >= timer.program.length-1) setLogDismiss(); // program over on a rest: an older offer goes with it
         changed = true;
         if(timer.pIndex >= timer.program.length-1){
           // the last phase is over: stop, and tell the runner (after this sync has finished)
-          var meta = timer.programMeta;
-          timer.running = false; timer.phaseEndsAt = null; timer.remainingMs = 0; timer.phase = "done";
-          stopTimerTicking();
-          setTimeout(function(){ if(timerProgramDoneHook) timerProgramDoneHook(meta); }, 0);
+          finishTimerProgram();
           break;
         }
-        timer.pIndex += 1;
+        timer.pIndex += 1; timer.extraMs = 0;
+        if(fresh){
+          var nxt = timer.program[timer.pIndex], nSet = setNumOf(nxt.tag);
+          timerSpeak((nSet && nSet!==setNumOf(ended.tag) ? "Set "+nSet+". " : "") + phaseWord(nxt.label));
+        }
         timer.phase = timer.program[timer.pIndex].kind;
         timer.phaseEndsAt += timer.program[timer.pIndex].ms;
         continue;
       }
-      if(timer.phase==="work"){ timer.round += 1; if(fresh){ beep(880,220,0.1); buzz([40,60,40]); } }
-      else if(fresh){ beep(440,220,0.1); buzz(120); }
+      if(timer.phase==="work"){ timer.round += 1; if(fresh){ beep(880,220,0.1); timerBuzz([40,60,40]); } }
+      else if(fresh){ beep(440,220,0.1); timerBuzz(120); }
+      if(fresh) timerSpeak(timer.phase==="work" ? "Rest" : "Work");
       timer.phase = timer.phase==="work" ? "rest" : "work";
       timer.phaseEndsAt += phaseDurationMs(timer.phase);
       changed = true;
     }
     return changed;
+  }
+  function finishTimerProgram(){
+    var meta = timer.programMeta;
+    timer.running = false; timer.phaseEndsAt = null; timer.remainingMs = 0; timer.phase = "done";
+    stopTimerTicking();
+    setTimeout(function(){ if(timerProgramDoneHook) timerProgramDoneHook(meta); }, 0);
+  }
+  // ---- skip / back / +15s (program only; free mode never calls these) ----
+  // They only move pIndex / phaseEndsAt (or remainingMs when paused), so the engine stays timestamp-driven.
+  var TIMER_RESTART_MS = 2000;   // Back inside the first 2 s of a phase goes to the previous one
+  function timerSkipOk(){ return !!timer.program && (timer.phase==="work" || timer.phase==="rest"); }
+  function workPhasesBefore(i){
+    var n = 0;
+    for(var k=0;k<i;k++){ if(timer.program[k].kind==="work") n++; }
+    return n;
+  }
+  function timerSkip(dir){
+    if(!timerSkipOk()) return;
+    var now = Date.now();
+    if(timer.running){ syncTimer(now); if(!timerSkipOk()) { persistTimer(); renderTimer(); return; } }
+    var prog = timer.program, i = timer.pIndex, elapsed = prog[i].ms + (timer.extraMs||0) - timerRemainingMs(now), to;
+    if(dir>0){
+      if(i >= prog.length-1){
+        timer.round = workPhasesBefore(prog.length) ;
+        finishTimerProgram(); persistTimer(); renderTimer(); return;
+      }
+      to = i+1;
+    } else {
+      to = (i>0 && elapsed < TIMER_RESTART_MS) ? i-1 : i;
+    }
+    timer.pIndex = to; timer.phase = prog[to].kind; timer.round = workPhasesBefore(to); timer.extraMs = 0;
+    if(timer.running) timer.phaseEndsAt = now + prog[to].ms; else timer.remainingMs = prog[to].ms;
+    beep(520, 80, 0.05);
+    persistTimer(); renderTimer();
+  }
+  function timerAddMs(ms){
+    if(!timer.program || timer.phase!=="rest") return;
+    if(timer.running){ syncTimer(Date.now()); if(timer.phase!=="rest") { renderTimer(); return; } timer.phaseEndsAt += ms; }
+    else timer.remainingMs += ms;
+    timer.extraMs = (timer.extraMs||0) + ms;
+    persistTimer(); renderTimer();
   }
   function startTimerTicking(){ if(!timerTickId) timerTickId = setInterval(tick, TIMER_TICK_MS); }
   function stopTimerTicking(){ if(timerTickId){ clearInterval(timerTickId); timerTickId = null; } }
@@ -3678,12 +4036,13 @@
     var s = getActiveSession();
     if(!s) return;
     s.timerState = { phase:timer.phase, running:timer.running, round:timer.round, phaseEndsAt:timer.phaseEndsAt, remainingMs:timer.remainingMs };
-    if(timer.program){ s.timerState.program = timer.program; s.timerState.pIndex = timer.pIndex; s.timerState.programMeta = timer.programMeta; }
+    if(timer.program){ s.timerState.program = timer.program; s.timerState.pIndex = timer.pIndex; s.timerState.programMeta = timer.programMeta; s.timerState.extraMs = timer.extraMs||0; }
     saveState();
   }
   // Rebuild the in-memory timer from the active session — on load, and after an import.
   function restoreTimer(){
     stopTimerTicking();
+    setLogDismiss();
     timer = idleTimer();
     var s = getActiveSession();
     var t = s && s.timerState;
@@ -3698,6 +4057,7 @@
     if(!t || (t.phase!=="work" && t.phase!=="rest")) return;
     timer.phase = t.phase;
     timer.round = t.round||0;
+    timer.extraMs = (timer.program && typeof t.extraMs==="number" && isFinite(t.extraMs) && t.extraMs>0) ? t.extraMs : 0;
     timer.remainingMs = typeof t.remainingMs==="number" ? t.remainingMs : (timer.program ? timer.program[timer.pIndex].ms : phaseDurationMs(t.phase));
     timer.running = !!t.running && typeof t.phaseEndsAt==="number";
     timer.phaseEndsAt = timer.running ? t.phaseEndsAt : null;
@@ -3712,7 +4072,7 @@
     ensureAudio();
     if(timer.program){
       if(timer.phase==="done") return; // finished: the runner loads the next step's program
-      if(timer.phase==="idle"){ timer.pIndex = 0; timer.phase = timer.program[0].kind; timer.round = 0; timer.remainingMs = timer.program[0].ms; }
+      if(timer.phase==="idle"){ timer.pIndex = 0; timer.phase = timer.program[0].kind; timer.round = 0; timer.extraMs = 0; timer.remainingMs = timer.program[0].ms; }
     } else if(timer.phase==="idle"){ timer.phase="work"; timer.round=0; timer.remainingMs=phaseDurationMs("work"); }
     timer.running = true;
     timer.phaseEndsAt = Date.now() + timer.remainingMs;
@@ -3732,13 +4092,16 @@
     stopTimerTicking();
     renderTimer();
   }
-  function resetTimer(){
+  function resetTimer(opts){
     stopTimerTicking();
     // Reset inside a running workout restarts the current step's program; anywhere else (a new
-    // or finished session, an import, Reset progress) it clears the program as before.
+    // or finished session, an import, Reset progress) it clears the program as before. A program
+    // loaded from the timer builder is kept (restarted) only when the Reset BUTTON asks (keepCustom);
+    // every other caller (end/start session, Reset progress, Reset all data) clears it. Its Clear button also unloads it.
     var prog = timer.program, meta = timer.programMeta, s = getActiveSession();
+    setLogDismiss();
     timer = idleTimer();
-    if(prog && s && s.workout){ timer.program = prog; timer.pIndex = 0; timer.programMeta = meta; timer.remainingMs = prog[0].ms; }
+    if(prog && ((s && s.workout) || (opts && opts.keepCustom && meta && meta.kind==="custom"))){ timer.program = prog; timer.pIndex = 0; timer.programMeta = meta; timer.remainingMs = prog[0].ms; }
     persistTimer();
     renderTimer();
   }
@@ -3747,12 +4110,43 @@
     var phaseChanged = syncTimer(now);
     var secs = Math.ceil(timerRemainingMs(now)/1000);
     if(phaseChanged) persistTimer();
-    else if(timer.running && secs!==timer.lastShownSec && secs>=1 && secs<=3) beep(660,90,0.06);
+    else if(timer.running && secs!==timer.lastShownSec && secs>=1 && secs<=3){ beep(660,90,0.06); timerSpeak(String(secs)); }
     if(phaseChanged || secs!==timer.lastShownSec) renderTimer();
   }
   function fmtClock(sec){
     var m = Math.floor(sec/60), s = sec%60;
     return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+  }
+  // ---- gym-floor display (full-screen overlay class on the card; no Fullscreen API) ----
+  function timerNextText(){
+    var pp = programPhase(), fmt = function(ms){ var s = Math.round(ms/1000); return Math.floor(s/60)+":"+(s%60<10?"0":"")+(s%60); };
+    if(timer.phase==="done") return "";
+    if(pp){
+      var nx = timer.program[timer.pIndex+1];
+      return nx ? "Next: "+nx.label+" "+fmt(nx.ms) : "Next: Done";
+    }
+    if(timer.phase==="idle") return "";
+    return timer.phase==="work" ? "Next: REST "+fmt(phaseDurationMs("rest")) : "Next: WORK "+fmt(phaseDurationMs("work"));
+  }
+  // "REP 3/6 · SET 2/3" out of a phase tag; tags without those parts (a duration, "SET 2/3 DONE") pass through as they are.
+  function timerCounters(tag){
+    tag = String(tag||"");
+    var rep = /REP \d+\/\d+/.exec(tag), set = /SET \d+\/\d+( DONE)?/.exec(tag);
+    return (rep||set) ? [rep&&rep[0], set&&set[0]].filter(Boolean).join(" \u00b7 ") : tag;
+  }
+  var timerFullY = 0, timerFlashKey = "";
+  function setTimerFull(on, restoreScroll){
+    var card = document.getElementById("timerCard"), btn = document.getElementById("timerFullBtn");
+    if(on===card.classList.contains("timer-full")) return;
+    if(on){ timerFullY = window.scrollY||0; }
+    card.classList.toggle("timer-full", on);
+    document.documentElement.classList.toggle("timer-full-lock", on);
+    btn.textContent = on ? "Exit" : "Full screen";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", on ? "Exit full screen timer" : "Full screen timer");
+    if(!on){ card.classList.remove("tf-flash"); if(restoreScroll){ try{ window.scrollTo(0, timerFullY); }catch(e){} } }
+    else timerFlashKey = timer.phase+"|"+timer.pIndex+"|"+timer.round;
+    try{ btn.focus({ preventScroll:true }); }catch(e){}
   }
   function renderTimer(){
     var secs = Math.ceil(timerRemainingMs(Date.now())/1000);
@@ -3763,24 +4157,161 @@
     var pp = programPhase();
     if(pp){
       document.getElementById("phaseLabel").textContent = timer.phase==="done" ? "DONE" : timer.phase==="idle" ? "READY · "+pp.label : pp.label;
-      document.getElementById("roundLabel").textContent = timer.phase==="done" ? " " : (pp.tag || " ");
+      document.getElementById("roundLabel").textContent = timer.phase==="done" ? " " : (timerCounters(pp.tag) || " ");
     } else {
       document.getElementById("phaseLabel").textContent = timer.phase==="idle" ? "READY" : (timer.phase==="work" ? "WORK" : "REST");
       document.getElementById("roundLabel").textContent = timer.round>0 ? ("ROUND "+timer.round) : " ";
     }
     document.getElementById("countdown").textContent = fmtClock(Math.max(secs,0));
-    var total = pp ? pp.ms/1000 : phaseDurationMs(timer.phase)/1000;
+    var nxt = document.getElementById("timerNext"), nt = timerNextText();
+    nxt.textContent = nt; nxt.hidden = !nt;
+    var fkey = timer.phase+"|"+timer.pIndex+"|"+timer.round;
+    if(fkey!==timerFlashKey){
+      timerFlashKey = fkey;
+      if(card.classList.contains("timer-full")){ card.classList.remove("tf-flash"); void card.offsetWidth; card.classList.add("tf-flash"); }
+    }
+    var total = pp ? (pp.ms+(timer.extraMs||0))/1000 : phaseDurationMs(timer.phase)/1000;
     var pct = total>0 ? Math.max(0,Math.min(100,(secs/total)*100)) : 0;
     document.getElementById("timerFill").style.width = pct+"%";
     document.getElementById("startBtn").textContent = timer.running ? "Pause" : (timer.phase==="idle" ? "Start" : timer.phase==="done" ? "Done" : "Resume");
     document.getElementById("startBtn").disabled = timer.phase==="done";
     document.getElementById("playRestBtn").hidden = timer.phase!=="rest"; // GAMES hook
+    setLogSync();
+    document.getElementById("timerSkipRow").hidden = !timerSkipOk();
+    document.getElementById("timerAddBtn").hidden = !(timerSkipOk() && timer.phase==="rest");
     // A workout step's program owns the timer; the free work/rest settings wait until it's unloaded.
     var idle = timer.phase==="idle" && !timer.program;
     document.getElementById("workInput").disabled = !idle;
     document.getElementById("restInput").disabled = !idle;
     ["workMinus","workPlus","restMinus","restPlus"].forEach(function(id){ document.getElementById(id).disabled = !idle; });
     document.querySelectorAll("#presets .chip").forEach(function(c){ c.disabled = !idle; });
+    var custom = customProgramLoaded();
+    var canLoad = !timer.running && (idle || custom); // same guard as the builder's Load button
+    document.querySelectorAll("#presets .preset-pinned").forEach(function(c){ c.disabled = !canLoad; });
+    document.querySelectorAll("#tbSaved [data-load]").forEach(function(c){ c.disabled = !canLoad; });
+    var advancedMode = state.settings.mode==="advanced";
+    var builderEl = document.getElementById("timerBuilder");
+    builderEl.classList.toggle("tb-simple", !advancedMode);
+    builderEl.hidden = !advancedMode && !custom; // Simple mode: only the loaded note + Clear, never the builder
+    document.getElementById("tbLoadBtn").disabled = timer.running || !(idle || custom);
+    document.getElementById("tbClearBtn").hidden = !custom;
+    document.getElementById("tbClearBtn").disabled = timer.running;
+    document.getElementById("tbNote").hidden = !custom;
+    document.getElementById("timerSettingsNow").textContent = custom ? "Custom workout loaded" :
+      state.timerDefaults.workSec+"s work · "+state.timerDefaults.restSec+"s rest";
+  }
+  // ---- saved custom timers (state.customTimers) ----
+  var renamingTimerId = null;
+  function timerCfgMs(cfg){ var ms = 0; compileTimerConfig(cfg).forEach(function(p){ ms += p.ms; }); return ms; }
+  function timerCfgSummary(cfg){ var c = normTimerConfig(cfg); return c.work+"s x "+c.reps+(c.sets>1 ? " x "+c.sets+" sets" : "")+" \u00b7 "+fmtDur(Math.round(timerCfgMs(c)/1000)); }
+  function findCustomTimer(id){ return (state.customTimers||[]).find(function(t){ return t.id===id; }); }
+  function renderSavedTimers(){
+    var list = state.customTimers || [];
+    // Pinned chips go first in #presets (Simple and Advanced); the fixed presets follow, unchanged.
+    var presets = document.getElementById("presets");
+    presets.querySelectorAll(".preset-pinned").forEach(function(c){ c.remove(); });
+    list.filter(function(t){ return t.pinned; }).reverse().forEach(function(t){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip preset-pinned"; b.dataset.timerId = t.id;
+      b.textContent = t.name;
+      var total = fmtDur(Math.round(timerCfgMs(t.cfg)/1000));
+      b.title = t.name+" \u00b7 "+total+" in total"; b.setAttribute("aria-label", t.name+", "+total+" in total");
+      presets.insertBefore(b, presets.firstChild);
+    });
+    var ul = document.getElementById("tbSaved");
+    ul.innerHTML = "";
+    document.getElementById("tbSavedEmpty").hidden = list.length>0;
+    list.forEach(function(t){
+      var li = document.createElement("li"); li.dataset.timerId = t.id;
+      if(renamingTimerId===t.id){
+        var inp = document.createElement("input");
+        inp.type = "text"; inp.maxLength = 40; inp.value = t.name; inp.setAttribute("aria-label", "New name");
+        var row = document.createElement("div"); row.className = "tb-saved-btns";
+        row.appendChild(inp);
+        [["rename-ok","Save"],["rename-cancel","Cancel"]].forEach(function(a){
+          var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset[a[0]===("rename-ok") ? "renameOk" : "renameCancel"] = "1"; b.textContent = a[1]; row.appendChild(b);
+        });
+        li.appendChild(row);
+        setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 0);
+      } else {
+        var nm = document.createElement("div"); nm.className = "tb-saved-name"; nm.textContent = t.name;
+        var meta = document.createElement("span"); meta.className = "tb-saved-meta"; meta.textContent = timerCfgSummary(t.cfg);
+        nm.appendChild(meta);
+        li.appendChild(nm);
+        var btns = document.createElement("div"); btns.className = "tb-saved-btns";
+        [["load","Load"],["pin",t.pinned ? "Unpin" : "Pin"],["rename","Rename"],["delete","Delete"]].forEach(function(a){
+          var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset[a[0]] = "1"; b.textContent = a[1];
+          b.setAttribute("aria-label", a[1]+" "+t.name);
+          if(a[0]==="pin") b.setAttribute("aria-pressed", t.pinned ? "true" : "false");
+          btns.appendChild(b);
+        });
+        li.appendChild(btns);
+      }
+      ul.appendChild(li);
+    });
+    renderTimer();
+  }
+  function timerLoadAllowed(){ return !timer.running && ((timer.phase==="idle" && !timer.program) || customProgramLoaded()); }
+  function loadSavedTimer(id){
+    var t = findCustomTimer(id);
+    if(!t || !timerLoadAllowed()) return;
+    var c = normTimerConfig(t.cfg);
+    Object.keys(TB_IDS).forEach(function(bid){ document.getElementById(bid).value = c[TB_IDS[bid]]; });
+    renderTimerBuilderTotal();
+    loadTimerProgram(compileTimerConfig(c), { kind:"custom", timerId:t.id });
+    document.getElementById("timerSettings").open = false;
+    showToast(t.name+" loaded. Tap Start when you're ready.");
+  }
+  function saveCustomTimer(){
+    var inp = document.getElementById("tbSaveName"), name = inp.value.trim().slice(0, 40);
+    if(!name){ showToast("Give the workout a name first"); return; }
+    if(state.customTimers.length>=MAX_CUSTOM_TIMERS){ showToast("You can save up to "+MAX_CUSTOM_TIMERS+" workouts. Delete one first."); return; }
+    cleanTimerBuilder();
+    state.customTimers.push({ id:uid(), name:name, cfg:normTimerConfig(readTimerBuilder()), pinned:false, createdAt:Date.now() });
+    inp.value = "";
+    saveState(); renderSavedTimers();
+    showToast("Saved \u201c"+name+"\u201d");
+  }
+  function savedTimerAction(e){
+    var btn = e.target.closest("button"); if(!btn) return;
+    var li = btn.closest("li"); if(!li) return;
+    var id = li.dataset.timerId, t = findCustomTimer(id); if(!t) return;
+    if(btn.dataset.load){ loadSavedTimer(id); }
+    else if(btn.dataset.pin){ t.pinned = !t.pinned; saveState(); renderSavedTimers(); }
+    else if(btn.dataset.rename){ renamingTimerId = id; renderSavedTimers(); }
+    else if(btn.dataset.renameCancel){ renamingTimerId = null; renderSavedTimers(); }
+    else if(btn.dataset.renameOk){ finishRename(li, t); }
+    else if(btn.dataset.delete){
+      var idx = state.customTimers.indexOf(t);
+      state.customTimers.splice(idx, 1); saveState(); renderSavedTimers();
+      showToast("Deleted \u201c"+t.name+"\u201d", { label:"Undo", fn:function(){
+        if(findCustomTimer(t.id) || state.customTimers.length>=MAX_CUSTOM_TIMERS) return;
+        state.customTimers.splice(Math.min(idx, state.customTimers.length), 0, t); saveState(); renderSavedTimers();
+      } });
+    }
+  }
+  function finishRename(li, t){
+    var name = li.querySelector("input").value.trim().slice(0, 40);
+    if(!name){ showToast("A name can't be empty"); return; }
+    t.name = name; renamingTimerId = null; saveState(); renderSavedTimers();
+  }
+  function customProgramLoaded(){ return !!(timer.program && timer.programMeta && timer.programMeta.kind==="custom"); }
+  var TB_IDS = { tbWork:"work", tbRepRest:"repRest", tbReps:"reps", tbSets:"sets", tbSetRest:"setRest", tbLeadIn:"leadIn" };
+  function readTimerBuilder(){
+    var o = {};
+    Object.keys(TB_IDS).forEach(function(id){ o[TB_IDS[id]] = parseInt(document.getElementById(id).value, 10); });
+    return o;
+  }
+  // Clamp what's in the boxes (same rules as compileTimerConfig) and show the result back.
+  function cleanTimerBuilder(){
+    var c = normTimerConfig(readTimerBuilder());
+    Object.keys(TB_IDS).forEach(function(id){ document.getElementById(id).value = c[TB_IDS[id]]; });
+    renderTimerBuilderTotal();
+  }
+  function renderTimerBuilderTotal(){
+    var prog = compileTimerConfig(readTimerBuilder()), ms = 0, work = 0;
+    prog.forEach(function(p){ ms += p.ms; if(p.kind==="work") work++; });
+    document.getElementById("tbTotal").textContent = work+" work intervals · "+fmtDur(Math.round(ms/1000))+" in total";
   }
 
   /* ---------------- screen wake lock ---------------- */
@@ -4192,7 +4723,7 @@
     var s = {
       id:uid(), startedAt:Date.now(), endedAt:null,
       timerConfig:{ workSec:state.timerDefaults.workSec, restSec:state.timerDefaults.restSec },
-      attempts:[], note:"", photos:[], satisfaction:null,
+      attempts:[], note:"", photos:[], satisfaction:null, setLog:[],
       location: opts.location!=null ? opts.location : (state.lastLocation||""),
       projectId: opts.projectId || null
     };
@@ -4209,6 +4740,7 @@
     if(!s) return;
     flushPendingSaves();
     pauseTimer();
+    setLogDismiss();
     finalizeWorkout(s);
     s.endedAt = Date.now();
     delete s.timerState;
@@ -4218,6 +4750,22 @@
     saveState();
     updateWakeLock();
     showEndSummary(s);
+  }
+  // Read-only list of the sets noted with the timer; nothing at all unless Advanced and there are some.
+  function renderSetLogList(container, s){
+    var list = (s && Array.isArray(s.setLog)) ? s.setLog : [];
+    var show = state.settings.mode==="advanced" && list.length>0;
+    container.hidden = !show;
+    container.innerHTML = "";
+    if(!show) return;
+    var eb = document.createElement("p"); eb.className = "eyebrow"; eb.textContent = "Sets noted"; container.appendChild(eb);
+    list.forEach(function(e){
+      var row = document.createElement("div"); row.className = "sl-li";
+      var a = document.createElement("span"); a.textContent = e.label+(e.tag ? " · "+e.tag : "");
+      var b = document.createElement("span"); b.className = "wr-detail";
+      b.textContent = [e.load!=null ? e.load+" kg" : "", e.rpe!=null ? "RPE "+e.rpe : ""].filter(Boolean).join(" · ");
+      row.appendChild(a); row.appendChild(b); container.appendChild(row);
+    });
   }
   function showEndSummary(s){
     var counts = { flash:0, send:0, fall:0 }, xpEarned = 0;
@@ -4248,6 +4796,7 @@
     setBuddy("endBuddy", (counts.flash+counts.send)>0 ? "stoked" : (total>0 ? "sheepish" : "neutral"));
     endSummarySession = s;
     renderWorkoutResult(document.getElementById("endWorkout"), s);
+    renderSetLogList(document.getElementById("endSetLog"), s);
     var endCoachText = document.getElementById("endCoachText");
     endCoachText.hidden = true; endCoachText.textContent = "";
     document.getElementById("endSessionOverlay").hidden = false;
@@ -4755,6 +5304,33 @@
     }
     return out;
   }
+  // The timer builder's program (pure). cfg = {work, reps, repRest, sets, setRest, leadIn} in seconds.
+  // Inputs are clamped: work 3-1800; rests 0 (none) or 3-1800; reps and sets 1-99; leadIn 0 (none) or 3-300.
+  // Phase 0 is the "GET READY" lead-in. A set rest replaces the rep rest between sets, and nothing follows the final rep.
+  function normTimerConfig(cfg){
+    cfg = cfg || {};
+    function num(v, def){ v = Math.round(Number(v)); return isFinite(v) ? v : def; }
+    function sec(v, def, allowZero, max){ v = num(v, def); if(allowZero && v<=0) return 0; return Math.max(3, Math.min(max||1800, v)); }
+    function cnt(v, def){ return Math.max(1, Math.min(99, num(v, def))); }
+    return { work:sec(cfg.work, 45), reps:cnt(cfg.reps, 1), repRest:sec(cfg.repRest, 0, true),
+      sets:cnt(cfg.sets, 1), setRest:sec(cfg.setRest, 0, true), leadIn:sec(cfg.leadIn==null ? 10 : cfg.leadIn, 10, true, 300) };
+  }
+  function compileTimerConfig(cfg){
+    var c = normTimerConfig(cfg), work = c.work, reps = c.reps, repRest = c.repRest, sets = c.sets, setRest = c.setRest, leadIn = c.leadIn;
+    function tagFor(r, s){ return "REP "+r+"/"+reps+" · SET "+s+"/"+sets; }
+    var out = [];
+    if(leadIn>0) out.push({ kind:"rest", label:"GET READY", ms:leadIn*1000, tag:tagFor(1, 1) });
+    for(var s=1; s<=sets; s++){
+      for(var r=1; r<=reps; r++){
+        out.push({ kind:"work", label:"WORK", ms:work*1000, tag:tagFor(r, s) });
+        if(r<reps){ if(repRest>0) out.push({ kind:"rest", label:"REST", ms:repRest*1000, tag:tagFor(r, s) }); }
+        else if(s<sets && setRest>0) out.push({ kind:"rest", label:"SET REST", ms:setRest*1000, tag:tagFor(r, s) });
+      }
+    }
+    return out;
+  }
+  if(window.__cruxTest) window.__cruxSound = { beep:beep, ensureAudio:ensureAudio, buzz:timerBuzz }; // dev/tests.html only
+  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig, skip:timerSkip, add:timerAddMs, get:function(){ return timer; }, load:loadTimerProgram, next:timerNextText, counters:timerCounters, saved:function(){ return state.customTimers; } }; // dev/tests.html only
   function restProgram(sec, tag){ return [{ kind:"rest", label:"REST", ms:sec*1000, tag:tag||"" }]; }
 
   // ---- the runner ----
@@ -4835,7 +5411,7 @@
   // between climbing goes or sets just ends.
   timerProgramDoneHook = function(meta){
     var s = getActiveSession();
-    if(!s || !s.workout || !meta) return;
+    if(!s || !s.workout || !meta || meta.kind==="custom") return; // a timer-builder program isn't part of a workout
     var step = workoutStep(s.workout);
     if(meta.kind==="step" && step && step.id===meta.stepId){
       var res = stepRes(s.workout, step);
@@ -5205,7 +5781,7 @@
 
     document.getElementById("workInput").value = state.timerDefaults.workSec;
     document.getElementById("restInput").value = state.timerDefaults.restSec;
-    document.getElementById("timerSettingsNow").textContent =
+    document.getElementById("timerSettingsNow").textContent = customProgramLoaded() ? "Custom workout loaded" :
       state.timerDefaults.workSec+"s work · "+state.timerDefaults.restSec+"s rest";
     if(!buddyTimer) setBuddy("logBuddy", "focused");
 
@@ -9032,6 +9608,16 @@
     gmOpener = null; gmFromRest = false;
   }
   document.getElementById("openGamesBtn").addEventListener("click", function(){ openGames({ fromRest:false }); });
+  document.getElementById("timerFullBtn").addEventListener("click", function(){ var was = document.getElementById("timerCard").classList.contains("timer-full"); setTimerFull(!was, was); });
+  // Leaving the session screen (end session, switching tab) must never strand the overlay or the scroll lock.
+  if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById("view-session").hidden) setTimerFull(false, false); })
+    .observe(document.getElementById("view-session"), { attributes:true, attributeFilter:["hidden"] });
+  document.addEventListener("keydown", function(e){
+    if(e.key!=="Escape" || e.defaultPrevented) return;
+    if(!document.getElementById("timerCard").classList.contains("timer-full")) return;
+    if(document.querySelector(".modal-overlay:not([hidden]), .cel-sheet, .wl-sheet")) return; // a sheet (Games, a celebration) on top closes first
+    e.preventDefault(); setTimerFull(false, true);
+  });
   document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
   document.getElementById("closeGamesBtn").addEventListener("click", function(){ closeGames(); });
   document.getElementById("gamesCard").addEventListener("pointerdown", function(e){
@@ -9362,7 +9948,7 @@
     var chip = e.target.closest(".chip");
     if(!chip) return;
     state.settings.mode = chip.dataset.modeVal;
-    saveState(); renderSettingsModal();
+    saveState(); renderSettingsModal(); renderTimer();
     if(!document.getElementById("view-home").hidden) renderHome();
   });
   document.getElementById("historyExpandBtn").addEventListener("click", function(){
@@ -9401,15 +9987,28 @@
       state.settings[key] = !state.settings[key];
       saveState();
       renderSettingsModal();
+      if(key==="timerSetLog") renderTimer();
       if(key==="devRoomLab") renderRoomLab();
       if(key==="devPreviewGyms"){ lastUnlockedEnvCount = null; renderCharacterCard(); } // a preview isn't an unlock: no toast
     });
   });
 
+  document.getElementById("timerVolume").addEventListener("input", function(e){
+    state.settings.timerVolume = Math.max(0, Math.min(100, Math.round(+e.target.value)));
+    document.getElementById("timerVolumeVal").textContent = state.settings.timerVolume+"%";
+    saveState();
+  });
+  document.getElementById("timerTestSound").addEventListener("click", function(){
+    beep(880,220,0.1); timerBuzz([40,60,40]); timerSpeak("Work");
+  });
+
   document.getElementById("startBtn").addEventListener("click", function(){
     if(timer.running) pauseTimer(); else { startTimer(); document.getElementById("timerSettings").open = false; }
   });
-  document.getElementById("resetBtn").addEventListener("click", resetTimer);
+  document.getElementById("resetBtn").addEventListener("click", function(){ resetTimer({ keepCustom:true }); });
+  document.getElementById("timerBackBtn").addEventListener("click", function(){ timerSkip(-1); });
+  document.getElementById("timerSkipBtn").addEventListener("click", function(){ timerSkip(1); });
+  document.getElementById("timerAddBtn").addEventListener("click", function(){ timerAddMs(15000); });
 
   document.getElementById("workInput").addEventListener("change", function(e){ setWork(e.target.value); });
   document.getElementById("restInput").addEventListener("change", function(e){ setRest(e.target.value); });
@@ -9421,9 +10020,43 @@
   document.getElementById("presets").addEventListener("click", function(e){
     var chip = e.target.closest(".chip");
     if(!chip || chip.disabled) return;
+    if(chip.dataset.timerId){ loadSavedTimer(chip.dataset.timerId); return; } // a pinned saved timer
     setWork(parseInt(chip.dataset.work,10));
     setRest(parseInt(chip.dataset.rest,10));
   });
+
+  // Timer builder: steppers and inputs re-total; the button loads the program, Clear unloads it.
+  document.querySelectorAll("#timerBuilder [data-tb]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var input = b.parentNode.querySelector("input");
+      input.value = (parseInt(input.value, 10)||0) + parseInt(b.dataset.d, 10);
+      cleanTimerBuilder();
+    });
+  });
+  document.getElementById("timerBuilder").addEventListener("input", renderTimerBuilderTotal);
+  document.getElementById("timerBuilder").addEventListener("change", cleanTimerBuilder);
+  document.getElementById("tbLoadBtn").addEventListener("click", function(){
+    if(document.getElementById("tbLoadBtn").disabled) return;
+    cleanTimerBuilder();
+    loadTimerProgram(compileTimerConfig(readTimerBuilder()), { kind:"custom" });
+    document.getElementById("timerSettings").open = false;
+    showToast("Workout loaded. Tap Start when you're ready.");
+  });
+  document.getElementById("tbClearBtn").addEventListener("click", function(){
+    if(timer.running) return;
+    loadTimerProgram(null);
+  });
+  cleanTimerBuilder();
+  document.getElementById("tbSaveBtn").addEventListener("click", saveCustomTimer);
+  document.getElementById("tbSaveName").addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); saveCustomTimer(); } });
+  document.getElementById("tbSaved").addEventListener("click", savedTimerAction);
+  document.getElementById("tbSaved").addEventListener("keydown", function(e){
+    var li = e.target.closest && e.target.closest("li"); if(!li || e.target.tagName!=="INPUT") return;
+    var t = findCustomTimer(li.dataset.timerId); if(!t) return;
+    if(e.key==="Enter"){ e.preventDefault(); finishRename(li, t); }
+    else if(e.key==="Escape"){ renamingTimerId = null; renderSavedTimers(); }
+  });
+  renderSavedTimers();
 
   document.getElementById("planToggle").addEventListener("click", function(){
     var s = getActiveSession();
@@ -9507,6 +10140,7 @@
     fresh.lastGradeType = keep.lastGradeType;
     fresh.character = keep.character;
     fresh.workouts = keep.workouts; // your workout library is setup, not history
+    fresh.customTimers = keep.customTimers; // so are saved timers
     state = fresh;
     recomputeProfile();
   }
@@ -9524,6 +10158,7 @@
     resetProgress();
     saveState();
     resetTimer();
+    renderSavedTimers();
     updateWakeLock();
     resetBtn.textContent = "Reset progress";
     closeSettings();
@@ -9737,6 +10372,7 @@
     saveState();
     applyTheme();
     restoreTimer();
+    renderSavedTimers();
     updateWakeLock();
     document.getElementById("importConfirm").hidden = true;
     closeSettings();
@@ -9782,6 +10418,7 @@
     saveState();
     applyTheme();
     resetTimer();
+    renderSavedTimers();
     updateWakeLock();
     closeSettings();
     showToast("All data reset");
