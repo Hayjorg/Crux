@@ -3217,6 +3217,62 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(s.timerVoice===true && s.timerVibrate===false && s.timerVolume===40, "round trip: "+JSON.stringify(s));
   });
 
+  // ---- gym-floor display ----
+  test("Timer full screen: class toggles, Escape and the button exit, scroll restored", async function(){
+    await boot(workoutSave()); await startOrResume();
+    var card = $("timerCard"), btn = $("timerFullBtn");
+    expect(btn && !card.classList.contains("timer-full") && btn.textContent==="Full screen", "initial state");
+    W.scrollTo(0, 0);
+    await click("timerFullBtn", 100);
+    expect(card.classList.contains("timer-full") && btn.textContent==="Exit" && btn.getAttribute("aria-pressed")==="true", "didn't enter");
+    var cs = W.getComputedStyle(card);
+    expect(cs.position==="fixed", "card not fixed: "+cs.position);
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); await wait(100);
+    expect(!card.classList.contains("timer-full") && btn.textContent==="Full screen", "Escape didn't exit");
+    await click("timerFullBtn", 100); await click("timerFullBtn", 100);
+    expect(!card.classList.contains("timer-full"), "button didn't exit");
+    // works while a free timer runs, and the wake lock path is untouched
+    await click("timerFullBtn", 100); await click("startBtn", 300);
+    expect(card.classList.contains("timer-full") && $("phaseLabel").textContent==="WORK" && $("startBtn").textContent==="Pause", "free mode in full screen");
+    D.dispatchEvent(new W.KeyboardEvent("keydown", { key:"Escape", bubbles:true })); await wait(100);
+    expect(!card.classList.contains("timer-full") && T().running, "exit stopped the timer");
+  });
+
+  test("Timer full screen: Next text and counters from a custom program", async function(){
+    await boot(workoutSave()); await startOrResume();
+    var prog = W.__cruxTimer.compile({ work:7, repRest:3, reps:2, sets:2, setRest:20, leadIn:5 });
+    loadCustom(prog);
+    expect($("timerNext").textContent==="Next: WORK 0:07", "idle: "+$("timerNext").textContent);
+    expect($("roundLabel").textContent==="REP 1/2 \u00b7 SET 1/2", "counter: "+$("roundLabel").textContent);
+    await click("startBtn", 200);
+    expect($("timerNext").textContent==="Next: WORK 0:07", "lead-in next: "+$("timerNext").textContent);
+    await click("timerSkipBtn", 100);
+    expect(T().pIndex===1 && $("timerNext").textContent==="Next: REST 0:03", "at 1: "+$("timerNext").textContent);
+    await click("timerSkipBtn", 100); await click("timerSkipBtn", 100);   // -> 3 (WORK rep 2)
+    expect($("roundLabel").textContent==="REP 2/2 \u00b7 SET 1/2" && $("timerNext").textContent==="Next: SET REST 0:20", "at 3: "+$("roundLabel").textContent+" / "+$("timerNext").textContent);
+    for(var i=T().pIndex; i<prog.length-1; i++) await click("timerSkipBtn", 60);
+    expect(T().pIndex===prog.length-1 && $("timerNext").textContent==="Next: Done", "last: "+$("timerNext").textContent);
+    await click("timerSkipBtn", 200);
+    expect(T().phase==="done" && $("timerNext").hidden, "done should hide Next");
+    var c = W.__cruxTimer.counters;
+    expect(c("REP 3/6 \u00b7 SET 2/3")==="REP 3/6 \u00b7 SET 2/3" && c("SET 2/3 DONE")==="SET 2/3 DONE" && c("0:45")==="0:45" && c("")==="", "counters parse");
+  });
+
+  test("Timer full screen: free mode unchanged and Play while you rest still works", async function(){
+    await boot(workoutSave()); await startOrResume();
+    expect($("timerNext").hidden && $("roundLabel").textContent.trim()==="", "idle free mode should show no Next/round");
+    await click("startBtn", 300);
+    expect($("timerNext").textContent==="Next: REST 1:30" && $("roundLabel").textContent.trim()==="", "free work: "+$("timerNext").textContent+" / "+$("roundLabel").textContent);
+    expect($("playRestBtn").hidden, "play button visible during work");
+    W.__cruxTimer.get().phaseEndsAt = Date.now()+5; await wait(1500);
+    expect($("phaseLabel").textContent==="REST" && $("roundLabel").textContent==="ROUND 1" && $("timerNext").textContent==="Next: WORK 0:45" && !$("playRestBtn").hidden, "free rest: "+$("phaseLabel").textContent+" / "+$("timerNext").textContent);
+    await click("timerFullBtn", 100);
+    expect(!$("playRestBtn").hidden, "play button hidden in portrait full screen");
+    await click("timerFullBtn", 100);
+    await click("playRestBtn", 300);
+    expect(!$("gamesOverlay").hidden, "Games didn't open from rest");
+  });
+
   /* ---------- runner ---------- */
   var running = false;
   async function runAll(){

@@ -603,6 +603,7 @@
 
   /* ================= TIMER (session view) ================= */
   .timer-card{padding:24px 22px 22px;text-align:center;margin-bottom:16px;transition:border-color .3s ease;}
+  .timer-full .timer-main,.timer-full .timer-side{width:100%;}
   .timer-card.phase-work{border-color:color-mix(in srgb, var(--accent) 55%, var(--border));}
   .timer-card.phase-rest{border-color:color-mix(in srgb, var(--send) 55%, var(--border));}
   .phase-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;}
@@ -620,6 +621,55 @@
   .timer-skip-row[hidden], .timer-skip-row [hidden]{display:none;}
   .timer-skip-btn{min-height:44px;min-width:44px;padding:10px 14px;font-size:13px;}
   .timer-skip-chip{min-height:44px;min-width:44px;padding:8px 16px;font-size:13px;}
+  .timer-full-btn{display:flex;margin:-10px -8px 6px auto;min-height:32px;font-size:12px;}
+  .timer-card{position:relative;}
+  .timer-next{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);margin:-8px 0 14px;font-variant-numeric:tabular-nums;}
+  .timer-next[hidden]{display:none;}
+  /* Gym-floor display: the card itself becomes a fixed overlay (no Fullscreen API: it can be blocked in the Artifact iframe). */
+  .timer-card.timer-full{position:fixed;inset:0;z-index:90;margin:0;border:0;border-radius:0;box-sizing:border-box;width:100%;height:100vh;height:100dvh;
+    padding:calc(14px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));
+    display:flex;flex-direction:column;justify-content:center;gap:2vh;overflow:hidden;
+    --tf-bg:var(--surface-2);--tf-ink:var(--text);--tf-sub:var(--text-dim);background:var(--tf-bg);color:var(--tf-ink);transition:background .2s ease;}
+  .timer-card.timer-full.phase-work{--tf-bg:var(--accent);--tf-ink:#0B1F1D;--tf-sub:#0B1F1D;}
+  .timer-card.timer-full.phase-rest{--tf-bg:color-mix(in srgb, var(--send) 32%, var(--bg));--tf-ink:var(--text);--tf-sub:var(--text);}
+  .timer-card.timer-full.phase-done{--tf-bg:var(--surface);}
+  .timer-full .timer-full-btn{position:absolute;margin:0;top:calc(10px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));min-height:56px;min-width:56px;padding:0 18px;font-size:15px;font-weight:700;color:var(--tf-ink);background:transparent;border:2px solid currentColor;border-radius:14px;z-index:2;}
+  .timer-full::before{content:"";position:absolute;inset:0;background:var(--tf-ink);opacity:0;pointer-events:none;}
+  .timer-full.tf-flash::before{animation:tfFlash .7s ease-out;}
+  @keyframes tfFlash{0%{opacity:.55;}100%{opacity:0;}}
+  .timer-full .timer-main,.timer-full .timer-side{position:relative;display:flex;flex-direction:column;align-items:center;}
+  .timer-full .phase-row{margin:0;}
+  .timer-full .phase-dot{display:none;}
+  .timer-full .phase-label{font-family:"Bebas Neue",sans-serif;font-size:clamp(40px,12vw,84px);letter-spacing:0.08em;color:var(--tf-ink);line-height:1;font-weight:400;}
+  .timer-full .round-label{font-size:clamp(16px,4.6vw,30px);color:var(--tf-sub);font-weight:600;}
+  .timer-full .phase-row{flex-direction:column;gap:4px;}
+  .timer-full .countdown{font-size:min(44vw,36dvh);line-height:0.9;margin:1vh 0;color:var(--tf-ink);font-variant-numeric:tabular-nums;}
+  .timer-full .progress-track{width:100%;max-width:none;height:clamp(16px,3.4dvh,28px);margin:0 0 1.5vh;background:color-mix(in srgb, var(--tf-ink) 22%, transparent);border-color:transparent;}
+  .timer-full .progress-fill{background:var(--tf-ink);transition:width 1s linear;}
+  .timer-full .timer-next{font-size:clamp(16px,4.6vw,28px);font-weight:600;color:var(--tf-ink);margin:0;}
+  .timer-full .timer-controls{margin:0 0 1.5vh;width:100%;flex-wrap:nowrap;}
+  .timer-full .timer-controls .btn{flex:1;min-height:64px;font-size:20px;}
+  .timer-full .timer-skip-row{margin:0;width:100%;flex-wrap:nowrap;}
+  .timer-full .timer-skip-row .btn,.timer-full .timer-skip-row .chip{flex:1;min-height:56px;font-size:16px;}
+  .timer-full .btn-ghost,.timer-full .chip{background:color-mix(in srgb, var(--tf-ink) 12%, transparent);color:var(--tf-ink);border-color:color-mix(in srgb, var(--tf-ink) 45%, transparent);}
+  .timer-full .timer-controls .btn-primary{background:var(--tf-ink);color:var(--tf-bg);border-color:transparent;box-shadow:none;}
+  .timer-full .timer-settings,.timer-full .presets,.timer-full .preset-guide-link,.timer-full .timer-builder{display:none;}
+  .timer-full .play-rest-btn{align-self:center;min-height:56px;color:var(--tf-ink);}
+  @media (orientation:landscape) and (max-height:520px){
+    .timer-card.timer-full{display:grid;grid-template-columns:1fr minmax(220px,34%);grid-template-rows:1fr;align-items:center;column-gap:20px;}
+    .timer-full .countdown{font-size:min(30vw,52dvh);}
+    .timer-full .phase-label{font-size:clamp(30px,13dvh,56px);}
+    .timer-full .round-label,.timer-full .timer-next{font-size:clamp(14px,5dvh,22px);}
+    .timer-full .timer-main{padding-right:0;}
+    .timer-full .timer-side{gap:10px;}
+    .timer-full .timer-controls,.timer-full .timer-skip-row{margin:0;}
+    .timer-full .play-rest-btn{display:none;}
+    .timer-full .timer-full-btn{top:calc(6px + env(safe-area-inset-top,0px));min-height:56px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .timer-full.tf-flash::before{animation:none;}
+    .timer-card.timer-full{transition:none;}
+  }
   .timer-config{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;padding-top:16px;border-top:1px dashed var(--border);}
   .field{display:flex;flex-direction:column;align-items:center;gap:4px;}
   .field label{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);}
@@ -1086,6 +1136,7 @@
 
   /* ---- shell polish: sheet motion, cards, intro, end, HUD ---- */
   body:has(#gamesOverlay:not([hidden])){overflow:hidden;}
+  html.timer-full-lock, html.timer-full-lock body{overflow:hidden;}
   .modal-overlay.games-overlay{animation:gmFade .2s ease;transition:opacity .11s ease;}
   .modal-overlay.games-overlay.gm-closing{opacity:0;pointer-events:none;}
   .modal-card.games-card{min-height:min(580px, calc(100dvh - 40px));animation:gmSheetIn .26s cubic-bezier(.2,.8,.2,1);
@@ -1866,6 +1917,8 @@
     </section>
 
     <section class="card timer-card" id="timerCard">
+      <button type="button" class="link-btn timer-full-btn" id="timerFullBtn" aria-pressed="false" aria-label="Full screen timer">Full screen</button>
+      <div class="timer-main">
       <div class="phase-row">
         <span class="phase-dot"></span>
         <span class="phase-label" id="phaseLabel">READY</span>
@@ -1873,6 +1926,9 @@
       </div>
       <div class="countdown" id="countdown">00:45</div>
       <div class="progress-track"><div class="progress-fill" id="timerFill" style="width:100%"></div></div>
+      <div class="timer-next" id="timerNext" hidden></div>
+      </div>
+      <div class="timer-side">
       <button type="button" class="link-btn play-rest-btn" id="playRestBtn" aria-haspopup="dialog" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.2v7.6l6-3.8z" fill="currentColor"/></svg>
         <span>Play while you rest</span>
@@ -1885,6 +1941,7 @@
         <button type="button" class="btn btn-ghost timer-skip-btn" id="timerBackBtn" aria-label="Previous phase (or restart this one)">&#9664;&#9664; Back</button>
         <button type="button" class="chip timer-skip-chip" id="timerAddBtn" aria-label="Add 15 seconds to the rest" hidden>+15s</button>
         <button type="button" class="btn btn-ghost timer-skip-btn" id="timerSkipBtn" aria-label="Skip to the next phase">Skip &#9654;&#9654;</button>
+      </div>
       </div>
       <details class="timer-settings" id="timerSettings">
       <summary class="timer-settings-summary">
@@ -3886,6 +3943,37 @@
     var m = Math.floor(sec/60), s = sec%60;
     return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
   }
+  // ---- gym-floor display (full-screen overlay class on the card; no Fullscreen API) ----
+  function timerNextText(){
+    var pp = programPhase(), fmt = function(ms){ var s = Math.round(ms/1000); return Math.floor(s/60)+":"+(s%60<10?"0":"")+(s%60); };
+    if(timer.phase==="done") return "";
+    if(pp){
+      var nx = timer.program[timer.pIndex+1];
+      return nx ? "Next: "+nx.label+" "+fmt(nx.ms) : "Next: Done";
+    }
+    if(timer.phase==="idle") return "";
+    return timer.phase==="work" ? "Next: REST "+fmt(phaseDurationMs("rest")) : "Next: WORK "+fmt(phaseDurationMs("work"));
+  }
+  // "REP 3/6 · SET 2/3" out of a phase tag; tags without those parts (a duration, "SET 2/3 DONE") pass through as they are.
+  function timerCounters(tag){
+    tag = String(tag||"");
+    var rep = /REP \d+\/\d+/.exec(tag), set = /SET \d+\/\d+( DONE)?/.exec(tag);
+    return (rep||set) ? [rep&&rep[0], set&&set[0]].filter(Boolean).join(" \u00b7 ") : tag;
+  }
+  var timerFullY = 0, timerFlashKey = "";
+  function setTimerFull(on){
+    var card = document.getElementById("timerCard"), btn = document.getElementById("timerFullBtn");
+    if(on===card.classList.contains("timer-full")) return;
+    if(on){ timerFullY = window.scrollY||0; }
+    card.classList.toggle("timer-full", on);
+    document.documentElement.classList.toggle("timer-full-lock", on);
+    btn.textContent = on ? "Exit" : "Full screen";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", on ? "Exit full screen timer" : "Full screen timer");
+    if(!on){ card.classList.remove("tf-flash"); try{ window.scrollTo(0, timerFullY); }catch(e){} }
+    else timerFlashKey = timer.phase+"|"+timer.pIndex+"|"+timer.round;
+    try{ btn.focus({ preventScroll:true }); }catch(e){}
+  }
   function renderTimer(){
     var secs = Math.ceil(timerRemainingMs(Date.now())/1000);
     timer.lastShownSec = secs;
@@ -3895,12 +3983,19 @@
     var pp = programPhase();
     if(pp){
       document.getElementById("phaseLabel").textContent = timer.phase==="done" ? "DONE" : timer.phase==="idle" ? "READY · "+pp.label : pp.label;
-      document.getElementById("roundLabel").textContent = timer.phase==="done" ? " " : (pp.tag || " ");
+      document.getElementById("roundLabel").textContent = timer.phase==="done" ? " " : (timerCounters(pp.tag) || " ");
     } else {
       document.getElementById("phaseLabel").textContent = timer.phase==="idle" ? "READY" : (timer.phase==="work" ? "WORK" : "REST");
       document.getElementById("roundLabel").textContent = timer.round>0 ? ("ROUND "+timer.round) : " ";
     }
     document.getElementById("countdown").textContent = fmtClock(Math.max(secs,0));
+    var nxt = document.getElementById("timerNext"), nt = timerNextText();
+    nxt.textContent = nt; nxt.hidden = !nt;
+    var fkey = timer.phase+"|"+timer.pIndex+"|"+timer.round;
+    if(fkey!==timerFlashKey){
+      timerFlashKey = fkey;
+      if(card.classList.contains("timer-full")){ card.classList.remove("tf-flash"); void card.offsetWidth; card.classList.add("tf-flash"); }
+    }
     var total = pp ? pp.ms/1000 : phaseDurationMs(timer.phase)/1000;
     var pct = total>0 ? Math.max(0,Math.min(100,(secs/total)*100)) : 0;
     document.getElementById("timerFill").style.width = pct+"%";
@@ -4940,7 +5035,7 @@
     return out;
   }
   if(window.__cruxTest) window.__cruxSound = { beep:beep, ensureAudio:ensureAudio, buzz:timerBuzz }; // dev/tests.html only
-  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig, skip:timerSkip, add:timerAddMs, get:function(){ return timer; }, load:loadTimerProgram }; // dev/tests.html only
+  if(window.__cruxTest) window.__cruxTimer = { compile:compileTimerConfig, norm:normTimerConfig, skip:timerSkip, add:timerAddMs, get:function(){ return timer; }, load:loadTimerProgram, next:timerNextText, counters:timerCounters }; // dev/tests.html only
   function restProgram(sec, tag){ return [{ kind:"rest", label:"REST", ms:sec*1000, tag:tag||"" }]; }
 
   // ---- the runner ----
@@ -9218,6 +9313,16 @@
     gmOpener = null; gmFromRest = false;
   }
   document.getElementById("openGamesBtn").addEventListener("click", function(){ openGames({ fromRest:false }); });
+  document.getElementById("timerFullBtn").addEventListener("click", function(){ setTimerFull(!document.getElementById("timerCard").classList.contains("timer-full")); });
+  // Leaving the session screen (end session, switching tab) must never strand the overlay or the scroll lock.
+  if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById("view-session").hidden) setTimerFull(false); })
+    .observe(document.getElementById("view-session"), { attributes:true, attributeFilter:["hidden"] });
+  document.addEventListener("keydown", function(e){
+    if(e.key!=="Escape" || e.defaultPrevented) return;
+    if(!document.getElementById("timerCard").classList.contains("timer-full")) return;
+    if(document.querySelector(".modal-overlay:not([hidden])")) return; // a sheet (Games, a celebration) on top closes first
+    e.preventDefault(); setTimerFull(false);
+  });
   document.getElementById("playRestBtn").addEventListener("click", function(){ openGames({ fromRest:true }); });
   document.getElementById("closeGamesBtn").addEventListener("click", function(){ closeGames(); });
   document.getElementById("gamesCard").addEventListener("pointerdown", function(e){
