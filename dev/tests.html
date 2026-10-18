@@ -4345,7 +4345,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     await climbBoot(function(s){ s.character.decorations = ["wallshelf"]; });
     var C = W.__cruxClimb, P = W.__cruxPerch; await climbOn();
     var c = climbStageCenter(); ptr("pointerdown", "mouse", c.x, c.y); ptr("pointerup", "mouse", c.x, c.y); $("characterStage").click(); await wait(150);
-    expect(C.state() && C.state().mode==="wall" && C.state().idx===0, "a tap on the board changed something: "+JSON.stringify(C.state()));
+    expect(C.state() && C.state().mode==="wall" && !P.running(), "a tap on the board dismounted or hopped him: "+JSON.stringify(C.state())); // Wall moves: a tap within reach of a wall hold climbs to it (he may move along the wall), never down or off
     await click("navTrainBtn", 250);
     expect(C.state()===null && /idle\/idle-01\.png$/.test(dev_frameName()) && !D.getElementById("climbHolds"), "leaving Home didn't put him on the floor");
     await goHome(); await wait(300);
@@ -4952,7 +4952,7 @@ and the project rules. It runs on its own private copy of the data, never your r
   // ---- climb to another hold ----
   var HOLD_SET = ["holdred", "holdblue", "holdyellowtri", "holdgreentri", "holdsand", "holdwood", "holdvolume", "jug", "slottedhold", "beanbag", "hangboard", "campusrungs", "toolbox"];
   async function climbBootHolds(){ await climbBoot(function(s){ s.character.decorations = HOLD_SET.slice(); }); }
-  async function mountNow(){ var C = W.__cruxClimb; expect(C.mount()===true, "mount refused"); await until(function(){ var st = C.state(); return st && st.mode==="wall"; }, 4000, "the climber to reach the first hold"); }
+  async function mountNow(){ var C = W.__cruxClimb; expect(C.mount()===true, "mount refused"); await until(function(){ var st = C.state(); return st && st.mode==="wall"; }, 4000, "the climber to reach the first hold"); $("characterScene").scrollIntoView({ block:"center" }); await wait(60); }
   function tapScene(x, y, id){ ptr("pointerdown", "mouse", x, y, id||7); ptr("pointerup", "mouse", x, y, id||7); }
   function wallHolds(){ // [{ id, t, j, x, y }] every wall target with its nearest stance, client coordinates of its middle
     var P = W.__cruxPerch, C = W.__cruxClimb, r = $("characterScene").getBoundingClientRect();
@@ -4976,28 +4976,25 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(hi.j-lo.j>=3 && hi.j>=3, "the holds don't span enough route steps: "+hs.map(function(h){ return h.id+":"+h.j; }));
     var w = watchClimb(C), R = C.route();
     tapScene(hi.x, hi.y); await wait(60);
-    expect(C.state() && C.state().desired===hi.j && C.state().goal && C.state().goal.id===hi.id, "the tap didn't set the goal: "+JSON.stringify(C.state()));
-    await until(function(){ var s = C.state(); return s && s.idx===hi.j && !s.busy && s.desired===hi.j; }, 9000, "the climb up to "+hi.id);
+    expect(C.state() && C.state().goal && C.state().goal.id===hi.id, "the tap didn't set the goal: "+JSON.stringify(C.state()));
+    await until(function(){ var s = C.state(); return s && !s.goal && !s.busy && s.idx===s.desired && s.idx>0; }, 9000, "the climb up to "+hi.id);
     var st = C.state(); expect(st.mode==="wall" || st.mode==="chalk", "not on the wall: "+st.mode);
-    for(var k=0;k<=hi.j;k++) expect(w.idxs.indexOf(k)>-1, "skipped stance "+k+": "+w.idxs.join());
     expect(w.jumps===0, "a move skipped a stance: "+w.idxs.join());
     expect(!w.modes.fall && !w.modes.mount && !w.gone, "he left the wall on the way up: "+Object.keys(w.modes).join());
     expect(Object.keys(w.frames).every(function(f){ return /^climb-(reach-left|reach-right|mid-reach-(left|right)-v2|chalk-up)\.png$/.test(f); }), "a frame that is not a climb frame: "+Object.keys(w.frames).join());
     var hold = R.hold[hi.j], d = fistDist(C, hi.t), dmin = Math.min.apply(null, R.hold.map(function(h){ return Math.hypot(h[0]-(hi.t.x+hi.t.w/2), h[1]-(hi.t.y+hi.t.h/2)); }));
-    expect(Math.abs(d-dmin)<1.5, "the fist is not on the route hold nearest "+hi.id+": "+d.toFixed(1)+" vs "+dmin.toFixed(1));
-    expect(d <= 0.32*C.geo().W, "the fist ended "+Math.round(d)+" px from "+hi.id);
-    expect(Math.hypot(C.dom(C.anchors[st.key].hi)[0]-hold[0], C.dom(C.anchors[st.key].hi)[1]-hold[1])<0.6 || st.mode==="chalk", "fist off the route hold");
+    expect(d<1.5, "Wall moves: the fist is not ON "+hi.id+": "+d.toFixed(1)+" px off");
+    var R2 = C.route(), hold2 = R2.hold[st.idx]; expect(Math.hypot(C.dom(C.anchors[st.key].hi)[0]-hold2[0], C.dom(C.anchors[st.key].hi)[1]-hold2[1])<0.6 || st.mode==="chalk", "fist off the route hold");
     // and back down to a lower one
     w.on = false; await wait(30); var w2 = watchClimb(C);
     tapScene(lo.x, lo.y); await wait(60);
-    try{ await until(function(){ var s = C.state(); return s && s.idx===lo.j && !s.busy && s.desired===lo.j; }, 9000, "the climb down to "+lo.id); }
+    try{ await until(function(){ var s = C.state(); return s && !s.goal && !s.busy && s.idx===s.desired; }, 9000, "the climb down to "+lo.id); }
     catch(err){ throw new Error(err.message+" now "+JSON.stringify(C.state())+" idxs "+w2.idxs.join()); }
-    for(var k2=lo.j;k2<=hi.j;k2++) expect(w2.idxs.indexOf(k2)>-1, "skipped stance "+k2+" going down: "+w2.idxs.join());
     expect(w2.jumps===0 && !w2.modes.fall && !w2.modes.mount && !w2.gone, "he left the wall going down: "+JSON.stringify(w2.modes));
-    expect(Math.abs(fistDist(C, lo.t) - Math.min.apply(null, C.route().hold.map(function(h){ return Math.hypot(h[0]-(lo.t.x+lo.t.w/2), h[1]-(lo.t.y+lo.t.h/2)); })))<1.5, "not at the hold nearest "+lo.id);
+    expect(fistDist(C, lo.t)<1.5, "Wall moves: the fist is not ON "+lo.id+": "+fistDist(C, lo.t).toFixed(1)+" px off");
     w2.on = false; expect(C.state().goal===null, "the goal stayed after arriving");
     // a tap on empty board, and on a target that is not on the wall, do nothing
-    var i0 = C.state().idx, ts = P.targets("homewall", P.sceneBox()), off = ts.filter(function(t){ return !C.wallTarget(t.id); })[0], sr = $("characterScene").getBoundingClientRect();
+    var i0 = C.state().idx, ts = P.targets("homewall", P.sceneBox()), off = ts.filter(function(t){ return t.kind!=="hang"; })[0], sr = $("characterScene").getBoundingClientRect();
     tapScene(sr.left + off.x + off.w/2, sr.top + off.y + off.h/2); await wait(200);
     expect(C.state() && C.state().idx===i0 && C.state().mode!=="fall" && !C.state().goal && !P.running(), "a tap on "+off.id+" (not on the wall) did something: "+JSON.stringify(C.state()));
     tapScene(sr.left+sr.width*0.97, sr.top+sr.height*0.05); await wait(150);
@@ -5090,6 +5087,104 @@ and the project rules. It runs on its own private copy of the data, never your r
       var R = C.route(), hi2 = C.dom(C.anchors[C.state().key].hi); expect(Math.hypot(hi2[0]-R.hold[lo.j][0], hi2[1]-R.hold[lo.j][1])<0.6, "fist off the hold");
       await wait(3400); expect(C.state().mode==="wall", "reduced motion went into the chalk rest: "+C.state().mode);
       expect(!/climbGoal|goal/.test(STORE[KEY]||""), "a goal reached the save");
+    } finally { P.reduced(false); }
+  });
+
+  // ---- Wall moves (2026-10-18): the fist ends ON the tapped hold; from the wall a hang target is a jump up ----
+  async function climbBootJump(){ await climbBoot(function(s){ s.character.decorations = HOLD_SET.filter(function(d){ return d!=="jug" && d!=="slottedhold"; }); }); }
+  async function settleClimb(ms){ var C = W.__cruxClimb; await wait(40); await until(function(){ var s = C.state(); return s && !s.goal && !s.pend && !s.busy && !s.pumpT && s.idx===s.desired; }, ms||12000, "the climb to settle"); await wait(60); }
+  function chainOk(C){ // every stance's low fist is on the hold below it, hands alternate
+    var R = C.route(), st = C.state(), bad = [];
+    for(var k=0;k<R.n;k++){
+      var a = C.anchors[R.st[k].key], q = C.scr({ a:a.hi, P:R.hold[k], th:R.st[k].th, s:st.s, mir:false }, a.lo), lo = k>0 ? R.hold[k-1] : R.S;
+      if(Math.hypot(q[0]-lo[0], q[1]-lo[1])>0.6) bad.push("lo fist off at "+k);
+      if(k>0 && R.st[k].key===R.st[k-1].key) bad.push("same hand twice at "+k);
+    }
+    return bad.join("; ");
+  }
+  test("Wall moves: a tap puts the fist exactly on every wall hold, up and down, from wherever he is: hands alternate, the low fist stays on a hold, he never leaves the wall", async function(){
+    await climbBootHolds();
+    var C = W.__cruxClimb; await mountNow();
+    var hs = wallHolds(); expect(hs.length>=6, "too few holds: "+hs.length);
+    var order = hs.slice().sort(function(a, b){ return a.id<b.id ? 1 : -1; }), seen = {}, on = true, modes = {};
+    (async function(){ while(on){ var s = C.state(); if(s) modes[s.mode] = 1; seen[dev_frameName().replace(/^.*\//, "")] = 1; await wait(10); } })();
+    for(var k=0;k<order.length;k++){
+      var h = order[k]; tapScene(h.x, h.y); await settleClimb();
+      var d = fistDist(C, h.t); expect(d<1.5, h.id+": the fist ended "+d.toFixed(1)+" px off (from stance "+C.state().idx+")");
+      var cb = chainOk(C); expect(cb==="", "after "+h.id+": "+cb);
+    }
+    on = false;
+    expect(!modes.fall && !modes.mount && !!C.state(), "he left the wall: "+Object.keys(modes).join());
+    expect(Object.keys(seen).every(function(f){ return /^climb-(reach-left|reach-right|mid-reach-(left|right)-v2|chalk-up)\.png$/.test(f); }), "a frame that is not a climb frame: "+Object.keys(seen).join());
+    // the same hold again: no move at all
+    var again = order[order.length-1], i0 = C.state().idx; tapScene(again.x, again.y); await wait(300);
+    expect(C.state().idx===i0 && !C.state().busy && fistDist(C, again.t)<1.5, "a tap on the hold he is on moved him");
+  });
+
+  test("Wall moves: a tap right after mounting, and a second tap during a move, are both honoured (planned from the hold he is on)", async function(){
+    await climbBootHolds();
+    var C = W.__cruxClimb; expect(C.mount()===true, "mount refused");
+    var hs = wallHolds(), a = hs.filter(function(h){ return h.id==="holdred"; })[0] || hs[0], b = hs.filter(function(h){ return h.id==="holdwood"; })[0] || hs[hs.length-1];
+    tapScene(a.x, a.y); await wait(30);
+    expect(C.state().mode==="mount" && C.state().pend===a.id, "the tap during the mount was dropped: "+JSON.stringify(C.state()));
+    await until(function(){ var s = C.state(); return s && s.mode==="wall" && s.idx>0; }, 6000, "the mount to hand over to the climb");
+    await settleClimb(); expect(fistDist(C, a.t)<1.5, "after the mount he is "+fistDist(C, a.t).toFixed(1)+" px off "+a.id);
+    // tap A, and while he is part-way tap B
+    tapScene(b.x, b.y); await wait(330);
+    tapScene(a.x, a.y); await wait(20);
+    expect(!!C.state().goal && C.state().goal.id===a.id, "the second tap didn't re-aim: "+JSON.stringify(C.state()));
+    await settleClimb(); expect(fistDist(C, a.t)<1.5 && chainOk(C)==="", "ended "+fistDist(C, a.t).toFixed(1)+" px off "+a.id+" "+chainOk(C));
+    tapScene(b.x, b.y); await wait(120); tapScene(a.x, a.y); await wait(100); tapScene(b.x, b.y);
+    await settleClimb(); expect(fistDist(C, b.t)<1.5, "a burst of taps: "+fistDist(C, b.t).toFixed(1)+" px off "+b.id);
+    expect(C.pending()<=1 && C.state().mode!=="fall", "stray timers or a fall");
+  });
+
+  function feetWatch(){ // samples his sprite every display frame: frames shown, lowest feet line (scene px), highest
+    var P = W.__cruxPerch, C = W.__cruxClimb, w = { on:true, frames:{}, maxFeet:-1e9, n:0 }, sc = $("characterScene"), img = $("characterStage");
+    (async function(){ while(w.on){ var r = img.getBoundingClientRect(), s = sc.getBoundingClientRect(); w.frames[dev_frameName().replace(/^.*\//, "")] = 1; w.maxFeet = Math.max(w.maxFeet, r.top - s.top + 0.875*r.height); w.n++; await wait(8); } })();
+    return w;
+  }
+  test("Wall moves: from the wall the hangboard and the campus rungs are a jump UP from his wall pose: never down on the floor, ends perched with both hands", async function(){
+    var C, P;
+    for(var q=0;q<2;q++){
+      var id = q===0 ? "hangboard" : "campusrungs", other = q===0 ? "campusrungs" : "hangboard";
+      await climbBoot(function(s){ s.character.decorations = HOLD_SET.filter(function(d){ return d!=="jug" && d!=="slottedhold" && d!==other; }); }); C = W.__cruxClimb; P = W.__cruxPerch; await mountNow();
+      var hs = wallHolds(), mid = hs.filter(function(h){ return h.id==="holdblue"; })[0] || hs[2];
+      tapScene(mid.x, mid.y); await settleClimb();
+      var g = C.geo(), floorFeet = g.top0 + 0.875*g.boxH, t = await targetXY(id, "homewall"), w;
+      expect(C.jumpTarget(id), id+" isn't a jump target from the wall: "+JSON.stringify(P.targets("homewall", P.sceneBox()).filter(function(x){ return x.id===id; }).map(function(x){ return [x.kind, x.x, x.y, x.w, x.h]; }))+JSON.stringify(C.state()));
+      w = feetWatch(); var el = D.querySelector('#sceneLayers [data-decor-id="'+id+'"]').getBoundingClientRect(); t = { x:el.left+el.width/2, y:el.top+el.height/2, t:{} }; tapScene(t.x, t.y); await wait(120);
+      expect(C.state()===null && P.running(), id+": the tap should leave the wall and jump: "+JSON.stringify(C.state())+" tap "+Math.round(t.x)+","+Math.round(t.y)+" hit "+(function(){ var e = D.elementFromPoint(t.x, t.y); return e ? e.tagName+"#"+e.id+"."+e.className : "none"; })()+" "+JSON.stringify(C.limits())+" target "+JSON.stringify([t.t.x,t.t.y,t.t.w,t.t.h,t.t.kind])+" boxes "+JSON.stringify(P.targets("homewall", P.sceneBox()).filter(function(x){ var sr = $("characterScene").getBoundingClientRect(), px = t.x-sr.left, py = t.y-sr.top; return px>=x.x-16 && px<=x.x+x.w+16 && py>=x.y-16 && py<=x.y+x.h+16; }).map(function(x){ return [x.id, Math.round(x.x), Math.round(x.y), Math.round(x.w), Math.round(x.h), C.wallTarget(x.id)]; })));
+      await settleRun(9000); await wait(200); w.on = false;
+      expect(P.state() && P.state().id===id && P.state().kind==="hang", id+": not perched: "+JSON.stringify(P.state()));
+      expect(/climb-hang-two\.png$/.test(dev_frameName()), id+": not the two-hand hang: "+dev_frameName());
+      expect(w.maxFeet < floorFeet - 3, id+": he came down to the floor on the way (feet "+w.maxFeet.toFixed(1)+" vs floor "+floorFeet.toFixed(1)+")");
+      var names = Object.keys(w.frames); expect(names.every(function(f){ return /^(jump-0[123]|climb-hang-two|climb-reach-(left|right)|climb-mid-reach-(left|right)-v2|idle-01)\.png$/.test(f) && (f!=="idle-01.png" || true); }) && !w.frames["climb-pull.png"] && !w.frames["climb-chalk-up.png"], id+": frames that belong to the floor route: "+names.join());
+      P.dismount(); await wait(1200);
+    }
+  });
+
+  test("Wall moves: the jump from the wall is cancelled cleanly (a press, leaving Home) and reduced motion places him on the hangboard directly", async function(){
+    await climbBootJump();
+    var C = W.__cruxClimb, P = W.__cruxPerch; await mountNow();
+    var hs = wallHolds(), mid = hs.filter(function(h){ return h.id==="holdblue"; })[0] || hs[2];
+    tapScene(mid.x, mid.y); await settleClimb();
+    var el0 = D.querySelector('#sceneLayers [data-decor-id="hangboard"]').getBoundingClientRect(), t = { x:el0.left+el0.width/2, y:el0.top+el0.height/2 }; tapScene(t.x, t.y); await wait(250);
+    expect(P.running(), "the jump isn't running");
+    var c = stageCenter(); ptr("pointerdown", "mouse", c.x, c.y, 11); ptr("pointerup", "mouse", c.x, c.y, 11); await wait(150);
+    expect(!P.running() && P.state() && P.state().id==="hangboard" && P.pending()===0, "a press mid-jump should land him on the board at once: "+JSON.stringify(P.state()));
+    P.dismount(); await wait(1200); await mountNow();
+    tapScene(mid.x, mid.y); await settleClimb(); tapScene(t.x, t.y); await wait(250);
+    await click("navTrainBtn", 250);
+    expect(C.state()===null && !P.running() && P.pending()===0 && !P.state() && /idle\/idle-01\.png$/.test(dev_frameName()), "leaving Home mid-jump: "+JSON.stringify(P.state()));
+    await goHome(); await wait(500);
+    P.reduced(true);
+    try{
+      await mountNow(); tapScene(mid.x, mid.y); await wait(40);
+      var seen = {}, on = true; (async function(){ while(on){ seen[dev_frameName().replace(/^.*\//, "")] = 1; await wait(5); } })();
+      tapScene(t.x, t.y); await wait(60); on = false;
+      expect(C.state()===null && P.state() && P.state().id==="hangboard" && P.pending()===0, "reduced motion didn't place him at once: "+JSON.stringify(P.state()));
+      expect(!seen["idle-01.png"] && !seen["jump-01.png"] && !seen["jump-02.png"], "reduced motion showed the jump or the floor: "+Object.keys(seen).join());
     } finally { P.reduced(false); }
   });
   // ---- end Home perch tests ----
