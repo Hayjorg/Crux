@@ -4675,6 +4675,102 @@ and the project rules. It runs on its own private copy of the data, never your r
   // ---- end Home polish tests ----
   // ---- end Home perch tests ----
 
+  // ---- update app tests ----
+  // Stubs stand in for fetch / caches / serviceWorker through window.__cruxUpdEnv (honoured only under __cruxTest).
+  function updStubs(o){
+    o = o || {};
+    var log = { fetched:[], deleted:[], unreg:0, reloads:[], clock:1000000 };
+    var etag = o.etag || "v1";
+    var env = { force:true, now:function(){ return log.clock; },
+      fetch:function(u, opt){ log.fetched.push({ u:String(u), cache:opt&&opt.cache });
+        if(o.offline && o.offline()) return Promise.reject(new TypeError("offline"));
+        if(/sw\.js/.test(u)) return Promise.resolve({ ok:true, headers:{ get:function(){ return null; } }, text:function(){ return Promise.resolve("// Generated (build abc123def4)"); } });
+        return Promise.resolve({ ok:true, headers:{ get:function(h){ return /etag/i.test(h) ? log.etag : null; } }, text:function(){ return Promise.resolve("x"); } }); },
+      caches:{ keys:function(){ return Promise.resolve(["crux-files", "crux-fonts"]); }, delete:function(k){ log.deleted.push(k); return Promise.resolve(true); } },
+      serviceWorker:{ getRegistrations:function(){ return Promise.resolve([{ unregister:function(){ log.unreg++; return Promise.resolve(true); } }]); } },
+      reload:function(u){ log.reloads.push(u); } };
+    log.etag = etag; log.env = env;
+    return log;
+  }
+  async function updBoot(o){
+    await boot(); var L = updStubs(o); W.__cruxUpdEnv = L.env; var U = W.__cruxUpdate;
+    U.st.base = null; U.st.last = 0; U.st.pending = false; U.st.dismissed = false; U.st.busy = false;
+    var b = D.getElementById("updateBanner"); if(b) b.remove();
+    return { L:L, U:U };
+  }
+  test("Update app: the button clears caches and unregisters the worker, reloads on a fresh address, and leaves the save and localStorage untouched", async function(){
+    var x = await updBoot(), L = x.L;
+    var keysBefore = Object.keys(STORE).sort().join(), before = STORE[KEY];
+    expect(visible("updateAppBtn") || !!D.getElementById("updateAppBtn"), "no Update app button");
+    await click("updateAppBtn", 400);
+    expect(L.deleted.join()==="crux-files,crux-fonts", "caches not all deleted: "+L.deleted.join());
+    expect(L.unreg===1, "service worker not unregistered");
+    expect(L.reloads.length===1 && /\?v=\d+$/.test(L.reloads[0]), "no cache-busting reload: "+L.reloads.join());
+    expect(L.fetched.some(function(f){ return f.cache==="no-store"; }), "network check wasn't no-store");
+    expect(STORE[KEY]===before && Object.keys(STORE).sort().join()===keysBefore, "the save or localStorage keys changed");
+  });
+  test("Update app: with no service worker or Cache API it says so, still reloads, and throws nothing", async function(){
+    var x = await updBoot(), L = x.L; L.env.caches = null; L.env.serviceWorker = null;
+    var before = STORE[KEY];
+    await click("updateAppBtn", 300);
+    expect(L.reloads.length===1 && L.deleted.length===0 && L.unreg===0, "unexpected work: "+JSON.stringify({ r:L.reloads, d:L.deleted, u:L.unreg }));
+    expect(/No offline cache/.test($("updateAppStatus").textContent), "status: "+$("updateAppStatus").textContent);
+    expect(STORE[KEY]===before, "save changed");
+  });
+  test("Update app: offline leaves every cache and the worker alone and says so", async function(){
+    var off = true, x = await updBoot({ offline:function(){ return off; } }), L = x.L;
+    await click("updateAppBtn", 300);
+    expect(L.deleted.length===0 && L.unreg===0 && L.reloads.length===0, "offline wiped something: "+JSON.stringify({ d:L.deleted, u:L.unreg, r:L.reloads }));
+    expect(/Can't reach the network/.test($("updateAppStatus").textContent) && !$("updateAppBtn").disabled, "status/button: "+$("updateAppStatus").textContent);
+  });
+  test("Update banner: appears when the page's ETag changed, not when it is the same, and never auto-reloads", async function(){
+    var x = await updBoot(), L = x.L, U = x.U;
+    expect(await U.check(true)==="base", "first check should record the baseline");
+    L.clock += 6*60*1000;
+    expect(await U.check(false)==="same" && !D.getElementById("updateBanner"), "same ETag showed a banner");
+    L.clock += 6*60*1000; L.etag = "v2";
+    expect(await U.check(false)==="new", "changed ETag not detected");
+    var b = D.getElementById("updateBanner"); expect(b && /New version available/.test(b.textContent), "no banner on a changed ETag");
+    expect(L.reloads.length===0 && L.deleted.length===0, "banner reloaded or wiped by itself");
+    b.querySelector(".ub-go").click(); await wait(300);
+    expect(L.reloads.length===1 && L.deleted.length===2, "banner Update didn't run the update");
+  });
+  test("Update banner: falls back to Last-Modified / text hash, and shows the version from sw.js", async function(){
+    var x = await updBoot(), L = x.L, U = x.U;
+    var h = { m:"Mon" }; L.env.fetch = function(u){ return Promise.resolve({ ok:true, headers:{ get:function(k){ return /last-modified/i.test(k) ? h.m : null; } }, text:function(){ return Promise.resolve("t"); } }); };
+    await U.check(true); L.clock += 6*60*1000; h.m = "Tue";
+    expect(await U.check(false)==="new", "Last-Modified change not detected");
+    var body = "a"; L.env.fetch = function(){ return Promise.resolve({ ok:true, headers:{ get:function(){ return null; } }, text:function(){ return Promise.resolve(body); } }); };
+    U.st.base = null; U.st.pending = false; U.st.last = 0; await U.check(true); L.clock += 6*60*1000; body = "ab";
+    expect(await U.check(false)==="new", "text change not detected");
+    L.env.fetch = updStubs().env.fetch; await U.version();
+    expect($("appVersionText").textContent==="abc123def4", "version: "+$("appVersionText").textContent);
+  });
+  test("Update banner: held back while a timer is running, shown once it is not", async function(){
+    var x = await updBoot(), L = x.L, U = x.U;
+    await startOrResume(); await click("startBtn", 300);
+    expect(U.busy(), "a running timer isn't seen as busy");
+    await U.check(true); L.clock += 6*60*1000; L.etag = "v2";
+    expect(await U.check(false)==="new", "change not noticed");
+    expect(!D.getElementById("updateBanner"), "banner shown over a running timer");
+    await click("startBtn", 200);  // pause
+    W.__cruxTimer.get().running = false; W.__cruxTimer.get().phase = "idle";
+    expect(!U.busy(), "still busy after the timer was reset");
+    U.refresh(); expect(!!D.getElementById("updateBanner"), "banner didn't show once idle");
+    expect(L.reloads.length===0, "reloaded by itself");
+  });
+  test("Update banner: checks are throttled to once per 5 minutes and do nothing when the check is off", async function(){
+    var x = await updBoot(), L = x.L, U = x.U;
+    expect(await U.check(false)==="base", "first");
+    var n = L.fetched.length;
+    L.clock += 4*60*1000; expect(await U.check(false)==="throttled" && L.fetched.length===n, "checked again within 5 minutes");
+    L.clock += 2*60*1000; expect(await U.check(false)==="same" && L.fetched.length===n+1, "no check after 5 minutes");
+    L.env.force = false; U.st.last = 0;
+    var m = L.fetched.length; expect(await U.check(true)==="off" && L.fetched.length===m, "checked under the local/file:// guard");
+    var keys = Object.keys(STORE).sort().join(); expect(!/update|upd/i.test(keys) && !/update|upd/i.test(STORE[KEY]||""), "an update field reached the save");
+  });
+  // ---- end update app tests ----
+
   /* ---------- runner ---------- */
   var running = false;
   var ONLY = (new URLSearchParams(location.search)).get("only") || "";

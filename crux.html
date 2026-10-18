@@ -1513,6 +1513,11 @@
   .legal-body h3:first-child{margin-top:4px;}
   .legal-body p{font-size:13px;line-height:1.55;color:var(--text-dim);margin:0 0 8px;}
   .legal-actions{position:sticky;bottom:-24px;margin:8px -22px -24px;padding:12px 22px 20px;background:var(--surface);border-top:1px solid var(--border);}
+  .update-banner{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 10px);z-index:149;white-space:nowrap;max-width:calc(100vw - 32px);display:flex;align-items:center;gap:10px;
+    background:var(--surface);color:var(--text);border:1px solid var(--border);padding:8px 8px 8px 16px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 6px 18px var(--shadow);}
+  .update-banner button{font:inherit;font-weight:800;border:0;border-radius:999px;cursor:pointer;}
+  .update-banner .ub-go{background:var(--accent);color:var(--accent-contrast);padding:7px 14px;}
+  .update-banner .ub-x{background:transparent;color:var(--text-dim);padding:7px 10px;}
   .toast-stack{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + 18px);display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:150;}
   .toast{background:var(--accent);color:var(--accent-contrast);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:0 6px 18px var(--shadow);animation:toastin .4s cubic-bezier(.34,1.56,.64,1), toastout .4s ease 2.6s forwards;}
   @keyframes toastin{from{transform:translateY(10px) scale(0.9);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
@@ -2408,6 +2413,9 @@
       <p class="settings-section-title">About &amp; legal</p>
       <p class="settings-section-hint">Safety notice, privacy, and terms of use.</p>
       <button type="button" class="btn btn-ghost" id="openLegalBtn" style="width:100%;padding:10px 12px;">Safety, privacy &amp; terms</button>
+      <p class="settings-section-hint" style="margin:14px 0 8px;">Version <span id="appVersionText">dev</span>. If the app looks out of date after an update, this fetches the newest copy. Your climbs and settings are not touched.</p>
+      <button type="button" class="btn btn-ghost" id="updateAppBtn" style="width:100%;padding:10px 12px;">Update app</button>
+      <p class="settings-section-hint" id="updateAppStatus" role="status" aria-live="polite" style="margin:8px 0 0;" hidden></p>
     </div>
 
     <div class="settings-section" id="developerSection" hidden>
@@ -11491,6 +11499,116 @@
     if(!getActiveSession()) startSession();
     logAttempt(m[1]);
   }
+
+  /* ---------------- app updates (installed / hosted copy only) ---------------- */
+  // The installed app keeps its page in memory and caches pictures, so a deploy can go unseen for days.
+  // "Update app" (Settings) unregisters the service worker, empties Cache Storage and reloads on a fresh
+  // address. It never touches localStorage or IndexedDB (the save). A quiet check on launch and when the app
+  // comes back to the front compares the live page's ETag (else Last-Modified, else a hash of its text) with the
+  // value seen at first load, kept in memory only, and offers a "New version available" banner. It never reloads
+  // by itself and stays hidden while a timer, a workout or a game is open. Nothing here is saved.
+  // window.__cruxUpdEnv (dev/tests.html only) swaps fetch/caches/serviceWorker/clock and forces the check on.
+  var UPD_MIN_MS = 5*60*1000;
+  var upd = { base:null, last:0, pending:false, busy:false, dismissed:false, version:null };
+  function updEnv(){ return (window.__cruxTest && window.__cruxUpdEnv) || {}; }
+  function updFetch(u, o){ var e = updEnv(); return (e.fetch || window.fetch.bind(window))(u, o); }
+  function updNow(){ var e = updEnv(); return e.now ? e.now() : Date.now(); }
+  function updEnabled(){
+    if(updEnv().force) return true;
+    if(location.protocol!=="http:" && location.protocol!=="https:") return false;
+    return !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  }
+  function updPageUrl(){ var u = new URL("./", document.baseURI); u.hash = ""; return u.href; }
+  function updHash(t){ var h = 5381; for(var i=0;i<t.length;i++) h = ((h*33) ^ t.charCodeAt(i)) >>> 0; return h.toString(36); }
+  function updSignature(res){
+    var h = res.headers, et = h && h.get && h.get("etag"), lm = h && h.get && h.get("last-modified");
+    if(et) return Promise.resolve("e:"+et);
+    if(lm) return Promise.resolve("m:"+lm);
+    return res.text().then(function(t){ return "t:"+t.length+":"+updHash(t); });
+  }
+  function updLive(){ // the live page, never from a cache; resolves to its signature or rejects when offline
+    var u = updPageUrl(); u += (u.indexOf("?")<0 ? "?" : "&") + "_=" + updNow();
+    return updFetch(u, { cache:"no-store" }).then(function(res){ if(!res || !res.ok) throw new Error("http"); return updSignature(res); });
+  }
+  function updAppBusy(){ // something the player is in the middle of: never offer a reload over it
+    if(timer.running || (timer.phase && timer.phase!=="idle" && timer.phase!=="done")) return true;
+    if(gm) return true;
+    var s = getActiveSession();
+    return !!(s && !s.endedAt && s.workout);
+  }
+  function updSetStatus(msg){ var el = document.getElementById("updateAppStatus"); if(!el) return; el.textContent = msg||""; el.hidden = !msg; }
+  function updBannerEl(){ return document.getElementById("updateBanner"); }
+  function updHideBanner(){ var b = updBannerEl(); if(b) b.remove(); }
+  function updShowBanner(){
+    if(updBannerEl() || upd.dismissed) return;
+    var b = document.createElement("div");
+    b.className = "update-banner"; b.id = "updateBanner"; b.setAttribute("role", "status");
+    var t = document.createElement("span"); t.textContent = "New version available";
+    var go = document.createElement("button"); go.type = "button"; go.className = "ub-go"; go.textContent = "Update";
+    go.addEventListener("click", function(){ updateApp(); });
+    var x = document.createElement("button"); x.type = "button"; x.className = "ub-x"; x.setAttribute("aria-label", "Dismiss"); x.textContent = "×";
+    x.addEventListener("click", function(){ upd.dismissed = true; updHideBanner(); });
+    b.appendChild(t); b.appendChild(go); b.appendChild(x);
+    document.body.appendChild(b);
+  }
+  function updRefreshBanner(){
+    if(!upd.pending || upd.dismissed) return;
+    if(updAppBusy()) updHideBanner(); else updShowBanner();
+  }
+  function updCheck(force){
+    if(!updEnabled()) return Promise.resolve("off");
+    var now = updNow();
+    if(!force && upd.last && now-upd.last < UPD_MIN_MS) return Promise.resolve("throttled");
+    upd.last = now;
+    return updLive().then(function(sig){
+      if(upd.base===null){ upd.base = sig; return "base"; }
+      if(sig!==upd.base){ upd.pending = true; updRefreshBanner(); return "new"; }
+      return "same";
+    }).catch(function(){ return "offline"; });
+  }
+  function updLoadVersion(){
+    var el = document.getElementById("appVersionText");
+    if(!el) return Promise.resolve();
+    if(!updEnabled()){ el.textContent = "dev"; return Promise.resolve(); }
+    var u = new URL("sw.js", document.baseURI); u.searchParams.set("_", updNow());
+    return updFetch(u.href, { cache:"no-store" }).then(function(res){ if(!res || !res.ok) throw new Error("http"); return res.text(); })
+      .then(function(t){ var m = /build ([0-9a-f]{6,})/.exec(t); el.textContent = m ? m[1] : "unknown"; })
+      .catch(function(){ el.textContent = upd.base ? upd.base.replace(/^[a-z]:/, "").replace(/[^0-9A-Za-z]/g, "").slice(0, 10) || "unknown" : "unknown (offline)"; });
+  }
+  function updateApp(){
+    if(upd.busy) return Promise.resolve("busy");
+    upd.busy = true; updSetStatus("Updating…");
+    var btn = document.getElementById("updateAppBtn"); if(btn) btn.disabled = true;
+    function fin(msg, code){ upd.busy = false; if(btn) btn.disabled = false; updSetStatus(msg); return code; }
+    var e = updEnv();
+    var sw = e.serviceWorker!==undefined ? e.serviceWorker : (navigator.serviceWorker || null);
+    var cs = e.caches!==undefined ? e.caches : (window.caches || null);
+    if(!updEnabled()) return Promise.resolve(fin("Nothing to update here: this copy runs from a file or a local server.", "local"));
+    // 1. Is the network there? If not, leave every cache alone so offline use keeps working.
+    return updLive().then(function(){
+      // 2. Forget the old service worker and every cached file (never the save).
+      var steps = [];
+      var did = [];
+      if(sw && sw.getRegistrations) steps.push(sw.getRegistrations().then(function(rs){ did.push("sw"); return Promise.all(rs.map(function(r){ return r.unregister(); })); }).catch(function(){}));
+      if(cs && cs.keys) steps.push(cs.keys().then(function(ks){ did.push("cache"); return Promise.all(ks.map(function(k){ return cs.delete(k); })); }).catch(function(){}));
+      return Promise.all(steps).then(function(){
+        // 3. Open the page again on a fresh address; the app ignores ?v=.
+        var go = e.reload || function(u){ location.replace(u); };
+        var target = location.pathname + "?v=" + updNow();
+        updSetStatus(did.length ? "Updating… reloading" : "No offline cache found. Reloading…");
+        go(target);
+        return "reload";
+      });
+    }, function(){
+      return fin("Can't reach the network, so nothing was changed. The app still works offline.", "offline");
+    }).catch(function(){ return fin("Update didn't finish. Nothing was lost; try again.", "error"); });
+  }
+  document.getElementById("updateAppBtn").addEventListener("click", function(){ updateApp(); });
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") updCheck(false); });
+  setInterval(updRefreshBanner, 15000); // a banner held back by a running timer shows once it ends
+  if(window.__cruxTest) window.__cruxUpdate = { check:updCheck, update:updateApp, version:updLoadVersion, busy:updAppBusy, refresh:updRefreshBanner, st:upd };
+  try{ if(updEnabled() && /[?&]v=\d/.test(location.search)) history.replaceState(null, "", location.pathname + location.hash); }catch(e){}
+  updCheck(true); updLoadVersion();
 
   /* ---------------- init ---------------- */
   applyTheme();
