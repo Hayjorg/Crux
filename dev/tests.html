@@ -4712,7 +4712,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     var s0 = smp[0].s, s1 = smp[smp.length-1].s;
     expect(Math.abs(s0-1)<0.02 && Math.abs(s1-hb.s)<0.01, "hang: size "+s0.toFixed(3)+" -> "+s1.toFixed(3)+", wanted 1 -> "+hb.s);
     expect(pullAt, "hang: never saw the pull frame");
-    var done = (1-pullAt.s)/(1-hb.s); expect(done>=0.3 && done<=0.7, "hang: "+Math.round(done*100)+"% of the shrink is done when the pull starts (should be about half)");
+    var done = (1-pullAt.s)/(1-hb.s); expect(done>=0.55 && done<=0.95, "hang: "+Math.round(done*100)+"% of the shrink is done when the pull starts (one smootherstep over the whole trip puts it at about 85%; Home perch polish 2 changed this from 'about half')");
     for(var k=1;k<smp.length;k++) expect(smp[k].s <= smp[k-1].s + 0.004, "hang: the size grew at "+Math.round(smp[k].t)+" ms ("+smp[k-1].s.toFixed(3)+" -> "+smp[k].s.toFixed(3)+")");
     expect(maxRate(smp) <= 0.0020, "hang: the size changes too fast ("+(maxRate(smp)*1000).toFixed(2)+" per second)");
     expect(P.pending()===0, "hang: timers left"); P.dismount(); await wait(120);
@@ -4724,7 +4724,7 @@ and the project rules. It runs on its own private copy of the data, never your r
     expect(peak <= 0.4*(1-bb.s), "sit: one frame changed the size by "+peak.toFixed(3)+" of a "+(1-bb.s).toFixed(2)+" step");
     expect(P.pending()===0, "sit: timers left");
     // ---- a tap on the perched climber: size and place ease back (a CSS transition), not a snap ----
-    var w = $("characterWander"), smp3 = await sampleScale(async function(){ P.dismountSmooth(); expect(w.classList.contains("dismounting"), "the dismount isn't animated"); }, 700);
+    var w = $("characterWander"), smp3 = await sampleScale(async function(){ P.dismountSmooth(); expect(w.classList.contains("dismounting"), "the dismount isn't animated"); }, 1300); // 1 s since Home perch polish 2 (was 0.5 s, sampled for 700 ms)
     expect(smp3[0].s < 0.8*(1) && smp3[0].s >= bb.s-0.02, "dismount: it started at "+smp3[0].s.toFixed(3)+" (a snap would start at 1)");
     expect(Math.abs(smp3[smp3.length-1].s-1)<0.01, "dismount: it ended at "+smp3[smp3.length-1].s.toFixed(3));
     for(var k3=1;k3<smp3.length;k3++) expect(smp3[k3].s >= smp3[k3-1].s - 0.004, "dismount: the size shrank again");
@@ -4832,6 +4832,266 @@ and the project rules. It runs on its own private copy of the data, never your r
   });
 
   // ---- end Home polish tests ----
+  // ---- Home perch polish 2 (2026-10-17): shadows and light on every perch, smoother size changes, climbing to another hold ----
+  // The size curve of a travel: no step bigger than a smootherstep allows for the observed duration, monotone, at least minMs long. Returns { T, maxStep }.
+  function scaleSteps(smp, name, minMs){
+    var s0 = smp[0].s, s1 = smp[smp.length-1].s, S = Math.abs(s1-s0), a = -1, z = -1, k;
+    expect(S>0.1, name+": the size hardly changed ("+s0.toFixed(3)+" -> "+s1.toFixed(3)+")");
+    for(k=0;k<smp.length;k++) if(Math.abs(smp[k].s-s0)>0.003){ a = k; break; }
+    for(k=smp.length-1;k>=0;k--) if(Math.abs(smp[k].s-s1)>0.003){ z = k; break; }
+    expect(a>0 && z>=a, name+": no size change seen");
+    var T = smp[Math.min(smp.length-1, z+1)].t - smp[a-1].t, maxStep = 0, up = s1>s0;
+    expect(T>=minMs, name+": the size change took "+Math.round(T)+" ms (wanted at least "+minMs+")");
+    for(k=1;k<smp.length;k++){
+      var ds = smp[k].s-smp[k-1].s, dt = smp[k].t-smp[k-1].t, allowed = 0.012 + 2.6*S*dt/T;
+      maxStep = Math.max(maxStep, Math.abs(ds));
+      expect(Math.abs(ds)<=allowed && Math.abs(ds)<=0.05, name+": a jump of "+ds.toFixed(4)+" in "+dt.toFixed(1)+" ms at "+Math.round(smp[k].t)+" ms (allowed "+allowed.toFixed(4)+")");
+      expect(up ? ds>=-0.004 : ds<=0.004, name+": the size went the wrong way at "+Math.round(smp[k].t)+" ms");
+    }
+    return { T:T, maxStep:maxStep, n:smp.length };
+  }
+
+  test("Home perch polish 2: the size changes smoothly (no jump per display frame, one long smootherstep) for sit, stand, hang, mount, fall and dismount", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch, rep = [];
+    expect(Math.abs(P.smoother(0)) < 1e-12 && Math.abs(P.smoother(1)-1) < 1e-12 && Math.abs(P.smoother(0.5)-0.5) < 1e-12 && P.smoother(0.1) < 0.01 && P.smoother(0.9) > 0.99, "perchSmoother isn't a smootherstep");
+    // sit (beanbag), stand (boots), hang (hangboard): from the floor to the perch
+    for(var spec of [["beanbag", 900], ["boots", 900], ["hangboard", 2000]]){
+      var id = spec[0], smp = await sampleScale(async function(){ P.travel(id); await settleRun(9000); }, 250);
+      var r = scaleSteps(smp, id, spec[1]); rep.push(id+" "+Math.round(r.T)+" ms, "+r.n+" frames, max step "+r.maxStep.toFixed(4));
+      expect(P.state() && P.state().id===id && P.pending()===0, id+": not perched, or timers left");
+      var t = P.targets("homewall", P.sceneBox()).filter(function(x){ return x.id===id; })[0], end = smp[smp.length-1].s;
+      expect(Math.abs(end - P.scaleOf(id, t.kind)) < 0.01, id+": ended at "+end.toFixed(3)+", wanted "+P.scaleOf(id, t.kind));
+      if(id==="hangboard"){ // the dismount of this one is the CSS ease (below); the sit one is checked after the loop
+        var down = await sampleScale(async function(){ P.dismountSmooth(); }, 1300); var rd = scaleSteps(down, "dismount", 700); rep.push("dismount "+Math.round(rd.T)+" ms, max step "+rd.maxStep.toFixed(4));
+      } else P.dismount();
+      await wait(150);
+    }
+    // from one perch straight to another (picked up off the first): no snap to the floor size in between
+    P.travel("beanbag"); await settleRun(9000);
+    var sw = await sampleScale(async function(){ P.travel("toolbox"); await settleRun(9000); }, 200);
+    for(var k=1;k<sw.length;k++) expect(Math.abs(sw[k].s-sw[k-1].s) <= 0.05, "perch to perch: the size jumped to "+sw[k].s.toFixed(3)+" at "+Math.round(sw[k].t)+" ms");
+    P.dismount(); await wait(150);
+    // the Home Wall board: mount, then fall
+    await climbBoot(); var C = W.__cruxClimb, g = C.geo(), want = null;
+    var ms = await sampleScale(async function(){ expect(C.mount()===true, "mount refused"); want = C.state().s/g.k; var t0 = Date.now(); while(Date.now()-t0<6000 && (!C.state() || C.state().mode==="mount")) await wait(30); }, 300);
+    var rm = scaleSteps(ms, "mount", 700); rep.push("mount "+Math.round(rm.T)+" ms, max step "+rm.maxStep.toFixed(4));
+    expect(Math.abs(ms[ms.length-1].s-want) < 0.02, "mount: ended at "+ms[ms.length-1].s.toFixed(3)+", wanted "+want.toFixed(3));
+    await wait(300);
+    var fs = await sampleScale(async function(){ C.fall(); var t0 = Date.now(); while(Date.now()-t0<6000 && C.state()) await wait(30); }, 250);
+    var rf = scaleSteps(fs, "fall", 600); rep.push("fall "+Math.round(rf.T)+" ms, max step "+rf.maxStep.toFixed(4));
+    expect(C.state()===null && C.pending()===0 && /idle\//.test(fileOf(stageSrc())), "the fall didn't end on the floor");
+    expect(C.mountMs>=1000 && C.fallMs>=900, "the board's size easing should be longer than before (540 / 430 ms)");
+  });
+
+  test("Home perch polish 2: every perch kind gets a contact shadow of the floor climber's colour; sit / stand on the object's own picture; hang on the wall", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch, ts = P.targets("homewall", P.sceneBox()), seen = { sit:0, stand:0, hang:0, soft:0, floor:0 }, wander = $("characterWander");
+    expect(P.shadowRgb==="20,14,8" && /\.character-shadow\{[^}]*rgba\(20,14,8/.test(SRC), "the perch shadow colour isn't the floor climber's shadow colour");
+    for(var i=0;i<ts.length;i++){
+      var t = ts[i]; if(!t.valid) continue;
+      expect(P.to(t.id)===true, t.id+": couldn't perch"); await wait(70);
+      var st = P.state(); if(!st){ continue; }
+      var sh = D.getElementById("perchShadow"), fl = D.getElementById("perchFloorShadow"), bs = D.getElementById("perchBodyShade");
+      if(st.kind==="sit" || st.kind==="stand"){
+        seen[st.kind]++;
+        expect(sh && bs && !fl, t.id+": a "+st.kind+" needs a contact shadow and the body light, not a floor shadow");
+        expect(/rgba\(20, 14, 8/.test(sh.style.background), t.id+": the contact shadow isn't the floor shadow's colour: "+sh.style.background.slice(0, 80));
+        expect((sh.style.maskImage || sh.style.webkitMaskImage || "").indexOf(fileOf(D.querySelector('#sceneLayers [data-decor-id="'+t.id+'"]').getAttribute("src")).replace(/^.*\//, "")) > -1 || /_blob/.test(sh.style.maskImage || sh.style.webkitMaskImage), t.id+": the shadow isn't clipped to the object's own picture");
+        expect(sh.compareDocumentPosition(wander) & 4, t.id+": the contact shadow must be under the climber in the DOM");
+        var spec = P.shade(); expect(spec && spec.list.length>=1 && spec.body>0 && spec.body<=0.5, t.id+": no shade spec");
+        spec.list.forEach(function(e){
+          expect(e.a>0.2 && e.a<=0.7 && e.rx>0 && e.ry>0 && e.ry<e.rx, t.id+": a bad ellipse "+JSON.stringify(e));
+          expect(e.x>=t.x-0.4*t.w && e.x<=t.x+t.w+0.4*t.w && e.y>=t.y-0.35*t.h && e.y<=t.y+1.1*t.h, t.id+": the shadow is not on the object ("+Math.round(e.x)+","+Math.round(e.y)+" vs "+Math.round(t.x)+","+Math.round(t.y)+" "+Math.round(t.w)+"x"+Math.round(t.h)+")");
+        });
+        if(P.soft[t.id]){ seen.soft++; expect(spec.list.length===2 && spec.body>=0.3 && P.shadeTable.soft.body>P.shadeTable.seat.body, t.id+": a soft seat gets two shadows and more light"); }
+        else expect(spec.list.length===1, t.id+": a hard seat / stand gets one");
+        expect(bs.style.maskImage || bs.style.webkitMaskImage, t.id+": the body light isn't clipped to the sprite");
+        expect(getComputedStyle(bs).mixBlendMode==="multiply" && getComputedStyle(bs).pointerEvents==="none", t.id+": the body light must multiply and never take taps");
+        expect(!wander.classList.contains("perch-wall"), t.id+": a wall shadow on a sit / stand");
+      } else if(st.kind==="hang"){
+        seen.hang++;
+        expect(!sh && !bs && wander.classList.contains("perch-wall"), t.id+": a hang gets the wall shadow only (plus a floor one far below)");
+        if(fl){ expect(fl.compareDocumentPosition(wander) & 4, t.id+": the floor shadow must be under the climber"); expect(/rgba\(20, 14, 8/.test(fl.style.background), t.id+": the floor shadow colour"); }
+      } else { seen.floor++; expect(!sh && !fl && !bs && !wander.classList.contains("perch-wall"), t.id+": a floor pose ("+st.kind+") must keep the ordinary floor shadow"); }
+      expect(D.querySelectorAll("#perchShadow, #perchBodyShade, #perchFloorShadow").length<=2 && D.querySelectorAll("#perchShadow").length<=1, t.id+": duplicate shadow elements");
+    }
+    expect(seen.sit>=5 && seen.stand>=3 && seen.hang>=3 && seen.soft>=2, "too few kinds covered: "+JSON.stringify(seen));
+    // a re-render / resize re-seats the shadow (never two); a plain dismount removes everything at once, a tap dismount fades it
+    P.to("beanbag"); await wait(120); P.sync(W.selectedEnvironment ? W.selectedEnvironment() : { id:"homewall" }); await wait(60);
+    expect(D.querySelectorAll("#perchShadow").length===1 && D.querySelectorAll("#perchBodyShade").length===1 && D.querySelectorAll("#perchLip .lip-shade").length===1, "shadows doubled or lost after a re-seat");
+    P.dismount(); expect(!D.querySelector("#perchShadow, #perchBodyShade, #perchFloorShadow, .perch-shadow") && !wander.classList.contains("perch-nodrop"), "the plain dismount left shadows behind");
+    P.to("beanbag"); await wait(120); P.dismountSmooth(); await wait(60);
+    expect(!D.getElementById("perchShadow") && D.querySelectorAll(".perch-shadow.out, .perch-bodyshade.out").length>=1, "the tap dismount should fade the shadows, not cut them");
+    await wait(600); expect(!D.querySelector(".perch-shadow, .perch-bodyshade"), "the faded shadows stayed");
+    // nothing is saved
+    expect(!/perchShadow|perchBodyShade|perch-wall/.test(STORE[KEY]||""), "a shadow field reached the save");
+  });
+
+  test("Home perch polish 2: the beanbag lip has no hard edge or step: soft contour, the shadow continues over it, the light follows his frame", async function(){
+    await perchBoot("homewall");
+    var P = W.__cruxPerch, wander = $("characterWander");
+    P.to("beanbag"); await wait(200);
+    var lip = D.getElementById("perchLip"), im = lip.querySelector("img"), ls = lip.querySelector(".lip-shade"), cs = getComputedStyle(lip);
+    expect(/radial-gradient/.test(cs.maskImage || cs.webkitMaskImage || ""), "the lip has no soft contour: "+cs.maskImage);
+    expect(P.lip.beanbag.fade && P.lip.beanbag.fade.hold>0.5 && P.lip.beanbag.fade.hold<1, "no fade numbers");
+    expect(ls && ls.style.clipPath===im.style.clipPath && /radial-gradient/.test(ls.style.background), "the shadow isn't repeated over the lip copy with the same clip");
+    expect(ls.style.background===D.getElementById("perchShadow").style.background, "the shadow over the lip is not the shadow under it");
+    expect(wander.classList.contains("perch-nodrop") && getComputedStyle($("characterStage")).filter==="none", "the sprite's drop shadow (hidden under the lip: a visible step) should be off in the beanbag");
+    P.to("stepstool"); await wait(200); expect(!wander.classList.contains("perch-nodrop") && getComputedStyle($("characterStage")).filter!=="none", "a hard seat keeps the sprite's own shadow");
+    // the body light is masked by the frame he is drawn in now (a glance swaps the frame)
+    P.to("beanbag"); await wait(200);
+    var look = P.idleFrame(), st = $("characterStage"), bs = D.getElementById("perchBodyShade");
+    var other = fileOf(P.frameAddr("sit"))===fileOf(st.getAttribute("src")) ? P.frameAddr("sit") : P.frameAddr("sit");
+    var cur = st.getAttribute("src"), alt = cur.indexOf("ledge-sit-look")>-1 ? cur.replace("ledge-sit-look", "ledge-sit") : cur.replace("ledge-sit", "ledge-sit-look");
+    st.setAttribute("src", alt); await wait(30);
+    expect((bs.style.maskImage || bs.style.webkitMaskImage).indexOf(alt.replace(/^.*\//, ""))>-1, "the light's mask didn't follow the frame: "+(bs.style.maskImage||"").slice(0, 120));
+    P.dismount();
+  });
+
+  // ---- climb to another hold ----
+  var HOLD_SET = ["holdred", "holdblue", "holdyellowtri", "holdgreentri", "holdsand", "holdwood", "holdvolume", "jug", "slottedhold", "beanbag", "hangboard", "campusrungs", "toolbox"];
+  async function climbBootHolds(){ await climbBoot(function(s){ s.character.decorations = HOLD_SET.slice(); }); }
+  async function mountNow(){ var C = W.__cruxClimb; expect(C.mount()===true, "mount refused"); await until(function(){ var st = C.state(); return st && st.mode==="wall"; }, 4000, "the climber to reach the first hold"); }
+  function tapScene(x, y, id){ ptr("pointerdown", "mouse", x, y, id||7); ptr("pointerup", "mouse", x, y, id||7); }
+  function wallHolds(){ // [{ id, t, j, x, y }] every wall target with its nearest stance, client coordinates of its middle
+    var P = W.__cruxPerch, C = W.__cruxClimb, r = $("characterScene").getBoundingClientRect();
+    var all = P.targets("homewall", P.sceneBox()).filter(function(t){ return C.wallTarget(t.id); });
+    return all.filter(function(t){ // a tap on its middle must not also be inside another hold's box (the nearest box wins, and overlapping holds are a coin toss)
+      var px = t.x+t.w/2, py = t.y+t.h/2; return all.every(function(o){ return o===t || !(px>=o.x-2 && px<=o.x+o.w+2 && py>=o.y-2 && py<=o.y+o.h+2); });
+    }).map(function(t){ return { id:t.id, t:t, j:C.nearest(t.id), x:r.left+t.x+t.w/2, y:r.top+t.y+t.h/2 }; });
+  }
+  function fistDist(C, t){ var st = C.state(), hi = C.dom(C.anchors[st.key].hi); return Math.hypot(hi[0]-(t.x+t.w/2), hi[1]-(t.y+t.h/2)); }
+  function watchClimb(C){ // records what he does while a climb to a hold runs
+    var w = { modes:{}, frames:{}, idxs:[], gone:false, on:true, jumps:0 }, last = C.state().idx; w.idxs.push(last);
+    (async function(){ while(w.on){ var st = C.state(); if(!st){ w.gone = true; break; } w.modes[st.mode] = 1; if(st.idx!==last){ if(Math.abs(st.idx-last)!==1) w.jumps++; last = st.idx; w.idxs.push(last); } w.frames[dev_frameName().replace(/^.*\//, "")] = 1; await wait(8); } })();
+    return w;
+  }
+
+  test("Home perch polish 2: tapping a lower or a higher hold on the wall while climbing: he stays on the board, climbs there stance by stance, ends at it", async function(){
+    await climbBootHolds();
+    var C = W.__cruxClimb, P = W.__cruxPerch; await mountNow();
+    var hs = wallHolds(); expect(hs.length>=4, "too few holds on the board to test: "+hs.map(function(h){ return h.id; }));
+    var hi = hs.slice().sort(function(a, b){ return b.j-a.j; })[0], lo = hs.slice().sort(function(a, b){ return a.j-b.j; })[0];
+    expect(hi.j-lo.j>=3 && hi.j>=3, "the holds don't span enough route steps: "+hs.map(function(h){ return h.id+":"+h.j; }));
+    var w = watchClimb(C), R = C.route();
+    tapScene(hi.x, hi.y); await wait(60);
+    expect(C.state() && C.state().desired===hi.j && C.state().goal && C.state().goal.id===hi.id, "the tap didn't set the goal: "+JSON.stringify(C.state()));
+    await until(function(){ var s = C.state(); return s && s.idx===hi.j && !s.busy && s.desired===hi.j; }, 9000, "the climb up to "+hi.id);
+    var st = C.state(); expect(st.mode==="wall" || st.mode==="chalk", "not on the wall: "+st.mode);
+    for(var k=0;k<=hi.j;k++) expect(w.idxs.indexOf(k)>-1, "skipped stance "+k+": "+w.idxs.join());
+    expect(w.jumps===0, "a move skipped a stance: "+w.idxs.join());
+    expect(!w.modes.fall && !w.modes.mount && !w.gone, "he left the wall on the way up: "+Object.keys(w.modes).join());
+    expect(Object.keys(w.frames).every(function(f){ return /^climb-(reach-left|reach-right|mid-reach-(left|right)-v2|chalk-up)\.png$/.test(f); }), "a frame that is not a climb frame: "+Object.keys(w.frames).join());
+    var hold = R.hold[hi.j], d = fistDist(C, hi.t), dmin = Math.min.apply(null, R.hold.map(function(h){ return Math.hypot(h[0]-(hi.t.x+hi.t.w/2), h[1]-(hi.t.y+hi.t.h/2)); }));
+    expect(Math.abs(d-dmin)<1.5, "the fist is not on the route hold nearest "+hi.id+": "+d.toFixed(1)+" vs "+dmin.toFixed(1));
+    expect(d <= 0.32*C.geo().W, "the fist ended "+Math.round(d)+" px from "+hi.id);
+    expect(Math.hypot(C.dom(C.anchors[st.key].hi)[0]-hold[0], C.dom(C.anchors[st.key].hi)[1]-hold[1])<0.6 || st.mode==="chalk", "fist off the route hold");
+    // and back down to a lower one
+    w.on = false; await wait(30); var w2 = watchClimb(C);
+    tapScene(lo.x, lo.y); await wait(60);
+    try{ await until(function(){ var s = C.state(); return s && s.idx===lo.j && !s.busy && s.desired===lo.j; }, 9000, "the climb down to "+lo.id); }
+    catch(err){ throw new Error(err.message+" now "+JSON.stringify(C.state())+" idxs "+w2.idxs.join()); }
+    for(var k2=lo.j;k2<=hi.j;k2++) expect(w2.idxs.indexOf(k2)>-1, "skipped stance "+k2+" going down: "+w2.idxs.join());
+    expect(w2.jumps===0 && !w2.modes.fall && !w2.modes.mount && !w2.gone, "he left the wall going down: "+JSON.stringify(w2.modes));
+    expect(Math.abs(fistDist(C, lo.t) - Math.min.apply(null, C.route().hold.map(function(h){ return Math.hypot(h[0]-(lo.t.x+lo.t.w/2), h[1]-(lo.t.y+lo.t.h/2)); })))<1.5, "not at the hold nearest "+lo.id);
+    w2.on = false; expect(C.state().goal===null, "the goal stayed after arriving");
+    // a tap on empty board, and on a target that is not on the wall, do nothing
+    var i0 = C.state().idx, ts = P.targets("homewall", P.sceneBox()), off = ts.filter(function(t){ return !C.wallTarget(t.id); })[0], sr = $("characterScene").getBoundingClientRect();
+    tapScene(sr.left + off.x + off.w/2, sr.top + off.y + off.h/2); await wait(200);
+    expect(C.state() && C.state().idx===i0 && C.state().mode!=="fall" && !C.state().goal && !P.running(), "a tap on "+off.id+" (not on the wall) did something: "+JSON.stringify(C.state()));
+    tapScene(sr.left+sr.width*0.97, sr.top+sr.height*0.05); await wait(150);
+    expect(C.state() && C.state().idx===i0 && !C.state().goal, "a tap on nothing did something");
+    expect(C.state().key && !D.querySelector("#perchLip"), "state");
+  });
+
+  test("Home perch polish 2: long-press and drop on a wall hold climbs there; a drop on anything else keeps jumping there, from the size he has on the wall", async function(){
+    await climbBootHolds();
+    var C = W.__cruxClimb, P = W.__cruxPerch; await mountNow();
+    var hs = wallHolds(), hi = hs.slice().sort(function(a, b){ return b.j-a.j; })[0];
+    var w = watchClimb(C); await dragDrop("mouse", hi); await wait(80);
+    expect(!D.getElementById("perchRing") && C.state() && C.state().goal && C.state().goal.id===hi.id && !P.running(), "the drop on "+hi.id+" didn't start a climb: "+JSON.stringify(C.state())+" running "+P.running());
+    await until(function(){ var s = C.state(); return s && s.idx===hi.j && !s.busy; }, 9000, "the climb to the dropped hold");
+    expect(!w.modes.fall && !w.modes.mount && !w.gone && w.jumps===0 && !P.state() && !P.running(), "the drop made him leave the wall: "+JSON.stringify(w.modes));
+    w.on = false;
+    // a still press that goes nowhere puts him back on his hold and he can still be dragged
+    var sc = $("characterScene").getBoundingClientRect(), c = stageCenter(), idx0 = C.state().idx;
+    ptr("pointerdown", "mouse", c.x, c.y); await wait(420); ptr("pointermove", "mouse", sc.left+sc.width*0.9, sc.top+sc.height*0.3); await wait(30); ptr("pointerup", "mouse", sc.left+sc.width*0.9, sc.top+sc.height*0.3); await wait(200);
+    expect(C.state() && C.state().idx===idx0 && C.state().mode==="wall" && !C.state().drag && !C.state().dragging && !P.running() && !D.getElementById("perchRing"), "a pick-up that went nowhere changed something: "+JSON.stringify(C.state()));
+    await climbDragUp(0 + 0, 18).catch(function(){}); await wait(20);
+    await climbDragUp(Math.max(48, 0), 18); await wait(700);
+    // a drop on a floor object: off the wall, jumps there; the size carries on from the wall size (no snap to the floor size)
+    var bb = await targetXY("beanbag", "homewall"), bsm = [], cc = stageCenter();
+    var wd = $("characterWander"), sOn = parseFloat(/scale\(-?([\d.]+)/.exec(wd.style.transform)[1]);
+    ptr("pointerdown", "mouse", cc.x, cc.y); await wait(420); ptr("pointermove", "mouse", bb.x, bb.y); await wait(30); ptr("pointerup", "mouse", bb.x, bb.y);
+    await wait(30);
+    var sNow = parseFloat(/scale\(-?([\d.]+)/.exec(wd.style.transform)[1]);
+    expect(C.state()===null && P.running(), "a drop on the beanbag should leave the wall and jump: "+JSON.stringify(C.state()));
+    expect(sNow < 0.7 && Math.abs(sNow - sOn) < 0.12, "the size snapped on leaving the wall: "+sOn.toFixed(3)+" -> "+sNow.toFixed(3));
+    await settleRun(9000);
+    expect(P.state() && P.state().id==="beanbag" && C.state()===null && !D.getElementById("climbHolds"), "didn't end on the beanbag: "+JSON.stringify(P.state()));
+    P.dismount();
+  });
+
+  test("Home perch polish 2: a climb to a hold is cancelled cleanly by another tap, a drag, leaving Home, a resize and Arrange; reduced motion places him directly", async function(){
+    var frame = document.getElementById("app"), w0 = frame.style.width, h0 = frame.style.height;
+    try{
+      await climbBootHolds();
+      var C = W.__cruxClimb, P = W.__cruxPerch; await mountNow();
+      var hs = wallHolds(), hi = hs.slice().sort(function(a, b){ return b.j-a.j; })[0], lo = hs.filter(function(h){ return h.j>=1 && h.j<=hi.j-2; })[0] || hs.slice().sort(function(a, b){ return a.j-b.j; })[0];
+      // a second tap mid-way re-aims the climb
+      tapScene(hi.x, hi.y); await wait(750);
+      var mid = C.state().idx; expect(mid>=1 && mid<hi.j, "not on the way yet: "+mid);
+      tapScene(lo.x, lo.y); await wait(60);
+      expect(C.state().goal && C.state().goal.id===lo.id, "the second tap didn't re-aim: "+JSON.stringify(C.state().goal));
+      await until(function(){ var s = C.state(); return s && s.idx===lo.j && !s.busy && s.desired===lo.j; }, 9000, "the re-aimed climb");
+      expect(C.state().mode!=="fall" && C.pending()<=1, "state after re-aim");
+      // a press (drag) cancels it: wait for a gap between two moves, press, and he stops where he is
+      tapScene(hi.x, hi.y); await until(function(){ var s = C.state(); return s && s.idx>lo.j && !s.busy; }, 5000, "a gap between moves");
+      var c = climbStageCenter(), at = C.state().idx; ptr("pointerdown", "mouse", c.x, c.y, 9); await wait(20);
+      expect(C.state().desired===at && !C.state().goal && C.state().dragging, "a press didn't cancel the climb: "+JSON.stringify(C.state()));
+      await wait(900); expect(C.state().idx<=at+1 && C.state().idx<hi.j, "he kept climbing under the finger: "+C.state().idx+" from "+at);
+      ptr("pointerup", "mouse", c.x, c.y, 9); await wait(300);
+      // a tap on the board's holds is ignored while he is mid-mount or falling (no goal): fall, then nothing to aim
+      // leaving Home mid-chain ends it at once, nothing left running
+      C.stance(0); await wait(100); tapScene(hi.x, hi.y); await wait(400);
+      await click("navTrainBtn", 250);
+      expect(C.state()===null && C.pending()===0 && P.pending()===0 && /idle\/idle-01\.png$/.test(dev_frameName()) && !D.getElementById("climbHolds"), "leaving Home mid-climb: "+JSON.stringify(C.state()));
+      await goHome(); await wait(400); await wait(1200);
+      expect(C.state()===null && !P.running(), "something restarted after coming back");
+      // a resize mid-chain: re-fitted on the stance he was on, the goal is gone
+      await mountNow(); tapScene(hi.x, hi.y); await wait(450);
+      frame.style.width = "340px"; C.relayout(); await wait(700);
+      var st = C.state(); expect(st && st.mode==="wall" && !st.busy && st.desired===st.idx && !st.goal, "a resize mid-climb: "+JSON.stringify(st));
+      var R = C.route(), hi2 = C.dom(C.anchors[st.key].hi); expect(Math.hypot(hi2[0]-R.hold[st.idx][0], hi2[1]-R.hold[st.idx][1])<0.6, "fist off the hold after the resize");
+      await wait(1500); expect(C.state().idx===st.idx, "he walked on after the resize: "+C.state().idx+" vs "+st.idx);
+      frame.style.width = w0; frame.style.height = h0; C.relayout(); await wait(500);
+      // Arrange mid-chain
+      var hs3 = wallHolds(), hi3 = hs3.slice().sort(function(a, b){ return b.j-a.j; })[0];
+      tapScene(hi3.x, hi3.y); await wait(300); await click("arrangeToggleBtn", 300);
+      expect(C.state()===null && C.pending()===0, "Arrange mid-climb: "+JSON.stringify(C.state())); await click("arrangeToggleBtn", 300);
+    } finally { frame.style.width = w0; frame.style.height = h0; }
+  });
+
+  test("Home perch polish 2: reduced motion climbs to the tapped hold directly: no swing, no waiting, no timers, never off the wall", async function(){
+    await climbBootHolds();
+    var C = W.__cruxClimb, P = W.__cruxPerch; P.reduced(true);
+    try{
+      await mountNow();
+      var hs = wallHolds(), hi = hs.slice().sort(function(a, b){ return b.j-a.j; })[0], lo = hs.slice().sort(function(a, b){ return a.j-b.j; })[0];
+      var seen = {}, running = true; (async function(){ while(running){ seen[dev_frameName()] = 1; await wait(6); } })();
+      tapScene(hi.x, hi.y); await wait(30);
+      expect(C.state() && C.state().idx===hi.j && C.state().mode==="wall" && !C.state().busy && !C.state().goal, "reduced motion didn't place him on stance "+hi.j+" at once: "+JSON.stringify(C.state()));
+      expect(C.pending()===0, "reduced motion left timers: "+C.pending());
+      tapScene(lo.x, lo.y); await wait(30);
+      expect(C.state() && C.state().idx===lo.j && C.pending()===0, "reduced motion didn't go back down at once: "+JSON.stringify(C.state()));
+      running = false;
+      var names = Object.keys(seen); expect(names.every(function(f){ return /climb\/climb-reach-(left|right)\.png$/.test(f); }), "reduced motion should only show stance frames: "+names.join());
+      var R = C.route(), hi2 = C.dom(C.anchors[C.state().key].hi); expect(Math.hypot(hi2[0]-R.hold[lo.j][0], hi2[1]-R.hold[lo.j][1])<0.6, "fist off the hold");
+      await wait(3400); expect(C.state().mode==="wall", "reduced motion went into the chalk rest: "+C.state().mode);
+      expect(!/climbGoal|goal/.test(STORE[KEY]||""), "a goal reached the save");
+    } finally { P.reduced(false); }
+  });
   // ---- end Home perch tests ----
 
   // ---- update app tests ----
