@@ -1,8 +1,8 @@
 # Hangboard hang: the frame we do not have (notes, 2026-10-17)
 
 Status: **DONE (2026-10-17).** The frame was made and wired: `assets/mascot/climber/default/climb/climb-hang-two.png` (640x960, keyed from the 1024x1536 master, head width matched to the other climb frames), `IMG.wall.cl_hang_two`,
-`PERCH_FRAME.hangTwo`, `HANGBOARD_FALLBACK = false`. It is used for the Hangboard, Campus Rungs and Gym Rings (`PERCH_TWOHAND`), **default colours with no outfit only**; another colour or any outfit keeps the one-fist stand-in described below.
-The rest of this note is the original brief, kept for the spec and for making the recolours / outfit layers later (then drop the `perchTwoOn` colour / outfit condition).
+`PERCH_FRAME.hangTwo`, `HANGBOARD_FALLBACK = false`. It is used for the Hangboard, Campus Rungs and Gym Rings (`PERCH_TWOHAND`), every colour and outfit (see the update below).
+**Update (Home perch fixes):** the recolours (slate / sandstone / moss) and the outfit layers (shoes, chalk bag, tee, shorts, knit band, headlamp; the painted beanie is skipped on this pose) were made by `dev/hang-two-layers.py`, and `perchTwoOn()` no longer has the colour / outfit condition: the one-fist stand-in below is only used when the picture is missing or `HANGBOARD_FALLBACK = true`. The rest of this note is the original brief, kept for the spec.
 
 ## Why nothing existing works
 
