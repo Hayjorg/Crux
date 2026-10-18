@@ -73,6 +73,20 @@ generated `sw.js` (service worker: page network-first, pictures and fonts cached
 - **After changing `crux.html` or any image,** rebuild `site/` and re-host it for the installed app to update.
 - **GitHub Pages (set up 2026-10-08, at the owner's request):** `.github/workflows/pages.yml` runs `dev/build-site.ps1` on a Windows runner and deploys `site/` to https://hayjorg.github.io/Crux/ on every push to `main`. So pushing `crux.html` or image changes to `main` updates the public installed app.
 
+- **Update app + new-version banner (2026-10-17):** the installed app keeps its page in memory, so a deploy can go unseen. Settings -> "About & legal"
+  has a Version line (build id parsed from the live `sw.js` comment "build xxxxxxxxxx", fetched no-store; "dev" under file:// or localhost) and an
+  **Update app** button (`updateApp()`): it first checks the network (no-store fetch of the page); offline it changes nothing (caches stay, so offline
+  use works) and says so. Online it unregisters service workers, deletes every Cache Storage entry, then `location.replace(path + "?v=<timestamp>")`
+  (the app ignores `?v=`; it is stripped again at launch). It never reads, renames or clears localStorage/IndexedDB (the save) and degrades with a
+  message when there is no service worker / Cache API. `updCheck()` runs at launch and on `visibilitychange` to visible, at most once per 5 min: it
+  fetches the scope's page with `cache:"no-store"`, compares ETag (else Last-Modified, else length+hash of the text) with the value recorded at first
+  check **in memory only**, and shows a small "New version available - Update" banner (`#updateBanner`, dismissible). The banner never reloads by
+  itself and is held back while a timer is running or paused mid-phase, a workout is open, or a game is open (`updAppBusy()`); it appears once idle.
+  Off under file:// and localhost. No saved field, no new localStorage key. Tests: "Update app:" / "Update banner:" in `dev/tests.html`, which
+  stub fetch/caches/serviceWorker through `window.__cruxUpdEnv` (only under `__cruxTest`). Not verifiable without a real phone: iOS standalone
+  behaviour, GitHub Pages' real ETag/caching headers, and `location.replace` bypassing the HTTP cache there. The first-load baseline is taken when the
+  page first checks, so a page already stale in memory at that moment would not see itself as old (it only notices later deploys).
+
 ## Climber variants (palette recolours, 2026-10-10)
 
 `state.character.variant` ("default" | "slate" | "sandstone" | "moss") picks a full recolour of every body frame, art in
